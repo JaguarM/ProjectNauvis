@@ -81,6 +81,13 @@ it declares `modLoader = "kotori_scala"` and so drags in a Scala loader, and it 
 blocks and 16 recipes of wood/stone/iron/gold/diamond tiering against Factorio's single
 storage tank. Adopting it means overriding all 16 and hiding most of the 37.
 
+**KubeJS** (`kubejs`, LGPL-3.0) is **on 26.1.2 in beta, not 26.2** — one version behind, like
+AE2, and `rhino` with it. Worth watching, because scripting is a real alternative to writing a
+mod *for pack policy*: stripping vanilla recipes at milestone 3 is one script against hundreds
+of condition-false JSON files, and it subsumes the Item Obliterator idea. It cannot touch the
+subsystem mods — a script is not a mod, and non-negotiable #3 requires each to stand alone, so
+block entities, ticking and capabilities stay Java.
+
 **Energized Power** (`energized-power`, 3.0.0+26.2.x, MIT) — FE machines and generators.
 Overlaps `nauvis_machines` and `nauvis_power` heavily, so the question is whether it replaces
 those milestones or duplicates them. Not yet evaluated in the way Fluid Tank has been.
@@ -123,8 +130,15 @@ released mods stay in their own repos and are pulled in with
 `includeBuild("../NeoProgressiveAutomation")` and friends, so one `./gradlew runServer` puts
 the whole pack on the classpath and cross-mod edits are possible in one pass.
 
-If ModDevGradle fights composite builds, fall back to dropping their built jars into
-`run/mods`. Prove which works before building on it — budget 20 minutes, not a day.
+**Settled: ModDevGradle does not fight composite builds**, so the `run/mods` fallback is not
+needed. One thing has to be spelled out — Gradle matches an included build by its project name,
+which defaults to the directory, while each jar is named after its mod id, so `settings.gradle`
+carries an explicit `dependencySubstitution` per sibling. The siblings are `runtimeOnly`: there
+is no compile-time dependency on any of them and there must not be one.
+
+Configuration cache is off here, though all four siblings enable it. Composite build plus
+ModDevGradle plus configuration cache is the untested corner and a milestone is the wrong time
+to find out.
 
 Milestones
 ----------
@@ -132,13 +146,19 @@ Milestones
 Each milestone is a playable state, not a checklist. Counts are *new* items, transitive over
 the recipe graph, with vanilla stand-ins excluded from the registration cost.
 
-### 0 — Foundation
+### 0 — Foundation · **done**
 
-Gradle workspace, composite build proven, the `nauvis` pack mod, and the **recipe generator**:
-`data/mapping.json` + `reference/factorio/recipes.json` → recipe JSON per owning mod. Nothing
-else starts until recipes generate, because everything after this depends on it.
+Gradle workspace, composite build proven, the `nauvis` pack mod, and the recipe generator.
+A dev server loads all five mods; `tools/gen_recipes.py` turns the mapping plus Factorio's dump
+into 341 files across 12 mods, and `:nauvis:check` fails the build if a timed recipe on disk
+disagrees with it.
 
-### 1 — First factory · 11 new registrations
+Two things arrived alongside and were not in the original plan, both of which pay for
+themselves immediately: a **headless gametest harness** (`:nauvis:runGameTestServer`), which is
+how anything about behaviour gets verified without a person watching, and **datagen** for
+models, language and loot tables.
+
+### 1 — First factory · 11 new registrations · *in progress*
 
 `assembling-machine-1`, `burner-inserter`, `inserter`, `iron-chest`, `boiler`, `steam-engine`,
 `small-electric-pole`, `pipe`, plus intermediates already owned by
@@ -210,9 +230,13 @@ framework, and its assets are All Rights Reserved regardless.
 What testing looks like
 -----------------------
 
-Claude runs `./gradlew runServer --nogui` headless: does the pack load, do registries populate,
-does `/datapack list` show what it should, does a recipe resolve. That catches broken recipes,
-missing loot tables and load failures before the game is ever launched.
+Claude runs `./gradlew :nauvis:runGameTestServer` headless: it starts a server, runs every
+gametest and exits non-zero if any fails. Behaviour is testable this way — a machine consuming
+its ingredients, an inserter moving a stack, a recipe resolving — so most of a milestone can be
+verified without anyone watching. `:nauvis:runServer` still answers the coarser question of
+whether the pack loads at all, and `:nauvis:check` refuses to build on a wrong recipe.
+
+Write the test with the block, not after it.
 
 Claude cannot see the game. Textures, GUI layout, whether the assembler screen is usable,
 whether the factory is *fun* — that is Yannic's half, and it is the half that decides whether

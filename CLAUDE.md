@@ -2,7 +2,8 @@ Project Nauvis
 ==============
 
 A Minecraft modpack that recreates Factorio. Read `docs/PLAN.md` before starting work;
-`docs/MAPPING.md` and `docs/API-26.2.md` are the other two you will need.
+`docs/MAPPING.md` and `docs/API-26.2.md` are the other two you will need. **`docs/NEXT.md`
+says what to pick up now** and how to run the build, the server and the tests.
 
 Non-negotiables
 ---------------
