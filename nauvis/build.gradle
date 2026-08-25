@@ -1,0 +1,135 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '2.0.143'
+    id 'idea'
+}
+
+ext {
+    mod_id = 'nauvis'
+    mod_name = 'Nauvis'
+}
+
+version = '0.1.0'
+group = 'com.jaguarm.nauvis'
+
+base {
+    archivesName = mod_id
+}
+
+// Mojang ships Java 25 to end users, so mods target Java 25.
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+sourceSets.main.resources {
+    srcDir 'src/generated/resources'
+    exclude '**/*.bbmodel'
+    exclude 'src/generated/**/.cache'
+}
+
+repositories {
+    // The NeoForged mirror intermittently serves zero-byte files with HTTP 200 for
+    // third-party libraries. exclusiveContent makes Central the only source for these
+    // groups, so the broken mirror is never consulted for them. See docs/API-26.2.md for
+    // the symptoms; the giveaway is a cache directory named
+    // da39a3ee5e6b4b0d3255bfef95601890afd80709, the SHA-1 of the empty string.
+    exclusiveContent {
+        forRepository { mavenCentral() }
+        filter {
+            includeGroup 'com.google.errorprone'
+            includeGroup 'com.fasterxml.jackson'
+            includeGroup 'org.apache.logging.log4j'
+        }
+    }
+
+    mavenCentral()
+}
+
+dependencies {
+    // The four released mods, pulled in to run the pack from one classpath. runtimeOnly, not
+    // implementation, because there is no compile-time dependency on any of them and there
+    // must not be one - the coupling is recipe conditions, not Java. settings.gradle
+    // substitutes each of these with the local checkout beside this repo.
+    runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
+    runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
+    runtimeOnly "com.jaguarm.neoprogressiveautomation:neoprogressiveautomation:${neoprogressiveautomation_version}"
+    runtimeOnly "com.jaguarm.crumblingore:crumblingore:${crumblingore_version}"
+}
+
+neoForge {
+    version = project.neo_version
+
+    runs {
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        data {
+            clientData()
+            programArguments.addAll '--mod', project.mod_id,
+                    '--all',
+                    '--output', file('src/generated/resources/').getAbsolutePath(),
+                    '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+// Expands the properties in src/main/templates into the mod metadata.
+var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : 'MIT',
+            mod_version            : version,
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from 'src/main/templates'
+    into "${layout.buildDirectory.get()}/generated/sources/modMetadata"
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}

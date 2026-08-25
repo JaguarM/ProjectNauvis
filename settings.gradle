@@ -1,0 +1,47 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'ProjectNauvis'
+
+// The four released mods keep their own repos and their own release cycles. Including their
+// builds substitutes their published coordinates with the local checkout, so an edit to one
+// is picked up here without publishing, and each still produces its own jar on its own.
+//
+// They have no compile-time dependency on each other or on anything here - the coupling is
+// data, not code: optional entries in neoforge.mods.toml and neoforge:mod_loaded conditions
+// on recipes. Including them buys one classpath to run the pack from, nothing more.
+// The substitution has to be spelled out. Gradle matches an included build by its project
+// name, which defaults to the directory - Facrafting, NeoProgressiveMaterials - while the jar
+// each one publishes is named after its mod id. Without these lines the coordinates simply
+// fail to resolve.
+includeBuild('../Facrafting') {
+    dependencySubstitution {
+        substitute module('com.jaguarm.facrafting:facrafting') using project(':')
+    }
+}
+includeBuild('../NeoProgressiveMaterials') {
+    dependencySubstitution {
+        substitute module('com.jaguarm.neoprogressivematerials:neoprogressivematerials') using project(':')
+    }
+}
+includeBuild('../NeoProgressiveAutomation') {
+    dependencySubstitution {
+        substitute module('com.jaguarm.neoprogressiveautomation:neoprogressiveautomation') using project(':')
+    }
+}
+includeBuild('../CrumblingOre') {
+    dependencySubstitution {
+        substitute module('com.jaguarm.crumblingore:crumblingore') using project(':')
+    }
+}
+
+// Pack policy, vanilla replacement, raw resources, terrain. The other nine subsystem mods
+// join this list as their milestones come up.
+include 'nauvis'
