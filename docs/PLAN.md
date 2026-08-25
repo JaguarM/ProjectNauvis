@@ -2,8 +2,8 @@ The plan
 ========
 
 Recreate Factorio as a Minecraft modpack: mine, smelt, automate, research, defend, launch a
-rocket. Minecraft 26.2 / NeoForge 26.2.0.59. First-party mods only — the pack must stay small
-and load fast, and on 26.2 almost nothing third-party is ported anyway.
+rocket. Minecraft 26.2 / NeoForge 26.2.0.59. First-party by default — the pack must stay small
+and load fast, and the tech ecosystem has not reached 26.2. See the third-party policy below.
 
 Read `../CLAUDE.md` first. The five non-negotiables there govern everything below.
 
@@ -24,6 +24,43 @@ never inside a subsystem mod — every mod must stay useful standalone.
 
 **Shortcuts are wanted.** Something playable that is only close enough beats waiting for the
 authentic version. See the shortcut table below.
+
+**First-party by default, with two openings.** Build it here unless a third-party mod is
+*almost identical* to the Factorio feature and has a current 26.2 build — then take it rather
+than rewrite it. And read outdated mods freely for architecture, the way Create is already
+read for belts. A mod stuck on 1.21.1 is still the best documentation of how a problem was
+solved; it just cannot be shipped. See below for what that rules in today, which is very
+little.
+
+Third-party mods
+----------------
+
+Surveyed 2026-08-25 against Modrinth. Redo it when a milestone comes up, not before — the
+answer changes only when someone ports something.
+
+**Nothing on 26.2 does Factorio's oil, or anything else in the chemistry chain.** Searching
+26.2 for `oil` returns one worldgen structure pack. There is no fluid-processing mod to adopt,
+so the barrels shortcut at milestone 4 is not a compromise against an available alternative —
+it is the only option. This resolves the fluids open question in `MAPPING.md`.
+
+The whole tech ecosystem stopped at 1.21.1: Create, Mekanism, PneumaticCraft, Modern
+Industrialization, Industrial Foregoing. Immersive Engineering has no current releases at all.
+These are the ones to **read**, not to depend on.
+
+**Applied Energistics 2 is the one to watch.** It is on 26.1.2 and still shipping betas, one
+Minecraft version behind us. Nothing else serious is close.
+
+What actually exists on 26.2 is generic plumbing, not chemistry, and licence is the first
+question to ask of any of it — a pack redistributes what it bundles:
+
+| Mod | Licence | Verdict |
+|---|---|---|
+| `pipez`, `tesseract` | All Rights Reserved | cannot be bundled without permission |
+| `classic-pipes` | CC-BY-NC-SA | non-commercial and share-alike; awkward |
+| `large-fluid-tank`, `modular-routers`, `energized-power` | MIT | usable, but duplicate our own machines with non-Factorio recipes |
+
+None of them clears the *almost identical to a Factorio feature* bar, so today the policy
+rules in nothing. It exists for the day something ports.
 
 The mods
 --------

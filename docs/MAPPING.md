@@ -101,7 +101,14 @@ Open questions
 - **Fluids** (`crude-oil`, `heavy-oil`, `light-oil`, `petroleum-gas`, `steam`, `lubricant`,
   `sulfuric-acid`) map to barrel *items* during the shortcut phase and to real fluids after.
   The mapping needs a second field for that when milestone 4 lands, rather than being edited
-  twice.
+  twice. **Settled on the third-party question:** nothing on 26.2 does oil or any other part
+  of the chemistry chain, so there is no mod to adopt instead. See `PLAN.md`.
 - **`solid-fuel`, `uranium-235`, `uranium-238`** appear as raw in the dump but are products of
   chemistry and centrifuging in the real game. They belong to `nauvis_fluids` and their
   recipes have to be written by hand — the only place in the pack where that is true.
+
+  `gen_recipes.py` confirms the hand-written set independently, by reporting every ingredient
+  no generated recipe produces. It is those three plus `heavy-oil`, `light-oil` and
+  `petroleum-gas` — and `uranium-processing`, whose 0.007 / 0.993 output is a probability that
+  no crafting recipe can express. Seven items, and the list is derived rather than remembered,
+  so it stays honest as the mapping changes.
