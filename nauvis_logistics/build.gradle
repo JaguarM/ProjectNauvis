@@ -6,17 +6,12 @@ plugins {
 }
 
 ext {
-    mod_id = 'nauvis'
-    mod_name = 'Nauvis'
-
-    // Every mod in the pack whose gametests should run here. A subsystem mod tests its own
-    // behaviour, in its own source tree, and these runs are where all of it happens at once on
-    // a classpath that has the whole pack on it.
-    pack_gametest_namespaces = 'nauvis,nauvis_machines,nauvis_logistics'
+    mod_id = 'nauvis_logistics'
+    mod_name = 'Nauvis Logistics'
 }
 
 version = '0.1.0'
-group = 'com.jaguarm.nauvis'
+group = 'com.jaguarm.nauvislogistics'
 
 base {
     archivesName = mod_id
@@ -35,11 +30,8 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // The NeoForged mirror intermittently serves zero-byte files with HTTP 200 for
-    // third-party libraries. exclusiveContent makes Central the only source for these
-    // groups, so the broken mirror is never consulted for them. See docs/API-26.2.md for
-    // the symptoms; the giveaway is a cache directory named
-    // da39a3ee5e6b4b0d3255bfef95601890afd80709, the SHA-1 of the empty string.
+    // See docs/API-26.2.md: the NeoForged mirror intermittently serves zero-byte files with
+    // HTTP 200 for these groups. exclusiveContent makes Central the only source for them.
     exclusiveContent {
         forRepository { mavenCentral() }
         filter {
@@ -53,20 +45,16 @@ repositories {
 }
 
 dependencies {
-    // The four released mods, pulled in to run the pack from one classpath. runtimeOnly, not
-    // implementation, because the pack mod has no compile-time dependency on any of them and
-    // must not grow one - the coupling is recipe conditions, not Java. settings.gradle
-    // substitutes each of these with the local checkout beside this repo.
+    // No compile-time dependency, deliberately. An inserter moves items between whatever is
+    // beside it through Capabilities.Item.BLOCK, which is NeoForge's - it never needs to know
+    // what a Facrafting recipe is. nauvis_machines is the one mod in the pack that compiles
+    // against a sibling, and it should stay the only one.
+    //
+    // These two are runtime only, so a standalone run of this mod has the mods its recipes
+    // name: Facrafting supplies the timed recipe type, Neo Progressive Materials the iron
+    // gear wheel an inserter is paid for in.
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
-    runtimeOnly "com.jaguarm.neoprogressiveautomation:neoprogressiveautomation:${neoprogressiveautomation_version}"
-    runtimeOnly "com.jaguarm.crumblingore:crumblingore:${crumblingore_version}"
-
-    // The subsystem mods in this repo, on the same terms. This is what makes
-    // :nauvis:runServer and :nauvis:runGameTestServer the whole pack rather than the pack mod
-    // on its own; each subsystem still builds and runs standalone.
-    runtimeOnly project(':nauvis_machines')
-    runtimeOnly project(':nauvis_logistics')
 }
 
 neoForge {
@@ -75,20 +63,20 @@ neoForge {
     runs {
         client {
             client()
-            systemProperty 'neoforge.enabledGameTestNamespaces', pack_gametest_namespaces
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         server {
             server()
             programArgument '--nogui'
-            systemProperty 'neoforge.enabledGameTestNamespaces', pack_gametest_namespaces
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
-        // Runs every registered gametest, then exits - non-zero if any failed. This is the
-        // check Claude can run unattended; the client run is for the half that needs eyes.
+        // Runs every registered gametest, then exits - non-zero if any failed. The pack's own
+        // :nauvis:runGameTestServer runs these too, on a classpath with all five mods.
         gameTestServer {
             type = 'gameTestServer'
-            systemProperty 'neoforge.enabledGameTestNamespaces', pack_gametest_namespaces
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         // Client and server datagen are separate runs since 1.21.4. Models and language go
@@ -129,6 +117,7 @@ var generateModMetadata = tasks.register('generateModMetadata', ProcessResources
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
             neo_version            : neo_version,
+            facrafting_version     : facrafting_version,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : 'MIT',

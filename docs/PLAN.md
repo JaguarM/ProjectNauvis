@@ -179,8 +179,24 @@ compile-time dependency on Facrafting** — the one in the pack — because a ma
 `FacraftRecipe` has to be able to name the type. The arrow points one way and there is no
 cycle. Still missing: a screen, which is the half that needs eyes.
 
-**Next is the inserter**, in `nauvis_logistics`, and it is what turns two machines into a
-factory.
+**`burner-inserter` is done**, in a new `nauvis_logistics` subproject: a directional block that
+takes one item from behind and gives it to whatever is in front, both through
+`Capabilities.Item.BLOCK`, burning coal to do it. It works with a vanilla chest, a furnace, an
+assembling machine or another mod's machine, because it asks the block rather than knowing what
+it is. Six gametests cover it.
+
+The interesting half is that **an idle inserter costs nothing**, with no polling and no ticker.
+Its work arrives in somebody else's inventory, and the answer turned out to be already in the
+game: every `BlockEntity.setChanged()` reaches all six neighbours as `onNeighborChange`, so a
+chest gaining an item tells the inserter beside it for free. See the section in `API-26.2.md`;
+it is asserted by a test, and by a second test that the wake is filtered down to the two
+neighbours an inserter can actually use.
+
+The electric `inserter` waits for `nauvis_power` — it costs a circuit and runs on the grid, and
+registering it now would mean an item that works without the power it is supposed to need.
+
+**Next is `iron-chest`**, then the boiler, steam engine and small electric pole, which is where
+milestone 1 closes and power begins.
 
 ### 2 — Belts · 4 new
 

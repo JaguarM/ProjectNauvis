@@ -50,3 +50,7 @@ include 'nauvis'
 // data/mapping.json names `nauvis_machines:assembling_machine_1` - an id is permanent, so the
 // machine lives in the mod the mapping gives it rather than in the pack mod.
 include 'nauvis_machines'
+
+// Belts, inserters, splitters, chests, robots. The inserter is what turns two machines into a
+// factory, so this mod arrives second even though belts are the harder half of it.
+include 'nauvis_logistics'

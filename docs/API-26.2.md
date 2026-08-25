@@ -37,6 +37,7 @@ Confirmed renames and signature changes
 | `Inventory.items` | private — use `getNonEquipmentItems()`; offhand is equipment and fetched apart |
 | `Player.displayClientMessage(Component, boolean)` | **gone.** `sendOverlayMessage(Component)` for the action bar, `sendSystemMessage(Component)` for chat |
 | `net.minecraft.world.ticks.ScheduledTickAccess` | **`net.minecraft.world.level.ScheduledTickAccess`** — the interface moved, the package `world.ticks` kept the rest |
+| `DirectionProperty` | **gone.** `BlockStateProperties.HORIZONTAL_FACING` is an `EnumProperty<Direction>` |
 
 Other confirmed details:
 
@@ -105,6 +106,43 @@ queueing twice and — usefully — a **gametest assertion that a machine really
 `nauvis_machines/.../assembler/AssemblerBlockEntity.java` is the worked example: it reschedules
 itself while a craft is running and simply stops when there is nothing to make, waking from
 `onContentsChanged`, from the recipe being set, and from `neighborChanged`.
+
+Hearing that a *neighbour's* inventory changed
+----------------------------------------------
+
+A machine can sleep perfectly because everything that gives it work touches its own inventory. A
+machine that watches a neighbour — an inserter, a hopper, anything that pulls — cannot, and the
+obvious answers are a permanent ticker or a poll. Neither survives at Factorio scale.
+
+**`IBlockExtension#onNeighborChange(BlockState, LevelReader, BlockPos pos, BlockPos neighbor)` is
+the signal, and it is free.** Every `BlockEntity.setChanged()` calls
+`Level.updateNeighbourForOutputSignal`, which NeoForge widened from vanilla's horizontal
+comparator check to call `onNeighborChange` on **all six neighbours, unconditionally**. So a
+vanilla chest gaining an item, a furnace finishing a smelt and an assembler banking a craft all
+reach the block beside them already — exactly, immediately, and with nobody subscribing.
+
+Three things to know:
+
+- `pos` is **you**; `neighbor` is the block entity that changed. Filter on `neighbor` before
+  looking anything up: the notification arrives from all six sides and most of them are
+  irrelevant. `nauvis_logistics/.../InserterBlock.java` compares it against the two positions an
+  inserter can use, which costs two `BlockPos.equals` against a state already in hand and skips
+  the block entity lookup entirely.
+- The parameter is a `LevelReader`, so cast to `ServerLevel` before scheduling anything.
+- It is **not** a substitute for `BlockCapabilityCache`, and the reverse is also true — its own
+  javadoc says so. The cache reports the capability being *replaced* (block placed, broken,
+  chunk cycled) and holds the handler so a transfer is not a lookup; `onNeighborChange` reports
+  the *contents* changing. A puller wants both.
+
+`BlockCapabilityCache.create` also takes an invalidation listener, and it is tempting to wake
+from it. Don't: the contract forbids level access inside it, and every case it reports is one
+`neighborChanged` already reports from a context where scheduling is safe.
+
+The claim above is asserted, not assumed: `inserter_wakes_when_source_fills` puts an item in a
+vanilla chest and checks the inserter is scheduled **in the same tick**. Deleting the
+`onNeighborChange` override makes exactly that test fail — and, tellingly, leaves
+`inserter_moves_items` passing, because a test that only checks items move never notices that the
+wake is broken.
 
 GameTest is registry-driven now, and needs a structure
 ------------------------------------------------------
@@ -175,6 +213,10 @@ Silent failures — these compile and then do nothing
   the block entity is already gone by then. Note `MinerBlock` in Neo Progressive Automation has
   exactly that override and only works because its entity is a `WorldlyContainer`; do not copy
   it. `assembler_spills_when_broken` is the gametest that catches this.
+- **A built-in datapack needs a `pack.mcmeta`.** `AddPackFindersEvent#addPackFinders` pointed at
+  a resource directory without one fails with a bare
+  `NullPointerException: ... because "pack" is null` from `PackRepository.discoverAvailable`,
+  naming neither the mod nor the directory. See `nauvis_logistics/src/main/resources/crafting_table/`.
 - **`data/<ns>/recipe/` and `data/<ns>/loot_table/` are singular.** Plural folder names do not
   error; the block just silently drops nothing.
 - **Recipes use `result.id`**, not `result.item`.

@@ -1,0 +1,54 @@
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="JaguarM"
+displayURL="https://github.com/JaguarM/ProjectNauvis"
+issueTrackerURL="https://github.com/JaguarM/ProjectNauvis/issues"
+
+description='''
+Factorio's logistics: inserters first, then belts, splitters, chests and robots.
+
+An inserter takes one item from whatever is behind it and puts it into whatever is in front,
+over and over, as long as it has coal to burn. It works with anything that holds items - a
+vanilla chest, a furnace, an assembling machine, another mod's tank of a thing - because it
+asks the block rather than knowing what it is.
+
+An idle inserter costs nothing at all. It is asleep until the chest behind it gains something,
+and it goes straight back to sleep when the chest runs dry.
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# Optional, unlike nauvis_machines' hard dependency on the same mod. An inserter is not a
+# machine that runs recipes - it moves items - so without Facrafting the timed recipes drop
+# out and the plain bench recipes take over, and the inserters themselves work unchanged.
+[[dependencies.${mod_id}]]
+    modId="facrafting"
+    type="optional"
+    versionRange="[${facrafting_version},)"
+    ordering="AFTER"
+    side="BOTH"
+
+# Optional: the inserter is paid for in an iron gear wheel. Without this mod that one recipe
+# does not load; the block still works if you get one another way.
+[[dependencies.${mod_id}]]
+    modId="neoprogressivematerials"
+    type="optional"
+    versionRange="[1.0.0,)"
+    ordering="AFTER"
+    side="BOTH"
