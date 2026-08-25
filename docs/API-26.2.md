@@ -58,18 +58,17 @@ Other confirmed details:
 GameTest is registry-driven now, and needs a structure
 ------------------------------------------------------
 
-Every tutorial shows `@GameTest` on a static method. **That is the old API.** On 26.2 a test
-is two registry entries and a structure file:
+Every tutorial shows `@GameTest` on a static method. **That is the old API.** On 26.2 a test is
+a `GameTestInstance` in `Registries.TEST_INSTANCE`, registered through NeoForge's
+`RegisterGameTestsEvent` on the mod bus, plus a structure to run in. `TestData` carries
+`environment`, `structure`, `max_ticks`, `setup_ticks`, `rotation`, `padding`, `sky_access`,
+`max_attempts` and `required_successes`.
 
-1. The body is a `Consumer<GameTestHelper>` in `Registries.TEST_FUNCTION`, registered through
-   `TestFunctionLoader.registerLoader(...)`.
-2. The test itself is a `GameTestInstance` — `FunctionGameTestInstance` points at the function
-   key — in `Registries.TEST_INSTANCE`. NeoForge exposes both through
-   `RegisterGameTestsEvent` on the mod bus, which also registers `TestEnvironmentDefinition`s.
-3. `TestData` carries `environment`, `structure`, `max_ticks`, `setup_ticks`, `rotation`,
-   `padding`, `sky_access`, `max_attempts`, `required_successes`.
+`nauvis/src/main/java/com/jaguarm/nauvis/NauvisGameTests.java` is a working example of all of
+the below.
 
-**`FunctionGameTestInstance` is not available to mods.** Its bodies live in
+**`FunctionGameTestInstance` is not available to mods**, whatever the vanilla code suggests by
+using it for `minecraft:always_pass`. Its bodies live in
 `Registries.TEST_FUNCTION`, which `BuiltInRegistries` bootstraps through
 `BuiltinTestFunctions::bootstrap` during *static initialisation* — that calls
 `TestFunctionLoader.runLoaders` once, long before any mod constructor runs, and NeoForge adds
