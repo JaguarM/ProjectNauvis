@@ -55,6 +55,30 @@ Other confirmed details:
 - The client cannot enumerate recipes (since 1.21.4). Use `OnDatapackSyncEvent#sendRecipes`
   plus `RecipesReceivedEvent`, not a hand-rolled catalogue.
 
+GameTest is registry-driven now, and needs a structure
+------------------------------------------------------
+
+Every tutorial shows `@GameTest` on a static method. **That is the old API.** On 26.2 a test
+is two registry entries and a structure file:
+
+1. The body is a `Consumer<GameTestHelper>` in `Registries.TEST_FUNCTION`, registered through
+   `TestFunctionLoader.registerLoader(...)`.
+2. The test itself is a `GameTestInstance` — `FunctionGameTestInstance` points at the function
+   key — in `Registries.TEST_INSTANCE`. NeoForge exposes both through
+   `RegisterGameTestsEvent` on the mod bus, which also registers `TestEnvironmentDefinition`s.
+3. `TestData` carries `environment`, `structure`, `max_ticks`, `setup_ticks`, `rotation`,
+   `padding`, `sky_access`, `max_attempts`, `required_successes`.
+
+**`structure` is mandatory and there is no empty default.**
+`TestInstanceBlockEntity.placeStructure()` resolves it through
+`level.getStructureManager().get(...)` and simply `return false` when it is missing — the test
+does not run and nothing says why. Ship an NBT at `data/<ns>/structure/<name>.nbt`; a floor
+the test can stand on has to come from that file, because `clearSpaceForStructure` clears the
+volume first. The current structure `DataVersion` is **4903** (`SharedConstants.WORLD_VERSION`).
+
+`GameTestEnvironments.DEFAULT_KEY` is `minecraft:default`, an `AllOf(List.of())` — use it
+rather than registering an environment for a test that needs no special conditions.
+
 Silent failures — these compile and then do nothing
 ---------------------------------------------------
 
