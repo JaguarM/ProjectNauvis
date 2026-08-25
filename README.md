@@ -1,0 +1,57 @@
+Project Nauvis
+==============
+
+A Minecraft modpack that recreates Factorio.
+
+| | |
+|---|---|
+| Minecraft | 26.2 |
+| NeoForge | 26.2.0.59 |
+| Java | 25 |
+| Status | planning complete, nothing built yet |
+
+Mine, smelt, automate, research, defend, launch a rocket — Factorio's loop with Factorio's
+own numbers, built as a small set of first-party mods rather than a three-hundred-mod pack.
+Every recipe's ingredients and craft times come from Factorio's own recipe data, so nothing
+here is balanced by hand.
+
+Where things are
+----------------
+
+| | |
+|---|---|
+| `CLAUDE.md` | the five non-negotiables. Read first |
+| `docs/PLAN.md` | mod map, milestones, shortcuts, what testing means |
+| `docs/MAPPING.md` | how the 214 Factorio items resolve to Minecraft ones |
+| `docs/API-26.2.md` | confirmed 26.2 renames and the silent failures |
+| `data/mapping.json` | the mapping itself. Hand-maintained |
+| `tools/gen_mapping.py` | seeded it once; refuses to overwrite |
+| `reference/` | Factorio's data and Create's source. Gitignored, not ours |
+
+The four mods that already exist live in their own repos alongside this one:
+[Facrafting][fc], [Neo Progressive Materials][npm], [Neo Progressive Automation][npa],
+[Crumbling Ore][co].
+
+The shape of it
+---------------
+
+Fourteen mods, each a separate jar with its own permanent id, each usable standalone, glued
+together by `neoforge:mod_loaded` recipe conditions with the dependency arrows pointing one
+way. Ten of them are new.
+
+The first milestone is a chest feeding an inserter feeding an assembling machine feeding an
+inserter feeding a chest, burning coal for power. It costs eleven new items. Everything after
+that is more of the same, at greater scale, until a rocket leaves the ground.
+
+Licensing
+---------
+
+The mods are MIT. `reference/` is not ours and is never committed: Factorio's recipe data
+belongs to Wube, and Create is MIT for code but All Rights Reserved for assets. Nothing in
+this repo copies either — Create is read for architecture and reimplemented, and only derived
+recipe data under our own item ids is committed.
+
+[fc]: https://github.com/JaguarM/Facrafting
+[npm]: https://github.com/JaguarM/NeoProgressiveMaterials
+[npa]: https://github.com/JaguarM/NeoProgressiveAutomation
+[co]: https://github.com/JaguarM/CrumblingOre

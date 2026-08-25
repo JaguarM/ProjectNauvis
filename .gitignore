@@ -1,0 +1,15 @@
+# Third-party jars supplied as reference. Never committed — not ours to redistribute.
+reference/mods/
+reference/extracted/
+reference/create-src/
+
+# Dev server working directory
+run/
+
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Factorio's own data, supplied as the recipe spec. Wube's asset — read locally, never committed.
+reference/factorio/

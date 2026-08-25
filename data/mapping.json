@@ -1,0 +1,1858 @@
+{
+  "_": "Factorio id -> Minecraft item. Hand-maintained; see docs/MAPPING.md.",
+  "_generated_from": "reference/factorio/recipes.json (214 entries)",
+  "items": {
+    "accumulator": {
+      "name": "Accumulator",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:accumulator",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "advanced-circuit": {
+      "name": "Advanced circuit",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:advanced_circuit",
+      "craft": {
+        "time": 6,
+        "yield": 1
+      }
+    },
+    "arithmetic-combinator": {
+      "name": "Arithmetic combinator",
+      "owner": "nauvis_circuits",
+      "item": "nauvis_circuits:arithmetic_combinator",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "artillery-shell": {
+      "name": "Artillery shell",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:artillery_shell",
+      "craft": {
+        "time": 15,
+        "yield": 1
+      }
+    },
+    "artillery-targeting-remote": {
+      "name": "Artillery targeting remote",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:artillery_targeting_remote",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "artillery-turret": {
+      "name": "Artillery turret",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:artillery_turret",
+      "craft": {
+        "time": 40,
+        "yield": 1
+      }
+    },
+    "artillery-wagon": {
+      "name": "Artillery wagon",
+      "owner": "nauvis_trains",
+      "item": "nauvis_trains:artillery_wagon",
+      "craft": {
+        "time": 4,
+        "yield": 1
+      }
+    },
+    "assembling-machine-1": {
+      "name": "Assembling machine 1",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:assembling_machine_1",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "assembling-machine-2": {
+      "name": "Assembling machine 2",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:assembling_machine_2",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "assembling-machine-3": {
+      "name": "Assembling machine 3",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:assembling_machine_3",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "atomic-bomb": {
+      "name": "Atomic bomb",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:atomic_bomb",
+      "craft": {
+        "time": 50,
+        "yield": 1
+      }
+    },
+    "battery": {
+      "name": "Battery",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:battery",
+      "craft": {
+        "time": 5,
+        "yield": 1
+      }
+    },
+    "battery-mk1": {
+      "name": "Battery MK1",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:battery_mk1",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "battery-mk2": {
+      "name": "Battery MK2",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:battery_mk2",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "beacon": {
+      "name": "Beacon",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:beacon",
+      "craft": {
+        "time": 15,
+        "yield": 1
+      }
+    },
+    "big-electric-pole": {
+      "name": "Big electric pole",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:big_electric_pole",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "blueprint": {
+      "skip": true,
+      "why": "Factorio UI tool, no Minecraft analogue"
+    },
+    "blueprint-book": {
+      "skip": true,
+      "why": "Factorio UI tool, no Minecraft analogue"
+    },
+    "boiler": {
+      "name": "Boiler",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:boiler",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "burner-inserter": {
+      "name": "Burner inserter",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:burner_inserter",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "burner-mining-drill": {
+      "name": "Burner mining drill",
+      "owner": "neoprogressiveautomation",
+      "item": "neoprogressiveautomation:burner_mining_drill",
+      "craft": {
+        "time": 4,
+        "yield": 1
+      }
+    },
+    "cannon-shell": {
+      "name": "Cannon shell",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:cannon_shell",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "car": {
+      "name": "Car",
+      "owner": "nauvis_trains",
+      "item": "nauvis_trains:car",
+      "craft": {
+        "time": 2,
+        "yield": 1
+      }
+    },
+    "cargo-wagon": {
+      "name": "Cargo wagon",
+      "owner": "nauvis_trains",
+      "item": "nauvis_trains:cargo_wagon",
+      "craft": {
+        "time": 1,
+        "yield": 1
+      }
+    },
+    "centrifuge": {
+      "name": "Centrifuge",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:centrifuge",
+      "craft": {
+        "time": 4,
+        "yield": 1
+      }
+    },
+    "chemical-plant": {
+      "name": "Chemical plant",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:chemical_plant",
+      "craft": {
+        "time": 5,
+        "yield": 1
+      }
+    },
+    "cliff-explosives": {
+      "name": "Cliff explosives",
+      "owner": "nauvis",
+      "item": "nauvis:cliff_explosives",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "cluster-grenade": {
+      "name": "Cluster grenade",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:cluster_grenade",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "coal": {
+      "name": "Coal",
+      "owner": "nauvis",
+      "item": "minecraft:coal",
+      "stand_in": true,
+      "raw": true
+    },
+    "combat-shotgun": {
+      "name": "Combat shotgun",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:combat_shotgun",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "concrete": {
+      "name": "Concrete",
+      "owner": "nauvis",
+      "item": "minecraft:gray_concrete",
+      "stand_in": true,
+      "craft": {
+        "time": 10,
+        "yield": 10
+      }
+    },
+    "constant-combinator": {
+      "name": "Constant combinator",
+      "owner": "nauvis_circuits",
+      "item": "nauvis_circuits:constant_combinator",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "construction-robot": {
+      "name": "Construction robot",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:construction_robot",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "copper-cable": {
+      "name": "Copper cable",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:copper_cable",
+      "craft": {
+        "time": 0.5,
+        "yield": 2
+      }
+    },
+    "copper-ore": {
+      "name": "Copper ore",
+      "owner": "nauvis",
+      "item": "minecraft:raw_copper",
+      "stand_in": true,
+      "raw": true
+    },
+    "copper-plate": {
+      "name": "Copper plate",
+      "owner": "neoprogressivematerials",
+      "item": "minecraft:copper_ingot",
+      "stand_in": true,
+      "craft": {
+        "time": 3.5,
+        "yield": 1
+      }
+    },
+    "crude-oil": {
+      "name": "Crude oil",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:crude_oil",
+      "raw": true
+    },
+    "crude-oil-barrel": {
+      "name": "Crude oil barrel",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:crude_oil_barrel",
+      "raw": true
+    },
+    "decider-combinator": {
+      "name": "Decider combinator",
+      "owner": "nauvis_circuits",
+      "item": "nauvis_circuits:decider_combinator",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "deconstruction-planner": {
+      "skip": true,
+      "why": "Factorio UI tool, no Minecraft analogue"
+    },
+    "defender-capsule": {
+      "name": "Defender capsule",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:defender_capsule",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "destroyer-capsule": {
+      "name": "Destroyer capsule",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:destroyer_capsule",
+      "craft": {
+        "time": 15,
+        "yield": 1
+      }
+    },
+    "discharge-defense": {
+      "name": "Discharge defense",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:discharge_defense",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "discharge-defense-remote": {
+      "name": "Discharge defense remote",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:discharge_defense_remote",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "distractor-capsule": {
+      "name": "Distractor capsule",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:distractor_capsule",
+      "craft": {
+        "time": 15,
+        "yield": 1
+      }
+    },
+    "effectivity-module": {
+      "name": "Efficiency module",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:effectivity_module",
+      "craft": {
+        "time": 15,
+        "yield": 1
+      }
+    },
+    "effectivity-module-2": {
+      "name": "Efficiency module 2",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:effectivity_module_2",
+      "craft": {
+        "time": 30,
+        "yield": 1
+      }
+    },
+    "effectivity-module-3": {
+      "name": "Efficiency module 3",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:effectivity_module_3",
+      "craft": {
+        "time": 60,
+        "yield": 1
+      }
+    },
+    "electric-engine-unit": {
+      "name": "Electric engine unit",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:electric_engine_unit",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "electric-furnace": {
+      "name": "Electric furnace",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:electric_furnace",
+      "craft": {
+        "time": 5,
+        "yield": 1
+      }
+    },
+    "electric-mining-drill": {
+      "name": "Electric mining drill",
+      "owner": "neoprogressiveautomation",
+      "item": "neoprogressiveautomation:electric_mining_drill",
+      "craft": {
+        "time": 2,
+        "yield": 1
+      }
+    },
+    "electronic-circuit": {
+      "name": "Electronic circuit",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:electronic_circuit",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "empty-barrel": {
+      "name": "Empty barrel",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:empty_barrel",
+      "craft": {
+        "time": 1,
+        "yield": 1
+      }
+    },
+    "energy-shield": {
+      "name": "Energy shield",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:energy_shield",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "energy-shield-mk2": {
+      "name": "Energy shield MK2",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:energy_shield_mk2",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "engine-unit": {
+      "name": "Engine unit",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:engine_unit",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "exoskeleton": {
+      "name": "Exoskeleton",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:exoskeleton",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "explosive-cannon-shell": {
+      "name": "Explosive cannon shell",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:explosive_cannon_shell",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "explosive-rocket": {
+      "name": "Explosive rocket",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:explosive_rocket",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "explosive-uranium-cannon-shell": {
+      "name": "Explosive uranium cannon shell",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:explosive_uranium_cannon_shell",
+      "craft": {
+        "time": 12,
+        "yield": 1
+      }
+    },
+    "explosives": {
+      "name": "Explosives",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:explosives",
+      "craft": {
+        "time": 5,
+        "yield": 2
+      }
+    },
+    "express-splitter": {
+      "name": "Express splitter",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:express_splitter",
+      "craft": {
+        "time": 2,
+        "yield": 1
+      }
+    },
+    "express-transport-belt": {
+      "name": "Express transport belt",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:express_transport_belt",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "express-underground-belt": {
+      "name": "Express underground belt",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:express_underground_belt",
+      "craft": {
+        "time": 2,
+        "yield": 2
+      }
+    },
+    "fast-inserter": {
+      "name": "Fast inserter",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:fast_inserter",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "fast-splitter": {
+      "name": "Fast splitter",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:fast_splitter",
+      "craft": {
+        "time": 2,
+        "yield": 1
+      }
+    },
+    "fast-transport-belt": {
+      "name": "Fast transport belt",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:fast_transport_belt",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "fast-underground-belt": {
+      "name": "Fast underground belt",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:fast_underground_belt",
+      "craft": {
+        "time": 2,
+        "yield": 2
+      }
+    },
+    "filter-inserter": {
+      "name": "Filter inserter",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:filter_inserter",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "firearm-magazine": {
+      "name": "Firearm magazine",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:firearm_magazine",
+      "craft": {
+        "time": 1,
+        "yield": 1
+      }
+    },
+    "flamethrower": {
+      "name": "Flamethrower",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:flamethrower",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "flamethrower-ammo": {
+      "name": "Flamethrower ammo",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:flamethrower_ammo",
+      "craft": {
+        "time": 6,
+        "yield": 1
+      }
+    },
+    "flamethrower-turret": {
+      "name": "Flamethrower turret",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:flamethrower_turret",
+      "craft": {
+        "time": 20,
+        "yield": 1
+      }
+    },
+    "fluid-wagon": {
+      "name": "Fluid wagon",
+      "owner": "nauvis_trains",
+      "item": "nauvis_trains:fluid_wagon",
+      "craft": {
+        "time": 1.5,
+        "yield": 1
+      }
+    },
+    "flying-robot-frame": {
+      "name": "Flying robot frame",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:flying_robot_frame",
+      "craft": {
+        "time": 20,
+        "yield": 1
+      }
+    },
+    "gate": {
+      "name": "Gate",
+      "owner": "nauvis_military",
+      "item": "minecraft:iron_door",
+      "stand_in": true,
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "green-wire": {
+      "name": "Green wire",
+      "owner": "nauvis_circuits",
+      "item": "nauvis_circuits:green_wire",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "grenade": {
+      "name": "Grenade",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:grenade",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "gun-turret": {
+      "name": "Gun turret",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:gun_turret",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "hazard-concrete": {
+      "name": "Hazard concrete",
+      "owner": "nauvis",
+      "item": "minecraft:yellow_concrete",
+      "stand_in": true,
+      "craft": {
+        "time": 0.25,
+        "yield": 10
+      }
+    },
+    "heat-exchanger": {
+      "name": "Heat exchanger",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:heat_exchanger",
+      "craft": {
+        "time": 3,
+        "yield": 1
+      }
+    },
+    "heat-pipe": {
+      "name": "Heat pipe",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:heat_pipe",
+      "craft": {
+        "time": 1,
+        "yield": 1
+      }
+    },
+    "heavy-armor": {
+      "name": "Heavy armor",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:heavy_armor",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "heavy-oil": {
+      "name": "Heavy oil",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:heavy_oil",
+      "raw": true
+    },
+    "heavy-oil-barrel": {
+      "name": "Heavy oil barrel",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:heavy_oil_barrel",
+      "raw": true
+    },
+    "high-tech-science-pack": {
+      "name": "High tech science pack",
+      "owner": "nauvis_research",
+      "item": "nauvis_research:high_tech_science_pack",
+      "craft": {
+        "time": 14,
+        "yield": 2
+      }
+    },
+    "inserter": {
+      "name": "Inserter",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:inserter",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "iron-axe": {
+      "skip": true,
+      "why": "Factorio UI tool, no Minecraft analogue"
+    },
+    "iron-chest": {
+      "name": "Iron chest",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:iron_chest",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "iron-gear-wheel": {
+      "name": "Iron gear wheel",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:iron_gear_wheel",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "iron-ore": {
+      "name": "Iron ore",
+      "owner": "nauvis",
+      "item": "minecraft:raw_iron",
+      "stand_in": true,
+      "raw": true
+    },
+    "iron-plate": {
+      "name": "Iron plate",
+      "owner": "neoprogressivematerials",
+      "item": "minecraft:iron_ingot",
+      "stand_in": true,
+      "craft": {
+        "time": 3.5,
+        "yield": 1
+      }
+    },
+    "iron-stick": {
+      "name": "Iron stick",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:iron_stick",
+      "craft": {
+        "time": 0.5,
+        "yield": 2
+      }
+    },
+    "kovarex-enrichment-process": {
+      "name": "Kovarex enrichment process",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:kovarex_enrichment_process",
+      "craft": {
+        "time": 50,
+        "yield": null
+      }
+    },
+    "lab": {
+      "name": "Lab",
+      "owner": "nauvis_research",
+      "item": "nauvis_research:lab",
+      "craft": {
+        "time": 2,
+        "yield": 1
+      }
+    },
+    "lamp": {
+      "name": "Lamp",
+      "owner": "nauvis_circuits",
+      "item": "minecraft:redstone_lamp",
+      "stand_in": true,
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "land-mine": {
+      "name": "Land mine",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:land_mine",
+      "craft": {
+        "time": 5,
+        "yield": 4
+      }
+    },
+    "landfill": {
+      "name": "Landfill",
+      "owner": "nauvis",
+      "item": "minecraft:dirt",
+      "stand_in": true,
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "laser-turret": {
+      "name": "Laser turret",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:laser_turret",
+      "craft": {
+        "time": 20,
+        "yield": 1
+      }
+    },
+    "light-armor": {
+      "name": "Light armor",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:light_armor",
+      "craft": {
+        "time": 3,
+        "yield": 1
+      }
+    },
+    "light-oil": {
+      "name": "Light oil",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:light_oil",
+      "raw": true
+    },
+    "light-oil-barrel": {
+      "name": "Light oil barrel",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:light_oil_barrel",
+      "raw": true
+    },
+    "locomotive": {
+      "name": "Locomotive",
+      "owner": "nauvis_trains",
+      "item": "nauvis_trains:locomotive",
+      "craft": {
+        "time": 4,
+        "yield": 1
+      }
+    },
+    "logistic-chest-active-provider": {
+      "name": "Active provider chest",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:logistic_chest_active_provider",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "logistic-chest-buffer": {
+      "name": "Buffer chest",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:logistic_chest_buffer",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "logistic-chest-passive-provider": {
+      "name": "Passive provider chest",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:logistic_chest_passive_provider",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "logistic-chest-requester": {
+      "name": "Requester chest",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:logistic_chest_requester",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "logistic-chest-storage": {
+      "name": "Storage chest",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:logistic_chest_storage",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "logistic-robot": {
+      "name": "Logistic robot",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:logistic_robot",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "long-handed-inserter": {
+      "name": "Long handed inserter",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:long_handed_inserter",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "low-density-structure": {
+      "name": "Low density structure",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:low_density_structure",
+      "craft": {
+        "time": 30,
+        "yield": 1
+      }
+    },
+    "lubricant": {
+      "name": "Lubricant",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:lubricant",
+      "craft": {
+        "time": 1,
+        "yield": 10
+      }
+    },
+    "lubricant-barrel": {
+      "name": "Lubricant barrel",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:lubricant_barrel",
+      "raw": true
+    },
+    "medium-electric-pole": {
+      "name": "Medium electric pole",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:medium_electric_pole",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "military-science-pack": {
+      "name": "Military science pack",
+      "owner": "nauvis_research",
+      "item": "nauvis_research:military_science_pack",
+      "craft": {
+        "time": 10,
+        "yield": 2
+      }
+    },
+    "modular-armor": {
+      "name": "Modular armor",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:modular_armor",
+      "craft": {
+        "time": 15,
+        "yield": 1
+      }
+    },
+    "nightvision": {
+      "name": "Nightvision",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:nightvision",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "nuclear-fuel": {
+      "name": "Nuclear fuel",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:nuclear_fuel",
+      "craft": {
+        "time": 60,
+        "yield": 1
+      }
+    },
+    "nuclear-fuel-reprocessing": {
+      "name": "Nuclear fuel reprocessing",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:nuclear_fuel_reprocessing",
+      "craft": {
+        "time": 50,
+        "yield": null
+      }
+    },
+    "nuclear-reactor": {
+      "name": "Nuclear reactor",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:nuclear_reactor",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "offshore-pump": {
+      "name": "Offshore pump",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:offshore_pump",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "oil-refinery": {
+      "name": "Oil refinery",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:oil_refinery",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "personal-laser-defense": {
+      "name": "Personal laser defense",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:personal_laser_defense",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "personal-roboport": {
+      "name": "Personal roboport",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:personal_roboport",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "personal-roboport-mk2": {
+      "name": "Personal roboport MK2",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:personal_roboport_mk2",
+      "craft": {
+        "time": 20,
+        "yield": 1
+      }
+    },
+    "petroleum-gas": {
+      "name": "Petroleum gas",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:petroleum_gas",
+      "raw": true
+    },
+    "petroleum-gas-barrel": {
+      "name": "Petroleum gas barrel",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:petroleum_gas_barrel",
+      "raw": true
+    },
+    "piercing-rounds-magazine": {
+      "name": "Piercing rounds magazine",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:piercing_rounds_magazine",
+      "craft": {
+        "time": 3,
+        "yield": 1
+      }
+    },
+    "piercing-shotgun-shells": {
+      "name": "Piercing shotgun shells",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:piercing_shotgun_shells",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "pipe": {
+      "name": "Pipe",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:pipe",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "pipe-to-ground": {
+      "name": "Pipe to ground",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:pipe_to_ground",
+      "craft": {
+        "time": 0.5,
+        "yield": 2
+      }
+    },
+    "pistol": {
+      "name": "Pistol",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:pistol",
+      "craft": {
+        "time": 5,
+        "yield": 1
+      }
+    },
+    "plastic-bar": {
+      "name": "Plastic bar",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:plastic_bar",
+      "craft": {
+        "time": 1,
+        "yield": 2
+      }
+    },
+    "poison-capsule": {
+      "name": "Poison capsule",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:poison_capsule",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "portable-fusion-reactor": {
+      "name": "Portable fusion reactor",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:portable_fusion_reactor",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "portable-solar-panel": {
+      "name": "Portable solar panel",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:portable_solar_panel",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "power-armor": {
+      "name": "Power armor",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:power_armor",
+      "craft": {
+        "time": 20,
+        "yield": 1
+      }
+    },
+    "power-armor-mk2": {
+      "name": "Power armor MK2",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:power_armor_mk2",
+      "craft": {
+        "time": 25,
+        "yield": 1
+      }
+    },
+    "power-switch": {
+      "name": "Power switch",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:power_switch",
+      "craft": {
+        "time": 2,
+        "yield": 1
+      }
+    },
+    "processing-unit": {
+      "name": "Processing unit",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:processing_unit",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "production-science-pack": {
+      "name": "Production science pack",
+      "owner": "nauvis_research",
+      "item": "nauvis_research:production_science_pack",
+      "craft": {
+        "time": 14,
+        "yield": 2
+      }
+    },
+    "productivity-module": {
+      "name": "Productivity module",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:productivity_module",
+      "craft": {
+        "time": 15,
+        "yield": 1
+      }
+    },
+    "productivity-module-2": {
+      "name": "Productivity module 2",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:productivity_module_2",
+      "craft": {
+        "time": 30,
+        "yield": 1
+      }
+    },
+    "productivity-module-3": {
+      "name": "Productivity module 3",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:productivity_module_3",
+      "craft": {
+        "time": 60,
+        "yield": 1
+      }
+    },
+    "programmable-speaker": {
+      "name": "Programmable speaker",
+      "owner": "nauvis_circuits",
+      "item": "nauvis_circuits:programmable_speaker",
+      "craft": {
+        "time": 2,
+        "yield": 1
+      }
+    },
+    "pump": {
+      "name": "Pump",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:pump",
+      "craft": {
+        "time": 2,
+        "yield": 1
+      }
+    },
+    "pumpjack": {
+      "name": "Pumpjack",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:pumpjack",
+      "craft": {
+        "time": 5,
+        "yield": 1
+      }
+    },
+    "radar": {
+      "name": "Radar",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:radar",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "rail": {
+      "name": "Rail",
+      "owner": "nauvis_trains",
+      "item": "minecraft:rail",
+      "stand_in": true,
+      "craft": {
+        "time": 0.5,
+        "yield": 2
+      }
+    },
+    "rail-chain-signal": {
+      "name": "Rail chain signal",
+      "owner": "nauvis_trains",
+      "item": "nauvis_trains:rail_chain_signal",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "rail-signal": {
+      "name": "Rail signal",
+      "owner": "nauvis_trains",
+      "item": "nauvis_trains:rail_signal",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "raw-fish": {
+      "name": "Raw fish",
+      "owner": "nauvis_fluids",
+      "item": "minecraft:cod",
+      "stand_in": true,
+      "raw": true
+    },
+    "raw-wood": {
+      "name": "Raw wood",
+      "owner": "nauvis",
+      "item": "minecraft:oak_log",
+      "stand_in": true,
+      "raw": true
+    },
+    "red-wire": {
+      "name": "Red wire",
+      "owner": "nauvis_circuits",
+      "item": "nauvis_circuits:red_wire",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "refined-concrete": {
+      "name": "Refined concrete",
+      "owner": "nauvis",
+      "item": "nauvis:refined_concrete",
+      "craft": {
+        "time": 15,
+        "yield": 10
+      }
+    },
+    "refined-hazard-concrete": {
+      "name": "Refined hazard concrete",
+      "owner": "nauvis",
+      "item": "nauvis:refined_hazard_concrete",
+      "craft": {
+        "time": 0.25,
+        "yield": 10
+      }
+    },
+    "repair-pack": {
+      "name": "Repair pack",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:repair_pack",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "roboport": {
+      "name": "Roboport",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:roboport",
+      "craft": {
+        "time": 5,
+        "yield": 1
+      }
+    },
+    "rocket": {
+      "name": "Rocket",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:rocket",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "rocket-control-unit": {
+      "name": "Rocket control unit",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:rocket_control_unit",
+      "craft": {
+        "time": 30,
+        "yield": 1
+      }
+    },
+    "rocket-fuel": {
+      "name": "Rocket fuel",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:rocket_fuel",
+      "craft": {
+        "time": 30,
+        "yield": 1
+      }
+    },
+    "rocket-launcher": {
+      "name": "Rocket launcher",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:rocket_launcher",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "rocket-part": {
+      "name": "Rocket part",
+      "owner": "nauvis_rocket",
+      "item": "nauvis_rocket:rocket_part",
+      "craft": {
+        "time": 3,
+        "yield": 1
+      }
+    },
+    "rocket-silo": {
+      "name": "Rocket silo",
+      "owner": "nauvis_rocket",
+      "item": "nauvis_rocket:rocket_silo",
+      "craft": {
+        "time": 30,
+        "yield": 1
+      }
+    },
+    "satellite": {
+      "name": "Satellite",
+      "owner": "nauvis_rocket",
+      "item": "nauvis_rocket:satellite",
+      "craft": {
+        "time": 5,
+        "yield": 1
+      }
+    },
+    "science-pack-1": {
+      "name": "Science pack 1",
+      "owner": "nauvis_research",
+      "item": "nauvis_research:science_pack_1",
+      "craft": {
+        "time": 5,
+        "yield": 1
+      }
+    },
+    "science-pack-2": {
+      "name": "Science pack 2",
+      "owner": "nauvis_research",
+      "item": "nauvis_research:science_pack_2",
+      "craft": {
+        "time": 6,
+        "yield": 1
+      }
+    },
+    "science-pack-3": {
+      "name": "Science pack 3",
+      "owner": "nauvis_research",
+      "item": "nauvis_research:science_pack_3",
+      "craft": {
+        "time": 12,
+        "yield": 1
+      }
+    },
+    "shotgun": {
+      "name": "Shotgun",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:shotgun",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "shotgun-shells": {
+      "name": "Shotgun shells",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:shotgun_shells",
+      "craft": {
+        "time": 3,
+        "yield": 1
+      }
+    },
+    "slowdown-capsule": {
+      "name": "Slowdown capsule",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:slowdown_capsule",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "small-electric-pole": {
+      "name": "Small electric pole",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:small_electric_pole",
+      "craft": {
+        "time": 0.5,
+        "yield": 2
+      }
+    },
+    "solar-panel": {
+      "name": "Solar panel",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:solar_panel",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "solid-fuel": {
+      "name": "Solid fuel",
+      "owner": "nauvis",
+      "item": "nauvis:solid_fuel",
+      "raw": true
+    },
+    "space-science-pack": {
+      "name": "Space science pack",
+      "owner": "nauvis_rocket",
+      "item": "nauvis_rocket:space_science_pack",
+      "craft": {
+        "time": 300,
+        "yield": 1000
+      }
+    },
+    "speed-module": {
+      "name": "Speed module",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:speed_module",
+      "craft": {
+        "time": 15,
+        "yield": 1
+      }
+    },
+    "speed-module-2": {
+      "name": "Speed module 2",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:speed_module_2",
+      "craft": {
+        "time": 30,
+        "yield": 1
+      }
+    },
+    "speed-module-3": {
+      "name": "Speed module 3",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:speed_module_3",
+      "craft": {
+        "time": 60,
+        "yield": 1
+      }
+    },
+    "splitter": {
+      "name": "Splitter",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:splitter",
+      "craft": {
+        "time": 1,
+        "yield": 1
+      }
+    },
+    "stack-filter-inserter": {
+      "name": "Stack filter inserter",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:stack_filter_inserter",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "stack-inserter": {
+      "name": "Stack inserter",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:stack_inserter",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "steam": {
+      "name": "Steam",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:steam",
+      "raw": true
+    },
+    "steam-engine": {
+      "name": "Steam engine",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:steam_engine",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "steam-turbine": {
+      "name": "Steam turbine",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:steam_turbine",
+      "craft": {
+        "time": 3,
+        "yield": 1
+      }
+    },
+    "steel-axe": {
+      "skip": true,
+      "why": "Factorio UI tool, no Minecraft analogue"
+    },
+    "steel-chest": {
+      "name": "Steel chest",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:steel_chest",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "steel-furnace": {
+      "name": "Steel furnace",
+      "owner": "nauvis_machines",
+      "item": "nauvis_machines:steel_furnace",
+      "craft": {
+        "time": 3,
+        "yield": 1
+      }
+    },
+    "steel-plate": {
+      "name": "Steel plate",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:steel_plate",
+      "craft": {
+        "time": 35,
+        "yield": 1
+      }
+    },
+    "stone": {
+      "name": "Stone",
+      "owner": "nauvis",
+      "item": "minecraft:cobblestone",
+      "stand_in": true,
+      "raw": true
+    },
+    "stone-brick": {
+      "name": "Stone brick",
+      "owner": "nauvis",
+      "item": "minecraft:stone_bricks",
+      "stand_in": true,
+      "craft": {
+        "time": 3.5,
+        "yield": 1
+      }
+    },
+    "stone-furnace": {
+      "name": "Stone furnace",
+      "owner": "nauvis_machines",
+      "item": "minecraft:furnace",
+      "stand_in": true,
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "stone-wall": {
+      "name": "Stone wall",
+      "owner": "nauvis_military",
+      "item": "minecraft:cobblestone_wall",
+      "stand_in": true,
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "storage-tank": {
+      "name": "Storage tank",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:storage_tank",
+      "craft": {
+        "time": 3,
+        "yield": 1
+      }
+    },
+    "submachine-gun": {
+      "name": "Submachine gun",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:submachine_gun",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "substation": {
+      "name": "Substation",
+      "owner": "nauvis_power",
+      "item": "nauvis_power:substation",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "sulfur": {
+      "name": "Sulfur",
+      "owner": "neoprogressivematerials",
+      "item": "neoprogressivematerials:sulfur",
+      "craft": {
+        "time": 1,
+        "yield": 2
+      }
+    },
+    "sulfuric-acid": {
+      "name": "Sulfuric acid",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:sulfuric_acid",
+      "craft": {
+        "time": 1,
+        "yield": 50
+      }
+    },
+    "sulfuric-acid-barrel": {
+      "name": "Sulfuric acid barrel",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:sulfuric_acid_barrel",
+      "raw": true
+    },
+    "tank": {
+      "name": "Tank",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:tank",
+      "craft": {
+        "time": 8,
+        "yield": 1
+      }
+    },
+    "train-stop": {
+      "name": "Train stop",
+      "owner": "nauvis_trains",
+      "item": "nauvis_trains:train_stop",
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    },
+    "transport-belt": {
+      "name": "Transport belt",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:transport_belt",
+      "craft": {
+        "time": 0.5,
+        "yield": 2
+      }
+    },
+    "underground-belt": {
+      "name": "Underground belt",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:underground_belt",
+      "craft": {
+        "time": 1,
+        "yield": 2
+      }
+    },
+    "uranium-235": {
+      "name": "Uranium-235",
+      "owner": "nauvis",
+      "item": "nauvis:uranium_235",
+      "raw": true
+    },
+    "uranium-238": {
+      "name": "Uranium-238",
+      "owner": "nauvis",
+      "item": "nauvis:uranium_238",
+      "raw": true
+    },
+    "uranium-cannon-shell": {
+      "name": "Uranium cannon shell",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:uranium_cannon_shell",
+      "craft": {
+        "time": 12,
+        "yield": 1
+      }
+    },
+    "uranium-fuel-cell": {
+      "name": "Uranium fuel cell",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:uranium_fuel_cell",
+      "craft": {
+        "time": 10,
+        "yield": 10
+      }
+    },
+    "uranium-ore": {
+      "name": "Uranium ore",
+      "owner": "nauvis",
+      "item": "nauvis:uranium_ore",
+      "raw": true
+    },
+    "uranium-processing": {
+      "name": "Uranium processing",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:uranium_processing",
+      "craft": {
+        "time": 10,
+        "yield": null
+      }
+    },
+    "uranium-rounds-magazine": {
+      "name": "Uranium rounds magazine",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:uranium_rounds_magazine",
+      "craft": {
+        "time": 10,
+        "yield": 1
+      }
+    },
+    "used-up-uranium-fuel-cell": {
+      "name": "Used up uranium fuel cell",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:used_up_uranium_fuel_cell",
+      "craft": {
+        "time": 200,
+        "yield": 1
+      }
+    },
+    "water": {
+      "name": "Water",
+      "owner": "nauvis_fluids",
+      "item": "minecraft:water",
+      "stand_in": true,
+      "raw": true
+    },
+    "water-barrel": {
+      "name": "Water barrel",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:water_barrel",
+      "raw": true
+    },
+    "wood": {
+      "name": "Wood",
+      "owner": "neoprogressivematerials",
+      "item": "minecraft:oak_planks",
+      "stand_in": true,
+      "craft": {
+        "time": 0.5,
+        "yield": 2
+      }
+    },
+    "wooden-chest": {
+      "name": "Wooden chest",
+      "owner": "nauvis_logistics",
+      "item": "minecraft:chest",
+      "stand_in": true,
+      "craft": {
+        "time": 0.5,
+        "yield": 1
+      }
+    }
+  }
+}
