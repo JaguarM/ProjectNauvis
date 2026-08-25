@@ -1,7 +1,8 @@
-# Third-party jars supplied as reference. Never committed — not ours to redistribute.
-reference/mods/
-reference/extracted/
-reference/create-src/
+# Other people's work, supplied as reference. Never committed — not ours to redistribute.
+# Ignore the whole directory rather than naming subfolders: a new reference drop must not
+# become a commit just because nobody remembered to add a line here.
+reference/*
+!reference/README.md
 
 # Dev server working directory
 run/
@@ -10,9 +11,6 @@ run/
 .gradle/
 build/
 */build/
-
-# Factorio's own data, supplied as the recipe spec. Wube's asset — read locally, never committed.
-reference/factorio/
 
 # Python bytecode from tools/
 __pycache__/
