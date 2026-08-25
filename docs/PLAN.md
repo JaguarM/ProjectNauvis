@@ -25,12 +25,22 @@ never inside a subsystem mod — every mod must stay useful standalone.
 **Shortcuts are wanted.** Something playable that is only close enough beats waiting for the
 authentic version. See the shortcut table below.
 
-**First-party by default, with two openings.** Build it here unless a third-party mod is
-*almost identical* to the Factorio feature and has a current 26.2 build — then take it rather
-than rewrite it. And read outdated mods freely for architecture, the way Create is already
-read for belts. A mod stuck on 1.21.1 is still the best documentation of how a problem was
-solved; it just cannot be shipped. See below for what that rules in today, which is very
-little.
+**First-party by default, with two openings.** Build it here unless a third-party mod on a
+current 26.2 build already does the job — then take it rather than rewrite it. The bar is
+*adopting beats rewriting*, not *identical to Factorio*: a mod whose behaviour is close and
+whose recipes are wrong is still a candidate, because recipes are the cheap part to fix. And
+read outdated mods freely for architecture, the way Create is already read for belts. A mod
+stuck on 1.21.1 is still the best documentation of how a problem was solved; it just cannot
+be shipped.
+
+**Adopting a mod means overriding its recipes.** Any mod taken in brings its own progression,
+tiered off vanilla materials and balanced by hand — exactly what non-negotiable #1 forbids.
+The fix is mechanical and the generator already does most of it: `data/mapping.json` gains
+entries pointing at the third-party item ids, `gen_recipes.py` writes Factorio-correct recipes
+into `data/<their_ns>/recipe/`, and the pack datapack loads above the mod so those win. A
+recipe whose `neoforge:conditions` cannot be met never loads, which is how the ones with no
+Factorio equivalent get removed. Budget this per mod — it is not free, but it is a script and
+a datapack, not a rewrite.
 
 Third-party mods
 ----------------
@@ -39,9 +49,11 @@ Surveyed 2026-08-25 against Modrinth. Redo it when a milestone comes up, not bef
 answer changes only when someone ports something.
 
 **Nothing on 26.2 does Factorio's oil, or anything else in the chemistry chain.** Searching
-26.2 for `oil` returns one worldgen structure pack. There is no fluid-processing mod to adopt,
-so the barrels shortcut at milestone 4 is not a compromise against an available alternative —
-it is the only option. This resolves the fluids open question in `MAPPING.md`.
+26.2 for `oil` returns one worldgen structure pack. Storage and transport do exist — Fluid
+Tank has both, see below — but refining, cracking and the chemical plant have no third-party
+answer, and those are the part milestone 4 is actually about. So the barrels shortcut stands:
+it deletes a subsystem nobody has built for this version. This resolves the fluids open
+question in `MAPPING.md`.
 
 The whole tech ecosystem stopped at 1.21.1: Create, Mekanism, PneumaticCraft, Modern
 Industrialization, Industrial Foregoing. Immersive Engineering has no current releases at all.
@@ -50,17 +62,32 @@ These are the ones to **read**, not to depend on.
 **Applied Energistics 2 is the one to watch.** It is on 26.1.2 and still shipping betas, one
 Minecraft version behind us. Nothing else serious is close.
 
-What actually exists on 26.2 is generic plumbing, not chemistry, and licence is the first
-question to ask of any of it — a pack redistributes what it bundles:
+What does exist on 26.2 is generic plumbing rather than chemistry: `pipez` and `tesseract`
+(transport), `classic-pipes`, `modular-routers`, `tiny-pipes`, `enhancedquarries`,
+`energized-power` (FE machines) and `large-fluid-tank` (tanks and fluid pipes).
 
-| Mod | Licence | Verdict |
-|---|---|---|
-| `pipez`, `tesseract` | All Rights Reserved | cannot be bundled without permission |
-| `classic-pipes` | CC-BY-NC-SA | non-commercial and share-alike; awkward |
-| `large-fluid-tank`, `modular-routers`, `energized-power` | MIT | usable, but duplicate our own machines with non-Factorio recipes |
+**Licence is not the blocker it looks like.** The pack ships on CurseForge as a manifest —
+CurseForge serves each jar from its own project page, so the pack never redistributes anything
+and an All-Rights-Reserved mod is as includable as an MIT one. Two things this does *not*
+cover: bundling jars into this repo (never — `reference/` is gitignored for exactly this
+reason), and adapting someone's code, which still follows their licence.
 
-None of them clears the *almost identical to a Factorio feature* bar, so today the policy
-rules in nothing. It exists for the day something ports.
+Two mods are accepted candidates, both with current 26.2 builds:
+
+**Fluid Tank** (`large-fluid-tank`, `fluidtank`, 26.20.1) — the jar is in `reference/mods/`.
+The one mod on 26.2 doing real fluid handling, so it is worth reading for the NeoForge 26.2
+fluid API whatever is decided about shipping it. Two costs to weigh, neither about licence:
+it declares `modLoader = "kotori_scala"` and so drags in a Scala loader, and it registers 37
+blocks and 16 recipes of wood/stone/iron/gold/diamond tiering against Factorio's single
+storage tank. Adopting it means overriding all 16 and hiding most of the 37.
+
+**Energized Power** (`energized-power`, 3.0.0+26.2.x, MIT) — FE machines and generators.
+Overlaps `nauvis_machines` and `nauvis_power` heavily, so the question is whether it replaces
+those milestones or duplicates them. Not yet evaluated in the way Fluid Tank has been.
+
+Note the licence conflict on Fluid Tank if its code is ever adapted rather than shipped: the
+GitHub repo is MIT, the shipped jar's `neoforge.mods.toml` says `All rights reserved`. Ask the
+author before copying a line of it. Reading it is fine either way.
 
 The mods
 --------

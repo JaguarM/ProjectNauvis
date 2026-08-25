@@ -101,8 +101,9 @@ Open questions
 - **Fluids** (`crude-oil`, `heavy-oil`, `light-oil`, `petroleum-gas`, `steam`, `lubricant`,
   `sulfuric-acid`) map to barrel *items* during the shortcut phase and to real fluids after.
   The mapping needs a second field for that when milestone 4 lands, rather than being edited
-  twice. **Settled on the third-party question:** nothing on 26.2 does oil or any other part
-  of the chemistry chain, so there is no mod to adopt instead. See `PLAN.md`.
+  twice. **Settled on the third-party question:** refining and the chemical plant have no
+  answer on 26.2, so barrels stand. Tanks and fluid pipes do exist, in Fluid Tank — a
+  candidate for the real-fluids phase, not for milestone 4. See `PLAN.md`.
 - **`solid-fuel`, `uranium-235`, `uranium-238`** appear as raw in the dump but are products of
   chemistry and centrifuging in the real game. They belong to `nauvis_fluids` and their
   recipes have to be written by hand — the only place in the pack where that is true.
