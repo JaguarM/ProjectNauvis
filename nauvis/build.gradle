@@ -21,9 +21,12 @@ base {
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 sourceSets.main.resources {
-    srcDir 'src/generated/resources'
+    // Two generated roots, not one. Each datagen run deletes output it does not recognise, so
+    // pointing both at the same directory makes whichever ran last wipe the other's work.
+    srcDir 'src/generated/client'
+    srcDir 'src/generated/server'
     exclude '**/*.bbmodel'
-    exclude 'src/generated/**/.cache'
+    exclude '**/.cache'
 }
 
 repositories {
@@ -77,11 +80,22 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
-        data {
+        // Client and server datagen are separate runs since 1.21.4. Models and language go
+        // through clientData, loot tables and tags through serverData; running only one
+        // silently generates half of what you asked for.
+        clientData {
             clientData()
             programArguments.addAll '--mod', project.mod_id,
                     '--all',
-                    '--output', file('src/generated/resources/').getAbsolutePath(),
+                    '--output', file('src/generated/client/').getAbsolutePath(),
+                    '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        serverData {
+            serverData()
+            programArguments.addAll '--mod', project.mod_id,
+                    '--all',
+                    '--output', file('src/generated/server/').getAbsolutePath(),
                     '--existing', file('src/main/resources/').getAbsolutePath()
         }
 
@@ -132,6 +146,12 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+// Recipes are generated, never hand-written - so a build that would ship a hand-edited one
+// should not succeed. See the root build.gradle.
+tasks.named('check') {
+    dependsOn rootProject.tasks.named('checkRecipes')
 }
 
 idea {

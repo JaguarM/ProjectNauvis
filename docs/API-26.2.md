@@ -97,6 +97,23 @@ conditions, which is what `minecraft:default` is.
 
 `TestFunctionLoader` is an abstract class, not a functional interface — it cannot be a lambda.
 
+Datagen is two runs, and they delete each other's work
+------------------------------------------------------
+
+Client and server datagen are separate since 1.21.4 — `clientData()` and `serverData()` in
+ModDevGradle, not one `data()`. Models, blockstates and language come out of the first; loot
+tables and tags out of the second. Running only one silently generates half of what was asked
+for.
+
+**Point them at different output directories.** Each run deletes output it does not recognise,
+so with a shared `--output` whichever ran last wipes the other's files — and it looks exactly
+like a provider that failed to register. `src/generated/client` and `src/generated/server`, both
+added as resource `srcDir`s, avoids it.
+
+If a generated file has a hand-written twin, `processResources` fails with *"Entry ... is a
+duplicate but no duplicate handling strategy has been set"*. Delete the hand-written one;
+datagen owns it now.
+
 Silent failures — these compile and then do nothing
 ---------------------------------------------------
 

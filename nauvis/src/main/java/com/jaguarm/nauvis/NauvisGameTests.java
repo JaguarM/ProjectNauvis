@@ -6,6 +6,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -62,6 +63,7 @@ public final class NauvisGameTests {
 
     static {
         TEST_TYPES.register("registry_presence", () -> RegistryPresenceTest.CODEC);
+        TEST_TYPES.register("assembler_places", () -> AssemblerPlacesTest.CODEC);
     }
 
     /** Called from the mod constructor so the test type registers with everything else. */
@@ -86,6 +88,47 @@ public final class NauvisGameTests {
                                 "neoprogressivematerials:iron_gear_wheel",
                                 "neoprogressivematerials:electronic_circuit",
                                 "neoprogressiveautomation:burner_drill")));
+
+        event.registerTest(
+                Identifier.fromNamespaceAndPath(Nauvis.MODID, "assembler_places"),
+                new AssemblerPlacesTest(
+                        new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE)));
+    }
+
+    /**
+     * The assembling machine exists in the world, not merely in a registry.
+     *
+     * <p>Deliberately small. It will grow into the real milestone-1 assertion - feed it three
+     * circuits, five gears and nine iron, tick it, and expect an assembling machine out - as
+     * soon as there is a block entity to do the crafting.
+     */
+    public static class AssemblerPlacesTest extends GameTestInstance {
+
+        public static final MapCodec<AssemblerPlacesTest> CODEC = RecordCodecBuilder.<AssemblerPlacesTest>mapCodec(
+                i -> i.group(TestData.CODEC.forGetter(AssemblerPlacesTest::info))
+                        .apply(i, AssemblerPlacesTest::new));
+
+        public AssemblerPlacesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos pos = new BlockPos(0, 1, 0);
+            helper.setBlock(pos, ModContent.ASSEMBLING_MACHINE_1.get());
+            helper.assertBlockPresent(ModContent.ASSEMBLING_MACHINE_1.get(), pos);
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("assembler places");
+        }
     }
 
     /**

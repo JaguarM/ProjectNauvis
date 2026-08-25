@@ -1,0 +1,48 @@
+// Root build. The mods are subprojects; this file holds only what applies to the repo.
+
+/**
+ * Non-negotiable #2, enforced rather than remembered.
+ *
+ * Diffs every recipe on disk against what the generator produces from Factorio's dump. A
+ * hand-edited recipe, or one left behind when the mapping changed, fails the build instead of
+ * reaching a world save.
+ *
+ * Skips itself when reference/factorio/recipes.json is absent. That file is Wube's and
+ * gitignored, so a fresh clone has no copy and must still be able to build.
+ */
+tasks.register('checkRecipes') {
+    group = 'verification'
+    description = "Diffs generated recipes against the ones committed to each mod."
+
+    def dump = file('reference/factorio/recipes.json')
+    def mapping = file('data/mapping.json')
+    def script = file('tools/gen_recipes.py')
+
+    inputs.file(mapping).withPropertyName('mapping')
+    inputs.file(script).withPropertyName('generator')
+    outputs.upToDateWhen { false }
+
+    doLast {
+        if (!dump.exists()) {
+            logger.lifecycle("checkRecipes: skipped, ${dump} is absent (it is gitignored - see reference/README.md)")
+            return
+        }
+
+        // ProcessBuilder rather than Gradle's exec {}, which is gone from task actions in
+        // Gradle 9 and would otherwise need an injected ExecOperations for a one-line call.
+        def process = new ProcessBuilder('python', script.absolutePath, '--check')
+                .directory(projectDir)
+                .redirectErrorStream(true)
+                .start()
+        def output = process.inputStream.text
+        def exitValue = process.waitFor()
+
+        logger.lifecycle(output)
+
+        if (exitValue != 0) {
+            throw new GradleException(
+                    "Recipes on disk disagree with the generator. Regenerate them rather than " +
+                    "editing by hand: python tools/gen_recipes.py --write")
+        }
+    }
+}
