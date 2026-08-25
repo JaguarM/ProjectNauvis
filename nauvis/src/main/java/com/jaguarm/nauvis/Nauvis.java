@@ -18,5 +18,6 @@ public class Nauvis {
     public static final String MODID = "nauvis";
 
     public Nauvis(IEventBus modEventBus, ModContainer modContainer) {
+        NauvisGameTests.register(modEventBus);
     }
 }

@@ -69,15 +69,33 @@ is two registry entries and a structure file:
 3. `TestData` carries `environment`, `structure`, `max_ticks`, `setup_ticks`, `rotation`,
    `padding`, `sky_access`, `max_attempts`, `required_successes`.
 
-**`structure` is mandatory and there is no empty default.**
-`TestInstanceBlockEntity.placeStructure()` resolves it through
-`level.getStructureManager().get(...)` and simply `return false` when it is missing — the test
-does not run and nothing says why. Ship an NBT at `data/<ns>/structure/<name>.nbt`; a floor
-the test can stand on has to come from that file, because `clearSpaceForStructure` clears the
-volume first. The current structure `DataVersion` is **4903** (`SharedConstants.WORLD_VERSION`).
+**`FunctionGameTestInstance` is not available to mods.** Its bodies live in
+`Registries.TEST_FUNCTION`, which `BuiltInRegistries` bootstraps through
+`BuiltinTestFunctions::bootstrap` during *static initialisation* — that calls
+`TestFunctionLoader.runLoaders` once, long before any mod constructor runs, and NeoForge adds
+no hook. Registering a loader from a mod produces `Trying to access missing test function`
+at run time, having compiled perfectly.
 
-`GameTestEnvironments.DEFAULT_KEY` is `minecraft:default`, an `AllOf(List.of())` — use it
-rather than registering an environment for a test that needs no special conditions.
+**Subclass `GameTestInstance` instead.** Three abstract members: `run(GameTestHelper)`,
+`codec()`, and `typeDescription()`. The codec must be registered into
+`Registries.TEST_INSTANCE_TYPE` with a `DeferredRegister` even when tests are registered in
+code and never serialised — the type has to exist for the instance to be legal. Note
+`RecordCodecBuilder.mapCodec` needs an explicit type witness and a typed lambda parameter here,
+or inference fails on `O`.
+
+**`structure` is mandatory.** `TestInstanceBlockEntity.placeStructure()` resolves it through
+`level.getStructureManager().get(...)` and simply `return false` when missing — the test does
+not run and nothing says why. Minecraft ships `data/minecraft/structure/empty.nbt`, so
+`Identifier.withDefaultNamespace("empty")` covers any test needing no terrain. For one that
+needs a floor, ship an NBT at `data/<ns>/structure/<name>.nbt` and put the floor in it —
+`clearSpaceForStructure` empties the volume first. Structure `DataVersion` is **4903**
+(`SharedConstants.WORLD_VERSION`).
+
+`RegisterGameTestsEvent` exposes no getter for an existing environment, so register your own:
+`event.registerEnvironment(id, new TestEnvironmentDefinition.AllOf(List.of()))` imposes no
+conditions, which is what `minecraft:default` is.
+
+`TestFunctionLoader` is an abstract class, not a functional interface — it cannot be a lambda.
 
 Silent failures — these compile and then do nothing
 ---------------------------------------------------

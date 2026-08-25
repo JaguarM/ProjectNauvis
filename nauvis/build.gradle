@@ -70,6 +70,13 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
+        // Runs every registered gametest, then exits - non-zero if any failed. This is the
+        // check Claude can run unattended; the client run is for the half that needs eyes.
+        gameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
         data {
             clientData()
             programArguments.addAll '--mod', project.mod_id,
