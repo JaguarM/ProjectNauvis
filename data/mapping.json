@@ -175,7 +175,7 @@
     "burner-mining-drill": {
       "name": "Burner mining drill",
       "owner": "neoprogressiveautomation",
-      "item": "neoprogressiveautomation:burner_mining_drill",
+      "item": "neoprogressiveautomation:burner_drill",
       "craft": {
         "time": 4,
         "yield": 1
@@ -432,7 +432,7 @@
     "electric-mining-drill": {
       "name": "Electric mining drill",
       "owner": "neoprogressiveautomation",
-      "item": "neoprogressiveautomation:electric_mining_drill",
+      "item": "neoprogressiveautomation:electric_drill",
       "craft": {
         "time": 2,
         "yield": 1

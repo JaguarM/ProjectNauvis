@@ -13,3 +13,7 @@ build/
 
 # Factorio's own data, supplied as the recipe spec. Wube's asset — read locally, never committed.
 reference/factorio/
+
+# Python bytecode from tools/
+__pycache__/
+*.pyc
