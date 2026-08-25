@@ -1,0 +1,11 @@
+{
+  "block.nauvis_machines.assembling_machine_1": "Assembling machine 1",
+  "itemGroup.nauvis_machines": "Project Nauvis: Machines",
+  "nauvis_machines.assembler.cleared": "Recipe cleared",
+  "nauvis_machines.assembler.full": "No room for %s",
+  "nauvis_machines.assembler.idle": "No recipe. Point at it holding what you want made.",
+  "nauvis_machines.assembler.loaded": "Loaded %s",
+  "nauvis_machines.assembler.making": "Assembling: %s",
+  "nauvis_machines.assembler.no_recipe": "Nothing in this world is made from %s",
+  "nauvis_machines.assembler.set": "Assembling: %s"
+}

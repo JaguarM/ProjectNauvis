@@ -29,6 +29,13 @@ Each mod is a separate jar with its own permanent mod id, usable standalone, glu
 others by `neoforge:mod_loaded` recipe conditions. No cycles. Pack policy — vanilla recipe
 removal — lives in the `nauvis` mod or the pack datapack, never inside a subsystem mod.
 
+A **compile-time** dependency is allowed only where the coupling genuinely is code, and is the
+exception rather than the pattern. There is one: `nauvis_machines` compiles against Facrafting,
+because a machine that runs a `FacraftRecipe` has to be able to name the type. Where that
+happens, the dependency is `required` in `neoforge.mods.toml` — a mod that cannot work without
+another must say so — and it still must not create a cycle. The pack mod has none and must
+grow none; its coupling to everything else is data.
+
 **4. Verify every 26.x API against decompiled sources.**
 Minecraft 26.2 is past the model's training cutoff and renamed a great deal. Guessing has
 produced wrong code repeatedly. `docs/API-26.2.md` lists the confirmed renames and where the

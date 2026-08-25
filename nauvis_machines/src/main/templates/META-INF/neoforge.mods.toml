@@ -1,0 +1,55 @@
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="JaguarM"
+displayURL="https://github.com/JaguarM/ProjectNauvis"
+issueTrackerURL="https://github.com/JaguarM/ProjectNauvis/issues"
+
+description='''
+Factorio's machines: the assemblers first, then furnaces, modules, the beacon and the radar.
+
+An assembling machine is told what to make and then makes it, over and over, out of whatever
+is put into it. Point at it with the item you want and it takes that as its recipe; feed it
+the ingredients and take the results out, by hand or with anything that moves items.
+
+The recipes are Factorio's own, down to the ingredient counts and the craft times, and they
+are Facrafting recipes - so an assembler is a machine that does the waiting for you.
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# Required, not optional, and the one hard dependency in the pack. An assembler runs timed
+# Facrafting recipes; without Facrafting there is no recipe type for it to run and the machine
+# would be a decorative block. The sibling mods keep this optional because they ship items,
+# which still exist when the timed recipes drop out.
+[[dependencies.${mod_id}]]
+    modId="facrafting"
+    type="required"
+    versionRange="[${facrafting_version},)"
+    ordering="AFTER"
+    side="BOTH"
+
+# Optional: the assembler's own recipe is paid for in electronic circuits and iron gear
+# wheels. Without this mod that one recipe simply does not load; the machine still works on
+# every other recipe in the pack.
+[[dependencies.${mod_id}]]
+    modId="neoprogressivematerials"
+    type="optional"
+    versionRange="[1.0.0,)"
+    ordering="AFTER"
+    side="BOTH"

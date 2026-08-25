@@ -167,6 +167,21 @@ models, language and loot tables.
 Chest → inserter → assembler → inserter → chest, burning coal. **This is the whole point of
 the pack and it costs eleven items.** Get here fast.
 
+**`assembling-machine-1` is done**, in a new `nauvis_machines` subproject: a recipe selector
+over one input inventory, running Facrafting's timed recipes, published to automation as a
+`ResourceHandler<ItemResource>` that takes ingredients in and gives results out. It sleeps
+when idle and wakes on a change to its inventory, its recipe or a neighbour. It can be pointed
+at a recipe, fed and emptied entirely by hand, so milestone 1 is playable before inserters
+exist. Eight gametests cover it, including that the craft takes Factorio's exact ten ticks,
+that a full output slot stalls the machine rather than voiding the ingredients, and that
+breaking it gives everything back. **`nauvis_machines` takes a
+compile-time dependency on Facrafting** — the one in the pack — because a machine that runs a
+`FacraftRecipe` has to be able to name the type. The arrow points one way and there is no
+cycle. Still missing: a screen, which is the half that needs eyes.
+
+**Next is the inserter**, in `nauvis_logistics`, and it is what turns two machines into a
+factory.
+
 ### 2 — Belts · 4 new
 
 `transport-belt`, `underground-belt`, `splitter`, `long-handed-inserter`. Small item count,

@@ -1,25 +1,24 @@
 package com.jaguarm.nauvis;
 
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.MapColor;
-import net.minecraft.network.chat.Component;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * What the pack mod puts in the world.
  *
- * <p>Ids come from the mapping table and are not negotiable — {@code assembling_machine_1} is
- * what Factorio calls it and what a world save will remember. Everything behind the id may be
- * crude for now.
+ * <p>Empty, for now, and deliberately so. The assembling machine started here and has moved to
+ * {@code nauvis_machines}, because {@code data/mapping.json} names it
+ * {@code nauvis_machines:assembling_machine_1} and non-negotiable #1 makes an id permanent from
+ * the first commit - a block registered under the wrong namespace is exactly the kind of
+ * mistake that survives into world saves.
+ *
+ * <p>What belongs here is what PLAN.md gives the pack mod and nothing else: the sixteen raw
+ * resources the other mods build on, and terrain. Those arrive with milestone 3. The registries
+ * stay wired up so that adding one is a single line rather than a round of plumbing.
+ *
+ * <p>{@code ../nauvis_machines/.../data/} is the worked example of datagen for models, language
+ * and loot tables; copy that shape when the first item lands here.
  */
 public final class ModContent {
 
@@ -27,39 +26,8 @@ public final class ModContent {
 
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Nauvis.MODID);
     private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Nauvis.MODID);
-    private static final DeferredRegister<CreativeModeTab> TABS =
-            DeferredRegister.create(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB, Nauvis.MODID);
 
-    /**
-     * The first machine. Milestone 1's whole point is a chest feeding this and a chest taking
-     * from it.
-     *
-     * <p>Currently a block and nothing more: no inventory, no recipe selector, no ticking. The
-     * shortcut in PLAN.md is a recipe selector over one input inventory running Facrafting's
-     * timed recipes, and that is the next thing to land here.
-     */
-    public static final DeferredBlock<Block> ASSEMBLING_MACHINE_1 = BLOCKS.registerSimpleBlock(
-            "assembling_machine_1",
-            () -> BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.METAL)
-                    .strength(3.0F, 6.0F)
-                    .sound(SoundType.METAL)
-                    .requiresCorrectToolForDrops());
-
-    public static final DeferredItem<net.minecraft.world.item.BlockItem> ASSEMBLING_MACHINE_1_ITEM =
-            ITEMS.registerSimpleBlockItem(ASSEMBLING_MACHINE_1);
-
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
-            "nauvis",
-            () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup.nauvis"))
-                    .icon(() -> new ItemStack(ASSEMBLING_MACHINE_1_ITEM.get()))
-                    .displayItems((parameters, output) -> {
-                        output.accept(ASSEMBLING_MACHINE_1_ITEM.get());
-                    })
-                    .build());
-
-    /** Every block this mod registers, for the loot table provider to walk. */
+    /** Every block this mod registers, for a loot table provider to walk. */
     public static java.util.List<Block> blocks() {
         return BLOCKS.getEntries().stream().map(holder -> (Block) holder.value()).toList();
     }
@@ -67,6 +35,5 @@ public final class ModContent {
     static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);
         ITEMS.register(modEventBus);
-        TABS.register(modEventBus);
     }
 }

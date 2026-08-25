@@ -6,7 +6,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -29,12 +28,13 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 /**
  * Tests that run inside a real server, headless, reporting pass or fail on exit.
  *
- * <p>This is the half of testing that needs nobody watching. Behaviour — a machine consuming
- * its ingredients, an inserter moving a stack, a recipe resolving — belongs here. How any of
- * it looks does not, and never will.
+ * <p>This is the half of testing that needs nobody watching. What the pack mod asserts is that
+ * the pack itself holds together; how a machine behaves is asserted in the mod that owns the
+ * machine, beside it. How any of it looks is asserted nowhere, and never will be.
  *
- * <p>Run with {@code ./gradlew :nauvis:runGameTestServer}: it starts a server, runs every
- * test, and exits non-zero if any failed.
+ * <p>Run with {@code ./gradlew :nauvis:runGameTestServer}: it starts a server with every mod in
+ * the pack on one classpath, runs every test in every one of them, and exits non-zero if any
+ * failed.
  *
  * <p>The 26.2 shape is registry-driven and unlike every tutorial. See {@code docs/API-26.2.md}
  * — in particular, {@code FunctionGameTestInstance} is unavailable to mods, because the
@@ -63,7 +63,6 @@ public final class NauvisGameTests {
 
     static {
         TEST_TYPES.register("registry_presence", () -> RegistryPresenceTest.CODEC);
-        TEST_TYPES.register("assembler_places", () -> AssemblerPlacesTest.CODEC);
     }
 
     /** Called from the mod constructor so the test type registers with everything else. */
@@ -87,54 +86,14 @@ public final class NauvisGameTests {
                         List.of(
                                 "neoprogressivematerials:iron_gear_wheel",
                                 "neoprogressivematerials:electronic_circuit",
-                                "neoprogressiveautomation:burner_drill")));
-
-        event.registerTest(
-                Identifier.fromNamespaceAndPath(Nauvis.MODID, "assembler_places"),
-                new AssemblerPlacesTest(
-                        new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE)));
-    }
-
-    /**
-     * The assembling machine exists in the world, not merely in a registry.
-     *
-     * <p>Deliberately small. It will grow into the real milestone-1 assertion - feed it three
-     * circuits, five gears and nine iron, tick it, and expect an assembling machine out - as
-     * soon as there is a block entity to do the crafting.
-     */
-    public static class AssemblerPlacesTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerPlacesTest> CODEC = RecordCodecBuilder.<AssemblerPlacesTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(AssemblerPlacesTest::info))
-                        .apply(i, AssemblerPlacesTest::new));
-
-        public AssemblerPlacesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            BlockPos pos = new BlockPos(0, 1, 0);
-            helper.setBlock(pos, ModContent.ASSEMBLING_MACHINE_1.get());
-            helper.assertBlockPresent(ModContent.ASSEMBLING_MACHINE_1.get(), pos);
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembler places");
-        }
+                                "neoprogressiveautomation:burner_drill",
+                                "nauvis_machines:assembling_machine_1")));
     }
 
     /**
      * Asserts that a list of item ids is registered once the server is up.
      *
-     * <p>Gradle resolving four sibling jars onto the classpath is a different claim from their
+     * <p>Gradle resolving the sibling jars onto the classpath is a different claim from their
      * items existing in the registry. This checks the second, which is the one that matters:
      * it fails if a mod silently declines to load.
      */

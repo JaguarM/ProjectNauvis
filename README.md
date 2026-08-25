@@ -8,7 +8,7 @@ A Minecraft modpack that recreates Factorio.
 | Minecraft | 26.2 |
 | NeoForge | 26.2.0.59 |
 | Java | 25 |
-| Status | milestone 0 done; the assembler is next. See `docs/NEXT.md` |
+| Status | milestone 0 done; the assembling machine works. See `docs/NEXT.md` |
 
 Mine, smelt, automate, research, defend, launch a rocket — Factorio's loop with Factorio's
 own numbers, built as a small set of first-party mods rather than a three-hundred-mod pack.
@@ -28,7 +28,8 @@ Where things are
 | `data/mapping.json` | the mapping itself. Hand-maintained |
 | `tools/gen_mapping.py` | seeded it once; refuses to overwrite |
 | `tools/gen_recipes.py` | turns the mapping plus Factorio's dump into recipe JSON |
-| `nauvis/` | the pack mod: policy, and the first machine |
+| `nauvis/` | the pack mod: policy, vanilla replacement, raw resources, terrain |
+| `nauvis_machines/` | assemblers, furnaces, modules, beacon, radar |
 | `reference/` | Factorio's data and Create's source. Gitignored, not ours |
 
 The four mods that already exist live in their own repos alongside this one:

@@ -35,6 +35,8 @@ Confirmed renames and signature changes
 | `Minecraft.screen` | `minecraft.gui.screen()` / `gui.setScreen(...)` |
 | `IItemHandler` | `Capabilities.Item.BLOCK` → `ResourceHandler<ItemResource>`, driven by `Transaction`. `IItemHandler` is deprecated for removal |
 | `Inventory.items` | private — use `getNonEquipmentItems()`; offhand is equipment and fetched apart |
+| `Player.displayClientMessage(Component, boolean)` | **gone.** `sendOverlayMessage(Component)` for the action bar, `sendSystemMessage(Component)` for chat |
+| `net.minecraft.world.ticks.ScheduledTickAccess` | **`net.minecraft.world.level.ScheduledTickAccess`** — the interface moved, the package `world.ticks` kept the rest |
 
 Other confirmed details:
 
@@ -54,6 +56,55 @@ Other confirmed details:
 - `KeyMapping` takes a `KeyMapping.Category`, not a string.
 - The client cannot enumerate recipes (since 1.21.4). Use `OnDatapackSyncEvent#sendRecipes`
   plus `RecipesReceivedEvent`, not a hand-rolled catalogue.
+- `BlockEntityType` has a **public constructor**, `(BlockEntitySupplier, Block...)`. There is no
+  `Builder` and no `.build(null)` any more.
+- `RecipeManager` lives on the server, not the level: `level.recipeAccess()` is a much smaller
+  interface (property sets and stonecutter recipes only). Use
+  `serverLevel.getServer().getRecipeManager()` — `byKey(ResourceKey<Recipe<?>>)` for one, and
+  `recipeMap().byType(type)` to walk a type.
+
+Inventories: `ResourceHandler`, and the class that already implements it
+-----------------------------------------------------------------------
+
+`IItemHandler` is deprecated for removal. The replacement is
+`Capabilities.Item.BLOCK` → `ResourceHandler<ItemResource>`, and the important thing is that
+**you almost never implement `ResourceHandler` from scratch**:
+
+- **`ItemStacksResourceHandler(int size)`** is a working slot inventory. Override
+  `onContentsChanged(index, previousStack)` to hook `setChanged`, `isValid` to filter, and
+  `getCapacity` to change stack limits. `set(index, resource, amount)` writes directly.
+- It extends `StacksResourceHandler`, which **implements `ValueIOSerializable`** —
+  `serialize(ValueOutput)` / `deserialize(ValueInput)` — so saving an inventory is
+  `inventory.serialize(output.child("Inventory"))` and
+  `input.child("Inventory").ifPresent(inventory::deserialize)`. No `ContainerHelper`.
+- `ResourceHandler`'s whole-handler `insert(resource, amount, tx)` and `extract(...)` are
+  **default methods that walk every index and call the index-addressed overloads**. A wrapper
+  that restricts insertion or extraction per slot therefore only has to override the six
+  index-addressed methods; the rest inherits the rule. See
+  `nauvis_machines/.../machine/MachineAccess.java`.
+- `getCapacityAsLong` must return **0** for anything `isValid` rejects. Hoppers use it to
+  decide whether to keep trying.
+
+`Transaction.openRoot()` in a try-with-resources, `commit()` to keep the changes, and falling
+out of the block without committing rolls everything back. That is what makes "spend the
+ingredients and bank the result, or neither" one method — and passing `commit = false` turns
+the same code into a simulation, so there is no second copy that can drift.
+
+Ticking without a ticker
+------------------------
+
+Non-negotiable #5 wants an idle machine to cost zero ticks, and a `BlockEntityTicker` cannot do
+that — a registered ticker runs every tick whether or not there is work.
+
+Scheduled block ticks can. `level.scheduleTick(pos, block, delay)` queues one visit;
+`Block.tick(BlockState, ServerLevel, BlockPos, RandomSource)` receives it; an unscheduled
+position is never visited at all. They are saved with the chunk, so work in progress survives a
+reload, and `level.getBlockTicks().hasScheduledTick(pos, block)` is both the guard against
+queueing twice and — usefully — a **gametest assertion that a machine really is asleep**.
+
+`nauvis_machines/.../assembler/AssemblerBlockEntity.java` is the worked example: it reschedules
+itself while a craft is running and simply stops when there is nothing to make, waking from
+`onContentsChanged`, from the recipe being set, and from `neighborChanged`.
 
 GameTest is registry-driven now, and needs a structure
 ------------------------------------------------------
@@ -64,8 +115,8 @@ a `GameTestInstance` in `Registries.TEST_INSTANCE`, registered through NeoForge'
 `environment`, `structure`, `max_ticks`, `setup_ticks`, `rotation`, `padding`, `sky_access`,
 `max_attempts` and `required_successes`.
 
-`nauvis/src/main/java/com/jaguarm/nauvis/NauvisGameTests.java` is a working example of all of
-the below.
+`nauvis_machines/src/main/java/com/jaguarm/nauvismachines/NauvisMachinesGameTests.java` is a
+working example of all of the below, and `nauvis/.../NauvisGameTests.java` is a smaller one.
 
 **`FunctionGameTestInstance` is not available to mods**, whatever the vanilla code suggests by
 using it for `minecraft:always_pass`. Its bodies live in
@@ -116,6 +167,14 @@ datagen owns it now.
 Silent failures — these compile and then do nothing
 ---------------------------------------------------
 
+- **A machine spills its inventory from `BlockEntity#preRemoveSideEffects(BlockPos,
+  BlockState)`**, not from `Block#affectNeighborsAfterRemoval`. The base implementation drops
+  contents *only for a `Container`*, so a capability inventory — a `ResourceHandler` — that
+  does not override this eats everything in it on every break. Overriding
+  `affectNeighborsAfterRemoval` instead compiles, reads correctly, and drops nothing, because
+  the block entity is already gone by then. Note `MinerBlock` in Neo Progressive Automation has
+  exactly that override and only works because its entity is a `WorldlyContainer`; do not copy
+  it. `assembler_spills_when_broken` is the gametest that catches this.
 - **`data/<ns>/recipe/` and `data/<ns>/loot_table/` are singular.** Plural folder names do not
   error; the block just silently drops nothing.
 - **Recipes use `result.id`**, not `result.item`.

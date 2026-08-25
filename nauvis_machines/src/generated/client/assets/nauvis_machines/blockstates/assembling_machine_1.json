@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "nauvis_machines:block/assembling_machine_1"
+    }
+  }
+}

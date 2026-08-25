@@ -45,3 +45,8 @@ includeBuild('../CrumblingOre') {
 // Pack policy, vanilla replacement, raw resources, terrain. The other nine subsystem mods
 // join this list as their milestones come up.
 include 'nauvis'
+
+// Assemblers, furnaces, modules, beacon, radar. Owns `assembling_machine_1`, which
+// data/mapping.json names `nauvis_machines:assembling_machine_1` - an id is permanent, so the
+// machine lives in the mod the mapping gives it rather than in the pack mod.
+include 'nauvis_machines'
