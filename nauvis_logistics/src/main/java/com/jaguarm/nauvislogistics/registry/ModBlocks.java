@@ -1,6 +1,7 @@
 package com.jaguarm.nauvislogistics.registry;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
+import com.jaguarm.nauvislogistics.storage.IronChestBlock;
 import com.jaguarm.nauvislogistics.transport.InserterBlock;
 
 import net.minecraft.world.level.block.SoundType;
@@ -25,6 +26,19 @@ public final class ModBlocks {
             properties -> properties
                     .mapColor(MapColor.METAL)
                     .strength(2.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops());
+
+    /**
+     * A bigger box. Not a vanilla chest subclass: vanilla's is welded to its double-chest
+     * pairing and its animated lid renderer, neither of which an iron chest wants.
+     */
+    public static final DeferredBlock<IronChestBlock> IRON_CHEST = BLOCKS.registerBlock(
+            "iron_chest",
+            IronChestBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.METAL)
+                    .strength(2.5F, 6.0F)
                     .sound(SoundType.METAL)
                     .requiresCorrectToolForDrops());
 

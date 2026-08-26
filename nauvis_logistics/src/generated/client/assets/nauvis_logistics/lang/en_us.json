@@ -1,5 +1,6 @@
 {
   "block.nauvis_logistics.burner_inserter": "Burner inserter",
+  "block.nauvis_logistics.iron_chest": "Iron chest",
   "itemGroup.nauvis_logistics": "Project Nauvis: Logistics",
   "nauvis_logistics.inserter.fuelled": "Burning %s",
   "nauvis_logistics.inserter.full": "Its fuel slot is full of %s",

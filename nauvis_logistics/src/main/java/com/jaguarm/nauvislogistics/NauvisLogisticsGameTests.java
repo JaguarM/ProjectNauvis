@@ -3,6 +3,7 @@ package com.jaguarm.nauvislogistics;
 import java.util.List;
 
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
+import com.jaguarm.nauvislogistics.storage.IronChestBlockEntity;
 import com.jaguarm.nauvislogistics.transport.InserterBlock;
 import com.jaguarm.nauvislogistics.transport.InserterBlockEntity;
 import com.mojang.serialization.MapCodec;
@@ -70,6 +71,8 @@ public final class NauvisLogisticsGameTests {
         TEST_TYPES.register("inserter_wakes_when_source_fills", () -> InserterWakesTest.CODEC);
         TEST_TYPES.register("inserter_needs_fuel", () -> InserterNeedsFuelTest.CODEC);
         TEST_TYPES.register("inserter_ignores_bystanders", () -> InserterIgnoresBystandersTest.CODEC);
+        TEST_TYPES.register("iron_chest_holds_items", () -> IronChestHoldsItemsTest.CODEC);
+        TEST_TYPES.register("inserter_fills_iron_chest", () -> InserterFillsIronChestTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -87,6 +90,8 @@ public final class NauvisLogisticsGameTests {
         register(event, environment, "inserter_wakes_when_source_fills", InserterWakesTest::new, 200);
         register(event, environment, "inserter_needs_fuel", InserterNeedsFuelTest::new, 200);
         register(event, environment, "inserter_ignores_bystanders", InserterIgnoresBystandersTest::new, 100);
+        register(event, environment, "iron_chest_holds_items", IronChestHoldsItemsTest::new, 60);
+        register(event, environment, "inserter_fills_iron_chest", InserterFillsIronChestTest::new, 200);
     }
 
     private interface TestFactory {
@@ -382,6 +387,101 @@ public final class NauvisLogisticsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("inserter ignores bystanders");
+        }
+    }
+
+    /** The chest is a container of the size it claims, and automation can reach it. */
+    public static class IronChestHoldsItemsTest extends GameTestInstance {
+
+        public static final MapCodec<IronChestHoldsItemsTest> CODEC =
+                RecordCodecBuilder.<IronChestHoldsItemsTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(IronChestHoldsItemsTest::info))
+                                .apply(i, IronChestHoldsItemsTest::new));
+
+        public IronChestHoldsItemsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            helper.setBlock(SOURCE, ModBlocks.IRON_CHEST.get());
+            helper.getBlockEntity(SOURCE, IronChestBlockEntity.class);
+
+            // Through the capability, not the Container interface: NeoForge only wraps a
+            // hard-coded list of vanilla block entity types, so a modded Container that forgets
+            // to register one is invisible to every inserter in the game while looking fine.
+            ResourceHandler<ItemResource> chest = container(helper, SOURCE);
+            helper.assertValueEqual(chest.size(), IronChestBlockEntity.SLOT_COUNT, "slots on an iron chest");
+
+            helper.assertValueEqual(insert(chest, Items.IRON_INGOT, 100), 100, "ingots accepted");
+            helper.assertValueEqual(countIn(chest, Items.IRON_INGOT), 100, "ingots held");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("iron chest holds items");
+        }
+    }
+
+    /**
+     * Milestone 1, in the only three blocks that are ours: chest, inserter, chest.
+     *
+     * <p>Both containers here are iron chests rather than vanilla ones, which makes this a
+     * different claim from {@code inserter_moves_items}. That one proves the inserter can talk to
+     * a container somebody else wrote; this proves ours behaves like one - that it publishes its
+     * capability, and that changing it wakes the inserter beside it the same way a vanilla chest
+     * does.
+     */
+    public static class InserterFillsIronChestTest extends GameTestInstance {
+
+        public static final MapCodec<InserterFillsIronChestTest> CODEC =
+                RecordCodecBuilder.<InserterFillsIronChestTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(InserterFillsIronChestTest::info))
+                                .apply(i, InserterFillsIronChestTest::new));
+
+        public InserterFillsIronChestTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            helper.setBlock(SOURCE, ModBlocks.IRON_CHEST.get());
+            helper.setBlock(DESTINATION, ModBlocks.IRON_CHEST.get());
+            helper.setBlock(INSERTER, ModBlocks.BURNER_INSERTER.get().defaultBlockState()
+                    .setValue(InserterBlock.FACING, Direction.EAST));
+            insert(helper.getBlockEntity(INSERTER, InserterBlockEntity.class).fuelAccess(), Items.COAL, 1);
+
+            helper.runAfterDelay(20, () -> {
+                helper.assertFalse(isScheduled(helper), "the inserter never went to sleep to begin with");
+
+                insert(container(helper, SOURCE), Items.IRON_INGOT, 1);
+                helper.assertTrue(isScheduled(helper),
+                        "an iron chest gaining an item did not wake the inserter beside it");
+
+                helper.runAfterDelay(InserterBlockEntity.SWING_TICKS + 5, () -> {
+                    helper.assertValueEqual(countIn(container(helper, DESTINATION), Items.IRON_INGOT), 1,
+                            "ingots delivered into the iron chest");
+                    helper.assertValueEqual(countIn(container(helper, SOURCE), Items.IRON_INGOT), 0,
+                            "ingots left behind in the source chest");
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("inserter fills iron chest");
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.jaguarm.nauvislogistics.registry;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
+import com.jaguarm.nauvislogistics.storage.IronChestBlockEntity;
 import com.jaguarm.nauvislogistics.transport.InserterBlockEntity;
 
 import net.minecraft.core.registries.Registries;
@@ -23,6 +24,13 @@ public final class ModBlockEntities {
                     () -> new BlockEntityType<>(
                             InserterBlockEntity::new,
                             ModBlocks.BURNER_INSERTER.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IronChestBlockEntity>> IRON_CHEST =
+            BLOCK_ENTITIES.register(
+                    "iron_chest",
+                    () -> new BlockEntityType<>(
+                            IronChestBlockEntity::new,
+                            ModBlocks.IRON_CHEST.get()));
 
     private ModBlockEntities() {}
 }

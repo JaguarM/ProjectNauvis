@@ -46,5 +46,17 @@ public class NauvisLogisticsModels extends ModelProvider {
         blockModels.blockStateOutput.accept(
                 MultiVariantGenerator.dispatch(ModBlocks.BURNER_INSERTER.get(), BlockModelGenerators.plainVariant(model))
                         .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
+
+        // Iron sides with a barrel's lid: reads as a metal container at a glance, and does not
+        // read as a block of iron, which is what a plain iron cube would have looked like.
+        Identifier chest = ModelTemplates.CUBE_TOP.create(
+                ModBlocks.IRON_CHEST.get(),
+                new TextureMapping()
+                        .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(Blocks.IRON_BLOCK))
+                        .put(TextureSlot.TOP, TextureMapping.getBlockTexture(Blocks.BARREL, "_top")),
+                blockModels.modelOutput);
+
+        blockModels.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(
+                ModBlocks.IRON_CHEST.get(), BlockModelGenerators.plainVariant(chest)));
     }
 }

@@ -58,6 +58,7 @@ public final class NauvisLogisticsData {
         protected void addTranslations() {
             add("itemGroup.nauvis_logistics", "Project Nauvis: Logistics");
             addBlock(ModBlocks.BURNER_INSERTER, "Burner inserter");
+            addBlock(ModBlocks.IRON_CHEST, "Iron chest");
             add("pack.nauvis_logistics.crafting_table", "Nauvis Logistics: Crafting Table Recipes");
 
             // The whole interface, until there is a screen. See InserterBlock.
@@ -79,6 +80,7 @@ public final class NauvisLogisticsData {
         @Override
         protected void generate() {
             dropSelf(ModBlocks.BURNER_INSERTER.get());
+            dropSelf(ModBlocks.IRON_CHEST.get());
         }
 
         @Override
