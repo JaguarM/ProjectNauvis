@@ -38,7 +38,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
@@ -246,43 +245,6 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
                 transaction.commit();
             }
             return true;
-        }
-    }
-
-    /**
-     * Whether this stack is something the machine is currently short of, rather than a pointer
-     * at what to make next.
-     *
-     * <p>This is what lets one click do both jobs: hand an idle machine a gear wheel and it
-     * starts making gear wheels, hand a machine that is already making gear wheels an iron
-     * plate and it takes the iron. Clearing the recipe first is how you re-target a machine to
-     * make one of its own ingredients.
-     */
-    public boolean wants(ServerLevel level, ItemStack stack) {
-        FacraftRecipe recipe = recipe(level);
-        if (recipe == null || stack.isEmpty()) {
-            return false;
-        }
-        for (SizedIngredient ingredient : recipe.ingredients()) {
-            if (ingredient.ingredient().test(stack)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Takes as much of a held stack as will fit into the input slots.
-     *
-     * @return how many items were taken, which may be none if the inputs are full.
-     */
-    public int acceptFromHand(ItemStack stack) {
-        try (Transaction transaction = Transaction.openRoot()) {
-            int taken = automationView.insert(ItemResource.of(stack), stack.getCount(), transaction);
-            if (taken > 0) {
-                transaction.commit();
-            }
-            return taken;
         }
     }
 

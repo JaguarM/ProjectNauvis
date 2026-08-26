@@ -5,15 +5,10 @@ import com.mojang.serialization.MapCodec;
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -26,22 +21,17 @@ import net.minecraft.world.phys.BlockHitResult;
  * The block half of the assembling machine: placement, breaking, and how a player tells it what
  * to make.
  *
- * <p>Until there is a screen, the controls are the block itself:
+ * <p>Right-click opens it, holding anything or nothing, exactly like a chest. Everything else is
+ * done in the screen: ingredients go in its slots, and the recipe is chosen by clicking one in
+ * Facrafting's panel beside it.
  *
- * <ul>
- *   <li><b>Right-click holding an ingredient of what it is making</b> - load it. This is the
- *       only way to feed a machine by hand until inserters exist.
- *   <li><b>Right-click holding anything else</b> - make that. The machine looks for the timed
- *       recipe producing it and takes that as its recipe. Nothing is consumed; the item is a
- *       pointer, not a payment.
- *   <li><b>Right-click empty-handed</b> - open it. The screen shows its slots and how far along
- *       it is; Facrafting's panel opens beside it, and clicking a recipe there points the machine.
- *   <li><b>Sneak + right-click empty-handed</b> - forget the recipe without opening anything.
- *       Also how you re-target a machine to make one of its own ingredients.
- * </ul>
+ * <p>It used to be cleverer. Before there was a screen, clicking the block with an item pointed
+ * the machine at that item's recipe, and clicking with an ingredient loaded it - the only way to
+ * work a machine with no interface. With an interface those are two hidden rules that fire when a
+ * player expects a container to open, so they are gone.
  *
- * <p>Building against the machine still works the way it does for a chest or a furnace: sneak
- * while holding the block you are placing.
+ * <p>Building against the machine works the way it does for a chest or a furnace: sneak while
+ * holding the block you are placing.
  */
 public class AssemblerBlock extends BaseEntityBlock {
 
@@ -87,49 +77,6 @@ public class AssemblerBlock extends BaseEntityBlock {
     }
 
     @Override
-    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
-            Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (stack.isEmpty()) {
-            return InteractionResult.TRY_WITH_EMPTY_HAND;
-        }
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return InteractionResult.SUCCESS;
-        }
-        if (!(level.getBlockEntity(pos) instanceof AssemblerBlockEntity assembler)) {
-            return InteractionResult.TRY_WITH_EMPTY_HAND;
-        }
-
-        // Read the name before anything is taken: a stack emptied by the click would otherwise
-        // report itself as Air.
-        Component name = stack.getHoverName();
-
-        // Ingredients first. A machine already making gear wheels should take the iron plate it
-        // is short of, not decide it would rather make iron plates.
-        if (assembler.wants(serverLevel, stack)) {
-            int taken = assembler.acceptFromHand(stack);
-            if (taken > 0 && !player.hasInfiniteMaterials()) {
-                stack.shrink(taken);
-            }
-            player.sendOverlayMessage(Component.translatable(
-                    taken > 0 ? "nauvis_machines.assembler.loaded" : "nauvis_machines.assembler.full",
-                    name));
-            return InteractionResult.SUCCESS;
-        }
-
-        ResourceKey<Recipe<?>> recipe = AssemblerBlockEntity.recipeProducing(serverLevel, stack.getItem());
-        if (recipe == null) {
-            player.sendOverlayMessage(
-                    Component.translatable("nauvis_machines.assembler.no_recipe", name));
-            return InteractionResult.SUCCESS;
-        }
-
-        assembler.setRecipe(recipe);
-        player.sendOverlayMessage(
-                Component.translatable("nauvis_machines.assembler.set", name));
-        return InteractionResult.SUCCESS;
-    }
-
-    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
             Player player, BlockHitResult hitResult) {
         if (!(level instanceof ServerLevel)) {
@@ -137,12 +84,6 @@ public class AssemblerBlock extends BaseEntityBlock {
         }
         if (!(level.getBlockEntity(pos) instanceof AssemblerBlockEntity assembler)) {
             return InteractionResult.PASS;
-        }
-
-        if (player.isSecondaryUseActive()) {
-            assembler.setRecipe(null);
-            player.sendOverlayMessage(Component.translatable("nauvis_machines.assembler.cleared"));
-            return InteractionResult.SUCCESS;
         }
 
         // The position travels with the menu: the screen reads the chosen recipe off the block

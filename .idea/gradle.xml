@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/../CrumblingOre" name="CrumblingOre">
+                <projects>
+                  <project path="$PROJECT_DIR$/../CrumblingOre" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/../Facrafting" name="Facrafting">
+                <projects>
+                  <project path="$PROJECT_DIR$/../Facrafting" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/../NeoProgressiveAutomation" name="NeoProgressiveAutomation">
+                <projects>
+                  <project path="$PROJECT_DIR$/../NeoProgressiveAutomation" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/../NeoProgressiveMaterials" name="NeoProgressiveMaterials">
+                <projects>
+                  <project path="$PROJECT_DIR$/../NeoProgressiveMaterials" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/../CrumblingOre" />
+            <option value="$PROJECT_DIR$/../Facrafting" />
+            <option value="$PROJECT_DIR$/../NeoProgressiveAutomation" />
+            <option value="$PROJECT_DIR$/../NeoProgressiveMaterials" />
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/nauvis" />
+            <option value="$PROJECT_DIR$/nauvis_logistics" />
+            <option value="$PROJECT_DIR$/nauvis_machines" />
+          </set>
+        </option>
+        <option name="resolveExternalAnnotations" value="true" />
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>

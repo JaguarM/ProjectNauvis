@@ -21,10 +21,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -91,7 +89,6 @@ public final class NauvisMachinesGameTests {
         TEST_TYPES.register("assembler_sleeps", () -> AssemblerSleepsTest.CODEC);
         TEST_TYPES.register("assembler_stalls_when_full", () -> AssemblerStallsWhenFullTest.CODEC);
         TEST_TYPES.register("assembler_spills_when_broken", () -> AssemblerSpillsWhenBrokenTest.CODEC);
-        TEST_TYPES.register("assembler_takes_from_hand", () -> AssemblerTakesFromHandTest.CODEC);
         TEST_TYPES.register("assembler_menu_selects_recipe", () -> AssemblerMenuSelectsRecipeTest.CODEC);
     }
 
@@ -115,7 +112,6 @@ public final class NauvisMachinesGameTests {
         register(event, environment, "assembler_sleeps", AssemblerSleepsTest::new, 60);
         register(event, environment, "assembler_stalls_when_full", AssemblerStallsWhenFullTest::new, 100);
         register(event, environment, "assembler_spills_when_broken", AssemblerSpillsWhenBrokenTest::new, 60);
-        register(event, environment, "assembler_takes_from_hand", AssemblerTakesFromHandTest::new, 60);
         register(event, environment, "assembler_menu_selects_recipe", AssemblerMenuSelectsRecipeTest::new, 60);
     }
 
@@ -473,63 +469,6 @@ public final class NauvisMachinesGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("assembler spills when broken");
-        }
-    }
-
-    /**
-     * A right-click does the job the machine needs doing: an ingredient it is short of goes in,
-     * anything else re-points it.
-     *
-     * <p>One click doing two things is only safe if the rule is exact, which is why it is
-     * asserted rather than described. Until inserters exist this is also the only way to feed a
-     * machine by hand, so it is the difference between a playable milestone and a screenshot.
-     */
-    public static class AssemblerTakesFromHandTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerTakesFromHandTest> CODEC =
-                RecordCodecBuilder.<AssemblerTakesFromHandTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerTakesFromHandTest::info))
-                                .apply(i, AssemblerTakesFromHandTest::new));
-
-        public AssemblerTakesFromHandTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            Player player = helper.makeMockPlayer(GameType.SURVIVAL);
-
-            // An idle machine takes the click as "make this".
-            helper.setBlock(MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
-            ItemStack pointer = new ItemStack(ModItems.ASSEMBLING_MACHINE_1.get());
-            player.setItemInHand(InteractionHand.MAIN_HAND, pointer);
-            helper.useBlock(MACHINE, player);
-
-            AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-            helper.assertTrue(assembler.recipeKey() != null, "a click with an item set no recipe");
-            helper.assertValueEqual(pointer.getCount(), 1, "items taken by a click that only pointed");
-
-            // Now that it is making assembling machines, iron plates are an ingredient and the
-            // same click loads them instead.
-            ItemStack iron = new ItemStack(Items.IRON_INGOT, 9);
-            player.setItemInHand(InteractionHand.MAIN_HAND, iron);
-            helper.useBlock(MACHINE, player);
-
-            helper.assertValueEqual(iron.getCount(), 0, "iron plates left in hand");
-            helper.assertValueEqual(assembler.inventory().getAmountAsInt(0), 9, "iron plates loaded");
-            helper.assertTrue(assembler.recipeKey() != null,
-                    "loading an ingredient must not change what the machine is making");
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembler takes from hand");
         }
     }
 

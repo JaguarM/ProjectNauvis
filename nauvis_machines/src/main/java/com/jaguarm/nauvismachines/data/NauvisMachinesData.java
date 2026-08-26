@@ -66,15 +66,6 @@ public final class NauvisMachinesData {
             add("itemGroup.nauvis_machines", "Project Nauvis: Machines");
             addBlock(ModBlocks.ASSEMBLING_MACHINE_1, "Assembling machine 1");
 
-            // The whole interface, until there is a screen. See AssemblerBlock.
-            add("nauvis_machines.assembler.set", "Assembling: %s");
-            add("nauvis_machines.assembler.making", "Assembling: %s");
-            add("nauvis_machines.assembler.loaded", "Loaded %s");
-            add("nauvis_machines.assembler.full", "No room for %s");
-            add("nauvis_machines.assembler.no_recipe", "Nothing in this world is made from %s");
-            add("nauvis_machines.assembler.idle", "No recipe. Point at it holding what you want made.");
-            add("nauvis_machines.assembler.cleared", "Recipe cleared");
-
             // The screen. Its recipe list is Facrafting's panel, so there is very little here.
             add("screen.nauvis_machines.assembler.idle", "Idle - pick a recipe on the right");
             add("screen.nauvis_machines.assembler.making", "Making %s");

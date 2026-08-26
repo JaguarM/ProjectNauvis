@@ -38,16 +38,31 @@ public class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
     private static final int COLOR_FRAME = 0xFF000000;
     private static final int COLOR_BACKGROUND = 0xF0141414;
     private static final int COLOR_SLOT = 0xFF3B3B3B;
+    /** Darker than the well it frames, or a row of slots renders as one grey slab. */
+    private static final int COLOR_SLOT_EDGE = 0xFF1E1E1E;
     private static final int COLOR_TEXT = 0xFFFFFFFF;
     private static final int COLOR_MUTED = 0xFF909090;
     private static final int COLOR_TRACK = 0xFF2A2A2A;
     private static final int COLOR_FILL = 0xFF55FF55;
 
-    /** The progress bar, between the ingredients and the result. */
-    private static final int ARROW_X = 74;
-    private static final int ARROW_Y = 39;
-    private static final int ARROW_WIDTH = 32;
+    /**
+     * The progress bar, in the gap between the ingredient block and the result.
+     *
+     * <p>Ingredients end at x=62 and the output well starts at x=115, so 70..104 is clear. Its
+     * vertical centre is the same y=35 everything else is arranged around.
+     */
+    private static final int ARROW_X = 70;
+    private static final int ARROW_Y = 32;
+    private static final int ARROW_WIDTH = 34;
     private static final int ARROW_HEIGHT = 6;
+
+    /**
+     * The status line, clear of both the slots above and vanilla's "Inventory" label below.
+     *
+     * <p>{@code inventoryLabelY} is {@code imageHeight - 94}, which is 72 here. The first version
+     * put this at 70 and the two lines were drawn through each other.
+     */
+    private static final int STATUS_Y = 58;
 
     public AssemblerScreen(AssemblerMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, PANEL_WIDTH, PANEL_HEIGHT);
@@ -69,9 +84,14 @@ public class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
         graphics.fill(x - 1, y - 1, x + imageWidth + 1, y + imageHeight + 1, COLOR_FRAME);
         graphics.fill(x, y, x + imageWidth, y + imageHeight, COLOR_BACKGROUND);
 
+        // Two passes, because adjacent slots are exactly 18 apart and a well is 18 across: drawn
+        // in one colour they tile into an unbroken rectangle, which is what the first version did
+        // to both the ingredient block and the whole player inventory.
         for (Slotish slot : slotWells()) {
             graphics.fill(x + slot.x() - 1, y + slot.y() - 1,
-                    x + slot.x() + 17, y + slot.y() + 17, COLOR_SLOT);
+                    x + slot.x() + 17, y + slot.y() + 17, COLOR_SLOT_EDGE);
+            graphics.fill(x + slot.x(), y + slot.y(),
+                    x + slot.x() + 16, y + slot.y() + 16, COLOR_SLOT);
         }
 
         drawProgress(graphics, x, y);
@@ -108,7 +128,7 @@ public class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
         // Vanilla's own "Inventory" label sits on a light panel; on this one it would vanish.
         graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, COLOR_MUTED, false);
 
-        graphics.text(font, statusLine(), 8, 70, COLOR_MUTED, false);
+        graphics.text(font, statusLine(), 8, STATUS_Y, COLOR_MUTED, false);
     }
 
     /**

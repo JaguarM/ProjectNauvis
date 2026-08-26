@@ -41,11 +41,18 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
     public static final int DATA_CRAFT_TICKS = 1;
     public static final int DATA_COUNT = 2;
 
-    /** Where the screen expects to find things. Shared, so the two cannot drift apart. */
-    public static final int INPUT_X = 30;
+    /**
+     * Where the screen expects to find things. Shared, so the two cannot drift apart.
+     *
+     * <p>Everything is arranged around one horizontal centre line at y=35: the ingredient block
+     * runs 17..53, the output well 26..44, and the progress bar sits between them. The first
+     * attempt put the bar at x=74 while the third ingredient column ran to x=84, and drew one on
+     * top of the other.
+     */
+    public static final int INPUT_X = 8;
     public static final int INPUT_Y = 17;
     public static final int OUTPUT_X = 116;
-    public static final int OUTPUT_Y = 35;
+    public static final int OUTPUT_Y = 26;
 
     private static final int PLAYER_SLOTS = 36;
 
