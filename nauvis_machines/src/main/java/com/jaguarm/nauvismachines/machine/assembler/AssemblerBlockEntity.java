@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -23,6 +24,11 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
@@ -59,7 +65,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * (ingredients arriving, a result being taken away), a recipe being chosen, or a neighbour
  * changing. A Factorio base is thousands of machines and most of them are idle at any moment.
  */
-public class AssemblerBlockEntity extends BlockEntity {
+public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
     /** Ingredient slots. Six is the largest ingredient count in Factorio's recipe set. */
     public static final int INPUT_SLOTS = 6;
@@ -82,6 +88,37 @@ public class AssemblerBlockEntity extends BlockEntity {
 
     /** Ticks spent on the current craft. Reaching the recipe's craft time means finished. */
     private int progress;
+
+    /**
+     * The current recipe's craft time, cached for the screen.
+     *
+     * <p>Kept here rather than looked up when asked, because {@link ContainerData} is polled every
+     * tick for every open menu, and resolving a recipe key through the recipe manager is not a
+     * thing to do on that schedule.
+     */
+    private int craftTicks;
+
+    /** What an open screen reads. Ints only, which is why the recipe itself is not in here. */
+    private final ContainerData menuData = new ContainerData() {
+        @Override
+        public int get(int id) {
+            return switch (id) {
+                case AssemblerMenu.DATA_PROGRESS -> progress;
+                case AssemblerMenu.DATA_CRAFT_TICKS -> craftTicks;
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int id, int value) {
+            // Server-authoritative: the client is told, never asked.
+        }
+
+        @Override
+        public int getCount() {
+            return AssemblerMenu.DATA_COUNT;
+        }
+    };
 
     public AssemblerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ASSEMBLER.get(), pos, state);
@@ -116,7 +153,14 @@ public class AssemblerBlockEntity extends BlockEntity {
         }
         recipeKey = key;
         progress = 0;
+        craftTicks = 0;
         setChanged();
+
+        // The screen reads the chosen recipe off this block entity, so a change has to reach the
+        // clients watching it. setChanged alone only marks the chunk for saving.
+        if (level != null) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+        }
         wake();
     }
 
@@ -133,7 +177,7 @@ public class AssemblerBlockEntity extends BlockEntity {
             return;
         }
 
-        int craftTicks = recipe.craftTicks();
+        craftTicks = recipe.craftTicks();
 
         // The ingredients are checked once, as a craft starts. Counting down is the cheap part;
         // simulating a whole craft every tick for every machine in a base is not.
@@ -289,6 +333,16 @@ public class AssemblerBlockEntity extends BlockEntity {
     private void onInventoryChanged() {
         setChanged();
         wake();
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable("block.nauvis_machines.assembling_machine_1");
+    }
+
+    @Override
+    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+        return new AssemblerMenu(containerId, playerInventory, inventory, menuData, worldPosition);
     }
 
     /**

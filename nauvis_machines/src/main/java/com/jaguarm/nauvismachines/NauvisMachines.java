@@ -3,6 +3,7 @@ package com.jaguarm.nauvismachines;
 import com.jaguarm.nauvismachines.registry.ModBlockEntities;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
 import com.jaguarm.nauvismachines.registry.ModItems;
+import com.jaguarm.nauvismachines.registry.ModMenus;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -30,6 +31,7 @@ public class NauvisMachines {
         ModItems.ITEMS.register(modEventBus);
         ModItems.TABS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        ModMenus.MENUS.register(modEventBus);
         NauvisMachinesGameTests.register(modEventBus);
     }
 }

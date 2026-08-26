@@ -3,6 +3,7 @@ package com.jaguarm.nauvismachines;
 import java.util.List;
 
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlockEntity;
+import com.jaguarm.nauvismachines.machine.assembler.AssemblerMenu;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
 import com.jaguarm.nauvismachines.registry.ModItems;
 import com.mojang.serialization.MapCodec;
@@ -25,6 +26,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Rotation;
@@ -89,6 +92,7 @@ public final class NauvisMachinesGameTests {
         TEST_TYPES.register("assembler_stalls_when_full", () -> AssemblerStallsWhenFullTest.CODEC);
         TEST_TYPES.register("assembler_spills_when_broken", () -> AssemblerSpillsWhenBrokenTest.CODEC);
         TEST_TYPES.register("assembler_takes_from_hand", () -> AssemblerTakesFromHandTest.CODEC);
+        TEST_TYPES.register("assembler_menu_selects_recipe", () -> AssemblerMenuSelectsRecipeTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -112,6 +116,7 @@ public final class NauvisMachinesGameTests {
         register(event, environment, "assembler_stalls_when_full", AssemblerStallsWhenFullTest::new, 100);
         register(event, environment, "assembler_spills_when_broken", AssemblerSpillsWhenBrokenTest::new, 60);
         register(event, environment, "assembler_takes_from_hand", AssemblerTakesFromHandTest::new, 60);
+        register(event, environment, "assembler_menu_selects_recipe", AssemblerMenuSelectsRecipeTest::new, 60);
     }
 
     private interface TestFactory {
@@ -525,6 +530,74 @@ public final class NauvisMachinesGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("assembler takes from hand");
+        }
+    }
+
+    /**
+     * Opening the machine gives a menu that can point it at a recipe.
+     *
+     * <p>Everything a screen does that a test can reach: the menu is built, it is the one the
+     * player has open, and {@code RecipeSelector.selectRecipe} - the method Facrafting's panel
+     * calls through a payload - reaches the block entity. What it looks like is not testable and
+     * is Yannic's to judge; that the wiring behind it works is, and this is where it breaks
+     * silently otherwise.
+     */
+    public static class AssemblerMenuSelectsRecipeTest extends GameTestInstance {
+
+        public static final MapCodec<AssemblerMenuSelectsRecipeTest> CODEC =
+                RecordCodecBuilder.<AssemblerMenuSelectsRecipeTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AssemblerMenuSelectsRecipeTest::info))
+                                .apply(i, AssemblerMenuSelectsRecipeTest::new));
+
+        public AssemblerMenuSelectsRecipeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            ServerLevel level = helper.getLevel();
+            helper.setBlock(MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
+            AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+
+            // The menu is built the way MenuProvider builds it, rather than through
+            // player.openMenu: opening a screen sends NeoForge's advanced_open_screen payload, and
+            // a mock player's connection has never negotiated a payload registry to receive it.
+            // What that would add over this is vanilla's own plumbing; what is below is ours.
+            Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+            AbstractContainerMenu opened = assembler.createMenu(1, player.getInventory(), player);
+
+            helper.assertTrue(opened instanceof AssemblerMenu,
+                    "opening an assembler did not give an assembler menu");
+            AssemblerMenu menu = (AssemblerMenu) opened;
+
+            helper.assertValueEqual(menu.slots.size(), AssemblerBlockEntity.SLOT_COUNT + 36,
+                    "slots on the assembler menu");
+            helper.assertTrue(menu.selectedRecipe() == null, "a fresh machine is already making something");
+
+            ResourceKey<Recipe<?>> recipe =
+                    AssemblerBlockEntity.recipeProducing(level, ModItems.ASSEMBLING_MACHINE_1.get());
+            helper.assertTrue(recipe != null, "no timed recipe makes an assembling machine");
+
+            // The verb Facrafting's panel invokes, straight through the interface.
+            menu.selectRecipe(recipe);
+            helper.assertValueEqual(assembler.recipeKey(), recipe, "the recipe the machine was pointed at");
+            helper.assertValueEqual(menu.selectedRecipe(), recipe, "the recipe the menu reports back");
+
+            // And clicking it a second time turns the machine off again.
+            menu.selectRecipe(null);
+            helper.assertTrue(assembler.recipeKey() == null, "selecting nothing did not clear the recipe");
+
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("assembler menu selects recipe");
         }
     }
 }

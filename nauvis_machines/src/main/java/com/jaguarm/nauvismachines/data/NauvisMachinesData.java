@@ -74,6 +74,12 @@ public final class NauvisMachinesData {
             add("nauvis_machines.assembler.no_recipe", "Nothing in this world is made from %s");
             add("nauvis_machines.assembler.idle", "No recipe. Point at it holding what you want made.");
             add("nauvis_machines.assembler.cleared", "Recipe cleared");
+
+            // The screen. Its recipe list is Facrafting's panel, so there is very little here.
+            add("screen.nauvis_machines.assembler.idle", "Idle - pick a recipe on the right");
+            add("screen.nauvis_machines.assembler.making", "Making %s");
+            add("screen.nauvis_machines.assembler.unknown", "Making something this client has not been told about");
+            add("screen.nauvis_machines.assembler.wants", "Wants %s x %s");
         }
     }
 

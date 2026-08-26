@@ -34,9 +34,10 @@ import net.minecraft.world.phys.BlockHitResult;
  *   <li><b>Right-click holding anything else</b> - make that. The machine looks for the timed
  *       recipe producing it and takes that as its recipe. Nothing is consumed; the item is a
  *       pointer, not a payment.
- *   <li><b>Right-click empty-handed</b> - say what it is making.
- *   <li><b>Sneak + right-click empty-handed</b> - forget the recipe. Also how you re-target a
- *       machine to make one of its own ingredients.
+ *   <li><b>Right-click empty-handed</b> - open it. The screen shows its slots and how far along
+ *       it is; Facrafting's panel opens beside it, and clicking a recipe there points the machine.
+ *   <li><b>Sneak + right-click empty-handed</b> - forget the recipe without opening anything.
+ *       Also how you re-target a machine to make one of its own ingredients.
  * </ul>
  *
  * <p>Building against the machine still works the way it does for a chest or a furnace: sneak
@@ -144,11 +145,9 @@ public class AssemblerBlock extends BaseEntityBlock {
             return InteractionResult.SUCCESS;
         }
 
-        ResourceKey<Recipe<?>> recipe = assembler.recipeKey();
-        player.sendOverlayMessage(recipe == null
-                ? Component.translatable("nauvis_machines.assembler.idle")
-                : Component.translatable("nauvis_machines.assembler.making",
-                        Component.literal(recipe.identifier().toString())));
+        // The position travels with the menu: the screen reads the chosen recipe off the block
+        // entity, because a recipe key cannot be a data slot.
+        player.openMenu(assembler, pos);
         return InteractionResult.SUCCESS;
     }
 
