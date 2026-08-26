@@ -8,7 +8,7 @@ A Minecraft modpack that recreates Factorio.
 | Minecraft | 26.2 |
 | NeoForge | 26.2.0.59 |
 | Java | 25 |
-| Status | milestone 0 done; the assembler and the burner inserter work. See `docs/NEXT.md` |
+| Status | milestone 0 done; assembler, inserter, chest and power work. See `docs/NEXT.md` |
 
 Mine, smelt, automate, research, defend, launch a rocket — Factorio's loop with Factorio's
 own numbers, built as a small set of first-party mods rather than a three-hundred-mod pack.
@@ -31,6 +31,8 @@ Where things are
 | `nauvis/` | the pack mod: policy, vanilla replacement, raw resources, terrain |
 | `nauvis_machines/` | assemblers, furnaces, modules, beacon, radar |
 | `nauvis_logistics/` | belts, inserters, splitters, chests, robots |
+| `nauvis_power/` | boiler, steam engine, solar, accumulator, poles |
+| `nauvis_fluids/` | barrels then pipes, oil, chemistry, nuclear |
 | `reference/` | Factorio's data and Create's source. Gitignored, not ours |
 
 The four mods that already exist live in their own repos alongside this one:

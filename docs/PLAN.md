@@ -195,8 +195,18 @@ neighbours an inserter can actually use.
 The electric `inserter` waits for `nauvis_power` — it costs a circuit and runs on the grid, and
 registering it now would mean an item that works without the power it is supposed to need.
 
-**Next is `iron-chest`**, then the boiler, steam engine and small electric pole, which is where
-milestone 1 closes and power begins.
+**`iron-chest`, `pipe`, `boiler` and `steam-engine` are done.** The chest is a plain vanilla
+`Container` on vanilla's four-row screen, which is the one place in this pack where being a
+Container buys more than a capability handler would. The pipe is three milestones early because
+the boiler and the engine are both paid for in pipes and an ingredient with the wrong id is not a
+shortcut this pack takes. Coal now goes into a boiler, the boiler makes steam, and a steam engine
+turns steam into FE — and the whole chain sleeps from the far end, which is asserted rather than
+hoped for.
+
+**What is left of milestone 1 is spending that electricity**: the small electric pole, then making
+the assembler consume FE, then the electric `inserter`. See the electric network note below — the
+pole is not a block so much as a graph, and it is the second decision here that is expensive to
+reverse.
 
 ### 2 — Belts · 4 new
 
@@ -257,6 +267,36 @@ object; items are positions on it. That is how Factorio does it too.
 
 Read it for the architecture and reimplement — Create's version is welded to its kinetics
 framework, and its assets are All Rights Reserved regardless.
+
+The electric network note
+-------------------------
+
+Poles are the other decision that is expensive to reverse, for the same reason belts are, and the
+belt note's sentence is the whole design with the nouns changed: **an electric network is one
+object; poles are members of it.**
+
+The trap is that a pole looks like a block and is not. Every machine in this pack can sleep because
+it can answer "have I got work?" by looking at itself. A pole cannot — it is one node in a graph
+whose job is to make other blocks reachable — so the thing that ticks has to be the network, once,
+rather than each pole. A pole that ticks is N ticks a second for N poles and an energy packet that
+takes N ticks to cross them; a pole that rescans its supply area is worse.
+
+So: one object per connected network, holding its member poles and `BlockCapabilityCache` handles
+on the producers and consumers at its edges. It ticks once, driven by a per-level manager, and a
+network with no producer or no hungry consumer does not tick at all. Poles join and leave it rather
+than driving it. Machines find poles when they are placed rather than poles scanning for machines,
+because a scan must never be per-tick. The graph is derivable from block positions, so it is not
+saved — rebuilding on chunk load is cheaper than invalidating a cache that spans one.
+
+**`reference/mods/energizedpower-*.jar` is the reference, and the counter-example.** It is the one
+FE mod on 26.2, it is MIT, and it does the opposite: `CableBlock` registers a ticker so every cable
+ticks, and every cable holds its own copy of the network's producer and consumer maps. Read it for
+what the endpoints look like and how connection changes propagate. Do not copy its tick model —
+non-negotiable #5 is exactly the constraint it does not have.
+
+Two radii, not one. Factorio's small pole reaches 7.5 blocks to another pole and supplies a 5x5
+area, and keeping both is what makes a base look like a Factorio base rather than a line of cables.
+Neither number is identity, so both are yours to tune; the id and the recipe are not.
 
 What testing looks like
 -----------------------
