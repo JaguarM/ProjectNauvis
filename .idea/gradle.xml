@@ -42,6 +42,7 @@
             <option value="$PROJECT_DIR$/nauvis_fluids" />
             <option value="$PROJECT_DIR$/nauvis_logistics" />
             <option value="$PROJECT_DIR$/nauvis_machines" />
+            <option value="$PROJECT_DIR$/nauvis_power" />
           </set>
         </option>
         <option name="resolveExternalAnnotations" value="true" />

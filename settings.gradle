@@ -59,3 +59,7 @@ include 'nauvis_logistics'
 // the steam engine are both paid for in pipes, so milestone 1's power needs one item out of a
 // mod whose real work is milestone 4.
 include 'nauvis_fluids'
+
+// Boiler, steam engine, solar, accumulator, poles. Where coal stops being something an inserter
+// eats and starts being something that runs a factory.
+include 'nauvis_power'

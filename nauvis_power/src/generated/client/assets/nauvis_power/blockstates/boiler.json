@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "nauvis_power:block/boiler"
+    }
+  }
+}

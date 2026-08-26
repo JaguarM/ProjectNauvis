@@ -10,6 +10,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/nauvis_fluids/ProjectNauvis.nauvis_fluids.main.iml" filepath="$PROJECT_DIR$/.idea/modules/nauvis_fluids/ProjectNauvis.nauvis_fluids.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/nauvis_logistics/ProjectNauvis.nauvis_logistics.main.iml" filepath="$PROJECT_DIR$/.idea/modules/nauvis_logistics/ProjectNauvis.nauvis_logistics.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/nauvis_machines/ProjectNauvis.nauvis_machines.main.iml" filepath="$PROJECT_DIR$/.idea/modules/nauvis_machines/ProjectNauvis.nauvis_machines.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/nauvis_power/ProjectNauvis.nauvis_power.main.iml" filepath="$PROJECT_DIR$/.idea/modules/nauvis_power/ProjectNauvis.nauvis_power.main.iml" />
     </modules>
   </component>
 </project>

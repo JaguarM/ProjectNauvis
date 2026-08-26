@@ -1,0 +1,39 @@
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="JaguarM"
+displayURL="https://github.com/JaguarM/ProjectNauvis"
+issueTrackerURL="https://github.com/JaguarM/ProjectNauvis/issues"
+
+description='''
+Factorio's power: the boiler and the steam engine first, then solar, accumulators and poles.
+
+Coal goes into a boiler, the boiler makes steam, and a steam engine turns steam into electricity.
+Power is Minecraft FE, buffered per machine, so any cable or machine from any mod can draw from
+a steam engine without knowing what one is.
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# Optional: without Facrafting the timed recipe drops out and the bench recipe takes over.
+[[dependencies.${mod_id}]]
+    modId="facrafting"
+    type="optional"
+    versionRange="[${facrafting_version},)"
+    ordering="AFTER"
+    side="BOTH"
