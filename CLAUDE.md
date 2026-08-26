@@ -29,12 +29,15 @@ Each mod is a separate jar with its own permanent mod id, usable standalone, glu
 others by `neoforge:mod_loaded` recipe conditions. No cycles. Pack policy — vanilla recipe
 removal — lives in the `nauvis` mod or the pack datapack, never inside a subsystem mod.
 
-A **compile-time** dependency is allowed only where the coupling genuinely is code, and is the
-exception rather than the pattern. There is one: `nauvis_machines` compiles against Facrafting,
-because a machine that runs a `FacraftRecipe` has to be able to name the type. Where that
-happens, the dependency is `required` in `neoforge.mods.toml` — a mod that cannot work without
-another must say so — and it still must not create a cycle. The pack mod has none and must
-grow none; its coupling to everything else is data.
+**Facrafting is the exception, and the foundation.** It owns the timed crafting model and the
+crafting interface, and a subsystem mod may depend on it at compile time: a machine that runs a
+`FacraftRecipe` has to be able to name the type, and a machine screen should be an extension of
+Facrafting's panel rather than a second one beside it. Declare it `required` in
+`neoforge.mods.toml` when you do — a mod that cannot work without another must say so.
+
+Everything else stays coupled by data. No subsystem mod depends on another subsystem mod, and
+the pack mod depends on nothing at compile time; if two subsystems need the same code, either it
+belongs in Facrafting or it gets duplicated. No cycles, ever.
 
 **4. Verify every 26.x API against decompiled sources.**
 Minecraft 26.2 is past the model's training cutoff and renamed a great deal. Guessing has
@@ -67,13 +70,31 @@ reserved regardless of what the code says. Ours are ours.
 The four sibling mods
 ---------------------
 
-These are already released, live in their own repos at `../`, and their ids are permanent:
+They live in their own repos at `../` and Project Nauvis consumes them via `includeBuild`, which
+means an edit to one is picked up here immediately — no publishing step. **Two of them are
+released and two are not, and that is the whole difference:**
 
-| Repo | Mod id | Owns |
-|---|---|---|
-| `../Facrafting` | `facrafting` | The timed crafting model. Depends on nothing. |
-| `../NeoProgressiveMaterials` | `neoprogressivematerials` | Intermediate products. Depends on Facrafting. |
-| `../NeoProgressiveAutomation` | `neoprogressiveautomation` | The two mining drills. Depends on both. |
-| `../CrumblingOre` | `crumblingore` | Ore depletion. Standalone. |
+| Repo | Mod id | Owns | |
+|---|---|---|---|
+| `../Facrafting` | `facrafting` | The timed crafting model, and the crafting UI. | **ours to change** |
+| `../NeoProgressiveMaterials` | `neoprogressivematerials` | Intermediate products. | **ours to change** |
+| `../NeoProgressiveAutomation` | `neoprogressiveautomation` | The two mining drills. | released |
+| `../CrumblingOre` | `crumblingore` | Ore depletion. | released |
 
-Do not move or rename them. Project Nauvis consumes them via `includeBuild`.
+**Facrafting and Neo Progressive Materials are not published** — no remote, no tags, and NPM is
+not even a git repository. Change them freely: they are part of this project, and Facrafting in
+particular is the foundation the rest builds on. Its crafting panel is the interface every
+machine screen should grow out of rather than sit beside.
+
+**Neo Progressive Automation and Crumbling Ore are on GitHub and in players' worlds.** Their ids
+are permanent and their behaviour should not change under an existing save.
+
+Three ids are frozen anyway, whatever the above says, because the released NPA names them in its
+own shipped recipes: **`facrafting:facraft`**, **`neoprogressivematerials:electronic_circuit`**
+and **`neoprogressivematerials:iron_gear_wheel`**. Renaming any of those breaks a mod that is
+already out. Check `grep -rho "neoprogressivematerials:[a-z_]*\|facrafting:[a-z_]*"
+../NeoProgressiveAutomation/src/main/resources` before assuming an id in those two mods is free.
+
+The four repos are still four repos. Folding the two unreleased ones into this one is a
+reasonable thing to want and a separate job from changing them — ask before doing it, because
+their git history is not this repo's to rewrite.
