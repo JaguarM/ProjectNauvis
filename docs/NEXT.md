@@ -103,6 +103,15 @@ This is the half that needs eyes and it is Yannic's to judge, which is why it ke
 rather than guessed at. It is also getting more expensive to defer: the iron chest above wants a
 screen too, and building both while one person looks at them beats building them apart.
 
+**Personal crafts pay at the end, not the start.** Factorio takes a craft's ingredients out of
+your inventory the moment you queue it, and they are gone. Facrafting's `CraftTicker` checks
+affordability every tick and only calls `CraftPlanner.consume` when the craft finishes, so moving
+the ingredients somewhere else mid-craft stalls the job instead. The job is kept and resumes when
+they come back - it is not lost - but it looks like a queue that stopped for no reason, and it
+was mistaken for a bug once already. Consuming up front and holding the result is the Factorio
+behaviour; it needs a place to put ingredients that are spent but not yet delivered. Deliberately
+left for now.
+
 **Smaller, deliberate gaps.** Nothing tests that inventories survive a save and reload. The
 assembler's input slots are unfiltered, so anything can go in any slot. The inserter's swing
 speed — 30 ticks — is the one number in the pack not taken from Factorio's dump, because the dump

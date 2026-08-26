@@ -54,3 +54,8 @@ include 'nauvis_machines'
 // Belts, inserters, splitters, chests, robots. The inserter is what turns two machines into a
 // factory, so this mod arrives second even though belts are the harder half of it.
 include 'nauvis_logistics'
+
+// Barrels, then pipes, oil, chemistry and nuclear. Exists this early only because the boiler and
+// the steam engine are both paid for in pipes, so milestone 1's power needs one item out of a
+// mod whose real work is milestone 4.
+include 'nauvis_fluids'

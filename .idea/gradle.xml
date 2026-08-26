@@ -39,6 +39,7 @@
             <option value="$PROJECT_DIR$/../NeoProgressiveMaterials" />
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/nauvis" />
+            <option value="$PROJECT_DIR$/nauvis_fluids" />
             <option value="$PROJECT_DIR$/nauvis_logistics" />
             <option value="$PROJECT_DIR$/nauvis_machines" />
           </set>

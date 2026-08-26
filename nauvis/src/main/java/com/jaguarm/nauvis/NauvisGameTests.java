@@ -87,7 +87,10 @@ public final class NauvisGameTests {
                                 "neoprogressivematerials:iron_gear_wheel",
                                 "neoprogressivematerials:electronic_circuit",
                                 "neoprogressiveautomation:burner_drill",
-                                "nauvis_machines:assembling_machine_1")));
+                                "nauvis_machines:assembling_machine_1",
+                                "nauvis_logistics:burner_inserter",
+                                "nauvis_logistics:iron_chest",
+                                "nauvis_fluids:pipe")));
     }
 
     /**
