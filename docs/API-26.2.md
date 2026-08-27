@@ -105,7 +105,14 @@ queueing twice and — usefully — a **gametest assertion that a machine really
 
 `nauvis_machines/.../assembler/AssemblerBlockEntity.java` is the worked example: it reschedules
 itself while a craft is running and simply stops when there is nothing to make, waking from
-`onContentsChanged`, from the recipe being set, and from `neighborChanged`.
+`onContentsChanged`, from the recipe being set, from `neighborChanged` — and from energy arriving,
+which is the one with no obvious hook.
+
+**`SimpleEnergyHandler.onEnergyChanged(int previousAmount)` is that hook.** It is called
+immediately for `set()` and at the end of the transaction for `insert`/`extract`, which is exactly
+what a machine that stopped for want of power needs: it is scheduled for nothing, so the wake has
+to arrive from whatever filled the buffer. `MachinePower` and `InserterPower` are both three-line
+subclasses that exist only to carry that callback.
 
 Hearing that a *neighbour's* inventory changed
 ----------------------------------------------
@@ -143,6 +150,50 @@ vanilla chest and checks the inserter is scheduled **in the same tick**. Deletin
 `onNeighborChange` override makes exactly that test fail — and, tellingly, leaves
 `inserter_moves_items` passing, because a test that only checks items move never notices that the
 wake is broken.
+
+Hearing that *any* block changed, anywhere
+------------------------------------------
+
+`onNeighborChange` reaches one block. A power pole has to notice a machine built **two** blocks
+away, in nobody's neighbourhood, in another mod that must not know what a pole is. There is no
+"block changed" event in NeoForge by that name; there are two things that work, and the choice
+between them is a memory decision rather than a correctness one.
+
+**`BlockEvent.NeighborNotifyEvent` is the level-wide signal.** `ServerLevel.updateNeighborsAt`
+fires it (verified in the patched sources, `ServerLevel:1201` and `:1215`), and `Level.setBlock`
+reaches that for any block placed or broken by any means — player, piston, machine, worldgen. It
+is cancellable, which makes it look like a redstone hook, but subscribing without cancelling is
+fine. It fires *very* often, so a subscriber needs a one-lookup pre-filter; `PowerNetworkManager`
+keeps a map of which poles reach into which chunk and rejects on that.
+
+**`ServerLevel.registerCapabilityListener(pos, listener)` is the exact alternative.** It fires
+when `invalidateCapabilities(pos)` is called there, and — the useful part —
+**`BlockEntity.clearRemoved()` calls it, so a block entity *appearing* at a position invalidates
+that position.** `setRemoved()` does the same on the way out, and `ChunkEvent.Load`/`Unload`
+invalidate a whole chunk. So a listener per position is exact and needs no filter. What it costs is
+one weak reference per watched position: 125 per pole for a 5×5×5 supply area, which is over a
+million in a base of ten thousand poles. That is why the grid uses the event instead.
+
+Two details that matter either way:
+
+- **`Level.getCapability` on an unloaded position loads the chunk**, because `getBlockState` does.
+  Guard with `level.isLoaded(pos)`. This is not an optimisation — without it, anything that scans a
+  radius drags in the world around it.
+- `ChunkEvent.Load`'s own javadoc forbids touching the level from inside it, on pain of deadlock.
+  Record the chunk position and act on the next tick.
+
+`LevelTickEvent.Post` vs `ServerTickEvent.Post`
+-----------------------------------------------
+
+Both have `Pre` and `Post` subclasses. `LevelTickEvent` hands you the level, which is what a
+per-level manager wants — but it **also fires for client levels**, so `instanceof ServerLevel` is
+not optional. `Post` rather than `Pre` so a generator that made energy this tick can spend it this
+tick rather than next.
+
+`BlockEntity.onLoad()` is deferred by one tick. It is called from `Level.tickBlockEntities` for
+everything in `freshBlockEntities`, not from `LevelChunk.addAndRegisterBlockEntity` — so a block
+entity placed on tick N registers itself during tick N+1, before that tick's `Post`. Gametests that
+place a block and then inspect derived state have to wait at least one tick.
 
 GameTest is registry-driven now, and needs a structure
 ------------------------------------------------------
