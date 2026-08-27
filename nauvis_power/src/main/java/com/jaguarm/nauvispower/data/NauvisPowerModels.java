@@ -63,6 +63,12 @@ public class NauvisPowerModels extends ModelProvider {
                                 BlockModelGenerators.plainVariant(engine))
                         .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
 
+        // Said explicitly, because CUBE_COLUMN_HORIZONTAL writes its model to
+        // block/steam_engine_horizontal while the item model defaults to block/steam_engine. Left
+        // alone, the block renders and the item in your hand is the missing-texture checkerboard -
+        // and datagen reports nothing, because both files were written exactly as asked.
+        blockModels.registerSimpleItemModel(ModBlocks.STEAM_ENGINE.get(), engine);
+
         pole(blockModels);
     }
 

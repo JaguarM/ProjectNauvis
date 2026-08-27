@@ -89,6 +89,15 @@ public final class NauvisPowerData {
             // No screen: the engine has no slot. Its readout is Jade's, below.
             add("nauvis_power.steam_engine.status", "Charge: %s / %s FE");
 
+            // Jade's own settings screen lists every provider, and asserts if one has no name.
+            // That assert fires from ScreenEvent.Init - so a missing key here is not a blank line
+            // in a config menu, it is a crash the moment any screen opens. There is no compile
+            // error and no warning; the provider registers perfectly and the game dies later.
+            add("config.jade.plugin_nauvis_power", "Project Nauvis: Power");
+            add("config.jade.plugin_nauvis_power.boiler", "Boiler");
+            add("config.jade.plugin_nauvis_power.steam_engine", "Steam engine");
+            add("config.jade.plugin_nauvis_power.small_electric_pole", "Electric network");
+
             // What Jade says about the block you are looking at. Present only when Jade is - the
             // strings are harmless without it, and a missing translation is worse than a spare one.
             add("jade.nauvis_power.network", "Network: %s poles, %s machines");
