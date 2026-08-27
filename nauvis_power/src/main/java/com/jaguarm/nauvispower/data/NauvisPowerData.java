@@ -86,8 +86,21 @@ public final class NauvisPowerData {
             add("screen.nauvis_power.boiler.full", "Full of steam - nothing is drawing it off");
             add("screen.nauvis_power.boiler.idle", "Out of fuel");
 
-            // No screen: the engine has no slot, so this waits for the hover display.
+            // No screen: the engine has no slot. Its readout is Jade's, below.
             add("nauvis_power.steam_engine.status", "Charge: %s / %s FE");
+
+            // What Jade says about the block you are looking at. Present only when Jade is - the
+            // strings are harmless without it, and a missing translation is worse than a spare one.
+            add("jade.nauvis_power.network", "Network: %s poles, %s machines");
+            add("jade.nauvis_power.network.live", "Carrying power");
+            add("jade.nauvis_power.network.idle", "Idle - nothing is drawing");
+            add("jade.nauvis_power.steam", "Steam: %s / %s");
+            add("jade.nauvis_power.boiler.burning", "Burning");
+            add("jade.nauvis_power.boiler.full", "Full - nothing is drawing the steam off");
+            add("jade.nauvis_power.boiler.no_fuel", "Out of fuel");
+            add("jade.nauvis_power.engine.running", "Making %s FE/t");
+            add("jade.nauvis_power.engine.full", "Full - nothing is drawing the power off");
+            add("jade.nauvis_power.engine.no_steam", "No steam");
             add("nauvis_power.small_electric_pole.status", "Network: %s poles, %s machines - live");
             add("nauvis_power.small_electric_pole.status_idle", "Network: %s poles, %s machines - idle");
             add("nauvis_power.small_electric_pole.detached", "Not part of a network");

@@ -349,6 +349,38 @@ Two radii, not one. Factorio's small pole reaches 7.5 blocks to another pole and
 area, and keeping both is what makes a base look like a Factorio base rather than a line of cables.
 Neither number is identity, so both are yours to tune; the id and the recipe are not.
 
+The look-at readout
+-------------------
+
+**Jade, not a first-party overlay.** `maven.modrinth:jade:26.2.9+neoforge`, from
+`https://api.modrinth.com/maven`. It is the one mod in `reference/mods/` actually on 26.2 — KubeJS
+is on 26.1.2 and Create on 1.21.1 — which is the whole reason it clears a bar the rest of the
+ecosystem does not.
+
+`compileOnly` in each subsystem mod and `runtimeOnly` in the pack. A `@WailaPlugin` class is only
+loaded when Jade is present, so every mod still stands alone and nothing is declared `required`.
+
+Two things about writing providers, both of which cost a client boot to discover:
+
+- **A provider may not be both halves.** Jade throws at registration if one object implements
+  `IServerDataProvider` and `IComponentProvider`, and has since 1.21.6. The pattern — theirs and
+  now ours — is an outer data class with a nested `Client`, sharing one uid so a player toggling
+  the readout off turns off both.
+- **Everything needs server data.** A boiler's steam and an engine's charge change every tick, and
+  a machine that pushed a block update every tick to animate a bar would be sending packets to
+  everyone in render distance. Jade asks the server only while somebody is looking, which is the
+  right amount. The pole needs it absolutely: a network is a server-side object and the client has
+  no `PowerNetworkManager` at all.
+
+Jade's *universal* providers already draw item contents and a generic energy bar with no help from
+anyone — which is why an assembler showed a red full bar before any of this existed. Ours add the
+half a generic provider cannot know: whether the machine is doing anything, and why not when it is
+not.
+
+What stays Jade's is the position and the frame. Factorio's readout is an anchored panel with alert
+icons floating over stalled machines; that is an overlay on the world rather than a tooltip, and a
+separate feature if it is ever wanted.
+
 What testing looks like
 -----------------------
 

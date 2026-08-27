@@ -50,6 +50,13 @@ repositories {
     }
 
     mavenCentral()
+
+    // Jade, for the look-at readout. Runtime only here - the pack ships it, and each subsystem
+    // mod's plugin classes only load when it is present.
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+    }
 }
 
 dependencies {
@@ -69,6 +76,10 @@ dependencies {
     runtimeOnly project(':nauvis_logistics')
     runtimeOnly project(':nauvis_fluids')
     runtimeOnly project(':nauvis_power')
+
+    // Not a dependency of anything, deliberately: it is in the pack because the readout is worth
+    // having, and every mod still runs without it.
+    runtimeOnly "maven.modrinth:jade:${jade_version}"
 }
 
 neoForge {

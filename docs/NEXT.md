@@ -86,7 +86,7 @@ How to run everything
 | `./gradlew :<mod>:runClientData` / `runServerData` | models and language / loot and tags |
 | `./gradlew build` | everything, including `checkRecipes` |
 | `python tools/gen_recipes.py --check` | the same recipe diff, on its own |
-| `python tools/check_gui_layout.py` | the assembler screen's boxes, for overlaps |
+| `python tools/check_gui_layout.py` | every machine screen's boxes, for overlaps |
 
 Adding a subsystem mod is routine: a subproject in `settings.gradle`, a `build.gradle` copied with
 the ids changed, a `src/main/templates/META-INF/neoforge.mods.toml`, and two lines in
