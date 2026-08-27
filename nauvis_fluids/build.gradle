@@ -42,9 +42,20 @@ repositories {
     }
 
     mavenCentral()
+
+    // Jade, for the look-at readout. See docs/PLAN.md - its plugin classes only load when it is
+    // present, so this stays a compile-only dependency.
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+    }
 }
 
 dependencies {
+    // compileOnly, never implementation: the @WailaPlugin class is only loaded when Jade is
+    // there, so this mod still runs standalone without it.
+    compileOnly "maven.modrinth:jade:${jade_version}"
+
     // No compile-time dependency, deliberately. An inserter moves items between whatever is
     // beside it through Capabilities.Item.BLOCK, which is NeoForge's - it never needs to know
     // what a Facrafting recipe is. nauvis_machines is the one mod in the pack that compiles

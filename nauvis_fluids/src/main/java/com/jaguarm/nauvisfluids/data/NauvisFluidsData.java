@@ -55,6 +55,20 @@ public final class NauvisFluidsData {
 
             // Steam is never in the world, but Jade and any tank screen will name it.
             add("fluid.nauvis_fluids.steam", "Steam");
+
+            // Jade's settings screen lists every provider and asserts if one has no name, and
+            // that assert fires from ScreenEvent.Init - a missing key here is not a blank line in
+            // a config menu, it is a crash the moment any screen opens.
+            add("config.jade.plugin_nauvis_fluids", "Project Nauvis: Fluids");
+            add("config.jade.plugin_nauvis_fluids.pipe", "Pipe");
+
+            // Factorio's pipe tooltip, as near as is honest. It says "Pipeline extent: 6/320";
+            // the 320 is its cap on one fluid segment and this pack has none, so ours stops at
+            // the count rather than printing a rule nothing enforces.
+            add("jade.nauvis_fluids.pipe.contents", "%s: %s of %s");
+            add("jade.nauvis_fluids.pipe.empty", "Empty");
+            add("jade.nauvis_fluids.pipe.extent", "Pipeline extent: %s pipes");
+            add("jade.nauvis_fluids.pipe.flowing", "Working");
             add("pack.nauvis_fluids.crafting_table", "Nauvis Fluids: Crafting Table Recipes");
         }
     }

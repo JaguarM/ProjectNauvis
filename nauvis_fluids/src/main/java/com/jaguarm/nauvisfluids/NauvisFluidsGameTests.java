@@ -52,6 +52,7 @@ public final class NauvisFluidsGameTests {
         TEST_TYPES.register("pipe_run_splits_and_merges", () -> PipeRunSplitsAndMergesTest.CODEC);
         TEST_TYPES.register("pipe_connects_to_what_offers_fluid", () -> PipeConnectsTest.CODEC);
         TEST_TYPES.register("steam_is_registered", () -> SteamIsRegisteredTest.CODEC);
+        TEST_TYPES.register("pipe_reports_its_run", () -> PipeReportsItsRunTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -68,6 +69,7 @@ public final class NauvisFluidsGameTests {
         register(event, environment, "pipe_run_splits_and_merges", PipeRunSplitsAndMergesTest::new, 200);
         register(event, environment, "pipe_connects_to_what_offers_fluid", PipeConnectsTest::new, 100);
         register(event, environment, "steam_is_registered", SteamIsRegisteredTest::new, 20);
+        register(event, environment, "pipe_reports_its_run", PipeReportsItsRunTest::new, 100);
     }
 
     private interface TestFactory {
@@ -304,6 +306,62 @@ public final class NauvisFluidsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("steam is registered");
+        }
+    }
+
+    /**
+     * The numbers behind the readout, which cannot be asserted any other way.
+     *
+     * <p>Jade's tooltip is drawn on the client from data the server sends, and neither half can be
+     * reached headlessly. What <em>can</em> be reached is what the server would send - the run's
+     * extent and its capacity - and that is where the bug would be: a readout reporting the block
+     * rather than the run would say a pipe holds nothing, for ever, and look perfectly reasonable
+     * doing it.
+     */
+    public static class PipeReportsItsRunTest extends GameTestInstance {
+
+        public static final MapCodec<PipeReportsItsRunTest> CODEC =
+                RecordCodecBuilder.<PipeReportsItsRunTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PipeReportsItsRunTest::info))
+                                .apply(i, PipeReportsItsRunTest::new));
+
+        private static final int LENGTH = 6;
+
+        public PipeReportsItsRunTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            for (int x = 0; x < LENGTH; x++) {
+                pipe(helper, new BlockPos(x, 1, 0));
+            }
+
+            helper.runAfterDelay(5, () -> {
+                // Asked from the far end, because every pipe in a run must answer for the whole
+                // run - that is what makes the readout worth having.
+                FluidNetwork run = networkAt(helper, new BlockPos(LENGTH - 1, 1, 0),
+                        "the last pipe has no run");
+
+                helper.assertValueEqual(run.pipeCount(), LENGTH,
+                        "the extent the readout would print");
+                helper.assertValueEqual(run.capacity(), LENGTH * FluidNetwork.CAPACITY_PER_PIPE,
+                        "the capacity the readout would print");
+                helper.assertValueEqual(run.amount(), 0, "what an unconnected run is holding");
+                helper.assertTrue(run.fluid().isEmpty(),
+                        "an empty run names a fluid, so the readout would claim to hold something");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("pipe reports its run");
         }
     }
 }

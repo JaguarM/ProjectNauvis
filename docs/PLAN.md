@@ -377,6 +377,12 @@ anyone — which is why an assembler showed a red full bar before any of this ex
 half a generic provider cannot know: whether the machine is doing anything, and why not when it is
 not.
 
+Written so far: the boiler, the steam engine and the pole in {@code nauvis_power}, and the pipe in
+`nauvis_fluids`. The pipe's is modelled on Factorio's own - what is in the run and how far it
+reaches - but stops at the extent rather than printing Factorio's `6/320`, because the 320 is its
+cap on one fluid segment and this pack has none. A tooltip is not the place to invent a rule
+nothing enforces.
+
 What stays Jade's is the position and the frame. Factorio's readout is an anchored panel with alert
 icons floating over stalled machines; that is an overlay on the world rather than a tooltip, and a
 separate feature if it is ever wanted.

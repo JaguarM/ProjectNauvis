@@ -1,6 +1,12 @@
 {
   "block.nauvis_fluids.pipe": "Pipe",
+  "config.jade.plugin_nauvis_fluids": "Project Nauvis: Fluids",
+  "config.jade.plugin_nauvis_fluids.pipe": "Pipe",
   "fluid.nauvis_fluids.steam": "Steam",
   "itemGroup.nauvis_fluids": "Project Nauvis: Fluids",
+  "jade.nauvis_fluids.pipe.contents": "%s: %s of %s",
+  "jade.nauvis_fluids.pipe.empty": "Empty",
+  "jade.nauvis_fluids.pipe.extent": "Pipeline extent: %s pipes",
+  "jade.nauvis_fluids.pipe.flowing": "Working",
   "pack.nauvis_fluids.crafting_table": "Nauvis Fluids: Crafting Table Recipes"
 }
