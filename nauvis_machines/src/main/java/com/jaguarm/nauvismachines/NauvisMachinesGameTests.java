@@ -2,14 +2,19 @@ package com.jaguarm.nauvismachines;
 
 import java.util.List;
 
+import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlock;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlockEntity;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerMenu;
+import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
+import com.jaguarm.nauvismachines.multiblock.MachineShape;
+import com.jaguarm.nauvismachines.multiblock.Multiblock;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
 import com.jaguarm.nauvismachines.registry.ModItems;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -28,10 +33,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.transfer.ResourceHandler;
@@ -94,6 +102,10 @@ public final class NauvisMachinesGameTests {
         TEST_TYPES.register("assembler_wakes_when_power_arrives",
                 () -> AssemblerWakesWhenPowerArrivesTest.CODEC);
         TEST_TYPES.register("assembler_gives_no_power_back", () -> AssemblerGivesNoPowerBackTest.CODEC);
+        TEST_TYPES.register("assembler_is_ten_blocks", () -> AssemblerIsTenBlocksTest.CODEC);
+        TEST_TYPES.register("assembler_breaks_as_one", () -> AssemblerBreaksAsOneTest.CODEC);
+        TEST_TYPES.register("assembler_fed_from_any_cell", () -> AssemblerFedFromAnyCellTest.CODEC);
+        TEST_TYPES.register("assemblers_tile_walkably", () -> AssemblersTileWalkablyTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -122,6 +134,12 @@ public final class NauvisMachinesGameTests {
                 AssemblerWakesWhenPowerArrivesTest::new, 100);
         register(event, environment, "assembler_gives_no_power_back",
                 AssemblerGivesNoPowerBackTest::new, 40);
+        register(event, environment, "assembler_is_ten_blocks", AssemblerIsTenBlocksTest::new, 20);
+        register(event, environment, "assembler_breaks_as_one", AssemblerBreaksAsOneTest::new, 40);
+        register(event, environment, "assembler_fed_from_any_cell",
+                AssemblerFedFromAnyCellTest::new, 20);
+        register(event, environment, "assemblers_tile_walkably",
+                AssemblersTileWalkablyTest::new, 20);
     }
 
     private interface TestFactory {
@@ -133,6 +151,35 @@ public final class NauvisMachinesGameTests {
         event.registerTest(
                 Identifier.fromNamespaceAndPath(NauvisMachines.MODID, name),
                 factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true, Rotation.NONE)));
+    }
+
+    /**
+     * Puts a whole assembler in, all ten blocks of it, anchored here.
+     *
+     * <p>Not {@code helper.setBlock}, which would leave one block of a machine standing on its
+     * own. That is not merely incomplete: the teardown rule in {@code Multiblock} destroys a cell
+     * whose neighbours are not its machine's other cells, so a lone middle block survives only
+     * until something next to it changes, and a test that placed one would fail somewhere else
+     * entirely.
+     */
+    private static void placeMachine(GameTestHelper helper, BlockPos anchor) {
+        AssemblerBlock block = ModBlocks.ASSEMBLING_MACHINE_1.get();
+        Multiblock.place(block, helper.getLevel(), helper.absolutePos(anchor),
+                block.defaultBlockState());
+    }
+
+    /** How high anything you would stand on reaches in this column, counting from its floor. */
+    private static double surface(GameTestHelper helper, BlockPos floor, int layers) {
+        double top = 0;
+        for (int layer = 0; layer < layers; layer++) {
+            BlockPos pos = floor.above(layer);
+            VoxelShape shape = helper.getBlockState(pos)
+                    .getCollisionShape(helper.getLevel(), helper.absolutePos(pos));
+            if (!shape.isEmpty()) {
+                top = Math.max(top, layer + shape.max(Direction.Axis.Y));
+            }
+        }
+        return top;
     }
 
     /** An item by id, so a test can name another mod's item without a compile-time dependency. */
@@ -147,7 +194,7 @@ public final class NauvisMachinesGameTests {
      * the only one milestone 1 can pay for.
      */
     private static AssemblerBlockEntity machineMaking(GameTestHelper helper, Item product) {
-        helper.setBlock(MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
+        placeMachine(helper, MACHINE);
         AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
         ResourceKey<Recipe<?>> recipe = AssemblerBlockEntity.recipeProducing(helper.getLevel(), product);
         helper.assertTrue(recipe != null,
@@ -174,7 +221,7 @@ public final class NauvisMachinesGameTests {
 
     /** Places a machine with a recipe and an empty buffer. */
     private static AssemblerBlockEntity unpoweredMachineMaking(GameTestHelper helper, Item product) {
-        helper.setBlock(MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
+        placeMachine(helper, MACHINE);
         AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
         ResourceKey<Recipe<?>> recipe = AssemblerBlockEntity.recipeProducing(helper.getLevel(), product);
         helper.assertTrue(recipe != null, "no timed recipe makes this item");
@@ -227,7 +274,7 @@ public final class NauvisMachinesGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            helper.setBlock(MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
+            placeMachine(helper, MACHINE);
             helper.assertBlockPresent(ModBlocks.ASSEMBLING_MACHINE_1.get(), MACHINE);
             helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
             helper.succeed();
@@ -264,7 +311,7 @@ public final class NauvisMachinesGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            helper.setBlock(MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
+            placeMachine(helper, MACHINE);
             AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
             ResourceHandler<ItemResource> view = assembler.automationView();
 
@@ -477,7 +524,7 @@ public final class NauvisMachinesGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            helper.setBlock(MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
+            placeMachine(helper, MACHINE);
             AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
             helper.assertValueEqual(
                     insert(assembler.automationView(), Items.IRON_INGOT, 7), 7, "ingots accepted");
@@ -529,7 +576,7 @@ public final class NauvisMachinesGameTests {
         @Override
         public void run(GameTestHelper helper) {
             ServerLevel level = helper.getLevel();
-            helper.setBlock(MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
+            placeMachine(helper, MACHINE);
             AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
 
             // The menu is built the way MenuProvider builds it, rather than through
@@ -722,6 +769,247 @@ public final class NauvisMachinesGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("assembler gives no power back");
+        }
+    }
+
+    /**
+     * A machine is ten blocks, they are the right ten, and only one of them holds anything.
+     *
+     * <p>The footprint is Factorio identity - three tiles by three - so this asserts the count and
+     * the arrangement rather than trusting the shape class to have been read correctly. It also
+     * asserts the thing that would otherwise be found by a crash: nine of the ten have no block
+     * entity, and every one of them can still name the tenth.
+     */
+    public static class AssemblerIsTenBlocksTest extends GameTestInstance {
+
+        public static final MapCodec<AssemblerIsTenBlocksTest> CODEC =
+                RecordCodecBuilder.<AssemblerIsTenBlocksTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AssemblerIsTenBlocksTest::info))
+                                .apply(i, AssemblerIsTenBlocksTest::new));
+
+        public AssemblerIsTenBlocksTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            AssemblerBlock block = ModBlocks.ASSEMBLING_MACHINE_1.get();
+            MachineShape shape = AssemblerShape.SHAPE;
+            placeMachine(helper, MACHINE);
+
+            helper.assertValueEqual(shape.cellCount(), 10, "blocks in an assembler");
+
+            for (int part = 0; part < shape.cellCount(); part++) {
+                BlockPos pos = MACHINE.offset(shape.offset(part, Direction.NORTH));
+
+                helper.assertBlockPresent(block, pos);
+                helper.assertValueEqual(helper.getBlockState(pos).getValue(shape.part()), part,
+                        "which cell the block at " + pos + " says it is");
+
+                // Every cell knows where the machine keeps its things, from its blockstate alone.
+                helper.assertValueEqual(
+                        Multiblock.anchorPos(block, helper.getBlockState(pos), helper.absolutePos(pos)),
+                        helper.absolutePos(MACHINE), "anchor as seen from " + pos);
+
+                boolean isAnchor = part == shape.anchor();
+                boolean hasBlockEntity =
+                        helper.getLevel().getBlockEntity(helper.absolutePos(pos)) != null;
+                helper.assertValueEqual(hasBlockEntity, isAnchor,
+                        "block entity at " + pos + ", where only the middle should have one");
+            }
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an assembler is ten blocks");
+        }
+    }
+
+    /**
+     * Break any one of the ten and the whole machine comes down, giving back exactly one machine.
+     *
+     * <p>A corner is broken rather than the middle, because the corner is the harder case: it is
+     * two blocks from the anchor, it has no block entity, and its own loot table entry is
+     * conditioned away. Everything after it is the teardown rule cascading, and the two ways that
+     * goes wrong are both silent - blocks left standing with nothing to break them, or ten
+     * machines dropped where one was placed.
+     */
+    public static class AssemblerBreaksAsOneTest extends GameTestInstance {
+
+        public static final MapCodec<AssemblerBreaksAsOneTest> CODEC =
+                RecordCodecBuilder.<AssemblerBreaksAsOneTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AssemblerBreaksAsOneTest::info))
+                                .apply(i, AssemblerBreaksAsOneTest::new));
+
+        public AssemblerBreaksAsOneTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            placeMachine(helper, MACHINE);
+
+            // dropBlock = true, so the loot table actually runs. See the spill test.
+            helper.getLevel().destroyBlock(helper.absolutePos(MACHINE.offset(-1, 0, -1)), true);
+
+            helper.runAfterDelay(2, () -> {
+                for (int x = -1; x <= 1; x++) {
+                    for (int z = -1; z <= 1; z++) {
+                        helper.assertBlockPresent(Blocks.AIR, MACHINE.offset(x, 0, z));
+                    }
+                }
+                helper.assertBlockPresent(Blocks.AIR, MACHINE.above());
+
+                helper.assertItemEntityCountIs(ModItems.ASSEMBLING_MACHINE_1.get(), MACHINE, 4.0, 1);
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an assembler breaks as one");
+        }
+    }
+
+    /**
+     * An inserter can feed the machine from anywhere along it, which is the point of a footprint.
+     *
+     * <p>A one-block assembler had one place to stand next to. A 3x3 has twelve faces round its
+     * edge and a roof, and Factorio expects all of them to work. This asserts that a far corner
+     * and the top of the gearbox - the two cells furthest from the block entity - reach the same
+     * inventory, which is what registering the capability against the block rather than the block
+     * entity buys. See {@code ModCapabilities}.
+     */
+    public static class AssemblerFedFromAnyCellTest extends GameTestInstance {
+
+        public static final MapCodec<AssemblerFedFromAnyCellTest> CODEC =
+                RecordCodecBuilder.<AssemblerFedFromAnyCellTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AssemblerFedFromAnyCellTest::info))
+                                .apply(i, AssemblerFedFromAnyCellTest::new));
+
+        public AssemblerFedFromAnyCellTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            placeMachine(helper, MACHINE);
+            AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+
+            helper.assertValueEqual(insert(view(helper, MACHINE.offset(-1, 0, -1), Direction.WEST),
+                    Items.IRON_INGOT, 4), 4, "ingots taken at the far corner");
+            helper.assertValueEqual(insert(view(helper, MACHINE.above(), Direction.UP),
+                    Items.IRON_INGOT, 3), 3, "ingots taken on top of the gearbox");
+
+            int held = 0;
+            for (int slot = 0; slot < assembler.inventory().size(); slot++) {
+                held += assembler.inventory().getAmountAsInt(slot);
+            }
+            helper.assertValueEqual(held, 7, "ingots that reached the one inventory");
+            helper.succeed();
+        }
+
+        /** What a hopper or an inserter against this face of this block would see. */
+        private static ResourceHandler<ItemResource> view(GameTestHelper helper, BlockPos pos,
+                Direction side) {
+            ResourceHandler<ItemResource> handler = Capabilities.Item.BLOCK.getCapability(
+                    helper.getLevel(), helper.absolutePos(pos), null, null, side);
+            helper.assertTrue(handler != null, "no item capability at " + pos + " on its " + side);
+            return handler;
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an assembler is fed from any of its blocks");
+        }
+    }
+
+    /**
+     * Two assemblers packed against each other, and you can still walk over them.
+     *
+     * <p>This is the requirement that shaped the machine, and it is one a person would find only
+     * by building a factory and then getting stuck in it. A Factorio player tiles assemblers with
+     * no gaps between them, and a field of 3x3 machines two solid blocks tall would be a wall -
+     * you cannot jump two blocks, so there would be no way across your own base.
+     *
+     * <p>What is asserted is the walk itself, along the row where the two machines meet: no column
+     * higher than one block, and no step between neighbouring columns larger than the 0.6 a player
+     * climbs for free. The gearboxes are then asserted to be the two blocks tall they look, so
+     * this cannot come out green by the machine quietly going flat.
+     */
+    public static class AssemblersTileWalkablyTest extends GameTestInstance {
+
+        public static final MapCodec<AssemblersTileWalkablyTest> CODEC =
+                RecordCodecBuilder.<AssemblersTileWalkablyTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AssemblersTileWalkablyTest::info))
+                                .apply(i, AssemblersTileWalkablyTest::new));
+
+        public AssemblersTileWalkablyTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        /** Vanilla's two numbers: what a player climbs without jumping, and how high they jump. */
+        private static final double STEP = 0.6;
+        private static final double JUMP = 1.25;
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos second = MACHINE.offset(3, 0, 0);
+            placeMachine(helper, MACHINE);
+            placeMachine(helper, second);
+
+            // Both are still standing: neither mistook the other for part of itself, and no
+            // teardown fired along the seam where they touch.
+            helper.assertBlockPresent(ModBlocks.ASSEMBLING_MACHINE_1.get(), MACHINE.offset(1, 0, 0));
+            helper.assertBlockPresent(ModBlocks.ASSEMBLING_MACHINE_1.get(), second.offset(-1, 0, 0));
+
+            double previous = 0;
+            for (int x = -1; x <= 4; x++) {
+                BlockPos column = MACHINE.offset(x, 0, -1);
+                double top = surface(helper, column, 2);
+
+                helper.assertTrue(top <= JUMP,
+                        "the lane at x=" + x + " stands " + top + " blocks high, which is more "
+                                + "than the " + JUMP + " a player can jump onto");
+                helper.assertTrue(x == -1 || Math.abs(top - previous) <= STEP,
+                        "the step from x=" + (x - 1) + " to x=" + x + " is "
+                                + Math.abs(top - previous) + " blocks, more than the " + STEP
+                                + " a player takes for free");
+                helper.assertTrue(helper.getBlockState(column.above(2)).isAir(),
+                        "no headroom over the lane at x=" + x);
+                previous = top;
+            }
+
+            // And the machines are not simply flat: each has a gearbox you walk around.
+            helper.assertValueEqual(surface(helper, MACHINE, 2), 2.0, "height of the first gearbox");
+            helper.assertValueEqual(surface(helper, second, 2), 2.0, "height of the second gearbox");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("assemblers tile walkably");
         }
     }
 }

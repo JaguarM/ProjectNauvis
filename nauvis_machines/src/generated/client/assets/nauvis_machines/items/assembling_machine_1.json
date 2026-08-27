@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "nauvis_machines:block/assembling_machine_1"
+    "model": "nauvis_machines:block/assembling_machine_1_inventory"
   }
 }

@@ -1,7 +1,40 @@
 {
   "variants": {
-    "": {
-      "model": "nauvis_machines:block/assembling_machine_1"
+    "part=0": {
+      "model": "nauvis_machines:block/assembling_machine_1_corner"
+    },
+    "part=1": {
+      "model": "nauvis_machines:block/assembling_machine_1_corner",
+      "y": 90
+    },
+    "part=2": {
+      "model": "nauvis_machines:block/assembling_machine_1_corner",
+      "y": 180
+    },
+    "part=3": {
+      "model": "nauvis_machines:block/assembling_machine_1_corner",
+      "y": 270
+    },
+    "part=4": {
+      "model": "nauvis_machines:block/assembling_machine_1_edge"
+    },
+    "part=5": {
+      "model": "nauvis_machines:block/assembling_machine_1_edge",
+      "y": 90
+    },
+    "part=6": {
+      "model": "nauvis_machines:block/assembling_machine_1_edge",
+      "y": 180
+    },
+    "part=7": {
+      "model": "nauvis_machines:block/assembling_machine_1_edge",
+      "y": 270
+    },
+    "part=8": {
+      "model": "nauvis_machines:block/assembling_machine_1_deck"
+    },
+    "part=9": {
+      "model": "nauvis_machines:block/assembling_machine_1_gearbox"
     }
   }
 }

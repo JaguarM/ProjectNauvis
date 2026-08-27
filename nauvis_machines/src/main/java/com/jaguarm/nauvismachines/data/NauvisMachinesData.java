@@ -5,6 +5,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import com.jaguarm.nauvismachines.NauvisMachines;
+import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
+import com.jaguarm.nauvismachines.multiblock.MachineShape;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
 import com.jaguarm.nauvismachines.registry.ModItems;
 
@@ -13,8 +15,14 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.advancements.predicates.StatePropertiesPredicate;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.data.LanguageProvider;
@@ -75,7 +83,16 @@ public final class NauvisMachinesData {
         }
     }
 
-    /** Every block drops itself. Machines are not a source of loot. */
+    /**
+     * Every block drops itself, once.
+     *
+     * <p>The condition is what makes "once" true. An assembler is ten blocks, and breaking any of
+     * them takes all ten down through {@code Multiblock}'s teardown - with drops enabled, which is
+     * what hands the player their machine back whichever cell they hit. Without a condition that
+     * would be ten machines. Only the anchor drops; the other nine are structure.
+     *
+     * <p>This is {@code SmallElectricPoleBlock}'s arrangement, where only the foot has a drop.
+     */
     private static class BlockLoot extends BlockLootSubProvider {
 
         BlockLoot(HolderLookup.Provider registries) {
@@ -84,7 +101,25 @@ public final class NauvisMachinesData {
 
         @Override
         protected void generate() {
-            dropSelf(ModBlocks.ASSEMBLING_MACHINE_1.get());
+            add(ModBlocks.ASSEMBLING_MACHINE_1.get(), anchorOnly(ModBlocks.ASSEMBLING_MACHINE_1.get(),
+                    AssemblerShape.SHAPE));
+        }
+
+        /**
+         * Vanilla's {@code createSinglePropConditionTable}, for a property that is a number.
+         *
+         * <p>That method wants a {@code StringRepresentable}, which an {@code IntegerProperty} is
+         * not, so the body is reproduced here against the {@code Property<Integer>} overload of
+         * {@code hasProperty}. Everything else about it is vanilla's, explosion condition and all.
+         */
+        private LootTable.Builder anchorOnly(Block block, MachineShape shape) {
+            return LootTable.lootTable().withPool(applyExplosionCondition(block,
+                    LootPool.lootPool()
+                            .setRolls(ConstantValue.exactly(1.0F))
+                            .add(LootItem.lootTableItem(block).when(
+                                    LootItemBlockStatePropertyCondition.hasBlockStateProperties(block)
+                                            .setProperties(StatePropertiesPredicate.Builder.properties()
+                                                    .hasProperty(shape.part(), shape.anchor()))))));
         }
 
         @Override

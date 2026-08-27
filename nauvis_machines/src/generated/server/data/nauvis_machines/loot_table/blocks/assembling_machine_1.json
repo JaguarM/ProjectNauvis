@@ -10,6 +10,15 @@
       "entries": [
         {
           "type": "minecraft:item",
+          "conditions": [
+            {
+              "block": "nauvis_machines:assembling_machine_1",
+              "condition": "minecraft:block_state_property",
+              "properties": {
+                "part": "8"
+              }
+            }
+          ],
           "name": "nauvis_machines:assembling_machine_1"
         }
       ],
