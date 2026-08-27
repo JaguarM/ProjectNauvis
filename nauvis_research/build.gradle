@@ -6,20 +6,12 @@ plugins {
 }
 
 ext {
-    mod_id = 'nauvis'
-    mod_name = 'Nauvis'
-
-    // Every mod in the pack whose gametests should run here. A subsystem mod tests its own
-    // behaviour, in its own source tree, and these runs are where all of it happens at once on
-    // a classpath that has the whole pack on it.
-    // The sibling repos count too: Neo Progressive Automation owns the two mining drills, and
-    // since they became multi-blocks their tests are as much part of the pack's health as ours.
-    pack_gametest_namespaces = 'nauvis,nauvis_machines,nauvis_logistics,nauvis_fluids,' +
-            'nauvis_power,nauvis_research,neoprogressiveautomation'
+    mod_id = 'nauvis_research'
+    mod_name = 'Nauvis Research'
 }
 
 version = '0.1.0'
-group = 'com.jaguarm.nauvis'
+group = 'com.jaguarm.nauvisresearch'
 
 base {
     archivesName = mod_id
@@ -38,11 +30,8 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // The NeoForged mirror intermittently serves zero-byte files with HTTP 200 for
-    // third-party libraries. exclusiveContent makes Central the only source for these
-    // groups, so the broken mirror is never consulted for them. See docs/API-26.2.md for
-    // the symptoms; the giveaway is a cache directory named
-    // da39a3ee5e6b4b0d3255bfef95601890afd80709, the SHA-1 of the empty string.
+    // See docs/API-26.2.md: the NeoForged mirror intermittently serves zero-byte files with
+    // HTTP 200 for these groups. exclusiveContent makes Central the only source for them.
     exclusiveContent {
         forRepository { mavenCentral() }
         filter {
@@ -54,8 +43,8 @@ repositories {
 
     mavenCentral()
 
-    // Jade, for the look-at readout. Runtime only here - the pack ships it, and each subsystem
-    // mod's plugin classes only load when it is present.
+    // Jade, for the look-at readout. See docs/PLAN.md - it is the one mod in the ecosystem
+    // actually on 26.2, and its plugin classes only load when it is present.
     maven {
         name = 'Modrinth'
         url = 'https://api.modrinth.com/maven'
@@ -63,27 +52,20 @@ repositories {
 }
 
 dependencies {
-    // The four released mods, pulled in to run the pack from one classpath. runtimeOnly, not
-    // implementation, because the pack mod has no compile-time dependency on any of them and
-    // must not grow one - the coupling is recipe conditions, not Java. settings.gradle
-    // substitutes each of these with the local checkout beside this repo.
+    // Runtime only, and no compile-time dependency on anything. A lab consumes science packs
+    // through Capabilities.Item.BLOCK and takes power through Capabilities.Energy.BLOCK, both
+    // NeoForge's, so it never needs to know what any other mod is.
+    //
+    // These are here so a standalone run of this mod has the mods its recipes name: Facrafting
+    // supplies the timed recipe type, Neo Progressive Materials the iron gear wheel a science
+    // pack is paid for in.
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
-    runtimeOnly "com.jaguarm.neoprogressiveautomation:neoprogressiveautomation:${neoprogressiveautomation_version}"
-    runtimeOnly "com.jaguarm.crumblingore:crumblingore:${crumblingore_version}"
 
-    // The subsystem mods in this repo, on the same terms. This is what makes
-    // :nauvis:runServer and :nauvis:runGameTestServer the whole pack rather than the pack mod
-    // on its own; each subsystem still builds and runs standalone.
-    runtimeOnly project(':nauvis_machines')
-    runtimeOnly project(':nauvis_logistics')
-    runtimeOnly project(':nauvis_fluids')
-    runtimeOnly project(':nauvis_power')
-    runtimeOnly project(':nauvis_research')
-
-    // Not a dependency of anything, deliberately: it is in the pack because the readout is worth
-    // having, and every mod still runs without it.
-    runtimeOnly "maven.modrinth:jade:${jade_version}"
+    // compileOnly, never implementation: the @WailaPlugin class is only loaded when Jade is
+    // there, so this mod still runs standalone without it and nothing has to be declared
+    // required in neoforge.mods.toml.
+    compileOnly "maven.modrinth:jade:${jade_version}"
 }
 
 neoForge {
@@ -92,20 +74,20 @@ neoForge {
     runs {
         client {
             client()
-            systemProperty 'neoforge.enabledGameTestNamespaces', pack_gametest_namespaces
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         server {
             server()
             programArgument '--nogui'
-            systemProperty 'neoforge.enabledGameTestNamespaces', pack_gametest_namespaces
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
-        // Runs every registered gametest, then exits - non-zero if any failed. This is the
-        // check Claude can run unattended; the client run is for the half that needs eyes.
+        // Runs every registered gametest, then exits - non-zero if any failed. The pack's own
+        // :nauvis:runGameTestServer runs these too, on a classpath with all five mods.
         gameTestServer {
             type = 'gameTestServer'
-            systemProperty 'neoforge.enabledGameTestNamespaces', pack_gametest_namespaces
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         // Client and server datagen are separate runs since 1.21.4. Models and language go
@@ -146,6 +128,7 @@ var generateModMetadata = tasks.register('generateModMetadata', ProcessResources
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
             neo_version            : neo_version,
+            facrafting_version     : facrafting_version,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : 'MIT',
@@ -177,14 +160,9 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 // Recipes are generated, never hand-written - so a build that would ship a hand-edited one
-// should not succeed. The other three catch what compiles, tests clean and is still wrong: an
-// unresolvable model reference, a screen drawn through itself, and a copied package that has
-// drifted from the copy it is meant to match. See the root build.gradle.
+// should not succeed. See the root build.gradle.
 tasks.named('check') {
     dependsOn rootProject.tasks.named('checkRecipes')
-    dependsOn rootProject.tasks.named('checkModels')
-    dependsOn rootProject.tasks.named('checkGuiLayout')
-    dependsOn rootProject.tasks.named('checkDuplicated')
 }
 
 idea {

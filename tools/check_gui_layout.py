@@ -94,6 +94,14 @@ SCREENS = [
               ('steam bar', 'STEAM_X', 'STEAM_Y', 'STEAM_WIDTH', 'STEAM_HEIGHT')],
     ),
     Screen(
+        'lab',
+        'nauvis_research/src/main/java/com/jaguarm/nauvisresearch/lab',
+        'LabMenu.java', 'LabScreen.java',
+        slots=[('pack', 'PACKS_X', 'PACKS_Y', 6, 6)],
+        bars=[('cycle bar', 'PROGRESS_X', 'PROGRESS_Y', 'PROGRESS_WIDTH', 'PROGRESS_HEIGHT'),
+              ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT')],
+    ),
+    Screen(
         'burner inserter',
         'nauvis_logistics/src/main/java/com/jaguarm/nauvislogistics/transport',
         'BurnerInserterMenu.java', 'BurnerInserterScreen.java',

@@ -40,7 +40,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # The subprojects in settings.gradle. The four siblings in ../ are their own repos and their own
 # builds; a checker in this repo that failed on their assets would fail a clean clone.
-MODS = ['nauvis', 'nauvis_machines', 'nauvis_logistics', 'nauvis_fluids', 'nauvis_power']
+MODS = ['nauvis', 'nauvis_machines', 'nauvis_logistics', 'nauvis_fluids', 'nauvis_power',
+        'nauvis_research']
 
 # Mods in their own repos beside this one, pulled in by settings.gradle. Only their machine
 # shapes are looked at - see check_footprints.
@@ -178,6 +179,11 @@ def check_model(assets, identifier, seen, missing, origin):
     if where in seen:
         return seen[where]
     seen[where] = {}
+
+    # builtin/* parents have no file: the game synthesises them, and generated flat items all
+    # inherit from minecraft:builtin/generated. Not an absence, so not a failure.
+    if namespace == 'minecraft' and name.startswith('builtin/'):
+        return {}
 
     model = assets.read_json(namespace, path)
     if model is None:

@@ -30,6 +30,7 @@ DUPLICATED = [
     ('com/jaguarm/{pkg}/multiblock',
      ('nauvis_machines', 'nauvismachines'),
      [('nauvis_power', 'nauvispower'),
+      ('nauvis_research', 'nauvisresearch'),
       ('../NeoProgressiveAutomation', 'neoprogressiveautomation')]),
 ]
 

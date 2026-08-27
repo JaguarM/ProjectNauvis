@@ -63,3 +63,7 @@ include 'nauvis_fluids'
 // Boiler, steam engine, solar, accumulator, poles. Where coal stops being something an inserter
 // eats and starts being something that runs a factory.
 include 'nauvis_power'
+
+// Labs, science packs, tech gating. The lab arrives ahead of its milestone because a factory
+// that makes things and never learns anything is only half a game.
+include 'nauvis_research'

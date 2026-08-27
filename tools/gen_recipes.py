@@ -164,11 +164,42 @@ def mod_loaded(mod_id: str) -> dict:
     return {"type": "neoforge:mod_loaded", "modid": mod_id}
 
 
+def registered(item_id: str) -> dict:
+    """A condition that holds once something registers this item, and not before."""
+    return {"type": "neoforge:registered", "value": item_id}
+
+
+def pending_ingredients(entry: dict, mapping: dict) -> list[dict]:
+    """
+    Conditions for ingredients whose mod is here but whose item is not written yet.
+
+    A recipe naming an unregistered item is a load error, which is why the pack copies across
+    only the recipes whose items exist. That rule alone would hold back the *whole* recipe for
+    an item that is finished and craftable except for one ingredient that is not - the lab is
+    three tiles by three, done, and paid for in four transport belts that belong to a milestone
+    which has not happened.
+
+    `neoforge:registered` is the way out. The recipe ships, correct and complete, and simply does
+    not load until whatever it names exists. Nothing has to be edited when belts arrive: the
+    `pending` flag comes off the mapping entry, the recipe regenerates without the condition, and
+    `checkRecipes` fails until it has been.
+
+    Mark an entry `"pending": true` when the mapping names an id nothing registers yet.
+    """
+    conditions = []
+    for ingredient in entry["recipe"]["ingredients"]:
+        target = mapping.get(ingredient["id"], {})
+        if target.get("pending"):
+            conditions.append(registered(resolve_item(ingredient["id"], mapping)))
+    return conditions
+
+
 def facraft_recipe(entry: dict, mapping: dict) -> dict:
     """The real recipe: timed, sized ingredients, no grid."""
     recipe = entry["recipe"]
     return {
-        "neoforge:conditions": [mod_loaded(m) for m in required_mods(entry, mapping)],
+        "neoforge:conditions": [mod_loaded(m) for m in required_mods(entry, mapping)]
+        + pending_ingredients(entry, mapping),
         "type": "facrafting:facraft",
         "craft_ticks": craft_ticks(recipe["time"], entry["id"]),
         "group": GROUP_BY_TYPE.get(entry.get("type"), ""),
@@ -210,6 +241,7 @@ def shapeless_recipe(entry: dict, mapping: dict, ingredients: list[str], *, with
         conditions += [mod_loaded(m) for m in mods if m != "facrafting"]
     else:
         conditions = [mod_loaded(m) for m in mods]
+    conditions += pending_ingredients(entry, mapping)
 
     return {
         "neoforge:conditions": conditions,

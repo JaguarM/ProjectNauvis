@@ -1,0 +1,10 @@
+// 26.2	2026-08-28T01:21:11.1315893	Model Definitions - nauvis_research
+00b9f0d97702543d6d857089bc89d41013e6fdbb assets/nauvis_research/blockstates/lab.json
+fd832695173d2e7854d65ab20596b1598c8e0331 assets/nauvis_research/items/lab.json
+b0ccefad128c1dbbcf8beafb604c64fe03620c44 assets/nauvis_research/items/science_pack_1.json
+6fa86251b5afa5e0010ab9934c57fba2005428d4 assets/nauvis_research/models/block/lab_corner.json
+ec736527518d71c4847ecd3a1a5ba9fc0a3561c3 assets/nauvis_research/models/block/lab_deck.json
+2e793a5f040154149423777587bf648858d774e6 assets/nauvis_research/models/block/lab_dome.json
+8cf7bae1414ef97f96d14c6e9ca3e6111e8a3e3c assets/nauvis_research/models/block/lab_edge.json
+4ea7003328ff5b38aa50099324eaf291cecd92df assets/nauvis_research/models/block/lab_inventory.json
+df044d7e2a265987e24a523d3fe97a6efb259a53 assets/nauvis_research/models/item/science_pack_1.json

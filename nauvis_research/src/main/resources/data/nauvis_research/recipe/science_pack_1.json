@@ -1,0 +1,29 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 100,
+  "group": "science",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:copper_ingot",
+      "count": 1
+    },
+    {
+      "ingredient": "neoprogressivematerials:iron_gear_wheel",
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "nauvis_research:science_pack_1",
+    "count": 1
+  }
+}

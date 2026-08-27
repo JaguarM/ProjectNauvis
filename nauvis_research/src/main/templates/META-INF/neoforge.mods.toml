@@ -1,0 +1,38 @@
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="JaguarM"
+displayURL="https://github.com/JaguarM/ProjectNauvis"
+issueTrackerURL="https://github.com/JaguarM/ProjectNauvis/issues"
+
+description='''
+Factorio's research: the lab and the science packs it eats.
+
+A lab is three tiles by three, runs on electricity, and turns science packs into research. Feed
+it with an inserter and it works its way through whatever it is given, one pack at a time.
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# Optional: without Facrafting the timed recipe drops out and the bench recipe takes over.
+[[dependencies.${mod_id}]]
+    modId="facrafting"
+    type="optional"
+    versionRange="[${facrafting_version},)"
+    ordering="AFTER"
+    side="BOTH"

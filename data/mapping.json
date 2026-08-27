@@ -1782,6 +1782,7 @@
       "name": "Transport belt",
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:transport_belt",
+      "pending": true,
       "craft": {
         "time": 0.5,
         "yield": 2

@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "conditions": [
+            {
+              "block": "nauvis_research:lab",
+              "condition": "minecraft:block_state_property",
+              "properties": {
+                "part": "8"
+              }
+            }
+          ],
+          "name": "nauvis_research:lab"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "nauvis_research:blocks/lab"
+}
