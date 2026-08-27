@@ -4,9 +4,10 @@ Next session
 Written 2026-08-27 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
 Delete or rewrite it when the job below is done — it describes one job, not the project.
 
-**Fifty-one gametests pass and the pack builds clean.** Milestone 1 is closed, steam runs through
-pipes, and the machines say what they are doing. **The assembler is now three tiles by three**, and
-the mechanism it grew is ready to be copied. The boiler and the steam engine are still cubes.
+**Fifty-four gametests pass and the pack builds clean.** Milestone 1 is closed, steam runs through
+pipes, and the machines say what they are doing. **The assembler, the boiler and the steam engine
+are all the size Factorio made them** — 3×3, 3×2 and 5×3 — and the mechanism is proven on a machine
+with a facing. The two mining drills are the last cubes, and they belong to a released mod.
 
 The job: machines the size Factorio made them
 ---------------------------------------------
@@ -305,6 +306,11 @@ Python rather than a gametest, decided. A gametest could ask the real model mana
 which is stronger — but only a client has a model manager, and the whole value of this is that it
 costs a second on any tree.
 
+**And the copies are checked.** `tools/check_duplicated.py` diffs every deliberately-duplicated
+package — `multiblock/` in two mods so far — allowing the `package` line to differ and nothing
+else. `--sync` rewrites the copies from the original; there is no merge and there is not meant to
+be. It is wired into `check` with the rest.
+
 **Footprints are checked too, since the pilot.** A machine's cells are read back out of its
 `*Shape.java` and compared with the `size` recorded for that Factorio entity in
 `data/mapping.json` — identity checked rather than remembered, the same argument that makes
@@ -330,16 +336,17 @@ bug.
    eighteen — see the walkability rule above. `nauvis_machines/.../multiblock/` is the mechanism,
    and the four gametests are `assembler_is_ten_blocks`, `assembler_breaks_as_one`,
    `assembler_fed_from_any_cell` and `assemblers_tile_walkably`.
-4. **The boiler (3×2) and the steam engine (5×3). ← start here.** Copy `multiblock/` into
-   `nauvis_power` verbatim and write `tools/check_duplicated.py` at the same time, per the decision
-   below — with the second copy, not the fourth. **These are the first machines with a facing**, so
-   they exercise the half of the framework the assembler never touches: `Boxes` rotating geometry,
-   `MachineShape` rotating cell offsets, and the blockstate `y` composing with each cell's own turn.
-   That path is written and unexercised, so distrust it and test it. The engine is the one that
-   proves the rest: five tiles is past what a single model can draw, its two steam ends are
-   specific cells rather than faces, and a row of engines off one boiler is the arrangement the
-   whole subsystem exists for.
-5. **The drills** — 2×2 and 3×3, on an NPA major version. See the decisions below.
+4. ~~**The boiler (3×2) and the steam engine (5×3).**~~ **Done.** Seven blocks and seventeen,
+   both with a facing, so the rotation is now exercised rather than merely written —
+   `boiler_turns_as_one` measures all four facings. `multiblock/` is duplicated into
+   `nauvis_power` and `tools/check_duplicated.py` holds the copies identical.
+5. **The drills — 2×2 and 3×3, on an NPA major version. ← start here.** See the decisions below;
+   this is the one that touches a released mod, so it wants its own version bump and a changelog
+   line. `MinerBlock` is in `../NeoProgressiveAutomation`, which means a third copy of
+   `multiblock/` — add it to `DUPLICATED` in `check_duplicated.py` and sync rather than editing it
+   by hand. **The electric drill is the first machine meant to be walked over rather than around**
+   (0.5 solid, head to 1.5), so it is the first to need the collision and the silhouette to
+   disagree, the way `PolePart`'s crossarm does.
 6. **Rewrite this file** and move the belts note up: milestone 2 is next.
 
 Gametests to write with the pilot, not after it: a machine places whole or not at all; breaking any
@@ -386,14 +393,14 @@ Where the pack stands
 
 | | |
 |---|---|
-| `nauvis_machines:assembling_machine_1` | recipe selector, six slots, timed craft, screen, runs on 10 FE a tick |
+| `nauvis_machines:assembling_machine_1` | 3×3 and ten blocks; recipe selector, six slots, timed craft, screen, 10 FE a tick |
 | `nauvis_logistics:burner_inserter` | takes from behind, gives in front, 30-tick swing, screen with a fuel slot |
 | `nauvis_logistics:inserter` | the same on 2 FE a tick and a 24-tick swing. No slot, so no screen |
 | `nauvis_logistics:iron_chest` | 36 slots on vanilla's four-row screen |
 | `nauvis_fluids:pipe` | carries steam; a run is one object however long, with visible connections |
 | `nauvis_fluids:steam` | a real fluid, so pipes and machines meet at NeoForge's capability |
-| `nauvis_power:boiler` | burns fuel, makes steam, screen with a fuel slot |
-| `nauvis_power:steam_engine` | directional and chainable, steam in through its two ends, 120 FE a tick out |
+| `nauvis_power:boiler` | 3×2 and seven blocks; burns fuel, steam out of the block under the chimney |
+| `nauvis_power:steam_engine` | 5×3 and seventeen blocks; steam in at the open ends of its spine, 120 FE a tick out |
 | `nauvis_power:small_electric_pole` | four blocks tall, climbable, wires itself to whatever it can reach |
 
 Power numbers keep Factorio's ratios rather than its units: one engine runs twelve assemblers, one
@@ -417,10 +424,12 @@ How to run everything
 | `./gradlew build` | everything, including `checkRecipes` |
 | `python tools/gen_recipes.py --check` | the same recipe diff, on its own |
 | `python tools/check_models.py` | every model, texture and blockstate reference, resolved |
+| `python tools/check_duplicated.py` | the copied packages, against each other. `--sync` to fix |
 | `python tools/check_gui_layout.py` | every machine screen's boxes, for overlaps |
 
-The last three are `checkRecipes`, `checkModels` and `checkGuiLayout` in the root `build.gradle`,
-and all three hang off `:nauvis:check`. They read files and start nothing, so they cost a second.
+The last four are `checkRecipes`, `checkModels`, `checkDuplicated` and `checkGuiLayout` in the
+root `build.gradle`, and all of them hang off `:nauvis:check`. They read files and start nothing,
+so they cost a second between them.
 
 Adding a subsystem mod is routine: a subproject in `settings.gradle`, a `build.gradle` copied with
 the ids changed, a `src/main/templates/META-INF/neoforge.mods.toml`, and two lines in
@@ -515,6 +524,19 @@ Silent failures — these compile, pass tests, and are still wrong
   for a hard-coded list of vanilla block entity types.
 - **A built-in datapack needs a `pack.mcmeta`**, or `AddPackFindersEvent` throws a bare NPE naming
   neither the mod nor the directory.
+- **A machine with a footprint is several endpoints on the grid, and they are the same machine.**
+  Every block of a machine publishes the energy capability, so that a pole supplies a machine whose
+  middle is out of range - Factorio's rule, and the reason footprints were worth having. One engine
+  is then up to five entries in a pole's supply area: five shares of a shortfall, a wrong count in
+  the readout a player reads, and eventually a machine sold energy it had just asked for through
+  two of its own blocks. `PowerNetwork` reduces endpoints to distinct handlers by object identity
+  each tick. Identity rather than position, so any mod's multi-block gets it for free.
+- **Gametests have no padding by default, and machines now sprawl.** `TestData`'s last field is
+  `padding` and it defaults to 0. With one-block machines that was survivable; with a seventeen-
+  block engine and a chain of two reaching ten blocks, the machines of one test land in the next
+  test along - where they are broken by its blocks or joined to its network. The failure then
+  appears in whichever test ran second, which is the worst kind: real, silent, and blamed on the
+  wrong code. Every test that builds a machine now asks for room.
 - **Asking for a capability in an unloaded chunk loads it.** Check `level.isLoaded` first — not as
   an optimisation, but so a network at the edge of the loaded world does not drag chunks in.
 
