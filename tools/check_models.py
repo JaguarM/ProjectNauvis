@@ -15,14 +15,17 @@ a vanilla texture on purpose (see docs/NEXT.md). Without the jar it still checks
 first-party and says so; with it, `minecraft:block/bricks` is a file that either exists or does
 not.
 
-Two of the rules are here for the multiblock work rather than for anything on disk today, and
-they are cheap to carry until it lands. A machine cell may draw geometry that overhangs into its
-neighbours, and both ways that goes wrong are silent:
+It also checks the two ways an overhanging box goes wrong, and it checks footprints. A machine
+cell may draw geometry that hangs into its neighbours, and both failures are silent:
 
   - **`-16..32`.** `CuboidModelElement` in 26.2 holds MIN_EXTENT = -16 and MAX_EXTENT = 32. A box
     outside that fails to parse and the block is a checkerboard.
   - **explicit `uv` once a box leaves `0..16`.** An absent `uv` is derived from the box position,
     so an overhanging box gets coordinates off the end of its texture and smears. Nothing warns.
+
+Footprints are the third thing: a machine's cells, read back out of its `*Shape.java`, against
+the `size` recorded for that Factorio entity in `data/mapping.json`. A footprint is identity, so
+it is checked rather than remembered - the same argument that makes recipes generated.
 
 Run it as `python tools/check_models.py`; `./gradlew build` runs it too. It reads only files, so
 it is safe to run at any time and needs no client.
@@ -244,6 +247,53 @@ def check_registrations(assets):
                         fail(f'{mod}:{name}', f'is registered and has no {kind} file')
 
 
+def check_footprints():
+    """Every machine's cells, against the footprint Factorio gave that entity.
+
+    A footprint is identity - see docs/NEXT.md - so it is checked rather than remembered, the way
+    recipes are. `data/mapping.json` holds the number beside the item id; a `*Shape.java` holds
+    the cells; this reads the cells back out of the source and compares. Constants read out of
+    source is `check_gui_layout.py`'s trick, and it needs no game.
+
+    A file with no cells is the framework rather than a machine, and is passed over. A file that
+    does build cells but names no FACTORIO_ID is reported as unchecked rather than failed - a
+    block need not be a Factorio entity - but it is said out loud, so nobody assumes otherwise.
+    """
+    mapping = json.loads((ROOT / 'data' / 'mapping.json').read_text(encoding='utf-8'))['items']
+
+    for mod in MODS:
+        source = ROOT / mod / 'src' / 'main' / 'java'
+        if not source.is_dir():
+            continue
+        for path in sorted(source.rglob('*Shape.java')):
+            text = path.read_text(encoding='utf-8')
+            cell_calls = re.findall(r'new MachineCell\(\s*(-?\d+),\s*(-?\d+),\s*(-?\d+),', text)
+            if not cell_calls:
+                continue  # the framework itself, not a machine
+
+            id_match = re.search(r'FACTORIO_ID\s*=\s*"([a-z0-9-]+)"', text)
+            if not id_match:
+                notes.append(f'{path.name}: no FACTORIO_ID, so its footprint is unchecked')
+                continue
+
+            factorio_id = id_match.group(1)
+            cells = [(int(x), int(z)) for x, _, z in cell_calls]
+            width = max(x for x, _ in cells) - min(x for x, _ in cells) + 1
+            depth = max(z for _, z in cells) - min(z for _, z in cells) + 1
+
+            entry = mapping.get(factorio_id)
+            if entry is None:
+                fail(path.name, f'names {factorio_id}, which is not in data/mapping.json')
+                continue
+
+            wanted = entry.get('size', [1, 1])
+            # Either way round: Factorio quotes a boiler as 3x2 and it is the same boiler laid
+            # the other way. What must not differ is the pair of numbers.
+            if sorted([width, depth]) != sorted(wanted):
+                fail(path.name, f'is {width}x{depth}, and Factorio\'s {factorio_id} is '
+                                f'{wanted[0]}x{wanted[1]} - see data/mapping.json')
+
+
 def check_fluid_models(assets):
     """Every registered fluid needs a FluidModel, and nothing but the log says otherwise.
 
@@ -276,6 +326,7 @@ assets = Assets()
 check_references(assets)
 check_registrations(assets)
 check_fluid_models(assets)
+check_footprints()
 
 print(f'{len(assets.files)} first-party asset files across {len(MODS)} mods')
 for note in notes:

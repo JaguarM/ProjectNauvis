@@ -45,6 +45,16 @@ public final class AssemblerShape {
 
     private AssemblerShape() {}
 
+    /**
+     * Which Factorio entity this is the shape of.
+     *
+     * <p>Not used at runtime. It is here so {@code tools/check_models.py} can tie the cells below
+     * to the {@code size} recorded against this id in {@code data/mapping.json}, and fail the
+     * build if the two ever disagree. A footprint is identity; identity is checked rather than
+     * remembered, the same way recipes are.
+     */
+    public static final String FACTORIO_ID = "assembling-machine-1";
+
     /** Model names. Four files for ten cells: the corners and the edges are one each, turned. */
     public static final String DECK = "deck";
     public static final String EDGE = "edge";

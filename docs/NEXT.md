@@ -4,9 +4,9 @@ Next session
 Written 2026-08-27 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
 Delete or rewrite it when the job below is done — it describes one job, not the project.
 
-**Forty-seven gametests pass and the pack builds clean.** Milestone 1 is closed, steam runs through
-pipes, and the machines say what they are doing. What is wrong now is that every one of them is a
-single cube.
+**Fifty-one gametests pass and the pack builds clean.** Milestone 1 is closed, steam runs through
+pipes, and the machines say what they are doing. **The assembler is now three tiles by three**, and
+the mechanism it grew is ready to be copied. The boiler and the steam engine are still cubes.
 
 The job: machines the size Factorio made them
 ---------------------------------------------
@@ -36,9 +36,11 @@ the shape class next to the models and are tuned by looking at them.
 ### The sizes
 
 Footprints in tiles. The recipe dump carries no sizes, but every entry has a `wiki_link` — that is
-the citation. **The table below is from knowledge of the game, not from a dump: check it once
-against the wiki, then record it in `data/mapping.json` and never type it again.** The four marked
-`?` are the ones worth checking first.
+the citation. **These are now in `data/mapping.json` as a `size` field, and `check_models.py`
+holds every machine to its own**, so this table is a summary rather than the record. They were
+entered from knowledge of the game rather than read out of a dump: **the four marked `?` are worth
+one pass against the wiki**, and correcting one is a one-line edit to the mapping that fails the
+build until the shape agrees.
 
 | Entity | Footprint | Proposed height | |
 |---|---|---|---|
@@ -101,9 +103,33 @@ That gives three collision heights and a house rule for picking between them:
 - **0.5 — walked over.** The electric drill, solar panels, splitters, belts. Yannic asked for the
   drill at "like 0.5" and that is right: a drill field you have to climb over is miserable, and
   Factorio's drill is visually low anyway.
-- **2.0 — walked around.** The default. Assembler, boiler, engine, furnaces.
+- **2.0 — walked around.** Boiler, engine, furnaces.
 - **nothing collides above 2.0.** A machine may *look* taller — see the chimney and the flywheel in
   the table — but the part above 2 blocks is scenery you can walk through.
+
+### And a fourth rule, which turned out to be the important one
+
+> Assemblers placed together should still be walkable.
+
+**A machine you can walk across beats a machine you walk around, and it decides the silhouette.**
+Take it seriously: a Factorio player tiles assemblers with no gaps, because in Factorio you can
+always walk round the far end of the field. Nine 3x3 machines two solid blocks tall is a wall with
+no way over it — you cannot jump two blocks — and the player is sealed out of their own base. It
+is the kind of thing nobody finds until they have built enough to be stuck in it.
+
+The assembler's answer, which the rest should copy where the entity allows:
+
+| | |
+|---|---|
+| **1.0** | the wall around the outside. One jump, and the only climb in a field of any size |
+| **0.75** | the floor inside the wall. A quarter-block dip, under the 0.6 step, so crossing is walking |
+| **1.0 / 2.0** | the plinth in the middle and the gearbox on it — the one thing to walk around |
+
+Two consequences worth stating. **The upper storey is mostly air**, so a 3x3 machine two blocks
+tall is ten blocks and not eighteen — which is why `MachineShape` takes a set of cells rather
+than a box. And **the tall part goes in the middle**, so tiled machines stand their obstacles three
+apart and leave lanes two blocks wide in both directions. `assemblers_tile_walkably` places two
+machines against each other and walks the seam, asserting every step of it.
 
 **Collision and silhouette are allowed to disagree, and the pole already does this.** `PolePart`
 gives the crossarm a full outline and no collision, because a shape three blocks over your head that
@@ -113,6 +139,12 @@ you walk through. Copy the pattern, do not invent a second one.
 
 The mechanism
 -------------
+
+**Built, in `nauvis_machines/src/main/java/com/jaguarm/nauvismachines/multiblock/`.** Four files:
+`MachineCell` (one block of a machine), `MachineShape` (which blocks, and the arithmetic),
+`Boxes` (the one rotation) and `Multiblock` (the block-side rules). `AssemblerShape` is what a
+machine looks like written in it, and is the thing to copy when adding the next one. What follows
+described it before it existed and still describes it; read the code for the detail.
 
 The pole is the precedent and it scales: one block id, one item, one property saying which piece
 this is, placed and broken as a unit, block entity on one piece only. What changes is that the
@@ -273,9 +305,16 @@ Python rather than a gametest, decided. A gametest could ask the real model mana
 which is stronger — but only a client has a model manager, and the whole value of this is that it
 costs a second on any tree.
 
-**Three rules still want writing, and each needs a `MachineShape` to read**: cells orthogonally
-connected, every box owned by a cell that exists, and the `VoxelShape` union covering every cell so
-no part of a machine is a hole you fall through. Add them with the pilot.
+**Footprints are checked too, since the pilot.** A machine's cells are read back out of its
+`*Shape.java` and compared with the `size` recorded for that Factorio entity in
+`data/mapping.json` — identity checked rather than remembered, the same argument that makes
+recipes generated. A shape opts in by naming its entry in a `FACTORIO_ID` constant.
+
+**The other two rules went into Java instead, and that was the better answer.** "Cells orthogonally
+connected" and "every box belongs to a cell" are facts about the shape, not about the JSON, so
+`MachineShape`'s constructor throws on them. That fails at class-load — in the game, in every
+gametest, in datagen — rather than only when somebody runs a script, and it can say which cells are
+cut off. Do not move them back to Python.
 
 The order to do it in
 ---------------------
@@ -285,17 +324,23 @@ bug.
 
 1. ~~**The checker first**, against the models that exist today.~~ **Done** — `check_models.py`,
    wired into `check`, passing on a clean tree. Three of its rules wait on step 3.
-2. **Sizes into `data/mapping.json`**, checked against the wiki links already in the dump.
-3. **The assembler, 3×3×2, as the pilot.** One mod, one machine, the whole mechanism: `MachineShape`,
-   the `PART` property, placement, teardown, capabilities from all twelve perimeter faces, the menu
-   from any cell, the item model, the gametests. Everything after this is repetition, so spend the
-   time here and let the shape of the code settle before copying it.
-4. **The boiler (3×2) and the steam engine (5×3).** The engine is the one that proves the mechanism:
-   five tiles is past what one model can draw, its two steam ends are specific cells rather than
-   faces, and a row of engines off one boiler is the arrangement the whole subsystem exists for.
+2. ~~**Sizes into `data/mapping.json`**~~ **Done** — 37 footprints, and `check_models.py` holds
+   each machine to its own.
+3. ~~**The assembler, 3×3×2, as the pilot.**~~ **Done**, and it is ten blocks rather than
+   eighteen — see the walkability rule above. `nauvis_machines/.../multiblock/` is the mechanism,
+   and the four gametests are `assembler_is_ten_blocks`, `assembler_breaks_as_one`,
+   `assembler_fed_from_any_cell` and `assemblers_tile_walkably`.
+4. **The boiler (3×2) and the steam engine (5×3). ← start here.** Copy `multiblock/` into
+   `nauvis_power` verbatim and write `tools/check_duplicated.py` at the same time, per the decision
+   below — with the second copy, not the fourth. **These are the first machines with a facing**, so
+   they exercise the half of the framework the assembler never touches: `Boxes` rotating geometry,
+   `MachineShape` rotating cell offsets, and the blockstate `y` composing with each cell's own turn.
+   That path is written and unexercised, so distrust it and test it. The engine is the one that
+   proves the rest: five tiles is past what a single model can draw, its two steam ends are
+   specific cells rather than faces, and a row of engines off one boiler is the arrangement the
+   whole subsystem exists for.
 5. **The drills** — 2×2 and 3×3, on an NPA major version. See the decisions below.
-6. **Rewrite this file** with what the mechanism actually turned out to be, and move the belts note
-   up: milestone 2 is next.
+6. **Rewrite this file** and move the belts note up: milestone 2 is next.
 
 Gametests to write with the pilot, not after it: a machine places whole or not at all; breaking any
 cell drops exactly one machine and leaves no orphan blocks; a hopper on a far corner still reaches

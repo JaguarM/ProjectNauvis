@@ -39,9 +39,22 @@ Entry shape
 | `owner` | which mod registers it |
 | `item` | the Minecraft item id it resolves to, in recipes and in the world |
 | `craft` | `time` in seconds and `yield`, from the dump. Never edit these — they are the spec |
+| `size` | Factorio's tile footprint, `[width, depth]`. Absent means one tile |
 | `stand_in` | true when an existing Minecraft item covers it and nothing new is registered |
 | `raw` | true when the dump gives it no recipe: an ore, a fluid, a filled barrel |
 | `skip` | true when it is never registered at all |
+
+`size` is the one field here that did not come out of the dump — the dump carries recipes and
+nothing else — so it was entered by hand against the `wiki_link` each entry already has. It is
+here rather than in the Java because **a footprint is identity in the same sense an ingredient
+list is**: three tiles by three is why an assembler line spaces the way it does, it lives in
+world saves and in the player's head, and changing it later moves every machine in every world.
+One Factorio tile is one Minecraft block, which is forced anyway — a belt, an inserter and a pipe
+are one tile there and one block here.
+
+`tools/check_models.py` reads each machine's cells back out of its `*Shape.java` and fails the
+build if they disagree with the number here, the way `checkRecipes` does for craft times. A shape
+opts into that by naming its entry in a `FACTORIO_ID` constant.
 
 Naming policy
 -------------
