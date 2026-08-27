@@ -1,0 +1,29 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "machine",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:copper_cable",
+      "count": 2
+    },
+    {
+      "ingredient": "minecraft:oak_planks",
+      "count": 2
+    }
+  ],
+  "result": {
+    "id": "nauvis_power:small_electric_pole",
+    "count": 2
+  }
+}

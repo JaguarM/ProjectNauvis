@@ -24,6 +24,8 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> BOILER = ITEMS.registerSimpleBlockItem(ModBlocks.BOILER);
     public static final DeferredItem<BlockItem> STEAM_ENGINE =
             ITEMS.registerSimpleBlockItem(ModBlocks.STEAM_ENGINE);
+    public static final DeferredItem<BlockItem> SMALL_ELECTRIC_POLE =
+            ITEMS.registerSimpleBlockItem(ModBlocks.SMALL_ELECTRIC_POLE);
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
             "nauvis_power",
@@ -33,6 +35,7 @@ public final class ModItems {
                     .displayItems((parameters, output) -> {
                         output.accept(BOILER.get());
                         output.accept(STEAM_ENGINE.get());
+                        output.accept(SMALL_ELECTRIC_POLE.get());
                     })
                     .build());
 

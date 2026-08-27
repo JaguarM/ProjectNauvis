@@ -1,11 +1,15 @@
 {
   "block.nauvis_power.boiler": "Boiler",
+  "block.nauvis_power.small_electric_pole": "Small electric pole",
   "block.nauvis_power.steam_engine": "Steam engine",
   "itemGroup.nauvis_power": "Project Nauvis: Power",
   "nauvis_power.boiler.fuelled": "Burning %s",
   "nauvis_power.boiler.full": "Its fuel slot is full of %s",
   "nauvis_power.boiler.not_fuel": "%s does not burn",
   "nauvis_power.boiler.status": "Steam: %s / %s",
+  "nauvis_power.small_electric_pole.detached": "Not part of a network",
+  "nauvis_power.small_electric_pole.status": "Network: %s poles, %s machines - live",
+  "nauvis_power.small_electric_pole.status_idle": "Network: %s poles, %s machines - idle",
   "nauvis_power.steam_engine.status": "Charge: %s / %s FE",
   "pack.nauvis_power.crafting_table": "Nauvis Power: Crafting Table Recipes"
 }

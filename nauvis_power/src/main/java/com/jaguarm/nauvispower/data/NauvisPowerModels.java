@@ -44,5 +44,17 @@ public class NauvisPowerModels extends ModelProvider {
                 blockModels.modelOutput);
         blockModels.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(
                 ModBlocks.STEAM_ENGINE.get(), BlockModelGenerators.plainVariant(engine)));
+
+        // A fence post is a 4x16x4 column, which is the shape SmallElectricPoleBlock collides
+        // with - so the model and the hitbox are the same object rather than two numbers that
+        // can drift. Stripped oak because a pole is planks and wire.
+        Identifier pole = ModelTemplates.FENCE_POST.create(
+                ModBlocks.SMALL_ELECTRIC_POLE.get(),
+                new TextureMapping().put(TextureSlot.TEXTURE,
+                        TextureMapping.getBlockTexture(Blocks.STRIPPED_OAK_LOG)),
+                blockModels.modelOutput);
+        blockModels.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(
+                ModBlocks.SMALL_ELECTRIC_POLE.get(), BlockModelGenerators.plainVariant(pole)));
+        blockModels.registerSimpleItemModel(ModBlocks.SMALL_ELECTRIC_POLE.get(), pole);
     }
 }

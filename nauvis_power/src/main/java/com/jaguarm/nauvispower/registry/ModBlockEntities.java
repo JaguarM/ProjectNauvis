@@ -3,6 +3,7 @@ package com.jaguarm.nauvispower.registry;
 import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.generator.BoilerBlockEntity;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
+import com.jaguarm.nauvispower.grid.SmallElectricPoleBlockEntity;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -21,6 +22,11 @@ public final class ModBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SteamEngineBlockEntity>> STEAM_ENGINE =
             BLOCK_ENTITIES.register("steam_engine",
                     () -> new BlockEntityType<>(SteamEngineBlockEntity::new, ModBlocks.STEAM_ENGINE.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SmallElectricPoleBlockEntity>>
+            SMALL_ELECTRIC_POLE = BLOCK_ENTITIES.register("small_electric_pole",
+                    () -> new BlockEntityType<>(
+                            SmallElectricPoleBlockEntity::new, ModBlocks.SMALL_ELECTRIC_POLE.get()));
 
     private ModBlockEntities() {}
 }

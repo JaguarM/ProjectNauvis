@@ -53,6 +53,7 @@ public final class NauvisPowerData {
             add("itemGroup.nauvis_power", "Project Nauvis: Power");
             addBlock(ModBlocks.BOILER, "Boiler");
             addBlock(ModBlocks.STEAM_ENGINE, "Steam engine");
+            addBlock(ModBlocks.SMALL_ELECTRIC_POLE, "Small electric pole");
             add("pack.nauvis_power.crafting_table", "Nauvis Power: Crafting Table Recipes");
 
             add("nauvis_power.boiler.fuelled", "Burning %s");
@@ -60,6 +61,9 @@ public final class NauvisPowerData {
             add("nauvis_power.boiler.not_fuel", "%s does not burn");
             add("nauvis_power.boiler.status", "Steam: %s / %s");
             add("nauvis_power.steam_engine.status", "Charge: %s / %s FE");
+            add("nauvis_power.small_electric_pole.status", "Network: %s poles, %s machines - live");
+            add("nauvis_power.small_electric_pole.status_idle", "Network: %s poles, %s machines - idle");
+            add("nauvis_power.small_electric_pole.detached", "Not part of a network");
         }
     }
 
@@ -73,6 +77,7 @@ public final class NauvisPowerData {
         protected void generate() {
             dropSelf(ModBlocks.BOILER.get());
             dropSelf(ModBlocks.STEAM_ENGINE.get());
+            dropSelf(ModBlocks.SMALL_ELECTRIC_POLE.get());
         }
 
         @Override
