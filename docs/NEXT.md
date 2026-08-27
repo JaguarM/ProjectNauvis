@@ -248,24 +248,34 @@ the commit, never copy an asset.
 First, a net: the model checker
 -------------------------------
 
-The last session queued this and the multiblock work makes it urgent rather than nice: datagen is
-about to emit *hundreds* of models from generated names, and three separate visual failures have
-already shipped without failing a compile, a test or a datagen run.
+**`tools/check_models.py` exists and passes.** It walks the generated assets the way the model
+manager would — blockstate → model → parent → texture → a real PNG — resolving into the vanilla
+client jar NeoForm already downloaded, so `minecraft:block/bricks` is a file that either is there or
+is not. Without that jar it checks everything first-party and says which half it did, because a
+fresh clone has no copy.
 
-`tools/check_gui_layout.py` is the shape to copy — constants read back out of source, no game
-required. The rules, in the order they will catch things:
+What it catches today, each one verified by breaking it and watching the run go red:
 
-- every blockstate variant names a model file that exists, for every value of `PART` and `FACING`;
-- every model, and every parent it inherits, exists;
-- every `#texture` reference resolves to a real PNG, vanilla ones included;
-- every registered fluid has a `FluidModel`;
-- **and the multiblock rules**: cells orthogonally connected, every box owned by a cell that exists,
-  every translated box inside `-16..32`, explicit `uv` on every box that leaves `0..16`, and the
-  `VoxelShape` union covering every cell so no part of the machine is a hole you fall through.
+- a blockstate or item definition naming a model that does not exist — **the steam engine bug**,
+  reported once per thing pointing at the missing model, because the blockstate and the item
+  definition are two separate fixes;
+- a texture slot naming a PNG that is not there, or a `#slot` nothing defines;
+- a registered block with no blockstate or no item file;
+- a registered fluid with no `FluidModel`;
+- **the two overhang rules, carried early for the multiblock work**: every box inside `-16..32`, and
+  explicit `uv` on any box that leaves `0..16`.
 
-Python beside `check_gui_layout.py` is the recommendation, not a gametest. The gametest version can
-ask the real model manager what resolved, which is stronger — but only a client has a model manager,
-and a check that does not run in `./gradlew build` is a check nobody runs.
+`./gradlew build` runs it, and now runs `check_gui_layout.py` too — that one had been sitting
+unwired, and a check that does not run in the build is a check nobody runs. Both are in the root
+`build.gradle` beside `checkRecipes`.
+
+Python rather than a gametest, decided. A gametest could ask the real model manager what resolved,
+which is stronger — but only a client has a model manager, and the whole value of this is that it
+costs a second on any tree.
+
+**Three rules still want writing, and each needs a `MachineShape` to read**: cells orthogonally
+connected, every box owned by a cell that exists, and the `VoxelShape` union covering every cell so
+no part of a machine is a hole you fall through. Add them with the pilot.
 
 The order to do it in
 ---------------------
@@ -273,8 +283,8 @@ The order to do it in
 Each step ends with a client boot, because that is the only thing that has ever caught this class of
 bug.
 
-1. **The checker first**, against the models that exist today. It should pass on a clean tree — if
-   it does not, that is a bug it just found.
+1. ~~**The checker first**, against the models that exist today.~~ **Done** — `check_models.py`,
+   wired into `check`, passing on a clean tree. Three of its rules wait on step 3.
 2. **Sizes into `data/mapping.json`**, checked against the wiki links already in the dump.
 3. **The assembler, 3×3×2, as the pilot.** One mod, one machine, the whole mechanism: `MachineShape`,
    the `PART` property, placement, teardown, capabilities from all twelve perimeter faces, the menu
@@ -283,7 +293,7 @@ bug.
 4. **The boiler (3×2) and the steam engine (5×3).** The engine is the one that proves the mechanism:
    five tiles is past what one model can draw, its two steam ends are specific cells rather than
    faces, and a row of engines off one boiler is the arrangement the whole subsystem exists for.
-5. **The drills**, if Yannic says so — see the decisions below.
+5. **The drills** — 2×2 and 3×3, on an NPA major version. See the decisions below.
 6. **Rewrite this file** with what the mechanism actually turned out to be, and move the belts note
    up: milestone 2 is next.
 
@@ -293,28 +303,28 @@ the inventory; the machine still sleeps, asserted with
 `level.getBlockTicks().hasScheduledTick(...)`; and a machine placed against a world edge or an
 occupied block places nothing rather than something broken.
 
-Two decisions I cannot make
----------------------------
+Two decisions, settled
+----------------------
 
-**Where the multiblock code lives.** `nauvis_machines`, `nauvis_power`, `nauvis_fluids` and later
-`nauvis_logistics` all need it, and non-negotiable #3 gives exactly two answers: it goes in
-Facrafting, or it gets duplicated. The precedent points at duplication — the GUI palettes are
-duplicated per mod for precisely this reason, "because a shared base in Facrafting would make these
-mods require it and kill the `*_standalone` recipes that exist for its absence". The cost is a
-`multiblock/` package copied verbatim into four mods. **Recommendation: duplicate**, and add a
-`tools/check_duplicated.py` that diffs the copies, in the spirit of `gen_recipes.py --check`, so
-they cannot drift. The alternative — Facrafting owning it — is one copy and a wider remit for a mod
-whose remit is currently "the timed crafting model and the crafting interface".
+Both answered by Yannic on 2026-08-27. Recorded here rather than in a commit message, because the
+next session will want the reasoning and not only the answer.
 
-**The two mining drills belong to a released mod.** `neoprogressiveautomation:burner_drill` and
-`electric_drill` are what `data/mapping.json` points the Factorio drills at, and CLAUDE.md says
-NPA's behaviour should not change under an existing save. Turning them into 2×2 and 3×3 multiblocks
-is about as large a behaviour change as exists. Three ways out: change them anyway on a major
-version bump and say so in the changelog; leave them 1×1 and accept that two Factorio entities are
-the wrong size; or make the footprint a config, which is a permanent tax on every drill code path
-for one release's worth of politeness. **Recommendation: change them on a major version**, because
-the drills are Factorio entities in a Factorio pack and the pack is the point — but it is Yannic's
-released mod and Yannic's call.
+**The multiblock code is duplicated per mod, not shared.** `nauvis_machines`, `nauvis_power`,
+`nauvis_fluids` and later `nauvis_logistics` all need it, and non-negotiable #3 gives exactly two
+answers: it goes in Facrafting, or it gets copied. Copied — the same call the GUI palettes already
+got, "because a shared base in Facrafting would make these mods require it and kill the
+`*_standalone` recipes that exist for its absence". A `multiblock/` package goes into each mod
+verbatim, and `tools/check_duplicated.py` diffs the copies in the spirit of `gen_recipes.py
+--check`, so what is meant to be identical cannot quietly stop being identical. **Write that
+checker with the second copy, not the fourth.**
+
+**The drills change, on an NPA major version.** `neoprogressiveautomation:burner_drill` becomes 2×2
+and `electric_drill` 3×3, even though NPA is released and CLAUDE.md says its behaviour should not
+change under an existing save. The reasoning: they are Factorio entities in a Factorio pack, the
+pack is the point, and the alternative — a footprint behind a config — is a permanent tax on every
+drill code path for one release's worth of compatibility. Bump the major version, say it in the
+changelog, and see *What this breaks* below: existing drills pop out as items rather than
+vanishing.
 
 What this breaks
 ----------------
@@ -361,7 +371,11 @@ How to run everything
 | `./gradlew :<mod>:runClientData` / `runServerData` | models and language / loot and tags |
 | `./gradlew build` | everything, including `checkRecipes` |
 | `python tools/gen_recipes.py --check` | the same recipe diff, on its own |
+| `python tools/check_models.py` | every model, texture and blockstate reference, resolved |
 | `python tools/check_gui_layout.py` | every machine screen's boxes, for overlaps |
+
+The last three are `checkRecipes`, `checkModels` and `checkGuiLayout` in the root `build.gradle`,
+and all three hang off `:nauvis:check`. They read files and start nothing, so they cost a second.
 
 Adding a subsystem mod is routine: a subproject in `settings.gradle`, a `build.gradle` copied with
 the ids changed, a `src/main/templates/META-INF/neoforge.mods.toml`, and two lines in

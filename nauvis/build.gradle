@@ -173,9 +173,13 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 // Recipes are generated, never hand-written - so a build that would ship a hand-edited one
-// should not succeed. See the root build.gradle.
+// should not succeed. The other two catch what compiles, tests clean and is still wrong to look
+// at: an unresolvable model reference, and a screen drawn through itself. See the root
+// build.gradle.
 tasks.named('check') {
     dependsOn rootProject.tasks.named('checkRecipes')
+    dependsOn rootProject.tasks.named('checkModels')
+    dependsOn rootProject.tasks.named('checkGuiLayout')
 }
 
 idea {
