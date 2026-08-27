@@ -29,7 +29,8 @@ ROOT = Path(__file__).resolve().parent.parent
 DUPLICATED = [
     ('com/jaguarm/{pkg}/multiblock',
      ('nauvis_machines', 'nauvismachines'),
-     [('nauvis_power', 'nauvispower')]),
+     [('nauvis_power', 'nauvispower'),
+      ('../NeoProgressiveAutomation', 'neoprogressiveautomation')]),
 ]
 
 PACKAGE = re.compile(r'^package\s+[\w.]+;', re.MULTILINE)
@@ -64,6 +65,13 @@ def main(sync):
         for copy_mod, copy_pkg in copies:
             copy_dir = package_dir(copy_mod, copy_pkg, template)
             where = f'{copy_mod}/{template.format(pkg=copy_pkg)}'
+
+            # A sibling repo that is not checked out beside this one. The composite build needs
+            # it and would have failed long before here, so this is a clone that is not building
+            # rather than drift - say so and move on rather than failing a check about copies.
+            if not (ROOT / copy_mod / 'src' / 'main' / 'java').is_dir():
+                print(f'  {copy_mod} is not checked out here - its copy is unchecked')
+                continue
 
             extra = {path.name for path in copy_dir.glob('*.java')}
             extra -= {path.name for path in origin_files}

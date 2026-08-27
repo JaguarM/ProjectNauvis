@@ -66,8 +66,10 @@ public final class SteamEngineShape {
     /**
      * Four corners, then the two flanks, then the spine, then the flywheels.
      *
-     * <p>The order fixes the {@code part} values, which are in world saves - <b>do not reorder
-     * this list</b>, only append to it.
+     * <p>Every cell is written out rather than looped. The order fixes the {@code part} values,
+     * which are in world saves - <b>do not reorder this list</b>, only append to it - and a loop
+     * hides both that order and the machine's real size from
+     * {@code tools/check_models.py}, which reads these numbers out of the source.
      */
     public static final MachineShape SHAPE = build();
 
@@ -88,18 +90,20 @@ public final class SteamEngineShape {
         cells.add(new MachineCell(0, 0, 4, MachineParts.CORNER, 3, MachineParts.CORNER_BOXES));
 
         // The west flank, then the east one: wall outward, floor inward.
-        for (int z = 1; z <= 3; z++) {
-            cells.add(new MachineCell(0, 0, z, MachineParts.EDGE, 3, MachineParts.EDGE_BOXES));
-        }
-        for (int z = 1; z <= 3; z++) {
-            cells.add(new MachineCell(2, 0, z, MachineParts.EDGE, 1, MachineParts.EDGE_BOXES));
-        }
+        cells.add(new MachineCell(0, 0, 1, MachineParts.EDGE, 3, MachineParts.EDGE_BOXES));
+        cells.add(new MachineCell(0, 0, 2, MachineParts.EDGE, 3, MachineParts.EDGE_BOXES));
+        cells.add(new MachineCell(0, 0, 3, MachineParts.EDGE, 3, MachineParts.EDGE_BOXES));
+        cells.add(new MachineCell(2, 0, 1, MachineParts.EDGE, 1, MachineParts.EDGE_BOXES));
+        cells.add(new MachineCell(2, 0, 2, MachineParts.EDGE, 1, MachineParts.EDGE_BOXES));
+        cells.add(new MachineCell(2, 0, 3, MachineParts.EDGE, 1, MachineParts.EDGE_BOXES));
 
         // The spine, north to south. Indices 10 to 14 - see NORTH_END, MIDDLE and SOUTH_END - and
         // no wall anywhere along it, which is what leaves both ends open for a pipe.
-        for (int z = 0; z <= 4; z++) {
-            cells.add(new MachineCell(1, 0, z, MachineParts.DECK, 0, MachineParts.DECK_BOXES));
-        }
+        cells.add(new MachineCell(1, 0, 0, MachineParts.DECK, 0, MachineParts.DECK_BOXES));
+        cells.add(new MachineCell(1, 0, 1, MachineParts.DECK, 0, MachineParts.DECK_BOXES));
+        cells.add(new MachineCell(1, 0, 2, MachineParts.DECK, 0, MachineParts.DECK_BOXES));
+        cells.add(new MachineCell(1, 0, 3, MachineParts.DECK, 0, MachineParts.DECK_BOXES));
+        cells.add(new MachineCell(1, 0, 4, MachineParts.DECK, 0, MachineParts.DECK_BOXES));
 
         // The flywheels, at the second and fourth tiles. The gap between them is the way across.
         cells.add(new MachineCell(1, 1, 1, FLYWHEEL, 0, FLYWHEEL_BOXES));

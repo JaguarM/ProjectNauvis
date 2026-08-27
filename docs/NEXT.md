@@ -4,10 +4,11 @@ Next session
 Written 2026-08-27 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
 Delete or rewrite it when the job below is done — it describes one job, not the project.
 
-**Fifty-four gametests pass and the pack builds clean.** Milestone 1 is closed, steam runs through
-pipes, and the machines say what they are doing. **The assembler, the boiler and the steam engine
-are all the size Factorio made them** — 3×3, 3×2 and 5×3 — and the mechanism is proven on a machine
-with a facing. The two mining drills are the last cubes, and they belong to a released mod.
+**Fifty-seven gametests pass and the pack builds clean.** Milestone 1 is closed, steam runs through
+pipes, and the machines say what they are doing. **Every machine in the pack is now the size
+Factorio made it** — assembler 3×3, boiler 3×2, steam engine 5×3, and the two drills 2×2 and 3×3 in
+Neo Progressive Automation 2.0.0. This job is done; what is below is the record of how, and the
+belts are next.
 
 The job: machines the size Factorio made them
 ---------------------------------------------
@@ -340,14 +341,14 @@ bug.
    both with a facing, so the rotation is now exercised rather than merely written —
    `boiler_turns_as_one` measures all four facings. `multiblock/` is duplicated into
    `nauvis_power` and `tools/check_duplicated.py` holds the copies identical.
-5. **The drills — 2×2 and 3×3, on an NPA major version. ← start here.** See the decisions below;
-   this is the one that touches a released mod, so it wants its own version bump and a changelog
-   line. `MinerBlock` is in `../NeoProgressiveAutomation`, which means a third copy of
-   `multiblock/` — add it to `DUPLICATED` in `check_duplicated.py` and sync rather than editing it
-   by hand. **The electric drill is the first machine meant to be walked over rather than around**
-   (0.5 solid, head to 1.5), so it is the first to need the collision and the silhouette to
-   disagree, the way `PolePart`'s crossarm does.
-6. **Rewrite this file** and move the belts note up: milestone 2 is next.
+5. ~~**The drills — 2×2 and 3×3, on an NPA major version.**~~ **Done**, as
+   `neoprogressiveautomation` 2.0.0, with the pack's pin moved to match. A third copy of
+   `multiblock/` lives there, synced rather than edited. The electric drill is the one machine
+   meant to be walked straight over — a half-block deck, under the 0.6 step — with only its output
+   head standing full height. It also gained that mod's first three gametests.
+6. **← Start here: rewrite this file.** The job it describes is finished, so it should now describe
+   the next one. Move the belts note up — milestone 2 — and keep the walkability rules, the
+   silent-failures list and the mechanism notes, which outlive this job.
 
 Gametests to write with the pilot, not after it: a machine places whole or not at all; breaking any
 cell drops exactly one machine and leaves no orphan blocks; a hopper on a far corner still reaches
@@ -402,6 +403,8 @@ Where the pack stands
 | `nauvis_power:boiler` | 3×2 and seven blocks; burns fuel, steam out of the block under the chimney |
 | `nauvis_power:steam_engine` | 5×3 and seventeen blocks; steam in at the open ends of its spine, 120 FE a tick out |
 | `nauvis_power:small_electric_pole` | four blocks tall, climbable, wires itself to whatever it can reach |
+| `neoprogressiveautomation:burner_drill` | 2×2 and five blocks; a full block with a chimney over the firebox |
+| `neoprogressiveautomation:electric_drill` | 3×3 and nine blocks; a half-block deck you walk over, output head at the front |
 
 Power numbers keep Factorio's ratios rather than its units: one engine runs twelve assemblers, one
 boiler runs twenty-four. None of that is identity; the ids, ingredients and craft times are, and
@@ -537,6 +540,18 @@ Silent failures — these compile, pass tests, and are still wrong
   test along - where they are broken by its blocks or joined to its network. The failure then
   appears in whichever test ran second, which is the worst kind: real, silent, and blamed on the
   wrong code. Every test that builds a machine now asks for room.
+- **A shape that builds its cells in a loop reads as smaller than it is.** `check_models.py` gets
+  a machine's footprint by reading `new MachineCell(...)` calls out of the source, and a loop is
+  not a number: the electric drill, written as a nested loop, reported itself as one tile by two
+  and passed. The checker now refuses to guess when it cannot read every cell, and every shape
+  writes its cells out. That is worth doing anyway — a cell's place in the list is its `part`
+  value, and `part` values are in world saves.
+- **`createBlockStateDefinition` runs inside `Block`'s constructor**, before any field of your
+  subclass exists. A block that picks its blockstate properties from a field reads null and picks
+  the wrong ones. The drills hit this: one `MinerBlock` with a tier field gave the electric drill a
+  five-value `part` property and a nine-value default state. It threw at registration, which was
+  luck — the same mistake between two shapes of equal size would have been silent. Answer with a
+  constant on a subclass, which exists long before any block does.
 - **Asking for a capability in an unloaded chunk loads it.** Check `level.isLoaded` first — not as
   an optimisation, but so a network at the edge of the loaded world does not drag chunks in.
 

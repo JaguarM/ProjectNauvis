@@ -42,6 +42,10 @@ ROOT = Path(__file__).resolve().parent.parent
 # builds; a checker in this repo that failed on their assets would fail a clean clone.
 MODS = ['nauvis', 'nauvis_machines', 'nauvis_logistics', 'nauvis_fluids', 'nauvis_power']
 
+# Mods in their own repos beside this one, pulled in by settings.gradle. Only their machine
+# shapes are looked at - see check_footprints.
+SIBLINGS = ['../NeoProgressiveAutomation']
+
 # Where datagen writes, and where anything hand-written lives. Both are shipped, so both count.
 ASSET_ROOTS = ['src/generated/client/assets', 'src/main/resources/assets']
 
@@ -261,15 +265,37 @@ def check_footprints():
     """
     mapping = json.loads((ROOT / 'data' / 'mapping.json').read_text(encoding='utf-8'))['items']
 
-    for mod in MODS:
+    # The sibling repos are checked for footprints and nothing else. Their assets are their own -
+    # they ship separately, with their own datagen - but a Factorio entity is a Factorio entity
+    # wherever it is registered, and the drills live over there.
+    for mod in MODS + SIBLINGS:
         source = ROOT / mod / 'src' / 'main' / 'java'
         if not source.is_dir():
+            # A sibling that is not checked out here. The composite build needs it and would have
+            # failed long before this, so it is a clone that cannot build rather than a problem
+            # with footprints.
+            if mod in SIBLINGS:
+                notes.append(f'{mod} is not checked out here - its footprints are unchecked')
             continue
         for path in sorted(source.rglob('*Shape.java')):
             text = path.read_text(encoding='utf-8')
+            constructions = len(re.findall(r'new MachineCell\(', text))
             cell_calls = re.findall(r'new MachineCell\(\s*(-?\d+),\s*(-?\d+),\s*(-?\d+),', text)
-            if not cell_calls:
+            if not constructions:
                 continue  # the framework itself, not a machine
+
+            # Every cell has to be written out. A shape that builds cells in a loop reads as
+            # whatever its literal cells happen to span, which is smaller than the machine and
+            # perfectly quiet about it - the electric drill read as 1x2 when eight of its nine
+            # cells came out of a nested loop. Refusing to guess is the whole value here.
+            #
+            # Writing them out is worth doing anyway: a cell's position in the list is its `part`
+            # value, and `part` values are in world saves.
+            if len(cell_calls) != constructions:
+                fail(path.name, f'builds {constructions - len(cell_calls)} of its {constructions} '
+                                f'cells from something other than plain numbers, so its footprint '
+                                f'cannot be read here. Write every cell out.')
+                continue
 
             id_match = re.search(r'FACTORIO_ID\s*=\s*"([a-z0-9-]+)"', text)
             if not id_match:

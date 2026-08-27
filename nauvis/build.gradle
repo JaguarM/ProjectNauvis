@@ -12,7 +12,10 @@ ext {
     // Every mod in the pack whose gametests should run here. A subsystem mod tests its own
     // behaviour, in its own source tree, and these runs are where all of it happens at once on
     // a classpath that has the whole pack on it.
-    pack_gametest_namespaces = 'nauvis,nauvis_machines,nauvis_logistics,nauvis_fluids,nauvis_power'
+    // The sibling repos count too: Neo Progressive Automation owns the two mining drills, and
+    // since they became multi-blocks their tests are as much part of the pack's health as ours.
+    pack_gametest_namespaces = 'nauvis,nauvis_machines,nauvis_logistics,nauvis_fluids,' +
+            'nauvis_power,neoprogressiveautomation'
 }
 
 version = '0.1.0'
