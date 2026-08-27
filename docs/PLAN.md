@@ -158,7 +158,7 @@ themselves immediately: a **headless gametest harness** (`:nauvis:runGameTestSer
 how anything about behaviour gets verified without a person watching, and **datagen** for
 models, language and loot tables.
 
-### 1 — First factory · 11 new registrations · *in progress*
+### 1 — First factory · 11 new registrations · *done*
 
 `assembling-machine-1`, `burner-inserter`, `inserter`, `iron-chest`, `boiler`, `steam-engine`,
 `small-electric-pole`, `pipe`, plus intermediates already owned by
@@ -192,8 +192,11 @@ chest gaining an item tells the inserter beside it for free. See the section in 
 it is asserted by a test, and by a second test that the wake is filtered down to the two
 neighbours an inserter can actually use.
 
-The electric `inserter` waits for `nauvis_power` — it costs a circuit and runs on the grid, and
-registering it now would mean an item that works without the power it is supposed to need.
+**The electric `inserter` is done too**, now that there is a grid to plug it into. It shares
+everything with the burner except what pays for a swing — the two block entities differ by two
+methods — and it swings in 24 ticks against 30, draws two FE a tick, and is a paperweight without
+a pole in range. That last part is asserted, because an electric inserter that ran on nothing
+would be strictly better than the burner for free.
 
 **`iron-chest`, `pipe`, `boiler` and `steam-engine` are done.** The chest is a plain vanilla
 `Container` on vanilla's four-row screen, which is the one place in this pack where being a
@@ -203,10 +206,17 @@ shortcut this pack takes. Coal now goes into a boiler, the boiler makes steam, a
 turns steam into FE — and the whole chain sleeps from the far end, which is asserted rather than
 hoped for.
 
-**What is left of milestone 1 is spending that electricity**: the small electric pole, then making
-the assembler consume FE, then the electric `inserter`. See the electric network note below — the
-pole is not a block so much as a graph, and it is the second decision here that is expensive to
-reverse.
+**`small-electric-pole` is done, and with it the electric network** — the second of the two
+decisions that are expensive to reverse. A `PowerNetwork` is one object holding its member poles
+and `BlockCapabilityCache` handles on the machines they reach; it ticks once however many poles it
+has, and drops out of the manager's active set the moment it moves no energy. Poles join and leave
+it and never tick at all. See the electric network note below, which now describes something that
+exists.
+
+**The assembler and the electric inserter both spend it.** Coal goes into a boiler at one end and
+an assembling machine eight blocks away runs, across four mods that do not compile against each
+other — `power_reaches_a_machine`, in the pack mod, is that claim in one test. Milestone 1 is
+closed: chest → inserter → assembler → inserter → chest, on a grid.
 
 ### 2 — Belts · 4 new
 
@@ -293,6 +303,28 @@ FE mod on 26.2, it is MIT, and it does the opposite: `CableBlock` registers a ti
 ticks, and every cable holds its own copy of the network's producer and consumer maps. Read it for
 what the endpoints look like and how connection changes propagate. Do not copy its tick model —
 non-negotiable #5 is exactly the constraint it does not have.
+
+**Built, in `nauvis_power/.../grid/`.** `PowerNetwork` is the object; `PowerNetworkManager` owns
+one per level and is driven by a single `LevelTickEvent.Post`. Two things about it were not obvious
+in advance and are worth knowing before changing it:
+
+- **A machine cannot find a pole, so the pole finds the machine.** Non-negotiable #3 forbids
+  `nauvis_machines` from knowing what a pole is, so discovery goes the other way, through
+  `Capabilities.Energy.BLOCK`. The hard part is the trigger for a machine built *later*, two blocks
+  from a pole and in nobody's neighbourhood: `BlockEvent.NeighborNotifyEvent`, which fires for any
+  block placed or broken by any means, pre-filtered by a map of which poles reach into which chunk.
+  A capability listener on all 125 supply positions of every pole is the exact alternative and
+  would cost over a million weak references in a base of ten thousand poles.
+- **Poles are bucketed into 8-block cells**, which is more than the 7.5 wire reach, so two poles
+  that can see each other are always within one cell of each other on every axis. That turns the
+  graph walk a split needs into a constant per pole instead of a 15×15×15 scan, and it is the
+  difference between breaking a pole in a big network being free and being a visible stutter.
+
+What it cannot do yet is discharge a battery: a network collects supply by asking every endpoint
+that did *not* want energy, so an accumulator will charge and never feed the grid until that grows
+a third case. And a network that has moved nothing is re-checked every ten ticks rather than woken
+exactly, because "a generator elsewhere filled up" and "a machine got hungry" are facts about
+handlers in other mods that owe us no signal.
 
 Two radii, not one. Factorio's small pole reaches 7.5 blocks to another pole and supplies a 5x5
 area, and keeping both is what makes a base look like a Factorio base rather than a line of cables.

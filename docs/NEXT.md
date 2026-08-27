@@ -1,130 +1,79 @@
 Next session
 ============
 
-Written 2026-08-26 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
+Written 2026-08-27 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
 Delete or rewrite it when the task below is done — it describes one job, not the project.
 
-The job: the electric network, and the small power pole
--------------------------------------------------------
+**Milestone 1 is closed.** Chest → inserter → assembler → inserter → chest, on a grid, burning
+coal at one end. Thirty gametests pass. The job below is milestone 2: belts.
 
-`nauvis_power:small_electric_pole` — 2 copper cable, 2 oak planks — and the thing behind it, which
-is the actual work: **moving electricity from generators to machines without paying for it every
-tick.**
+The job: transport belts
+------------------------
 
-This is the second of the two architectural decisions that are expensive to reverse. The other is
-belts, and PLAN.md's belt note already says the thing that matters here too:
+`nauvis_logistics:transport_belt` — 1 iron gear wheel, 1 iron plate, yields 2, 0.5s — and the
+thing behind it, which is the actual work.
+
+**This is the last of the three decisions that are expensive to reverse**, and PLAN.md has said
+the same sentence about all three:
 
 > A transport line is one object; items are positions on it. That is how Factorio does it too.
 
-The same sentence with the nouns changed is the whole design. **An electric network is one object;
-poles are members of it.** Get that wrong and it is a rewrite, not a patch.
+Poles and networks were the same sentence with the nouns changed, and the result is in
+`nauvis_power/.../grid/` — read it before starting, not for the code but for the shape. One object
+per connected thing, members that join and leave rather than tick, and a manager that iterates the
+objects rather than the members. A belt run is the same problem with an ordering on it.
 
-### Why this is not a normal block
+### The shortcut PLAN.md licenses, and what it costs
 
-Everything built so far sleeps because a machine can answer "have I got work?" by looking at
-itself. A pole cannot. It is not a machine that does something — it is one node in a graph whose
-job is to make a hundred other blocks reachable from each other, and the graph is the thing that
-has to tick, not the node.
+PLAN.md explicitly permits **a BlockEntity per belt block passing items along**, and says the
+rewrite must be containable, which is why belts get their own mod. That shortcut is fine for a few
+hundred belts and lets milestone 2 ship. It will not survive a real base, for exactly the reason
+the naive pole did: N block entities is N ticks a second, and an item takes N ticks to cross N
+belts.
 
-Three shapes, and the first two are traps:
-
-**Naive: every pole ticks and pushes to its neighbours.** N poles × 20 ticks a second, and a
-packet of energy takes N ticks to cross N poles. This is what a base of ten thousand poles cannot
-afford, and it is what non-negotiable #5 exists to prevent.
-
-**Naive: every pole rescans its supply area.** A 5×5×N block scan per pole per tick. Worse.
-
-**What to build: one object per connected network.** The network holds its member poles, the
-producers it can pull from and the consumers it can push to. It ticks **once**, not once per pole.
-The cost is one iteration per network plus the machines that actually want energy — a big base has
-a handful of networks, not thousands. A network with no producer, or with every consumer full,
-does not tick at all.
+**Decide deliberately which one you are building**, and say so in the commit. The grid took the
+harder road because "one object per network" was cheap to build once the indexes existed; belts may
+not be, because a belt run has an order, a direction, splitters that fork it and undergrounds that
+skip part of it. A `BeltInventory` that owns a whole run and `TransportedItemStack`s that carry a
+position along it is the endgame either way.
 
 ### Read this first, and then do it differently
 
-**`reference/mods/energizedpower-3.0.0+26.2.x-neoforge.jar` is the one FE mod on our exact
-Minecraft version, and it is MIT.** It is worth twenty minutes with `javap` before writing
-anything, because it is a working answer to this exact problem and it is a working answer of the
-shape this pack cannot use:
+`reference/create-src/src/main/java/com/simibubi/create/content/kinetics/belt/transport/` is the
+reference. `TransportedItemStack` carries a position *along* the belt; `BeltInventory` owns the
+whole run; segment blocks delegate to one controller. That is the architecture.
 
-- `CableBlock` has a `getTicker`, so **every cable ticks every tick**;
-- every `CableBlockEntity` holds its *own* `Map<Pair<BlockPos, Direction>, EnergyHandler>` of
-  producers and consumers, plus its own `Deque<BlockPos>` of the component it discovered — so the
-  whole network's endpoint table is duplicated once per cable;
-- `updateConnections` re-floods on change, per cable.
-
-That is a perfectly reasonable mod and a bad fit for a pack whose first non-negotiable about
-performance is that idle machines cost zero. Read it for what the endpoints look like and how it
-handles connection changes; do not copy its tick model. MIT means adapting is allowed *with
-attribution* — check `CLAUDE.md`'s licensing section before lifting a line.
-
-### The shape to build
-
-- **`PowerNetwork`** — a plain object, not a block entity. Holds member pole positions, and
-  `BlockCapabilityCache` handles on producers and consumers so a transfer is never a lookup.
-  One `tick()`: pull from producers into a budget, push the budget to consumers.
-- **A per-level manager** driven by `ServerTickEvent.Post` (or `LevelTickEvent.Post` — both have
-  `Pre`/`Post` subclasses). It iterates *active* networks only. One object ticking, not thousands.
-- **Poles join and leave**, they do not tick. `onLoad` registers, `setRemoved` and
-  `onChunkUnloaded` deregister, `neighborChanged` re-links.
-- **Machines find poles, not the other way round.** A machine scans a small radius for poles when
-  it is placed or loads, and registers with whatever network it finds. A pole placed later scans
-  once for machines in range. Both are O(r³) but only on placement, which is rare — the thing that
-  must never be per-tick is the scan.
-- **Do not persist the graph.** It is derivable from block positions, so saving it is caching, and
-  invalidating that cache across chunk loads is where the bugs would live. Rebuild on load.
-
-### Numbers
-
-Factorio's small electric pole: **wire reach 7.5** (pole to pole) and a **5×5 supply area** (two
-blocks either side). Both are behaviour rather than identity, so they are yours to tune — the id,
-the 2 copper cable, the 2 oak planks and the 0.5s are not, and those are generated. Two radii, not
-one, is worth keeping: it is what makes a Factorio base look like a Factorio base.
+**Create's code is MIT and adapting it with attribution is permitted. Its assets are All Rights
+Reserved.** And its belt code is welded to the kinetics framework — stress, rotation, contraptions —
+which is the exact weight this pack exists to avoid. Read it and reimplement.
 
 ### How you will know it works
 
-Assert the sleeping, not just the flowing. `power_chain_sleeps` in `nauvis_power` is the model, and
-so is the way it was checked: delete the guard and watch the right test go red. When that was done
-to the boiler it failed on the *engine*, because a boiler that keeps burning keeps calling
-`setChanged`, which wakes the engine through `onNeighborChange` forever. Cascades unravel from
-either end, so test from both.
+Assert the sleeping, not just the moving, and delete the guard to watch the right test go red —
+that check has caught two things this session that only looked correct. `power_network_sleeps` and
+`electric_inserter_needs_power` are the models for how it is written.
 
-For a network the assertions are: a network with a full consumer is not in the manager's active
-set; breaking a pole splits one network into two; placing one merges them; and a machine two poles
-away from a generator receives energy.
+For belts the assertions are: an item put on one end comes off the other in the right number of
+ticks; a belt with nothing on it is not scheduled; breaking a belt in the middle of a run splits it
+and neither half loses an item; an inserter can take from a belt and put onto one.
 
-Then: spend it
---------------
-
-The pole is only worth having if something drains it.
-
-**Make the assembler consume FE.** Factorio's assembling machine 1 is electric and ours runs on
-nothing. It wants a `SimpleEnergyHandler` buffer, an insert-only capability so a network can fill
-it, and a per-tick cost while crafting. PLAN.md's brownout shortcut — "a machine whose buffer
-cannot refill runs slower" — is a later refinement; stopping when empty is enough first.
-
-**Watch the sleep rules when you do.** The assembler currently wakes on inventory, recipe and
-neighbour changes. Add "energy arrived", or a machine that ran dry will sleep through the grid
-coming back. That is the same class of bug the power chain's test was written to catch.
-
-**Then the electric `inserter`**, which is deliberately unregistered: it costs an electronic
-circuit and runs on the grid, and shipping it before there is a grid would mean an item that works
-without the power it is supposed to need. That closes milestone 1.
-
-Where milestone 1 stands
-------------------------
+Where the pack stands
+---------------------
 
 | | |
 |---|---|
-| `nauvis_machines:assembling_machine_1` | recipe selector, six ingredient slots, timed craft, a screen |
-| `nauvis_logistics:burner_inserter` | takes from behind, gives in front, burns coal |
+| `nauvis_machines:assembling_machine_1` | recipe selector, six ingredient slots, timed craft, a screen, **runs on 10 FE a tick** |
+| `nauvis_logistics:burner_inserter` | takes from behind, gives in front, burns coal, 30-tick swing |
+| `nauvis_logistics:inserter` | the same on 2 FE a tick, 24-tick swing |
 | `nauvis_logistics:iron_chest` | 36 slots on vanilla's four-row screen |
 | `nauvis_fluids:pipe` | an ingredient that happens to be placeable |
 | `nauvis_power:boiler` | burns fuel, makes steam |
-| `nauvis_power:steam_engine` | steam in, FE out |
+| `nauvis_power:steam_engine` | steam in, 120 FE a tick out |
+| `nauvis_power:small_electric_pole` | a member of a network, and nothing else |
 
-Twenty gametests pass. Nothing consumes power yet, so the boiler and the engine are a demo rather
-than part of the factory — which is what the job above is for.
+Power numbers keep Factorio's ratios rather than its units: one engine runs twelve assemblers, one
+boiler runs twenty-four, an inserter costs almost nothing. None of that is identity; the ids, the
+ingredients and the craft times are, and those are generated.
 
 How to run everything
 ---------------------
@@ -156,27 +105,40 @@ The patterns worth copying
 work. Every machine schedules its own block tick while it has something to do and stops when it
 does not. An unscheduled position is never visited, and scheduled ticks are saved with the chunk.
 
-Three ways a machine learns it has work again, and one usually needs more than one:
+Four ways a machine learns it has work again, and one usually needs more than one:
 
 - its own inventory changed (`onContentsChanged`);
+- **electricity arrived** — `MachinePower` / `InserterPower` exist only to carry that callback. A
+  machine that ran dry has stopped scheduling ticks, so nothing it does can restart it: the wake
+  has to come from whatever filled the buffer. Deleting either callback fails exactly one test;
 - a *neighbour's* block entity changed — `onNeighborChange`, which every `setChanged()` reaches on
-  all six sides. This is how an inserter hears a chest gain an item and how an engine hears a
-  boiler make steam. Filter on the `neighbor` position before looking anything up;
+  all six sides. This is how an inserter hears a chest gain an item. Filter on the `neighbor`
+  position before looking anything up;
 - a neighbouring *block* changed (`neighborChanged`), plus `onLoad` for its own chunk reloading.
 
 `level.getBlockTicks().hasScheduledTick(pos, block)` is how a gametest asserts a machine really is
 asleep. **Assert it for anything new**, then delete the sleep logic and watch the test go red before
-trusting it — every wake mechanism here was checked that way and two only looked correct.
+trusting it.
+
+**One object per connected thing.** `nauvis_power/.../grid/` is the worked example and the one to
+copy the shape of for belts. `PowerNetwork` holds member poles and machine handles and ticks once;
+`PowerNetworkManager` iterates networks, of which a base has a handful, rather than poles, of which
+it has thousands; a network that moved nothing leaves the active set. Poles never tick.
+
+Two things in there were not obvious and are written up in PLAN.md's electric network note: how a
+machine two blocks from a pole is discovered at all without `nauvis_machines` learning what a pole
+is, and why poles are bucketed into 8-block cells.
 
 **Transactions.** Spending and receiving happen inside one `Transaction`, so a result that will not
 fit rolls back as though nothing happened. Passing `commit = false` to the same method turns it into
-the simulation, so "can I?" and "do it" cannot drift apart.
+the simulation, so "can I?" and "do it" cannot drift apart. The network's tick uses a whole
+uncommitted transaction as its demand survey for the same reason.
 
 **One interface.** Facrafting owns the crafting UI. Its panel attaches to any container screen; a
 menu implementing `RecipeSelector` makes a left-click there point that machine instead of queueing
 a personal craft, and right-click still queues. Machine screens grow out of that rather than sit
-beside it — see `AssemblerScreen`, which has slots and a progress bar and deliberately no recipe
-list.
+beside it — see `AssemblerScreen`, which has slots, a progress bar, a charge bar and deliberately
+no recipe list.
 
 Traps that have already cost time
 ---------------------------------
@@ -189,13 +151,27 @@ Traps that have already cost time
   only for a hard-coded list of vanilla block entity types.
 - **A built-in datapack needs a `pack.mcmeta`**, or `AddPackFindersEvent` throws a bare NPE naming
   neither the mod nor the directory.
-- **Screen geometry is arithmetic and can be checked without eyes.** The first assembler screen drew
-  its progress bar through a column of slots and two labels through each other.
-  `tools/check_gui_layout.py` reads the constants back out of the source and would have failed on
-  all three.
+- **Asking for a capability in an unloaded chunk loads it.** `PowerNetwork#addEndpoint` checks
+  `level.isLoaded` first, and not as an optimisation — without it a pole at the edge of the loaded
+  world drags its neighbours in. The chunk loading later is itself the trigger to look again.
+- **Screen geometry is arithmetic and can be checked without eyes.** `tools/check_gui_layout.py`
+  reads the constants back out of the source and would have failed on the first assembler screen
+  three times over.
 
 What is deliberately missing
 ----------------------------
+
+**An accumulator cannot discharge.** A network collects supply by asking every endpoint that did
+*not* want energy, so a battery would charge and never feed the grid. `PowerNetwork` says so in its
+own comment; it wants a third case, and there is no accumulator until milestone 3.
+
+**A network that moved nothing is re-checked every ten ticks rather than woken exactly.** It hears
+about poles and machines appearing the moment they do, but "a generator elsewhere filled up" and "a
+machine got hungry again" are facts about handlers in other mods that owe us no signal. Half a
+second of latency, paid by a handful of objects rather than by every pole.
+
+**No brownout.** PLAN.md wants a machine whose buffer cannot refill to run *slower*; ours stops.
+That is the refinement the per-machine buffer was designed to allow.
 
 **Personal crafts pay at the end, not the start.** Factorio takes a craft's ingredients the moment
 you queue it. Facrafting's `CraftTicker` checks affordability every tick and only consumes on
@@ -209,17 +185,18 @@ confirm. Ours is a persistent JEI-style column beside the screen. Same informati
 shape, and the modal is the more faithful one. That is a Facrafting change now that its panel is the
 shared interface, and it wants Yannic's eye rather than a guess.
 
-**Smaller.** Nothing tests that inventories survive a save and reload. The assembler's input slots
-are unfiltered. The inserter's 30-tick swing is the one number in the pack not from Factorio's dump
-(its burner inserter is about 0.6 items a second). An inserter at a chunk border whose source chunk
+**Smaller.** Nothing tests that inventories survive a save and reload, and nothing tests that a
+network is rebuilt correctly after a chunk cycle — both paths exist and both are only reasoned
+about. The assembler's input slots are unfiltered. An inserter at a chunk border whose source chunk
 cycles while it stays loaded can sleep through items appearing.
 
 Textures
 --------
 
 Every model points at *vanilla* textures on purpose — a blast furnace body for the assembler, a
-furnace with a front face for the inserter so its facing is visible, bricks for the boiler, iron for
-the engine and the pipe. A model naming a texture the mod does not ship renders as the magenta
+furnace with a front face for the burner inserter and a blast furnace for the electric one so the
+two are told apart, bricks for the boiler, iron for the engine and the pipe, a stripped oak fence
+post for the pole. A model naming a texture the mod does not ship renders as the magenta
 checkerboard, which reads as a broken model rather than as art nobody has drawn yet.
 
 `../NeoProgressiveAutomation/texture-workshop/` is the approach that produced the drills, and its
