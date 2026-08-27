@@ -305,8 +305,21 @@ what the endpoints look like and how connection changes propagate. Do not copy i
 non-negotiable #5 is exactly the constraint it does not have.
 
 **Built, in `nauvis_power/.../grid/`.** `PowerNetwork` is the object; `PowerNetworkManager` owns
-one per level and is driven by a single `LevelTickEvent.Post`. Two things about it were not obvious
-in advance and are worth knowing before changing it:
+one per level and is driven by a single `LevelTickEvent.Post`.
+
+**The pole itself is three blocks tall**, a true multi-block on one `PolePart` property in the way
+a vanilla door is two: placement refuses when there is no headroom, `setPlacedBy` puts the upper
+two in, and one `updateShape` rule — a part whose neighbour above or below is not what it should be
+turns to air — is the entire teardown. Only the bottom carries the block entity and only the bottom
+drops the item, so breaking any part gives back exactly one pole. A one-block pole read as a fence
+post; the other way to get height, a `VoxelShape` three blocks tall on a single block, has the
+renderer cull the whole thing the moment its one real block leaves the screen.
+**`reference/ImmersiveEngineering-src`'s `wooden_post` is the reference** for that shape — base
+block holds the logic, dummies above, break one and the whole thing goes. Read and reimplemented,
+not copied; IE's licence permits drawing on it with credit and requires visible source, which this
+is. Its assets were not touched.
+
+Two things about the network were not obvious in advance and are worth knowing before changing it:
 
 - **A machine cannot find a pole, so the pole finds the machine.** Non-negotiable #3 forbids
   `nauvis_machines` from knowing what a pole is, so discovery goes the other way, through

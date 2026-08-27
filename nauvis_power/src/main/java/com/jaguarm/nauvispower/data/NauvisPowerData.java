@@ -5,6 +5,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import com.jaguarm.nauvispower.NauvisPower;
+import com.jaguarm.nauvispower.grid.PolePart;
+import com.jaguarm.nauvispower.grid.SmallElectricPoleBlock;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 import com.jaguarm.nauvispower.registry.ModItems;
 
@@ -77,7 +79,10 @@ public final class NauvisPowerData {
         protected void generate() {
             dropSelf(ModBlocks.BOILER.get());
             dropSelf(ModBlocks.STEAM_ENGINE.get());
-            dropSelf(ModBlocks.SMALL_ELECTRIC_POLE.get());
+            // One pole, not three. The other two parts are torn down by the block itself and
+            // must drop nothing, or a pole would be a way to make two more.
+            add(ModBlocks.SMALL_ELECTRIC_POLE.get(), createSinglePropConditionTable(
+                    ModBlocks.SMALL_ELECTRIC_POLE.get(), SmallElectricPoleBlock.PART, PolePart.BOTTOM));
         }
 
         @Override

@@ -5,7 +5,7 @@ Written 2026-08-27 for whoever picks this up cold. Read `../CLAUDE.md` first, th
 Delete or rewrite it when the task below is done — it describes one job, not the project.
 
 **Milestone 1 is closed.** Chest → inserter → assembler → inserter → chest, on a grid, burning
-coal at one end. Thirty gametests pass. The job below is milestone 2: belts.
+coal at one end. Thirty-three gametests pass. The job below is milestone 2: belts.
 
 The job: transport belts
 ------------------------
@@ -69,7 +69,7 @@ Where the pack stands
 | `nauvis_fluids:pipe` | an ingredient that happens to be placeable |
 | `nauvis_power:boiler` | burns fuel, makes steam |
 | `nauvis_power:steam_engine` | steam in, 120 FE a tick out |
-| `nauvis_power:small_electric_pole` | a member of a network, and nothing else |
+| `nauvis_power:small_electric_pole` | three blocks tall, a member of a network, and nothing else |
 
 Power numbers keep Factorio's ratios rather than its units: one engine runs twelve assemblers, one
 boiler runs twenty-four, an inserter costs almost nothing. None of that is identity; the ids, the
@@ -119,6 +119,14 @@ Four ways a machine learns it has work again, and one usually needs more than on
 `level.getBlockTicks().hasScheduledTick(pos, block)` is how a gametest asserts a machine really is
 asleep. **Assert it for anything new**, then delete the sleep logic and watch the test go red before
 trusting it.
+
+**Multi-blocks are vanilla's job.** `SmallElectricPoleBlock` is three blocks on one `PolePart`
+property, the way a door is two: refuse placement without headroom, place the rest from
+`setPlacedBy`, and let one `updateShape` rule — a part whose vertical neighbour is wrong turns to
+air — be the whole teardown. That rule covers being broken, exploded, `/setblock`ed and moved by
+another mod, rather than only the cases somebody thought to handle, and an air result routed
+through `Block.updateOrDestroy` is what drops the item. A belt run that wants a visual "this is one
+run" state can lean on the same property-plus-`updateShape` shape.
 
 **One object per connected thing.** `nauvis_power/.../grid/` is the worked example and the one to
 copy the shape of for belts. `PowerNetwork` holds member poles and machine handles and ticks once;

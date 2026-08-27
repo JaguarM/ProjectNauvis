@@ -1,7 +1,13 @@
 {
   "variants": {
-    "": {
-      "model": "nauvis_power:block/small_electric_pole_post"
+    "part=bottom": {
+      "model": "nauvis_power:block/small_electric_pole_bottom"
+    },
+    "part=middle": {
+      "model": "nauvis_power:block/small_electric_pole_middle"
+    },
+    "part=top": {
+      "model": "nauvis_power:block/small_electric_pole_top"
     }
   }
 }

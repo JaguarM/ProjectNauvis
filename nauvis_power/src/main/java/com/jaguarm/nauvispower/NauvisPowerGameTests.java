@@ -6,13 +6,17 @@ import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.nauvispower.generator.BoilerBlockEntity;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
+import com.jaguarm.nauvispower.grid.PolePart;
 import com.jaguarm.nauvispower.grid.PowerNetwork;
 import com.jaguarm.nauvispower.grid.PowerNetworkManager;
+import com.jaguarm.nauvispower.grid.SmallElectricPoleBlock;
 import com.jaguarm.nauvispower.registry.ModBlocks;
+import com.jaguarm.nauvispower.registry.ModItems;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -22,11 +26,17 @@ import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -66,6 +76,9 @@ public final class NauvisPowerGameTests {
         TEST_TYPES.register("pole_finds_a_machine", () -> PoleFindsAMachineTest.CODEC);
         TEST_TYPES.register("pole_finds_a_later_machine", () -> PoleFindsALaterMachineTest.CODEC);
         TEST_TYPES.register("power_network_sleeps", () -> PowerNetworkSleepsTest.CODEC);
+        TEST_TYPES.register("pole_stands_three_blocks_tall", () -> PoleStandsThreeBlocksTallTest.CODEC);
+        TEST_TYPES.register("pole_breaks_as_one", () -> PoleBreaksAsOneTest.CODEC);
+        TEST_TYPES.register("pole_needs_headroom", () -> PoleNeedsHeadroomTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -88,6 +101,10 @@ public final class NauvisPowerGameTests {
         registerSpaced(event, environment, "pole_finds_a_later_machine",
                 PoleFindsALaterMachineTest::new, 200);
         registerSpaced(event, environment, "power_network_sleeps", PowerNetworkSleepsTest::new, 200);
+        registerSpaced(event, environment, "pole_stands_three_blocks_tall",
+                PoleStandsThreeBlocksTallTest::new, 100);
+        registerSpaced(event, environment, "pole_breaks_as_one", PoleBreaksAsOneTest::new, 200);
+        registerSpaced(event, environment, "pole_needs_headroom", PoleNeedsHeadroomTest::new, 100);
     }
 
     private interface TestFactory {
@@ -135,6 +152,28 @@ public final class NauvisPowerGameTests {
 
     private static boolean isScheduled(GameTestHelper helper, BlockPos pos, Block block) {
         return helper.getLevel().getBlockTicks().hasScheduledTick(helper.absolutePos(pos), block);
+    }
+
+    /**
+     * Places a block the way a player does, {@code setPlacedBy} included.
+     *
+     * <p>{@code helper.setBlock} writes one block state and stops, which is the whole of most
+     * blocks and none of a pole: a pole is three blocks tall and the upper two are placed from
+     * {@code setPlacedBy}. A test that skipped it would be testing a pole that cannot exist.
+     */
+    private static void place(GameTestHelper helper, BlockPos pos, Block block) {
+        helper.setBlock(pos, block);
+        BlockPos absolute = helper.absolutePos(pos);
+        block.setPlacedBy(helper.getLevel(), absolute,
+                helper.getLevel().getBlockState(absolute), null, ItemStack.EMPTY);
+    }
+
+    /** Which part of a pole, if any, stands at a test-relative position. */
+    private static @Nullable PolePart partAt(GameTestHelper helper, BlockPos pos) {
+        BlockState state = helper.getLevel().getBlockState(helper.absolutePos(pos));
+        return state.is(ModBlocks.SMALL_ELECTRIC_POLE.get())
+                ? state.getValue(SmallElectricPoleBlock.PART)
+                : null;
     }
 
     private static PowerNetworkManager grid(GameTestHelper helper) {
@@ -319,7 +358,8 @@ public final class NauvisPowerGameTests {
     /**
      * <b>The graph, and the two operations that are expensive to get wrong.</b>
      *
-     * <p>Three poles in a vertical line, four blocks apart. The outer two are eight apart, which
+     * <p>Three poles in a vertical line, four blocks apart - so each three-block pole clears the
+     * next by one. The outer two are eight apart, which
      * is past the 7.5 wire reach, so they are only ever connected through the middle one. Taking
      * the middle one out has to split one network into two, and putting it back has to merge them
      * again - and a merge that quietly leaves two objects behind, or a split that never happens,
@@ -342,8 +382,8 @@ public final class NauvisPowerGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            helper.setBlock(LOWER, ModBlocks.SMALL_ELECTRIC_POLE.get());
-            helper.setBlock(UPPER, ModBlocks.SMALL_ELECTRIC_POLE.get());
+            place(helper, LOWER, ModBlocks.SMALL_ELECTRIC_POLE.get());
+            place(helper, UPPER, ModBlocks.SMALL_ELECTRIC_POLE.get());
 
             helper.startSequence()
                     .thenExecuteAfter(5, () -> {
@@ -354,7 +394,7 @@ public final class NauvisPowerGameTests {
                                         + "not being measured");
                         helper.assertValueEqual(lower.poleCount(), 1, "poles in the lower network");
                     })
-                    .thenExecute(() -> helper.setBlock(MIDDLE, ModBlocks.SMALL_ELECTRIC_POLE.get()))
+                    .thenExecute(() -> place(helper, MIDDLE, ModBlocks.SMALL_ELECTRIC_POLE.get()))
                     .thenExecuteAfter(5, () -> {
                         PowerNetwork lower = requireNetwork(helper, LOWER, "the lower pole lost its network");
                         PowerNetwork upper = requireNetwork(helper, UPPER, "the upper pole lost its network");
@@ -409,7 +449,7 @@ public final class NauvisPowerGameTests {
             // would pick up both, and nothing else would notice.
             helper.setBlock(ENGINE, ModBlocks.STEAM_ENGINE.get());
             helper.setBlock(OUT_OF_RANGE, ModBlocks.STEAM_ENGINE.get());
-            helper.setBlock(POLE, ModBlocks.SMALL_ELECTRIC_POLE.get());
+            place(helper, POLE, ModBlocks.SMALL_ELECTRIC_POLE.get());
 
             helper.runAfterDelay(5, () -> {
                 PowerNetwork network = requireNetwork(helper, POLE, "the pole has no network");
@@ -456,7 +496,7 @@ public final class NauvisPowerGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            helper.setBlock(POLE, ModBlocks.SMALL_ELECTRIC_POLE.get());
+            place(helper, POLE, ModBlocks.SMALL_ELECTRIC_POLE.get());
 
             helper.startSequence()
                     .thenExecuteAfter(10, () -> helper.assertValueEqual(
@@ -509,7 +549,7 @@ public final class NauvisPowerGameTests {
         @Override
         public void run(GameTestHelper helper) {
             buildChain(helper, true);
-            helper.setBlock(POLE, ModBlocks.SMALL_ELECTRIC_POLE.get());
+            place(helper, POLE, ModBlocks.SMALL_ELECTRIC_POLE.get());
 
             helper.runAfterDelay(150, () -> {
                 PowerNetwork network = requireNetwork(helper, POLE, "the pole has no network");
@@ -533,6 +573,179 @@ public final class NauvisPowerGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("power network sleeps");
+        }
+    }
+
+    /**
+     * A pole is three blocks, and only the bottom one is a pole as far as the grid is concerned.
+     *
+     * <p>The second assertion is the one worth having. A multi-block that put a block entity in
+     * every part would work perfectly and cost three times the memory, and nothing else here would
+     * ever notice.
+     */
+    public static class PoleStandsThreeBlocksTallTest extends GameTestInstance {
+
+        public static final MapCodec<PoleStandsThreeBlocksTallTest> CODEC =
+                RecordCodecBuilder.<PoleStandsThreeBlocksTallTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PoleStandsThreeBlocksTallTest::info))
+                                .apply(i, PoleStandsThreeBlocksTallTest::new));
+
+        private static final BlockPos FOOT = new BlockPos(0, 1, 0);
+
+        public PoleStandsThreeBlocksTallTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, FOOT, ModBlocks.SMALL_ELECTRIC_POLE.get());
+
+            helper.assertValueEqual(partAt(helper, FOOT), PolePart.BOTTOM, "the part at the foot");
+            helper.assertValueEqual(partAt(helper, FOOT.above()), PolePart.MIDDLE,
+                    "the part one block up");
+            helper.assertValueEqual(partAt(helper, FOOT.above(2)), PolePart.TOP,
+                    "the part two blocks up");
+
+            helper.assertTrue(
+                    helper.getLevel().getBlockEntity(helper.absolutePos(FOOT.above())) == null,
+                    "the middle of a pole carries a block entity, which is three times the memory "
+                            + "a base of poles needs to hold nothing");
+
+            helper.runAfterDelay(5, () -> {
+                PowerNetwork network = requireNetwork(helper, FOOT, "the pole foot has no network");
+                helper.assertValueEqual(network.poleCount(), 1,
+                        "poles in the network - three blocks are one pole");
+                helper.assertTrue(networkAt(helper, FOOT.above()) == null,
+                        "the middle of a pole joined the network as a pole of its own");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("pole stands three blocks tall");
+        }
+    }
+
+    /**
+     * Break any part of a pole and the whole pole goes - once, and for one item back.
+     *
+     * <p>The middle is the interesting one to hit: it is neither the part that holds the block
+     * entity nor the part that drops the item, so it is the case where a teardown that only
+     * handled "broken from the bottom" would leave a pole floating with nothing under it.
+     */
+    public static class PoleBreaksAsOneTest extends GameTestInstance {
+
+        public static final MapCodec<PoleBreaksAsOneTest> CODEC =
+                RecordCodecBuilder.<PoleBreaksAsOneTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PoleBreaksAsOneTest::info))
+                                .apply(i, PoleBreaksAsOneTest::new));
+
+        private static final BlockPos FOOT = new BlockPos(0, 1, 0);
+
+        public PoleBreaksAsOneTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, FOOT, ModBlocks.SMALL_ELECTRIC_POLE.get());
+
+            helper.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertTrue(networkAt(helper, FOOT) != null, "the pole has no network");
+                        helper.setBlock(FOOT.above(), Blocks.AIR);
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        for (int height = 0; height < SmallElectricPoleBlock.HEIGHT; height++) {
+                            // Not assertValueEqual: it compares by calling equals on the value,
+                            // so a null one is a crash rather than a failure.
+                            helper.assertTrue(partAt(helper, FOOT.above(height)) == null,
+                                    "part of the pole is still standing " + height
+                                            + " blocks up after the middle was broken");
+                        }
+                        helper.assertTrue(networkAt(helper, FOOT) == null,
+                                "a pole that no longer exists is still in the grid index");
+
+                        // One item, not three and not none. The middle and the top drop nothing
+                        // by a loot-table condition; the bottom's own destruction is what pays
+                        // the player back, whichever part they actually hit.
+                        helper.assertItemEntityCountIs(
+                                ModItems.SMALL_ELECTRIC_POLE.get(), FOOT, 4.0, 1);
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("pole breaks as one");
+        }
+    }
+
+    /**
+     * A pole will not go under a low ceiling rather than going in half-built.
+     *
+     * <p>Refusing at {@code getStateForPlacement} is what makes the teardown rule safe to state so
+     * bluntly: if a pole could ever be placed with no room for its top, that rule would delete it
+     * again the instant anything nudged it, and the player would have watched a pole vanish.
+     */
+    public static class PoleNeedsHeadroomTest extends GameTestInstance {
+
+        public static final MapCodec<PoleNeedsHeadroomTest> CODEC =
+                RecordCodecBuilder.<PoleNeedsHeadroomTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PoleNeedsHeadroomTest::info))
+                                .apply(i, PoleNeedsHeadroomTest::new));
+
+        private static final BlockPos GROUND = new BlockPos(0, 1, 0);
+        private static final BlockPos FOOT = new BlockPos(0, 2, 0);
+
+        public PoleNeedsHeadroomTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            helper.setBlock(GROUND, Blocks.STONE);
+
+            helper.assertTrue(placementState(helper) != null,
+                    "a pole refused to go somewhere with three blocks of clear air above it");
+
+            // A ceiling where the pole's own top would be.
+            helper.setBlock(FOOT.above(2), Blocks.STONE);
+            helper.assertTrue(placementState(helper) == null,
+                    "a pole went in under a ceiling too low for it, so two thirds of it is missing");
+
+            helper.succeed();
+        }
+
+        /** What the block would place as, asked exactly the way a right-click asks it. */
+        private static @Nullable BlockState placementState(GameTestHelper helper) {
+            BlockPos below = helper.absolutePos(GROUND);
+            BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(below), Direction.UP, below, false);
+            BlockPlaceContext context = new BlockPlaceContext(helper.getLevel(), null,
+                    InteractionHand.MAIN_HAND,
+                    new ItemStack(ModItems.SMALL_ELECTRIC_POLE.get()), hit);
+            return ModBlocks.SMALL_ELECTRIC_POLE.get().getStateForPlacement(context);
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("pole needs headroom");
         }
     }
 }

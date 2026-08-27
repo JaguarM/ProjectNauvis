@@ -18,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -195,12 +196,12 @@ public final class NauvisGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            helper.setBlock(BOILER, block(helper, "nauvis_power:boiler"));
-            helper.setBlock(ENGINE, block(helper, "nauvis_power:steam_engine"));
-            helper.setBlock(NEAR_POLE, block(helper, "nauvis_power:small_electric_pole"));
-            helper.setBlock(FAR_POLE, block(helper, "nauvis_power:small_electric_pole"));
-            helper.setBlock(ASSEMBLER, block(helper, "nauvis_machines:assembling_machine_1"));
-            helper.setBlock(UNPOWERED_ASSEMBLER, block(helper, "nauvis_machines:assembling_machine_1"));
+            place(helper, BOILER, block(helper, "nauvis_power:boiler"));
+            place(helper, ENGINE, block(helper, "nauvis_power:steam_engine"));
+            place(helper, NEAR_POLE, block(helper, "nauvis_power:small_electric_pole"));
+            place(helper, FAR_POLE, block(helper, "nauvis_power:small_electric_pole"));
+            place(helper, ASSEMBLER, block(helper, "nauvis_machines:assembling_machine_1"));
+            place(helper, UNPOWERED_ASSEMBLER, block(helper, "nauvis_machines:assembling_machine_1"));
 
             ResourceHandler<ItemResource> fuel = helper.getLevel()
                     .getCapability(Capabilities.Item.BLOCK, helper.absolutePos(BOILER), null);
@@ -228,6 +229,20 @@ public final class NauvisGameTests {
                     .getCapability(Capabilities.Energy.BLOCK, helper.absolutePos(pos), null);
             helper.assertTrue(handler != null, "no energy capability at " + pos);
             return handler.getAmountAsInt();
+        }
+
+        /**
+         * Places a block the way a player does, {@code setPlacedBy} included.
+         *
+         * <p>A power pole is three blocks tall and puts its upper two in from there, so a test
+         * that only wrote one block state would be building a pole that cannot exist. Calling it
+         * for everything costs nothing and needs no knowledge of which blocks care.
+         */
+        private static void place(GameTestHelper helper, BlockPos pos, Block block) {
+            helper.setBlock(pos, block);
+            BlockPos absolute = helper.absolutePos(pos);
+            block.setPlacedBy(helper.getLevel(), absolute,
+                    helper.getLevel().getBlockState(absolute), null, ItemStack.EMPTY);
         }
 
         /** A block by id, so the pack mod can name another mod's block without depending on it. */
