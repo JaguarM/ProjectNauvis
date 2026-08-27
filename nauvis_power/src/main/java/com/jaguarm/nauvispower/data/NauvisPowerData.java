@@ -14,11 +14,13 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.data.loot.LootTableProvider;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
@@ -42,6 +44,27 @@ public final class NauvisPowerData {
                         Set.of(),
                         List.of(new LootTableProvider.SubProviderEntry(BlockLoot::new, LootContextParamSets.BLOCK)),
                         lookup));
+        event.createProvider(BlockTagsData::new);
+    }
+
+    /**
+     * Tags, which so far means one: a pole is climbable.
+     *
+     * <p>Through the tag rather than by overriding {@code isLadder}, because NeoForge's default
+     * implementation of that method <em>is</em> this tag - writing Java here would take the choice
+     * away from datapacks rather than adding anything. It is also the tag mobs and the climbing
+     * sound already read.
+     */
+    private static class BlockTagsData extends BlockTagsProvider {
+
+        BlockTagsData(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
+            super(output, lookup, NauvisPower.MODID);
+        }
+
+        @Override
+        protected void addTags(HolderLookup.Provider registries) {
+            tag(BlockTags.CLIMBABLE).add(ModBlocks.SMALL_ELECTRIC_POLE.getKey());
+        }
     }
 
     private static class Lang extends LanguageProvider {
@@ -79,10 +102,10 @@ public final class NauvisPowerData {
         protected void generate() {
             dropSelf(ModBlocks.BOILER.get());
             dropSelf(ModBlocks.STEAM_ENGINE.get());
-            // One pole, not three. The other two parts are torn down by the block itself and
-            // must drop nothing, or a pole would be a way to make two more.
+            // One pole, not four. The other three parts are torn down by the block itself and
+            // must drop nothing, or a pole would be a way to make three more.
             add(ModBlocks.SMALL_ELECTRIC_POLE.get(), createSinglePropConditionTable(
-                    ModBlocks.SMALL_ELECTRIC_POLE.get(), SmallElectricPoleBlock.PART, PolePart.BOTTOM));
+                    ModBlocks.SMALL_ELECTRIC_POLE.get(), SmallElectricPoleBlock.PART, PolePart.FOOT));
         }
 
         @Override

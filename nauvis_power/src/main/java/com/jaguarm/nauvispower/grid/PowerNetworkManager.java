@@ -164,6 +164,7 @@ public final class PowerNetworkManager {
         network.addPole(key);
         networkByPole.put(key, network);
         pendingPoles.add(key);
+        refreshWires(key, reachable);
     }
 
     /**
@@ -181,6 +182,13 @@ public final class PowerNetworkManager {
 
         network.removePole(key);
         dropUnreachedEndpoints(network, key);
+
+        // This pole is already out of the index, so what it could reach is what is left standing.
+        LongArrayList orphaned = new LongArrayList();
+        collectWireNeighbours(key, orphaned);
+        for (int i = 0; i < orphaned.size(); i++) {
+            refreshWires(orphaned.getLong(i), null);
+        }
 
         if (network.poles().isEmpty()) {
             networks.remove(network);
@@ -267,6 +275,41 @@ public final class PowerNetworkManager {
                 }
             }
             pendingBlocks.clear();
+        }
+    }
+
+    /**
+     * Tells a pole, and everything it can see, what they are wired to.
+     *
+     * <p>Only the client cares - see {@code SmallElectricPoleBlockEntity#links}. It runs on
+     * placement and removal, which is the only time a wire can appear or disappear, and never on a
+     * tick. The neighbours have to be told too: a wire has two ends, and the one that already
+     * existed does not otherwise know that something just came into view.
+     *
+     * @param reachable the poles in range, if the caller already worked them out.
+     */
+    private void refreshWires(long pole, @Nullable LongArrayList reachable) {
+        LongArrayList wired = reachable;
+        if (wired == null) {
+            wired = new LongArrayList();
+            collectWireNeighbours(pole, wired);
+        }
+        setLinks(pole, wired);
+
+        for (int i = 0; i < wired.size(); i++) {
+            long neighbour = wired.getLong(i);
+            LongArrayList theirs = new LongArrayList();
+            collectWireNeighbours(neighbour, theirs);
+            setLinks(neighbour, theirs);
+        }
+    }
+
+    private void setLinks(long pole, LongArrayList wired) {
+        BlockPos pos = BlockPos.of(pole);
+        // isLoaded first: asking for a block entity in an unloaded chunk would load it.
+        if (level.isLoaded(pos)
+                && level.getBlockEntity(pos) instanceof SmallElectricPoleBlockEntity entity) {
+            entity.setLinks(wired.toLongArray());
         }
     }
 

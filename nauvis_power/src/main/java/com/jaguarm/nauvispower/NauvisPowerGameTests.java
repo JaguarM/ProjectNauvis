@@ -10,6 +10,7 @@ import com.jaguarm.nauvispower.grid.PolePart;
 import com.jaguarm.nauvispower.grid.PowerNetwork;
 import com.jaguarm.nauvispower.grid.PowerNetworkManager;
 import com.jaguarm.nauvispower.grid.SmallElectricPoleBlock;
+import com.jaguarm.nauvispower.grid.SmallElectricPoleBlockEntity;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 import com.jaguarm.nauvispower.registry.ModItems;
 import com.mojang.serialization.MapCodec;
@@ -76,9 +77,10 @@ public final class NauvisPowerGameTests {
         TEST_TYPES.register("pole_finds_a_machine", () -> PoleFindsAMachineTest.CODEC);
         TEST_TYPES.register("pole_finds_a_later_machine", () -> PoleFindsALaterMachineTest.CODEC);
         TEST_TYPES.register("power_network_sleeps", () -> PowerNetworkSleepsTest.CODEC);
-        TEST_TYPES.register("pole_stands_three_blocks_tall", () -> PoleStandsThreeBlocksTallTest.CODEC);
+        TEST_TYPES.register("pole_stands_four_blocks_tall", () -> PoleStandsFourBlocksTallTest.CODEC);
         TEST_TYPES.register("pole_breaks_as_one", () -> PoleBreaksAsOneTest.CODEC);
         TEST_TYPES.register("pole_needs_headroom", () -> PoleNeedsHeadroomTest.CODEC);
+        TEST_TYPES.register("pole_wires_link_up", () -> PoleWiresLinkUpTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -101,10 +103,11 @@ public final class NauvisPowerGameTests {
         registerSpaced(event, environment, "pole_finds_a_later_machine",
                 PoleFindsALaterMachineTest::new, 200);
         registerSpaced(event, environment, "power_network_sleeps", PowerNetworkSleepsTest::new, 200);
-        registerSpaced(event, environment, "pole_stands_three_blocks_tall",
-                PoleStandsThreeBlocksTallTest::new, 100);
+        registerSpaced(event, environment, "pole_stands_four_blocks_tall",
+                PoleStandsFourBlocksTallTest::new, 100);
         registerSpaced(event, environment, "pole_breaks_as_one", PoleBreaksAsOneTest::new, 200);
         registerSpaced(event, environment, "pole_needs_headroom", PoleNeedsHeadroomTest::new, 100);
+        registerSpaced(event, environment, "pole_wires_link_up", PoleWiresLinkUpTest::new, 200);
     }
 
     private interface TestFactory {
@@ -577,22 +580,22 @@ public final class NauvisPowerGameTests {
     }
 
     /**
-     * A pole is three blocks, and only the bottom one is a pole as far as the grid is concerned.
+     * A pole is four blocks, and only the foot is a pole as far as the grid is concerned.
      *
      * <p>The second assertion is the one worth having. A multi-block that put a block entity in
      * every part would work perfectly and cost three times the memory, and nothing else here would
      * ever notice.
      */
-    public static class PoleStandsThreeBlocksTallTest extends GameTestInstance {
+    public static class PoleStandsFourBlocksTallTest extends GameTestInstance {
 
-        public static final MapCodec<PoleStandsThreeBlocksTallTest> CODEC =
-                RecordCodecBuilder.<PoleStandsThreeBlocksTallTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(PoleStandsThreeBlocksTallTest::info))
-                                .apply(i, PoleStandsThreeBlocksTallTest::new));
+        public static final MapCodec<PoleStandsFourBlocksTallTest> CODEC =
+                RecordCodecBuilder.<PoleStandsFourBlocksTallTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PoleStandsFourBlocksTallTest::info))
+                                .apply(i, PoleStandsFourBlocksTallTest::new));
 
         private static final BlockPos FOOT = new BlockPos(0, 1, 0);
 
-        public PoleStandsThreeBlocksTallTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+        public PoleStandsFourBlocksTallTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
             super(info);
         }
 
@@ -600,21 +603,24 @@ public final class NauvisPowerGameTests {
         public void run(GameTestHelper helper) {
             place(helper, FOOT, ModBlocks.SMALL_ELECTRIC_POLE.get());
 
-            helper.assertValueEqual(partAt(helper, FOOT), PolePart.BOTTOM, "the part at the foot");
-            helper.assertValueEqual(partAt(helper, FOOT.above()), PolePart.MIDDLE,
-                    "the part one block up");
-            helper.assertValueEqual(partAt(helper, FOOT.above(2)), PolePart.TOP,
-                    "the part two blocks up");
+            for (PolePart part : PolePart.values()) {
+                helper.assertValueEqual(partAt(helper, FOOT.above(part.height())), part,
+                        "the part " + part.height() + " blocks up");
+            }
 
-            helper.assertTrue(
-                    helper.getLevel().getBlockEntity(helper.absolutePos(FOOT.above())) == null,
-                    "the middle of a pole carries a block entity, which is three times the memory "
-                            + "a base of poles needs to hold nothing");
+            for (PolePart part : PolePart.values()) {
+                boolean expected = part == PolePart.FOOT;
+                helper.assertTrue(
+                        (helper.getLevel().getBlockEntity(
+                                helper.absolutePos(FOOT.above(part.height()))) != null) == expected,
+                        "block entity at the " + part.getSerializedName() + " of a pole - only the "
+                                + "foot should have one, or a base of poles pays four times over");
+            }
 
             helper.runAfterDelay(5, () -> {
                 PowerNetwork network = requireNetwork(helper, FOOT, "the pole foot has no network");
                 helper.assertValueEqual(network.poleCount(), 1,
-                        "poles in the network - three blocks are one pole");
+                        "poles in the network - four blocks are one pole");
                 helper.assertTrue(networkAt(helper, FOOT.above()) == null,
                         "the middle of a pole joined the network as a pole of its own");
                 helper.succeed();
@@ -628,7 +634,7 @@ public final class NauvisPowerGameTests {
 
         @Override
         protected MutableComponent typeDescription() {
-            return Component.literal("pole stands three blocks tall");
+            return Component.literal("pole stands four blocks tall");
         }
     }
 
@@ -746,6 +752,80 @@ public final class NauvisPowerGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("pole needs headroom");
+        }
+    }
+
+    /**
+     * <b>Poles wire themselves up.</b>
+     *
+     * <p>There is no coil to craft and no connector to place: two poles that can see each other are
+     * wired, because the network has already worked out that they are connected and a player being
+     * asked to say it a second time is the part of Immersive Engineering this pack does not want.
+     *
+     * <p>What is asserted is the list the <em>client</em> draws from. Both ends have to know - a
+     * wire has two, and the pole that was already standing has no other way to learn that something
+     * came into view - and the pole out of reach has to know nothing, or the rule is not reach at
+     * all. Breaking one end has to clear the other, or the wire hangs in the air pointing at
+     * nothing.
+     */
+    public static class PoleWiresLinkUpTest extends GameTestInstance {
+
+        public static final MapCodec<PoleWiresLinkUpTest> CODEC =
+                RecordCodecBuilder.<PoleWiresLinkUpTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PoleWiresLinkUpTest::info))
+                                .apply(i, PoleWiresLinkUpTest::new));
+
+        private static final BlockPos NEAR = new BlockPos(0, 1, 0);
+        /** Five apart, inside the 7.5 wire reach. */
+        private static final BlockPos ALSO_NEAR = new BlockPos(5, 1, 0);
+        /** Twelve from both, outside it. */
+        private static final BlockPos FAR = new BlockPos(0, 1, 12);
+
+        public PoleWiresLinkUpTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, NEAR, ModBlocks.SMALL_ELECTRIC_POLE.get());
+            place(helper, ALSO_NEAR, ModBlocks.SMALL_ELECTRIC_POLE.get());
+            place(helper, FAR, ModBlocks.SMALL_ELECTRIC_POLE.get());
+
+            helper.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        assertWiredTo(helper, NEAR, ALSO_NEAR);
+                        assertWiredTo(helper, ALSO_NEAR, NEAR);
+                        helper.assertValueEqual(links(helper, FAR).length, 0,
+                                "wires from a pole twelve blocks from anything");
+                    })
+                    .thenExecute(() -> helper.setBlock(ALSO_NEAR, Blocks.AIR))
+                    .thenExecuteAfter(5, () -> helper.assertValueEqual(links(helper, NEAR).length, 0,
+                            "wires still hanging off a pole whose only neighbour was broken"))
+                    .thenSucceed();
+        }
+
+        private static long[] links(GameTestHelper helper, BlockPos pole) {
+            return helper.getBlockEntity(pole, SmallElectricPoleBlockEntity.class).links();
+        }
+
+        private static void assertWiredTo(GameTestHelper helper, BlockPos from, BlockPos to) {
+            long wanted = helper.absolutePos(to).asLong();
+            for (long link : links(helper, from)) {
+                if (link == wanted) {
+                    return;
+                }
+            }
+            helper.fail("the pole at " + from + " is not wired to the one at " + to);
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("pole wires link up");
         }
     }
 }

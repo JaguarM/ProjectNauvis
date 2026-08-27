@@ -15,7 +15,7 @@
               "block": "nauvis_power:small_electric_pole",
               "condition": "minecraft:block_state_property",
               "properties": {
-                "part": "bottom"
+                "part": "foot"
               }
             }
           ],

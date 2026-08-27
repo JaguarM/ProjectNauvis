@@ -30,7 +30,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * The small electric pole. Two copper cable and two oak planks, three blocks tall, and the reason
+ * The small electric pole. Two copper cable and two oak planks, four blocks tall, and the reason
  * the rest of this package exists.
  *
  * <p><b>It has no ticker and no {@code tick} override</b>, and that is the point rather than an
@@ -39,12 +39,12 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * which schedule their own ticks because each can answer "have I got work?" by looking at itself.
  * A pole cannot - it is a node in a graph, and the graph is the thing with work to do.
  *
- * <h2>Three blocks, one thing</h2>
+ * <h2>Four blocks, one thing</h2>
  *
- * <p>A one-block pole reads as a fence post. A real one has to stand over the machines it feeds,
- * and the honest way to do that in Minecraft is a true multi-block: three real blocks with a
+ * <p>A one-block pole reads as a fence post. A real one has to stand well over the machines it
+ * feeds, and the honest way to do that in Minecraft is a true multi-block: four real blocks with a
  * {@link PolePart} property, placed together and broken together. The alternative - one block with
- * a {@code VoxelShape} three blocks tall - looks the same until you walk up to it, at which point
+ * a {@code VoxelShape} four blocks tall - looks the same until you walk up to it, at which point
  * the renderer culls the whole pole the moment its one real block leaves the screen.
  *
  * <p>The mechanism is vanilla's, from {@code DoorBlock} and {@code DoublePlantBlock}:
@@ -81,7 +81,7 @@ public class SmallElectricPoleBlock extends BaseEntityBlock {
 
     public SmallElectricPoleBlock(Properties properties) {
         super(properties);
-        registerDefaultState(getStateDefinition().any().setValue(PART, PolePart.BOTTOM));
+        registerDefaultState(getStateDefinition().any().setValue(PART, PolePart.FOOT));
     }
 
     @Override
@@ -100,7 +100,7 @@ public class SmallElectricPoleBlock extends BaseEntityBlock {
      */
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return state.getValue(PART) == PolePart.BOTTOM
+        return state.getValue(PART) == PolePart.FOOT
                 ? new SmallElectricPoleBlockEntity(pos, state)
                 : null;
     }
@@ -108,6 +108,24 @@ public class SmallElectricPoleBlock extends BaseEntityBlock {
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return state.getValue(PART).shape();
+    }
+
+    /**
+     * The post, never the crossarm.
+     *
+     * <p>An arm that reaches most of the way across its block would catch you as you walked past
+     * the top of a pole - from a shape three blocks over your head that you were not looking at.
+     * The outline still traces the whole pole; only what you bump into is trimmed.
+     *
+     * <p>The post itself does collide, because a pole is climbable: it is in
+     * {@code minecraft:climbable}, so you go up it like a ladder, and something has to be there to
+     * climb. That is Immersive Engineering's behaviour too, and it is the difference between a
+     * pole being scenery and being somewhere to stand while you wire the next one.
+     */
+    @Override
+    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos,
+            CollisionContext context) {
+        return state.getValue(PART).collisionShape();
     }
 
     /** Null - and so no placement at all - unless the whole pole fits. */
@@ -170,7 +188,7 @@ public class SmallElectricPoleBlock extends BaseEntityBlock {
         if (!level.isClientSide() && player.isCreative()) {
             BlockPos bottom = pos.below(state.getValue(PART).height());
             BlockState bottomState = level.getBlockState(bottom);
-            if (bottomState.is(this) && bottomState.getValue(PART) == PolePart.BOTTOM) {
+            if (bottomState.is(this) && bottomState.getValue(PART) == PolePart.FOOT) {
                 level.setBlock(bottom, Blocks.AIR.defaultBlockState(), 35);
                 level.levelEvent(player, 2001, bottom, Block.getId(bottomState));
             }

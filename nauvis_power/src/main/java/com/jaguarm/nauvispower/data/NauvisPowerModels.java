@@ -1,5 +1,8 @@
 package com.jaguarm.nauvispower.data;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
@@ -10,6 +13,7 @@ import com.jaguarm.nauvispower.registry.ModBlocks;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.ItemModelGenerators;
+import net.minecraft.client.data.models.MultiVariant;
 import net.minecraft.client.data.models.ModelProvider;
 import net.minecraft.client.data.models.blockstates.MultiVariantGenerator;
 import net.minecraft.client.data.models.blockstates.PropertyDispatch;
@@ -69,24 +73,31 @@ public class NauvisPowerModels extends ModelProvider {
     private void pole(BlockModelGenerators blockModels) {
         // Material wraps the sprite id; the model file wants the plain identifier.
         Identifier texture = TextureMapping.getBlockTexture(Blocks.STRIPPED_OAK_LOG).sprite();
-        Identifier bottom = poleModel(blockModels, PolePart.BOTTOM, texture);
-        Identifier middle = poleModel(blockModels, PolePart.MIDDLE, texture);
-        Identifier top = poleModel(blockModels, PolePart.TOP, texture);
 
+        // Keyed by model name, not by part: the two shaft parts are the same post and deserve one
+        // file between them.
+        Map<String, Identifier> models = new HashMap<>();
+        for (PolePart part : PolePart.values()) {
+            models.computeIfAbsent(part.modelName(), name -> poleModel(blockModels, part, texture));
+        }
+
+        PropertyDispatch.C1<MultiVariant, PolePart> dispatch =
+                PropertyDispatch.initial(SmallElectricPoleBlock.PART);
+        for (PolePart part : PolePart.values()) {
+            dispatch = dispatch.select(part,
+                    BlockModelGenerators.plainVariant(models.get(part.modelName())));
+        }
         blockModels.blockStateOutput.accept(
-                MultiVariantGenerator.dispatch(ModBlocks.SMALL_ELECTRIC_POLE.get())
-                        .with(PropertyDispatch.initial(SmallElectricPoleBlock.PART)
-                                .select(PolePart.BOTTOM, BlockModelGenerators.plainVariant(bottom))
-                                .select(PolePart.MIDDLE, BlockModelGenerators.plainVariant(middle))
-                                .select(PolePart.TOP, BlockModelGenerators.plainVariant(top))));
+                MultiVariantGenerator.dispatch(ModBlocks.SMALL_ELECTRIC_POLE.get()).with(dispatch));
 
-        // The crossarm is the silhouette a player recognises, so the item is the top.
-        blockModels.registerSimpleItemModel(ModBlocks.SMALL_ELECTRIC_POLE.get(), top);
+        // The crossarm is the silhouette a player recognises, so the item is the head.
+        blockModels.registerSimpleItemModel(ModBlocks.SMALL_ELECTRIC_POLE.get(),
+                models.get(PolePart.HEAD.modelName()));
     }
 
     private static Identifier poleModel(BlockModelGenerators blockModels, PolePart part, Identifier texture) {
         Identifier id = Identifier.fromNamespaceAndPath(NauvisPower.MODID,
-                "block/small_electric_pole_" + part.getSerializedName());
+                "block/small_electric_pole_" + part.modelName());
         blockModels.modelOutput.accept(id, () -> {
             JsonObject textures = new JsonObject();
             textures.addProperty("texture", texture.toString());

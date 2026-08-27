@@ -307,13 +307,19 @@ non-negotiable #5 is exactly the constraint it does not have.
 **Built, in `nauvis_power/.../grid/`.** `PowerNetwork` is the object; `PowerNetworkManager` owns
 one per level and is driven by a single `LevelTickEvent.Post`.
 
-**The pole itself is three blocks tall**, a true multi-block on one `PolePart` property in the way
-a vanilla door is two: placement refuses when there is no headroom, `setPlacedBy` puts the upper
-two in, and one `updateShape` rule — a part whose neighbour above or below is not what it should be
-turns to air — is the entire teardown. Only the bottom carries the block entity and only the bottom
-drops the item, so breaking any part gives back exactly one pole. A one-block pole read as a fence
-post; the other way to get height, a `VoxelShape` three blocks tall on a single block, has the
-renderer cull the whole thing the moment its one real block leaves the screen.
+**The pole itself is four blocks tall**, a true multi-block on one `PolePart` property in the way
+a vanilla door is two: placement refuses when there is no headroom, `setPlacedBy` puts the rest in,
+and one `updateShape` rule — a part whose neighbour above or below is not what it should be turns
+to air — is the entire teardown. Only the foot carries the block entity and only the foot drops the
+item, so breaking any part gives back exactly one pole. A one-block pole read as a fence post; the
+other way to get height, a `VoxelShape` four blocks tall on a single block, has the renderer cull
+the whole thing the moment its one real block leaves the screen.
+
+It is **climbable** (through `minecraft:climbable`, so a datapack can say otherwise) and its
+crossarm has **no collision** — an arm you cannot see, three blocks over your head, that catches you
+as you walk past is worse than no arm at all. And **wires draw themselves**: the network already
+knows which poles can see each other, so it pushes that set to each pole and the client renders a
+sagging line between the heads. No coil, no connectors, nothing for the player to say twice.
 **`reference/ImmersiveEngineering-src`'s `wooden_post` is the reference** for that shape — base
 block holds the logic, dummies above, break one and the whole thing goes. Read and reimplemented,
 not copied; IE's licence permits drawing on it with credit and requires visible source, which this
