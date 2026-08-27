@@ -3,8 +3,15 @@ package com.jaguarm.nauvislogistics.transport;
 import com.jaguarm.nauvislogistics.registry.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -19,7 +26,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * <p>Being visibly slow is the point of the burner tier - it is the one you are supposed to want
  * to replace, and {@link ElectricInserterBlockEntity} is what you replace it with.
  */
-public class BurnerInserterBlockEntity extends InserterBlockEntity {
+public class BurnerInserterBlockEntity extends InserterBlockEntity implements MenuProvider {
 
     /** The only slot: what it burns. Fuel goes in, nothing comes out. */
     public static final int FUEL_SLOT = 0;
@@ -34,7 +41,31 @@ public class BurnerInserterBlockEntity extends InserterBlockEntity {
      */
     public static final int SWING_TICKS = 30;
 
-    private final InserterFuel fuel = new InserterFuel(SLOT_COUNT, this::onSupplyChanged);
+    private final InserterFuel fuel = new InserterFuel(SLOT_COUNT, this::onSupplyChanged,
+            () -> level == null ? null : level.fuelValues());
+
+    /** What an open screen reads. Ints only, which is all an inserter has to say. */
+    private final ContainerData menuData = new ContainerData() {
+        @Override
+        public int get(int id) {
+            return switch (id) {
+                case BurnerInserterMenu.DATA_BURN_TIME -> burnTime;
+                case BurnerInserterMenu.DATA_BURN_TIME_TOTAL -> burnTimeTotal;
+                case BurnerInserterMenu.DATA_SWING -> swing();
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int id, int value) {
+            // Server-authoritative: the client is told, never asked.
+        }
+
+        @Override
+        public int getCount() {
+            return BurnerInserterMenu.DATA_COUNT;
+        }
+    };
 
     /** What a player or another inserter can put fuel into. Insert-only: see {@link FuelAccess}. */
     private final ResourceHandler<ItemResource> fuelAccess = new FuelAccess(fuel);
@@ -106,6 +137,22 @@ public class BurnerInserterBlockEntity extends InserterBlockEntity {
         burnTimeTotal = worth;
         setChanged();
         return true;
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable("block.nauvis_logistics.burner_inserter");
+    }
+
+    /**
+     * The fuel slot as the player sees it: the real handler, not the insert-only
+     * {@link #fuelAccess()} another inserter gets. Somebody standing in front of it may take their
+     * coal back out; a hopper feeding it may not.
+     */
+    @Override
+    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+        return new BurnerInserterMenu(containerId, playerInventory, fuel, menuData,
+                ContainerLevelAccess.create(level, worldPosition));
     }
 
     /**

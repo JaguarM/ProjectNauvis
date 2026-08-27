@@ -4,11 +4,8 @@ import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -19,11 +16,11 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.redstone.Orientation;
-import net.minecraft.world.phys.BlockHitResult;
 
 /**
  * The block half of an inserter: which way it points and - the part that matters - how it hears
- * that there is work. What runs it belongs to the subclass.
+ * that there is work. What runs it, and what right-clicking it does, belong to the subclass: the
+ * burner has a fuel slot and so opens a screen, and the electric one has nothing to hold.
  *
  * <h2>onNeighborChange is the whole trick</h2>
  *
@@ -55,9 +52,6 @@ public abstract class InserterBlock extends BaseEntityBlock {
         super(properties);
         registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH));
     }
-
-    /** What right-clicking an empty hand says about this particular inserter. */
-    protected abstract Component status(BlockState state, InserterBlockEntity inserter);
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
@@ -118,20 +112,6 @@ public abstract class InserterBlock extends BaseEntityBlock {
         if (level.getBlockEntity(pos) instanceof InserterBlockEntity inserter) {
             inserter.wake();
         }
-    }
-
-    @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
-            Player player, BlockHitResult hitResult) {
-        if (!(level instanceof ServerLevel)) {
-            return InteractionResult.SUCCESS;
-        }
-        if (!(level.getBlockEntity(pos) instanceof InserterBlockEntity inserter)) {
-            return InteractionResult.PASS;
-        }
-
-        player.sendOverlayMessage(status(state, inserter));
-        return InteractionResult.SUCCESS;
     }
 
     // Fuel is spilled from BurnerInserterBlockEntity#preRemoveSideEffects, not from here. See the

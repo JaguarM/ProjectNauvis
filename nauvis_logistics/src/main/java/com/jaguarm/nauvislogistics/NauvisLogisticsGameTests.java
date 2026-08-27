@@ -6,6 +6,7 @@ import com.jaguarm.nauvislogistics.registry.ModBlocks;
 import com.jaguarm.nauvislogistics.storage.IronChestBlockEntity;
 import com.jaguarm.nauvislogistics.transport.InserterBlock;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlockEntity;
+import com.jaguarm.nauvislogistics.transport.BurnerInserterMenu;
 import com.jaguarm.nauvislogistics.transport.ElectricInserterBlockEntity;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -22,7 +23,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.neoforged.bus.api.IEventBus;
@@ -76,6 +80,7 @@ public final class NauvisLogisticsGameTests {
         TEST_TYPES.register("inserter_fills_iron_chest", () -> InserterFillsIronChestTest.CODEC);
         TEST_TYPES.register("electric_inserter_moves_items", () -> ElectricInserterMovesItemsTest.CODEC);
         TEST_TYPES.register("electric_inserter_needs_power", () -> ElectricInserterNeedsPowerTest.CODEC);
+        TEST_TYPES.register("burner_inserter_opens_a_screen", () -> BurnerInserterOpensAScreenTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -99,6 +104,8 @@ public final class NauvisLogisticsGameTests {
                 ElectricInserterMovesItemsTest::new, 200);
         register(event, environment, "electric_inserter_needs_power",
                 ElectricInserterNeedsPowerTest::new, 200);
+        register(event, environment, "burner_inserter_opens_a_screen",
+                BurnerInserterOpensAScreenTest::new, 60);
     }
 
     private interface TestFactory {
@@ -628,6 +635,61 @@ public final class NauvisLogisticsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("electric inserter needs power");
+        }
+    }
+
+    /**
+     * The burner inserter opens, its fuel slot is in there, and it takes fuel and nothing else.
+     *
+     * <p>All three used to be right-click handling: coal in hand to fuel it, empty hand for a line
+     * of text, and a burn-time check buried in the interaction code. The screen replaces the first
+     * two and {@code InserterFuel#isValid} replaces the third - which is why the filter is
+     * asserted through the capability rather than through the menu, since a hopper pointed at the
+     * inserter has to be told the same thing.
+     */
+    public static class BurnerInserterOpensAScreenTest extends GameTestInstance {
+
+        public static final MapCodec<BurnerInserterOpensAScreenTest> CODEC =
+                RecordCodecBuilder.<BurnerInserterOpensAScreenTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(BurnerInserterOpensAScreenTest::info))
+                                .apply(i, BurnerInserterOpensAScreenTest::new));
+
+        private static final int PLAYER_SLOTS = 36;
+
+        public BurnerInserterOpensAScreenTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            buildLine(helper, true);
+            BurnerInserterBlockEntity inserter =
+                    helper.getBlockEntity(INSERTER, BurnerInserterBlockEntity.class);
+
+            Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+            AbstractContainerMenu menu = inserter.createMenu(1, player.getInventory(), player);
+            helper.assertTrue(menu instanceof BurnerInserterMenu,
+                    "the burner inserter opened something else");
+            helper.assertValueEqual(menu.slots.size(),
+                    BurnerInserterBlockEntity.SLOT_COUNT + PLAYER_SLOTS,
+                    "slots in the burner inserter's menu");
+            helper.assertValueEqual(
+                    menu.getSlot(BurnerInserterBlockEntity.FUEL_SLOT).getItem().getItem(), Items.COAL,
+                    "what the first slot of the inserter's menu is showing");
+
+            helper.assertValueEqual(insert(inserter.fuelAccess(), Items.DIAMOND, 1), 0,
+                    "diamonds accepted by a fuel slot");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("burner inserter opens a screen");
         }
     }
 }

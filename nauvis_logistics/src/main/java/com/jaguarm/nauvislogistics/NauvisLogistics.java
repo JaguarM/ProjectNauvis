@@ -3,6 +3,7 @@ package com.jaguarm.nauvislogistics;
 import com.jaguarm.nauvislogistics.registry.ModBlockEntities;
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
 import com.jaguarm.nauvislogistics.registry.ModItems;
+import com.jaguarm.nauvislogistics.registry.ModMenus;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -28,6 +29,7 @@ public class NauvisLogistics {
         ModItems.ITEMS.register(modEventBus);
         ModItems.TABS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        ModMenus.MENUS.register(modEventBus);
         modEventBus.addListener(ModPacks::addPackFinders);
         NauvisLogisticsGameTests.register(modEventBus);
     }

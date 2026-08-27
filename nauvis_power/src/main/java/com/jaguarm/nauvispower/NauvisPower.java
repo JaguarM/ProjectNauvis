@@ -3,6 +3,7 @@ package com.jaguarm.nauvispower;
 import com.jaguarm.nauvispower.registry.ModBlockEntities;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 import com.jaguarm.nauvispower.registry.ModItems;
+import com.jaguarm.nauvispower.registry.ModMenus;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -29,6 +30,7 @@ public class NauvisPower {
         ModItems.ITEMS.register(modEventBus);
         ModItems.TABS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        ModMenus.MENUS.register(modEventBus);
         modEventBus.addListener(ModPacks::addPackFinders);
         NauvisPowerGameTests.register(modEventBus);
     }

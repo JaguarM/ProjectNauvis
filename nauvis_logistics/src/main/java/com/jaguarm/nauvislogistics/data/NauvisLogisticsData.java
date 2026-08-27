@@ -63,11 +63,13 @@ public final class NauvisLogisticsData {
             add("pack.nauvis_logistics.crafting_table", "Nauvis Logistics: Crafting Table Recipes");
 
             // The whole interface, until there is a screen. See InserterBlock.
-            add("nauvis_logistics.inserter.fuelled", "Burning %s");
-            add("nauvis_logistics.inserter.full", "Its fuel slot is full of %s");
-            add("nauvis_logistics.inserter.not_fuel", "%s does not burn");
+            // The burner inserter's screen. Its old right-click strings went with the code.
+            add("screen.nauvis_logistics.burner_inserter.no_fuel", "Out of fuel");
+            add("screen.nauvis_logistics.burner_inserter.working", "Moving an item");
+            add("screen.nauvis_logistics.burner_inserter.waiting", "Nothing to move");
+
+            // The electric inserter has no slot and so no screen: these wait for the hover display.
             add("nauvis_logistics.inserter.running", "Taking from behind, giving to the %s");
-            add("nauvis_logistics.inserter.no_fuel", "Out of fuel. Give it coal.");
             add("nauvis_logistics.inserter.no_power", "No power. Put a pole within two blocks.");
         }
     }

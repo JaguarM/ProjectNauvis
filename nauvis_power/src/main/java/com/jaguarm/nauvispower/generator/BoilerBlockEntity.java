@@ -10,8 +10,15 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -36,7 +43,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * boiler only runs when its own buffer has room, and its buffer only gains room when an engine
  * takes some. See {@link #drawSteam}.
  */
-public class BoilerBlockEntity extends BlockEntity {
+public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
 
     public static final int FUEL_SLOT = 0;
     public static final int SLOT_COUNT = 1;
@@ -47,8 +54,32 @@ public class BoilerBlockEntity extends BlockEntity {
     /** A few seconds of buffer. Big enough to ride out a gap, small enough to be worth refilling. */
     public static final int STEAM_CAPACITY = 200;
 
-    private final BoilerFuel fuel = new BoilerFuel(SLOT_COUNT, this::onFuelChanged);
+    private final BoilerFuel fuel = new BoilerFuel(SLOT_COUNT, this::onFuelChanged,
+            () -> level == null ? null : level.fuelValues());
     private final ResourceHandler<ItemResource> fuelAccess = new FuelAccess(fuel);
+
+    /** What an open screen reads. Ints only, which is all a boiler has to say. */
+    private final ContainerData menuData = new ContainerData() {
+        @Override
+        public int get(int id) {
+            return switch (id) {
+                case BoilerMenu.DATA_BURN_TIME -> burnTime;
+                case BoilerMenu.DATA_BURN_TIME_TOTAL -> burnTimeTotal;
+                case BoilerMenu.DATA_STEAM -> steam;
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int id, int value) {
+            // Server-authoritative: the client is told, never asked.
+        }
+
+        @Override
+        public int getCount() {
+            return BoilerMenu.DATA_COUNT;
+        }
+    };
 
     private int steam;
     private int burnTime;
@@ -165,6 +196,22 @@ public class BoilerBlockEntity extends BlockEntity {
     private void onFuelChanged() {
         setChanged();
         wake();
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable("block.nauvis_power.boiler");
+    }
+
+    /**
+     * The fuel slot as the player sees it: the real handler, not the insert-only
+     * {@link #fuelAccess} an inserter gets. Somebody standing in front of the machine may take
+     * their coal back out; a hopper underneath may not.
+     */
+    @Override
+    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+        return new BoilerMenu(containerId, playerInventory, fuel, menuData,
+                ContainerLevelAccess.create(level, worldPosition));
     }
 
     /** See the assembler: this is the hook, not {@code Block#affectNeighborsAfterRemoval}. */

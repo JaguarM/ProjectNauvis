@@ -81,10 +81,12 @@ public final class NauvisPowerData {
             addBlock(ModBlocks.SMALL_ELECTRIC_POLE, "Small electric pole");
             add("pack.nauvis_power.crafting_table", "Nauvis Power: Crafting Table Recipes");
 
-            add("nauvis_power.boiler.fuelled", "Burning %s");
-            add("nauvis_power.boiler.full", "Its fuel slot is full of %s");
-            add("nauvis_power.boiler.not_fuel", "%s does not burn");
-            add("nauvis_power.boiler.status", "Steam: %s / %s");
+            // The boiler's screen. Its old right-click strings are gone with the right-click code.
+            add("screen.nauvis_power.boiler.burning", "Burning");
+            add("screen.nauvis_power.boiler.full", "Full of steam - nothing is drawing it off");
+            add("screen.nauvis_power.boiler.idle", "Out of fuel");
+
+            // No screen: the engine has no slot, so this waits for the hover display.
             add("nauvis_power.steam_engine.status", "Charge: %s / %s FE");
             add("nauvis_power.small_electric_pole.status", "Network: %s poles, %s machines - live");
             add("nauvis_power.small_electric_pole.status_idle", "Network: %s poles, %s machines - idle");

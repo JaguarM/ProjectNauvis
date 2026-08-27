@@ -5,6 +5,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.nauvispower.generator.BoilerBlockEntity;
+import com.jaguarm.nauvispower.generator.BoilerMenu;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
 import com.jaguarm.nauvispower.grid.PolePart;
 import com.jaguarm.nauvispower.grid.PowerNetwork;
@@ -28,6 +29,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -83,6 +87,8 @@ public final class NauvisPowerGameTests {
         TEST_TYPES.register("pole_needs_headroom", () -> PoleNeedsHeadroomTest.CODEC);
         TEST_TYPES.register("pole_wires_link_up", () -> PoleWiresLinkUpTest.CODEC);
         TEST_TYPES.register("pole_wire_bounds_reach_both_ends", () -> PoleWireBoundsTest.CODEC);
+        TEST_TYPES.register("boiler_opens_a_screen", () -> BoilerOpensAScreenTest.CODEC);
+        TEST_TYPES.register("boiler_refuses_what_will_not_burn", () -> BoilerRefusesNonFuelTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -111,6 +117,8 @@ public final class NauvisPowerGameTests {
         registerSpaced(event, environment, "pole_needs_headroom", PoleNeedsHeadroomTest::new, 100);
         registerSpaced(event, environment, "pole_wires_link_up", PoleWiresLinkUpTest::new, 200);
         registerSpaced(event, environment, "pole_wire_bounds_reach_both_ends", PoleWireBoundsTest::new, 100);
+        register(event, environment, "boiler_opens_a_screen", BoilerOpensAScreenTest::new, 60);
+        register(event, environment, "boiler_refuses_what_will_not_burn", BoilerRefusesNonFuelTest::new, 60);
     }
 
     private interface TestFactory {
@@ -889,6 +897,99 @@ public final class NauvisPowerGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("pole wire bounds reach both ends");
+        }
+    }
+
+    /**
+     * A boiler opens, and what opens has the fuel slot in it.
+     *
+     * <p>It used to be fuelled by right-clicking with coal in hand, which meant its contents were
+     * invisible and could not be taken back out. The assertion that matters is the slot count: a
+     * menu that came up with only the player's inventory in it would look like a working screen
+     * and be useless.
+     */
+    public static class BoilerOpensAScreenTest extends GameTestInstance {
+
+        public static final MapCodec<BoilerOpensAScreenTest> CODEC =
+                RecordCodecBuilder.<BoilerOpensAScreenTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(BoilerOpensAScreenTest::info))
+                                .apply(i, BoilerOpensAScreenTest::new));
+
+        /** Six ingredient slots' worth of player inventory, plus the machine's own. */
+        private static final int PLAYER_SLOTS = 36;
+
+        public BoilerOpensAScreenTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            helper.setBlock(BOILER, ModBlocks.BOILER.get());
+            BoilerBlockEntity boiler = helper.getBlockEntity(BOILER, BoilerBlockEntity.class);
+            insert(boiler.fuelAccess(), Items.COAL, 1);
+
+            Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+            AbstractContainerMenu menu = boiler.createMenu(1, player.getInventory(), player);
+            helper.assertTrue(menu instanceof BoilerMenu, "the boiler opened something else");
+            helper.assertValueEqual(menu.slots.size(), BoilerBlockEntity.SLOT_COUNT + PLAYER_SLOTS,
+                    "slots in the boiler's menu");
+            helper.assertValueEqual(
+                    menu.getSlot(BoilerBlockEntity.FUEL_SLOT).getItem().getItem(), Items.COAL,
+                    "what the first slot of the boiler's menu is showing");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("boiler opens a screen");
+        }
+    }
+
+    /**
+     * The fuel slot takes fuel and nothing else.
+     *
+     * <p>This used to be checked in the right-click handler, which is gone. Without it the slot
+     * would happily accept a diamond and then sit there doing nothing, and an inserter pointed at
+     * the boiler would keep feeding it whatever it had. One {@code isValid} closes the screen, the
+     * hopper and the inserter at once, which is why it is asserted through the automation view
+     * rather than through the menu.
+     */
+    public static class BoilerRefusesNonFuelTest extends GameTestInstance {
+
+        public static final MapCodec<BoilerRefusesNonFuelTest> CODEC =
+                RecordCodecBuilder.<BoilerRefusesNonFuelTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(BoilerRefusesNonFuelTest::info))
+                                .apply(i, BoilerRefusesNonFuelTest::new));
+
+        public BoilerRefusesNonFuelTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            helper.setBlock(BOILER, ModBlocks.BOILER.get());
+            BoilerBlockEntity boiler = helper.getBlockEntity(BOILER, BoilerBlockEntity.class);
+
+            helper.assertValueEqual(insert(boiler.fuelAccess(), Items.DIAMOND, 1), 0,
+                    "diamonds accepted by a fuel slot");
+            helper.assertValueEqual(insert(boiler.fuelAccess(), Items.COAL, 1), 1,
+                    "coal accepted by a fuel slot");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("boiler refuses what will not burn");
         }
     }
 }
