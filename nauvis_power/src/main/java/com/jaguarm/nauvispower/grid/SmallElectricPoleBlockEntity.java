@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.AABB;
 
 /**
  * A pole's membership of a network, and the wires it draws.
@@ -64,6 +65,41 @@ public class SmallElectricPoleBlockEntity extends BlockEntity {
 
     public long[] links() {
         return links;
+    }
+
+    /**
+     * A box containing this pole and every wire hanging off it.
+     *
+     * <p><b>This is what decides whether the wires are drawn at all.</b> A block entity renderer is
+     * frustum-culled against its render bounding box, and the default is the one-block cube at the
+     * block entity - which for a pole is the block at its foot. So the moment that one block leaves
+     * the screen every wire attached to it vanished, while the wire itself was still in plain view.
+     *
+     * <p>It lives here rather than in the renderer so that a headless test can assert it, because
+     * the thing it goes wrong as is invisible geometry rather than an exception.
+     *
+     * <p>The sag needs no allowance: a wire dips at most {@code span * SAG} below the line between
+     * two heads, which is under a block, and this box already reaches from the heads down to the
+     * feet.
+     */
+    public AABB wireBounds() {
+        double minX = worldPosition.getX();
+        double minY = worldPosition.getY();
+        double minZ = worldPosition.getZ();
+        double maxX = minX + 1;
+        double maxY = minY + SmallElectricPoleBlock.HEIGHT;
+        double maxZ = minZ + 1;
+
+        for (long link : links) {
+            BlockPos other = BlockPos.of(link);
+            minX = Math.min(minX, other.getX());
+            minY = Math.min(minY, other.getY());
+            minZ = Math.min(minZ, other.getZ());
+            maxX = Math.max(maxX, other.getX() + 1);
+            maxY = Math.max(maxY, other.getY() + SmallElectricPoleBlock.HEIGHT);
+            maxZ = Math.max(maxZ, other.getZ() + 1);
+        }
+        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     /**

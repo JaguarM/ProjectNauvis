@@ -5,7 +5,7 @@ Written 2026-08-27 for whoever picks this up cold. Read `../CLAUDE.md` first, th
 Delete or rewrite it when the task below is done — it describes one job, not the project.
 
 **Milestone 1 is closed.** Chest → inserter → assembler → inserter → chest, on a grid, burning
-coal at one end. Thirty-four gametests pass. The job below is milestone 2: belts.
+coal at one end. Thirty-five gametests pass. The job below is milestone 2: belts.
 
 The job: transport belts
 ------------------------
@@ -119,6 +119,12 @@ Four ways a machine learns it has work again, and one usually needs more than on
 `level.getBlockTicks().hasScheduledTick(pos, block)` is how a gametest asserts a machine really is
 asleep. **Assert it for anything new**, then delete the sleep logic and watch the test go red before
 trusting it.
+
+**A renderer that draws outside its own block has to say so.** `getRenderBoundingBox` defaults to
+the one block the block entity sits in, and geometry reaching past it is frustum-culled away with no
+error and nothing in the log. The wires between poles hit this exactly. See `API-26.2.md`; the
+bounds are computed on the block entity so `pole_wire_bounds_reach_both_ends` can assert them
+without a client.
 
 **Multi-blocks are vanilla's job.** `SmallElectricPoleBlock` is four blocks on one `PolePart`
 property, the way a door is two: refuse placement without headroom, place the rest from

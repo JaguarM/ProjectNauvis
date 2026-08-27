@@ -36,6 +36,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
@@ -81,6 +82,7 @@ public final class NauvisPowerGameTests {
         TEST_TYPES.register("pole_breaks_as_one", () -> PoleBreaksAsOneTest.CODEC);
         TEST_TYPES.register("pole_needs_headroom", () -> PoleNeedsHeadroomTest.CODEC);
         TEST_TYPES.register("pole_wires_link_up", () -> PoleWiresLinkUpTest.CODEC);
+        TEST_TYPES.register("pole_wire_bounds_reach_both_ends", () -> PoleWireBoundsTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -108,6 +110,7 @@ public final class NauvisPowerGameTests {
         registerSpaced(event, environment, "pole_breaks_as_one", PoleBreaksAsOneTest::new, 200);
         registerSpaced(event, environment, "pole_needs_headroom", PoleNeedsHeadroomTest::new, 100);
         registerSpaced(event, environment, "pole_wires_link_up", PoleWiresLinkUpTest::new, 200);
+        registerSpaced(event, environment, "pole_wire_bounds_reach_both_ends", PoleWireBoundsTest::new, 100);
     }
 
     private interface TestFactory {
@@ -826,6 +829,66 @@ public final class NauvisPowerGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("pole wires link up");
+        }
+    }
+
+    /**
+     * <b>A pole claims enough space for the wires it draws, or they are culled away.</b>
+     *
+     * <p>A block entity renderer is frustum-tested against one box, and the default is the single
+     * block the block entity sits in. A wire hangs between two poles seven blocks apart, so a pole
+     * whose foot had gone off the edge of the screen stopped drawing wires that were still in plain
+     * sight - which is what {@code getRenderBoundingBox} exists to fix.
+     *
+     * <p>Rendering cannot be tested headlessly, but the box can, and the box is the whole bug. The
+     * assertion is that it reaches the far pole's head: the top of the far pole, not just its foot,
+     * because that is where the wire actually ends.
+     */
+    public static class PoleWireBoundsTest extends GameTestInstance {
+
+        public static final MapCodec<PoleWireBoundsTest> CODEC =
+                RecordCodecBuilder.<PoleWireBoundsTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PoleWireBoundsTest::info))
+                                .apply(i, PoleWireBoundsTest::new));
+
+        private static final BlockPos NEAR = new BlockPos(0, 1, 0);
+        private static final BlockPos ALSO_NEAR = new BlockPos(6, 1, 0);
+
+        public PoleWireBoundsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, NEAR, ModBlocks.SMALL_ELECTRIC_POLE.get());
+            place(helper, ALSO_NEAR, ModBlocks.SMALL_ELECTRIC_POLE.get());
+
+            helper.runAfterDelay(5, () -> {
+                AABB bounds = helper.getBlockEntity(NEAR, SmallElectricPoleBlockEntity.class).wireBounds();
+
+                BlockPos ownHead = helper.absolutePos(
+                        NEAR.above(SmallElectricPoleBlock.HEIGHT - 1));
+                BlockPos farHead = helper.absolutePos(
+                        ALSO_NEAR.above(SmallElectricPoleBlock.HEIGHT - 1));
+
+                helper.assertTrue(bounds.contains(Vec3.atCenterOf(ownHead)),
+                        "a pole does not claim its own head, so its wires are culled the moment "
+                                + "its foot leaves the screen");
+                helper.assertTrue(bounds.contains(Vec3.atCenterOf(farHead)),
+                        "a pole does not claim the far end of the wire it draws, so the wire "
+                                + "disappears whenever the pole itself is out of view");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("pole wire bounds reach both ends");
         }
     }
 }

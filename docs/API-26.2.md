@@ -195,6 +195,39 @@ everything in `freshBlockEntities`, not from `LevelChunk.addAndRegisterBlockEnti
 entity placed on tick N registers itself during tick N+1, before that tick's `Post`. Gametests that
 place a block and then inspect derived state have to wait at least one tick.
 
+Block entity renderers: extract, submit, and the box that decides visibility
+---------------------------------------------------------------------------
+
+26.2 splits a `BlockEntityRenderer` in two. `extractRenderState(be, state, partialTicks,
+cameraPos, breakProgress)` reads the world into a reusable state object; `submit(state, poseStack,
+collector, camera)` turns that into geometry and may not touch the level. Register with
+`EntityRenderersEvent.RegisterRenderers#registerBlockEntityRenderer`.
+
+`RenderType` moved to **`net.minecraft.client.renderer.rendertype.RenderTypes`** (static factories)
+and `net.minecraft.client.renderer.rendertype.RenderType` (the type). For arbitrary geometry,
+`SubmitNodeCollector#submitCustomGeometry(poseStack, renderType, (pose, buffer) -> ...)` hands you a
+`VertexConsumer`; `BeaconRenderer` is the worked example of the vertex calls
+(`addVertex(pose, x, y, z).setColor(...).setUv(...).setOverlay(...).setLight(...).setNormal(...)`).
+`RenderTypes.entityCutout(texture)` is quads and **does not cull**, unlike `entityCutoutCull`.
+
+**A renderer that draws outside its own block must override
+`getRenderBoundingBox(T blockEntity)`.** This is the box the frustum test uses
+(`BlockEntityRenderDispatcher#tryExtractRenderState`), and it defaults to the *unit cube at the
+block entity*. Geometry that reaches further — a beam, a cable, anything spanning to another block
+— disappears the moment that one block leaves the screen, while the geometry itself is still in
+plain view. There is no exception and nothing in the log; it just stops drawing.
+
+`shouldRenderOffScreen()` is a **different** switch and both are usually needed. It moves the block
+entity out of the per-section pass into a level-wide one, and that is the only pass that visits a
+block entity whose own chunk section was culled. Both passes then frustum-test against
+`getRenderBoundingBox`. The cost is one frustum test per *loaded* such block entity per frame
+rather than per visible one.
+
+`nauvis_power/.../client/PoleWireRenderer.java` is the worked example, and
+`pole_wire_bounds_reach_both_ends` asserts the box headlessly — the bounds are computed on the
+block entity precisely so a gametest can reach them, because the failure mode is invisible geometry
+rather than a crash.
+
 GameTest is registry-driven now, and needs a structure
 ------------------------------------------------------
 

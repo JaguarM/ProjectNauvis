@@ -19,6 +19,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -178,8 +179,29 @@ public class PoleWireRenderer implements BlockEntityRenderer<SmallElectricPoleBl
     }
 
     /**
-     * A wire leaves its own block entirely, so it has to be drawn even when the pole's own block is
-     * behind you, and it has to survive past the 64 blocks a block entity is normally worth.
+     * <b>The box the frustum test uses, and the reason wires stay drawn.</b>
+     *
+     * <p>Its default is the unit cube at the block entity, so a pole whose foot had gone off the
+     * edge of the screen stopped drawing wires that were still in plain sight. Vanilla leashes
+     * never look wrong this way because an entity is culled against a box that already contains
+     * what it draws; a block entity is culled against one block, and has to say otherwise.
+     *
+     * <p>Computed on the block entity so that a headless test can assert it - see
+     * {@link SmallElectricPoleBlockEntity#wireBounds()}.
+     */
+    @Override
+    public AABB getRenderBoundingBox(SmallElectricPoleBlockEntity pole) {
+        return pole.wireBounds();
+    }
+
+    /**
+     * Off-screen, because a wire leaves its own block entirely.
+     *
+     * <p>This takes poles out of the per-section pass and into the level-wide one, which is the
+     * only one that visits a block entity whose own chunk section was culled - and a pole two
+     * sections behind you can still have a wire in front of you. The cost is one frustum test per
+     * loaded pole per frame rather than per visible pole; a frustum test against a box is a few
+     * dot products, and there is no other way to get this right.
      */
     @Override
     public boolean shouldRenderOffScreen() {
