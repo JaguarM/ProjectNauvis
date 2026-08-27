@@ -4,76 +4,116 @@ Next session
 Written 2026-08-27 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
 Delete or rewrite it when the task below is done — it describes one job, not the project.
 
-**Milestone 1 is closed.** Chest → inserter → assembler → inserter → chest, on a grid, burning
-coal at one end. Thirty-five gametests pass. The job below is milestone 2: belts.
+**Forty-seven gametests pass and the pack builds clean.** Milestone 1 is closed, steam runs through
+pipes, and the machines say what they are doing. What is weakest now is how all of it *looks*.
 
-The job: transport belts
-------------------------
+The job: how this pack makes things look, decided properly
+----------------------------------------------------------
 
-`nauvis_logistics:transport_belt` — 1 iron gear wheel, 1 iron plate, yields 2, 0.5s — and the
-thing behind it, which is the actual work.
+**This section is a suggestion, not a specification.** Yannic asked for two concrete things — a
+model checker, then a models pass — and both are below. But the thing actually worth producing is a
+**process for visual work that survives past this session**, and the plan below is one guess at it
+by somebody who could not see the game. If a better shape becomes obvious once you are inside it,
+take it and rewrite this file to say what you chose.
 
-**This is the last of the three decisions that are expensive to reverse**, and PLAN.md has said
-the same sentence about all three:
+The reason the process matters more than the models: three separate visual failures shipped in one
+day, and **not one of them failed a compile, a test, or a datagen run.** They were found by a human
+looking at the game, or by a client boot that happened for another reason. Any process that ends
+with "and then look at it" will keep letting them through.
 
-> A transport line is one object; items are positions on it. That is how Factorio does it too.
+### First, a net: assert models and textures exist
 
-Poles and networks were the same sentence with the nouns changed, and the result is in
-`nauvis_power/.../grid/` — read it before starting, not for the code but for the shape. One object
-per connected thing, members that join and leave rather than tick, and a manager that iterates the
-objects rather than the members. A belt run is the same problem with an ordering on it.
+`tools/check_gui_layout.py` reads screen geometry back out of the source and checks the boxes do
+not overlap. There is no equivalent for models, and there should be — the same script shape,
+walking every registered block and item:
 
-### The shortcut PLAN.md licenses, and what it costs
+- does the blockstate name a model file that exists, for every variant and every multipart case?
+- does that model, and every parent it inherits from, exist?
+- does every `#texture` reference resolve to a real PNG, vanilla ones included?
+- does every registered fluid have a `FluidModel`?
 
-PLAN.md explicitly permits **a BlockEntity per belt block passing items along**, and says the
-rewrite must be containable, which is why belts get their own mod. That shortcut is fine for a few
-hundred belts and lets milestone 2 ship. It will not survive a real base, for exactly the reason
-the naive pole did: N block entities is N ticks a second, and an item takes N ticks to cross N
-belts.
+This would have caught the steam engine's checkerboard in a second. **And the surface for that class
+of bug just grew a lot**: the pipe now has three hand-written models plus a six-way multipart
+blockstate, and the pole has three more built from raw JSON. Those are written by hand, from a
+`Supplier<JsonElement>`, with nothing checking them.
 
-**Decide deliberately which one you are building**, and say so in the commit. The grid took the
-harder road because "one object per network" was cheap to build once the indexes existed; belts may
-not be, because a belt run has an order, a direction, splitters that fork it and undergrounds that
-skip part of it. A `BeltInventory` that owns a whole run and `TransportedItemStack`s that carry a
-position along it is the endgame either way.
+Whether it belongs in Python beside `check_gui_layout.py`, or as a gametest that walks
+`BuiltInRegistries.BLOCK` inside a running server, is an open question worth ten minutes of thought
+— the gametest version can ask the real model manager what resolved, which is stronger, but only
+the client has one. Do not assume the Python answer just because the precedent is Python.
 
-### Read this first, and then do it differently
+### Then the models themselves
 
-`reference/create-src/src/main/java/com/simibubi/create/content/kinetics/belt/transport/` is the
-reference. `TransportedItemStack` carries a position *along* the belt; `BeltInventory` owns the
-whole run; segment blocks delegate to one controller. That is the architecture.
+The visible complaints, in Yannic's words: *you can't see where they point*, and *they should be
+more impressive*. What is directional today and reads poorly: both inserters, which are a furnace
+cube with a front face. What has no facing at all and probably should: the boiler and the assembler.
+The steam engine got a horizontal column this session so its two steam ends are visible — that is
+the bar to clear, and it is a low bar.
 
-**Create's code is MIT and adapting it with attribution is permitted. Its assets are All Rights
-Reserved.** And its belt code is welded to the kinetics framework — stress, rotation, contraptions —
-which is the exact weight this pack exists to avoid. Read it and reimplement.
+Every model currently points at **vanilla** textures on purpose: a model naming a texture the mod
+does not ship renders as the magenta checkerboard, which reads as broken rather than as unfinished.
+Any move to first-party textures has to land art and models together.
 
-### How you will know it works
+How to work on this, from Yannic
+--------------------------------
 
-Assert the sleeping, not just the moving, and delete the guard to watch the right test go red —
-that check has caught two things this session that only looked correct. `power_network_sleeps` and
-`electric_inserter_needs_power` are the models for how it is written.
+> If I can give a design session just a few files and reference mods it's faster and more accurate.
 
-For belts the assertions are: an item put on one end comes off the other in the right number of
-ticks; a belt with nothing on it is not scheduled; breaking a belt in the middle of a run splits it
-and neither half loses an item; an inserter can take from a belt and put onto one.
+Take that seriously — it is a statement about how to get good work out of a session, and it cuts
+against the instinct to read the whole repo first. **Open the few files that matter, and one
+reference, and start.** The list below is what "the few files" means for visual work, so a fresh
+session does not have to go looking for them.
+
+### The files a model session actually needs
+
+| | |
+|---|---|
+| `nauvis_power/.../data/NauvisPowerModels.java` | boiler, engine, pole. Has both idioms: `ModelTemplate` and raw JSON |
+| `nauvis_fluids/.../data/NauvisFluidsModels.java` | the pipe: raw JSON plus a six-way multipart, the newest and least proven |
+| `nauvis_logistics/.../data/NauvisLogisticsModels.java` | the two inserters — the ones that read worst |
+| `nauvis_machines/.../data/NauvisMachinesModels.java` | the assembler |
+| `nauvis_power/.../grid/PolePart.java` | **the pattern worth copying**: one list of boxes, read by both the `VoxelShape` and the model, so what you see and what you hit cannot drift |
+| `tools/check_gui_layout.py` | the shape a checker takes here — constants read back out of source, no game required |
+
+### The references, and what each is good for
+
+- **`../NeoProgressiveAutomation/texture-workshop/`** — ours, and the best writing in these repos on
+  *why* vanilla textures look the way they do: six colours for cobblestone, three ideas for a
+  furnace face, never pure black. `make_miner_textures.py` renders sixteen textures from three 16x16
+  ASCII maps and a five-tone palette per tier, with Pillow. Editing one map moves every tier
+  together, so a family cannot drift apart. **Start here** — it is the closest thing to an existing
+  process, and it is already ours to extend.
+- **`reference/ImmersiveEngineering-src`** — the best model work on the reference shelf, and the
+  source of the pole's shape. Read and reimplement, credit in the commit; never copy assets.
+- **`reference/create-src`** — code MIT with attribution, **assets All Rights Reserved**. Read for
+  architecture only.
+- **Vanilla** — `net.minecraft.client.data.models.model.ModelTemplates` is the list of parents you
+  get for free, and `BlockModelGenerators` has the rotation dispatches (`ROTATION_HORIZONTAL_FACING`
+  and friends). Worth a skim before hand-writing geometry.
 
 Where the pack stands
 ---------------------
 
 | | |
 |---|---|
-| `nauvis_machines:assembling_machine_1` | recipe selector, six ingredient slots, timed craft, a screen, **runs on 10 FE a tick** |
-| `nauvis_logistics:burner_inserter` | takes from behind, gives in front, burns coal, 30-tick swing |
-| `nauvis_logistics:inserter` | the same on 2 FE a tick, 24-tick swing |
+| `nauvis_machines:assembling_machine_1` | recipe selector, six slots, timed craft, screen, runs on 10 FE a tick |
+| `nauvis_logistics:burner_inserter` | takes from behind, gives in front, 30-tick swing, screen with a fuel slot |
+| `nauvis_logistics:inserter` | the same on 2 FE a tick and a 24-tick swing. No slot, so no screen |
 | `nauvis_logistics:iron_chest` | 36 slots on vanilla's four-row screen |
-| `nauvis_fluids:pipe` | an ingredient that happens to be placeable |
-| `nauvis_power:boiler` | burns fuel, makes steam |
-| `nauvis_power:steam_engine` | steam in, 120 FE a tick out |
+| `nauvis_fluids:pipe` | carries steam; a run is one object however long, with visible connections |
+| `nauvis_fluids:steam` | a real fluid, so pipes and machines meet at NeoForge's capability |
+| `nauvis_power:boiler` | burns fuel, makes steam, screen with a fuel slot |
+| `nauvis_power:steam_engine` | directional and chainable, steam in through its two ends, 120 FE a tick out |
 | `nauvis_power:small_electric_pole` | four blocks tall, climbable, wires itself to whatever it can reach |
 
 Power numbers keep Factorio's ratios rather than its units: one engine runs twelve assemblers, one
-boiler runs twenty-four, an inserter costs almost nothing. None of that is identity; the ids, the
-ingredients and the craft times are, and those are generated.
+boiler runs twenty-four. None of that is identity; the ids, ingredients and craft times are, and
+those are generated.
+
+**After the visual work, the next real feature is belts** — milestone 2, and the last of the three
+decisions that are expensive to reverse. PLAN.md's belt note and the shape in
+`nauvis_power/.../grid/` are where to start; `reference/create-src/.../kinetics/belt/transport/` is
+the architecture to read and reimplement.
 
 How to run everything
 ---------------------
@@ -81,7 +121,7 @@ How to run everything
 | | |
 |---|---|
 | `./gradlew :nauvis:runGameTestServer` | every gametest in every mod, headless, non-zero on failure |
-| `./gradlew :nauvis:runClient` | the whole pack, six mods |
+| `./gradlew :nauvis:runClient` | the whole pack. **Boot it after any model, fluid or plugin change** |
 | `./gradlew :<mod>:runGameTestServer` | one mod alone, to prove it still stands alone |
 | `./gradlew :<mod>:runClientData` / `runServerData` | models and language / loot and tags |
 | `./gradlew build` | everything, including `checkRecipes` |
@@ -108,9 +148,10 @@ does not. An unscheduled position is never visited, and scheduled ticks are save
 Four ways a machine learns it has work again, and one usually needs more than one:
 
 - its own inventory changed (`onContentsChanged`);
-- **electricity arrived** — `MachinePower` / `InserterPower` exist only to carry that callback. A
-  machine that ran dry has stopped scheduling ticks, so nothing it does can restart it: the wake
-  has to come from whatever filled the buffer. Deleting either callback fails exactly one test;
+- **electricity or steam arrived** — `MachinePower`, `InserterPower` and `SteamTank` exist only to
+  carry that callback. A machine that ran dry has stopped scheduling ticks, so nothing it does can
+  restart it: the wake has to come from whatever filled the buffer. Deleting one fails exactly one
+  test;
 - a *neighbour's* block entity changed — `onNeighborChange`, which every `setChanged()` reaches on
   all six sides. This is how an inserter hears a chest gain an item. Filter on the `neighbor`
   position before looking anything up;
@@ -120,115 +161,116 @@ Four ways a machine learns it has work again, and one usually needs more than on
 asleep. **Assert it for anything new**, then delete the sleep logic and watch the test go red before
 trusting it.
 
+**One object per connected thing, three times over.** `PowerNetwork` for the grid, `FluidNetwork`
+for pipe runs, and belts next. Members join and leave; the network ticks once however many members
+it has; one that moved nothing drops out of the active set. Read `nauvis_fluids/.../pipe/` first —
+it is the smaller of the two, and its header says exactly why it is smaller: a pipe connects to the
+six blocks it touches, which is what `neighborChanged` already reports, while a pole reaches 7.5
+blocks and needs a spatial index and a level-wide hook to match.
+
+**Capabilities are how mods meet.** No subsystem mod compiles against another. The grid moves FE
+through `Capabilities.Energy.BLOCK`, steam moves through `Capabilities.Fluid.BLOCK`, and items
+through `Capabilities.Item.BLOCK`. `SteamTank` even looks its fluid up by registry id rather than
+importing it, so `nauvis_power` still loads with `nauvis_fluids` absent.
+
+**Sided capabilities carry meaning.** A steam engine offers steam only on the two faces along its
+axis, which is what makes its facing matter and what makes a pipe refuse its flank. Note that
+*which faces answer* and *which way the machine looks* are two separate registrations with two
+separate tests — breaking one leaves the other's test passing.
+
 **A renderer that draws outside its own block has to say so.** `getRenderBoundingBox` defaults to
 the one block the block entity sits in, and geometry reaching past it is frustum-culled away with no
-error and nothing in the log. The wires between poles hit this exactly. See `API-26.2.md`; the
-bounds are computed on the block entity so `pole_wire_bounds_reach_both_ends` can assert them
-without a client.
+error and nothing in the log. The wires between poles hit this exactly. See `API-26.2.md`.
 
 **Multi-blocks are vanilla's job.** `SmallElectricPoleBlock` is four blocks on one `PolePart`
 property, the way a door is two: refuse placement without headroom, place the rest from
 `setPlacedBy`, and let one `updateShape` rule — a part whose vertical neighbour is wrong turns to
-air — be the whole teardown. That rule covers being broken, exploded, `/setblock`ed and moved by
-another mod, rather than only the cases somebody thought to handle, and an air result routed
-through `Block.updateOrDestroy` is what drops the item. A belt run that wants a visual "this is one
-run" state can lean on the same property-plus-`updateShape` shape.
-
-**One object per connected thing.** `nauvis_power/.../grid/` is the worked example and the one to
-copy the shape of for belts. `PowerNetwork` holds member poles and machine handles and ticks once;
-`PowerNetworkManager` iterates networks, of which a base has a handful, rather than poles, of which
-it has thousands; a network that moved nothing leaves the active set. Poles never tick.
-
-Two things in there were not obvious and are written up in PLAN.md's electric network note: how a
-machine two blocks from a pole is discovered at all without `nauvis_machines` learning what a pole
-is, and why poles are bucketed into 8-block cells.
+air — be the whole teardown.
 
 **Transactions.** Spending and receiving happen inside one `Transaction`, so a result that will not
-fit rolls back as though nothing happened. Passing `commit = false` to the same method turns it into
-the simulation, so "can I?" and "do it" cannot drift apart. The network's tick uses a whole
-uncommitted transaction as its demand survey for the same reason.
+fit rolls back as though nothing happened. Passing `commit = false` turns the same method into the
+simulation, so "can I?" and "do it" cannot drift apart.
 
-**One interface.** Facrafting owns the crafting UI. Its panel attaches to any container screen; a
-menu implementing `RecipeSelector` makes a left-click there point that machine instead of queueing
-a personal craft, and right-click still queues. Machine screens grow out of that rather than sit
-beside it — see `AssemblerScreen`, which has slots, a progress bar, a charge bar and deliberately
-no recipe list.
+**One interface.** Facrafting owns the crafting UI and its panel attaches itself to any container
+screen. Machine screens grow out of that rather than sit beside it. Palettes are duplicated per mod
+rather than shared, because a shared base in Facrafting would make these mods require it and kill
+the `*_standalone` recipes that exist for its absence.
 
-Traps that have already cost time
----------------------------------
+Silent failures — these compile, pass tests, and are still wrong
+----------------------------------------------------------------
 
+**This is the section the next session most needs.** Every one of these shipped.
+
+- **A model file renamed out from under its item.** `CUBE_COLUMN_HORIZONTAL` writes to
+  `block/<name>_horizontal`; the item model defaults to `block/<name>`. The block rendered and the
+  item was a checkerboard. Datagen reported nothing — both files were written exactly as asked. Call
+  `registerSimpleItemModel(block, modelId)` explicitly whenever a template adds a suffix.
+- **A fluid with no `FluidModel`.** Every registered fluid needs one via `RegisterFluidModelsEvent`
+  in 26.2; `getStillTexture` on `IClientFluidTypeExtensions` is gone. Not skippable for a fluid
+  never placed in the world — it is drawn wherever a tank is shown. NeoForge logs
+  `Missing FluidModel for fluid` and nothing else complains.
+- **A Jade provider with no config translation.** Jade's settings screen lists every provider and
+  asserts if one has no name, and that assert fires from `ScreenEvent.Init` — so a missing
+  `config.jade.plugin_<modid>.<uid>` key is not a blank line in a menu, it is a crash the moment any
+  screen opens. Add the keys with the provider.
+- **A Jade provider that is both halves.** Jade throws at registration if one object implements both
+  `IServerDataProvider` and `IComponentProvider`. Outer data class, nested `Client`, shared uid.
 - **A machine spills its inventory from `BlockEntity#preRemoveSideEffects`**, not from
   `Block#affectNeighborsAfterRemoval`. The wrong one compiles, reads correctly, and drops nothing.
-  `MinerBlock` in Neo Progressive Automation has exactly that override and only works because its
-  entity is a `WorldlyContainer`; do not copy it.
-- **A modded `Container` must register its own item capability.** NeoForge wraps vanilla's, but
-  only for a hard-coded list of vanilla block entity types.
+- **A modded `Container` must register its own item capability.** NeoForge wraps vanilla's, but only
+  for a hard-coded list of vanilla block entity types.
 - **A built-in datapack needs a `pack.mcmeta`**, or `AddPackFindersEvent` throws a bare NPE naming
   neither the mod nor the directory.
-- **Asking for a capability in an unloaded chunk loads it.** `PowerNetwork#addEndpoint` checks
-  `level.isLoaded` first, and not as an optimisation — without it a pole at the edge of the loaded
-  world drags its neighbours in. The chunk loading later is itself the trigger to look again.
-- **Screen geometry is arithmetic and can be checked without eyes.** `tools/check_gui_layout.py`
-  reads the constants back out of the source and would have failed on the first assembler screen
-  three times over.
+- **Asking for a capability in an unloaded chunk loads it.** Check `level.isLoaded` first — not as
+  an optimisation, but so a network at the edge of the loaded world does not drag chunks in.
 
 What is deliberately missing
 ----------------------------
 
-**An accumulator cannot discharge.** A network collects supply by asking every endpoint that did
-*not* want energy, so a battery would charge and never feed the grid. `PowerNetwork` says so in its
-own comment; it wants a third case, and there is no accumulator until milestone 3.
+**An accumulator cannot discharge.** `PowerNetwork` collects supply from endpoints that did not want
+energy, so a battery would charge and never feed the grid. It wants a third case; there is no
+accumulator until milestone 3.
 
 **A network that moved nothing is re-checked every ten ticks rather than woken exactly.** It hears
-about poles and machines appearing the moment they do, but "a generator elsewhere filled up" and "a
-machine got hungry again" are facts about handlers in other mods that owe us no signal. Half a
-second of latency, paid by a handful of objects rather than by every pole.
+about members and machines appearing the moment they do, but "a generator elsewhere filled up" is a
+fact about a handler in another mod that owes us no signal.
 
 **No brownout.** PLAN.md wants a machine whose buffer cannot refill to run *slower*; ours stops.
-That is the refinement the per-machine buffer was designed to allow.
 
-**Personal crafts pay at the end, not the start.** Factorio takes a craft's ingredients the moment
-you queue it. Facrafting's `CraftTicker` checks affordability every tick and only consumes on
-completion, so moving the ingredients away mid-craft stalls the job instead. The job is kept and
-resumes — it is not lost — but it looks like a queue that stopped for no reason, and it has been
-mistaken for a bug once. Consuming up front needs somewhere to hold ingredients that are spent but
-not yet delivered.
+**No pipeline length limit.** Factorio caps a fluid segment at 320 pipes and its tooltip says
+`6/320`; ours says `6 pipes` because we enforce nothing. Adding the cap is a real gameplay change —
+refusal to connect, not just a number — if it is ever wanted.
 
-**Factorio's recipe picker is a modal**, anchored to the machine, with category tabs and a tick to
-confirm. Ours is a persistent JEI-style column beside the screen. Same information, different
-shape, and the modal is the more faithful one. That is a Facrafting change now that its panel is the
-shared interface, and it wants Yannic's eye rather than a guess.
+**Personal crafts pay at the end, not the start.** Facrafting's `CraftTicker` checks affordability
+every tick and consumes on completion, so moving ingredients away mid-craft stalls the job rather
+than losing it. It looks like a queue that stopped for no reason, and has been mistaken for a bug.
+
+**Factorio's recipe picker is a modal** anchored to the machine; ours is a persistent column beside
+the screen. The modal is the more faithful one. A Facrafting change, and it wants Yannic's eye.
 
 **Smaller.** Nothing tests that inventories survive a save and reload, and nothing tests that a
-network is rebuilt correctly after a chunk cycle — both paths exist and both are only reasoned
-about. The assembler's input slots are unfiltered. An inserter at a chunk border whose source chunk
-cycles while it stays loaded can sleep through items appearing.
+network rebuilds after a chunk cycle — both paths exist and are only reasoned about. The assembler's
+input slots are unfiltered. An inserter at a chunk border whose source chunk cycles while it stays
+loaded can sleep through items appearing.
 
-Textures
---------
+Jade, and a note on dependencies
+--------------------------------
 
-Every model points at *vanilla* textures on purpose — a blast furnace body for the assembler, a
-furnace with a front face for the burner inserter and a blast furnace for the electric one so the
-two are told apart, bricks for the boiler, iron for the engine and the pipe, a stripped oak fence
-post for the pole. A model naming a texture the mod does not ship renders as the magenta
-checkerboard, which reads as a broken model rather than as art nobody has drawn yet.
+The look-at readout is Jade — `maven.modrinth:jade:${jade_version}`, `compileOnly` in the subsystem
+mods and `runtimeOnly` in the pack. Its plugin classes load only when it is present, so nothing has
+to declare it required. PLAN.md's section covers the rest.
 
-`../NeoProgressiveAutomation/texture-workshop/` is the approach that produced the drills, and its
-README is the best writing in these repos on why vanilla textures look the way they do — six colours
-for cobblestone, three ideas for a furnace face, never pure black. `make_miner_textures.py` renders
-sixteen textures from three 16x16 ASCII maps plus one five-tone palette per tier, using Pillow.
-Editing a map changes every tier together, so a family cannot drift apart.
+**Licences are not a decision point for including or depending on a mod here.** The pack is not
+monetised and ships the way thousands of CurseForge packs do. Weigh version support, API shape and
+maintenance instead. This does not extend to *copying*: CLAUDE.md's rule that code is read and
+reimplemented with attribution, and that assets are never copied, still stands and is a separate
+matter.
 
 A note on KubeJS
 ----------------
 
-Still on 26.1.2, in beta, not on 26.2 — one Minecraft version behind us, same as AE2, and `rhino`
-with it. LGPL-3.0, so no obstacle to shipping once it ports.
-
-Where it would help is **pack policy**: stripping vanilla recipes so the Factorio tree is the only
-road forward is milestone 3, and it is one script against hundreds of condition-false JSON files. It
-also subsumes the Item Obliterator idea.
-
-Where it cannot help is everything above. A script is not a mod, and non-negotiable #3 requires each
-subsystem mod to stand alone — so block entities, ticking, sleeping and capability handlers stay
-Java.
+Still on 26.1.2 and in beta — one Minecraft version behind us. LGPL-3.0, so no obstacle once it
+ports. Where it would help is **pack policy**: stripping vanilla recipes so the Factorio tree is the
+only road forward is milestone 3, and it is one script against hundreds of condition-false JSON
+files. Where it cannot help is machines — non-negotiable #3 requires each subsystem mod to stand
+alone, so block entities, ticking and capability handlers stay Java.
