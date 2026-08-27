@@ -1,8 +1,8 @@
 package com.jaguarm.nauvisfluids.registry;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
+import com.jaguarm.nauvisfluids.pipe.PipeBlock;
 
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.registries.DeferredBlock;
@@ -13,16 +13,18 @@ public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(NauvisFluids.MODID);
 
     /**
-     * A length of pipe. It carries nothing.
+     * A length of pipe, which carries steam.
      *
-     * <p>Not a placeholder for a missing feature so much as an ingredient that happens to be
-     * placeable: the boiler costs four of these and the steam engine five, and milestone 4 is
-     * where a pipe starts moving fluid. Until then it is a plain block with the right id and the
-     * right recipe, which is the part that has to be right from the first commit.
+     * <p>It began as an ingredient that happened to be placeable - the boiler costs four of them -
+     * and PLAN.md put moving fluid in milestone 4. Steam brought it forward, because a boiler and
+     * a steam engine that can only be built touching each other is not Factorio's arrangement.
+     * What it carries belongs to the run rather than to the block; see {@code FluidNetwork}.
      */
-    public static final DeferredBlock<Block> PIPE = BLOCKS.registerSimpleBlock(
+    public static final DeferredBlock<PipeBlock> PIPE = BLOCKS.registerBlock(
             "pipe",
+            PipeBlock::new,
             properties -> properties
+                    .noOcclusion()
                     .mapColor(MapColor.METAL)
                     .strength(1.5F, 6.0F)
                     .sound(SoundType.COPPER)

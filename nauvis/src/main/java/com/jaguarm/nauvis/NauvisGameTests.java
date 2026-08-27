@@ -76,6 +76,7 @@ public final class NauvisGameTests {
     static {
         TEST_TYPES.register("registry_presence", () -> RegistryPresenceTest.CODEC);
         TEST_TYPES.register("power_reaches_a_machine", () -> PowerReachesAMachineTest.CODEC);
+        TEST_TYPES.register("steam_travels_down_a_pipe", () -> SteamTravelsDownAPipeTest.CODEC);
     }
 
     /** Called from the mod constructor so the test type registers with everything else. */
@@ -114,6 +115,41 @@ public final class NauvisGameTests {
                 Identifier.fromNamespaceAndPath(Nauvis.MODID, "power_reaches_a_machine"),
                 new PowerReachesAMachineTest(new TestData<>(environment, EMPTY_STRUCTURE, 200, 0,
                         true, Rotation.NONE, false, 1, 1, false, 24)));
+
+        event.registerTest(
+                Identifier.fromNamespaceAndPath(Nauvis.MODID, "steam_travels_down_a_pipe"),
+                new SteamTravelsDownAPipeTest(new TestData<>(environment, EMPTY_STRUCTURE, 200, 0,
+                        true, Rotation.NONE, false, 1, 1, false, 24)));
+    }
+
+    /**
+     * Places a block the way a player does, {@code setPlacedBy} included.
+     *
+     * <p>A power pole is four blocks tall and puts the rest in from there, so a test that only
+     * wrote one block state would be building a pole that cannot exist. Calling it for everything
+     * costs nothing and needs no knowledge of which blocks care.
+     */
+    private static void place(GameTestHelper helper, BlockPos pos, Block block) {
+        place(helper, pos, block, null);
+    }
+
+    private static void place(GameTestHelper helper, BlockPos pos, Block block,
+            @Nullable Direction facing) {
+        if (facing == null) {
+            helper.setBlock(pos, block);
+        } else {
+            helper.setBlock(pos, block, facing);
+        }
+        BlockPos absolute = helper.absolutePos(pos);
+        block.setPlacedBy(helper.getLevel(), absolute,
+                helper.getLevel().getBlockState(absolute), null, ItemStack.EMPTY);
+    }
+
+    /** A block by id, so the pack mod can name another mod's block without depending on it. */
+    private static Block block(GameTestHelper helper, String id) {
+        Block block = BuiltInRegistries.BLOCK.getValue(Identifier.parse(id));
+        helper.assertTrue(block != Blocks.AIR, "expected " + id + " to be registered, got air");
+        return block;
     }
 
     /**
@@ -237,34 +273,72 @@ public final class NauvisGameTests {
             return handler.getAmountAsInt();
         }
 
-        /**
-         * Places a block the way a player does, {@code setPlacedBy} included.
-         *
-         * <p>A power pole is three blocks tall and puts its upper two in from there, so a test
-         * that only wrote one block state would be building a pole that cannot exist. Calling it
-         * for everything costs nothing and needs no knowledge of which blocks care.
-         */
-        private static void place(GameTestHelper helper, BlockPos pos, Block block) {
-            place(helper, pos, block, null);
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
         }
 
-        private static void place(GameTestHelper helper, BlockPos pos, Block block,
-                @Nullable Direction facing) {
-            if (facing == null) {
-                helper.setBlock(pos, block);
-            } else {
-                helper.setBlock(pos, block, facing);
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("power reaches a machine");
+        }
+    }
+
+    /**
+     * <b>The pipe pipes.</b> A boiler, four pipes, and an engine that runs on what came down them.
+     *
+     * <p>Until now a steam engine had to be built touching its boiler, which is not the
+     * arrangement this pack is copying. The interesting part is that none of the three mods
+     * involved compiles against another: {@code nauvis_fluids} owns steam and the pipe,
+     * {@code nauvis_power} owns the boiler and the engine, and they meet at
+     * {@code Capabilities.Fluid.BLOCK}. Only the pack mod can check that they actually do, and it
+     * names all four blocks by id.
+     *
+     * <p>The engine is deliberately five blocks from the boiler - far enough that nothing but the
+     * pipe run could be carrying anything.
+     */
+    public static class SteamTravelsDownAPipeTest extends GameTestInstance {
+
+        public static final MapCodec<SteamTravelsDownAPipeTest> CODEC =
+                RecordCodecBuilder.<SteamTravelsDownAPipeTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SteamTravelsDownAPipeTest::info))
+                                .apply(i, SteamTravelsDownAPipeTest::new));
+
+        private static final BlockPos BOILER = new BlockPos(0, 1, 0);
+        private static final int PIPES = 4;
+        /** Just past the last pipe, laid along the line so its ends face the run. */
+        private static final BlockPos ENGINE = new BlockPos(PIPES + 1, 1, 0);
+
+        public SteamTravelsDownAPipeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, BOILER, block(helper, "nauvis_power:boiler"));
+            for (int x = 1; x <= PIPES; x++) {
+                place(helper, new BlockPos(x, 1, 0), block(helper, "nauvis_fluids:pipe"));
             }
-            BlockPos absolute = helper.absolutePos(pos);
-            block.setPlacedBy(helper.getLevel(), absolute,
-                    helper.getLevel().getBlockState(absolute), null, ItemStack.EMPTY);
-        }
+            place(helper, ENGINE, block(helper, "nauvis_power:steam_engine"), Direction.EAST);
 
-        /** A block by id, so the pack mod can name another mod's block without depending on it. */
-        private static Block block(GameTestHelper helper, String id) {
-            Block block = BuiltInRegistries.BLOCK.getValue(Identifier.parse(id));
-            helper.assertTrue(block != Blocks.AIR, "expected " + id + " to be registered, got air");
-            return block;
+            ResourceHandler<ItemResource> fuel = helper.getLevel()
+                    .getCapability(Capabilities.Item.BLOCK, helper.absolutePos(BOILER), null);
+            helper.assertTrue(fuel != null, "the boiler published no item capability to fuel it through");
+            try (Transaction transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(fuel.insert(ItemResource.of(Items.COAL), 1, transaction), 1,
+                        "coal accepted by the boiler");
+                transaction.commit();
+            }
+
+            helper.runAfterDelay(80, () -> {
+                EnergyHandler charge = helper.getLevel()
+                        .getCapability(Capabilities.Energy.BLOCK, helper.absolutePos(ENGINE), null);
+                helper.assertTrue(charge != null, "no energy capability on the steam engine");
+                helper.assertTrue(charge.getAmountAsInt() > 0,
+                        "an engine four pipes from a burning boiler made no power, so the pipe run "
+                                + "is not carrying steam");
+                helper.succeed();
+            });
         }
 
         @Override
@@ -274,7 +348,7 @@ public final class NauvisGameTests {
 
         @Override
         protected MutableComponent typeDescription() {
-            return Component.literal("power reaches a machine");
+            return Component.literal("steam travels down a pipe");
         }
     }
 }

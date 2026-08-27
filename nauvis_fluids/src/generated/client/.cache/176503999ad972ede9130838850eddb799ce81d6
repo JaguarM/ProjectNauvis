@@ -1,4 +1,6 @@
-// 26.2	2026-08-26T22:37:33.2005825	Model Definitions - nauvis_fluids
-a0b8df9900e54b827a612224a0202f4f36769b7a assets/nauvis_fluids/blockstates/pipe.json
-eaf4c6bfda75dbe28c65a083c42e42adcde00499 assets/nauvis_fluids/items/pipe.json
-f4794ef11f21fc83074f01337f4805683c92fe55 assets/nauvis_fluids/models/block/pipe.json
+// 26.2	2026-08-27T20:24:29.6128928	Model Definitions - nauvis_fluids
+39eae6bc99d69f555175b5257af26a41a4b31cc3 assets/nauvis_fluids/blockstates/pipe.json
+cd885c3d05063ac8fe27b9a6c3d5a98368c960e4 assets/nauvis_fluids/items/pipe.json
+7cafc9e00b6d83123e39fe91598ce0de7221339e assets/nauvis_fluids/models/block/pipe_arm.json
+55b2b5843eb210ab0a764e52ba4c15d5184bc710 assets/nauvis_fluids/models/block/pipe_core.json
+ab1126e0f8893d805fc2616a048aeac660fedc7d assets/nauvis_fluids/models/block/pipe_inventory.json

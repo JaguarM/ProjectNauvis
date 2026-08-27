@@ -1,6 +1,7 @@
 package com.jaguarm.nauvisfluids;
 
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
+import com.jaguarm.nauvisfluids.registry.ModBlockEntities;
 import com.jaguarm.nauvisfluids.registry.ModFluids;
 import com.jaguarm.nauvisfluids.registry.ModItems;
 
@@ -17,9 +18,9 @@ import net.neoforged.fml.common.Mod;
  * and the right recipe, costs nothing and keeps non-negotiable #1 honest - the alternative was to
  * invent a stand-in ingredient and have to break it later.
  *
- * <p>The pipe carries no fluid. PLAN.md's shortcut for milestone 4 is barrels-as-items and no
- * pipe network at all, so a pipe that moves something is a long way off; this one is a block that
- * exists to be crafted into a boiler.
+ * <p>The pipe carries steam. PLAN.md's shortcut for milestone 4 is barrels-as-items and no pipe
+ * network at all; steam brought one forward, because a boiler and a steam engine that can only be
+ * built touching each other is not the arrangement this pack is copying.
  */
 @Mod(NauvisFluids.MODID)
 public class NauvisFluids {
@@ -28,10 +29,12 @@ public class NauvisFluids {
 
     public NauvisFluids(IEventBus modEventBus, ModContainer modContainer) {
         ModBlocks.BLOCKS.register(modEventBus);
+        ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModFluids.FLUID_TYPES.register(modEventBus);
         ModFluids.FLUIDS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModItems.TABS.register(modEventBus);
         modEventBus.addListener(ModPacks::addPackFinders);
+        NauvisFluidsGameTests.register(modEventBus);
     }
 }

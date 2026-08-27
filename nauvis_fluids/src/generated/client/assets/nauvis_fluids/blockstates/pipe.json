@@ -1,7 +1,64 @@
 {
-  "variants": {
-    "": {
-      "model": "nauvis_fluids:block/pipe"
+  "multipart": [
+    {
+      "apply": {
+        "model": "nauvis_fluids:block/pipe_core"
+      }
+    },
+    {
+      "apply": {
+        "model": "nauvis_fluids:block/pipe_arm"
+      },
+      "when": {
+        "down": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "nauvis_fluids:block/pipe_arm",
+        "x": 180
+      },
+      "when": {
+        "up": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "nauvis_fluids:block/pipe_arm",
+        "x": 270
+      },
+      "when": {
+        "north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "nauvis_fluids:block/pipe_arm",
+        "x": 90
+      },
+      "when": {
+        "south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "nauvis_fluids:block/pipe_arm",
+        "x": 270,
+        "y": 270
+      },
+      "when": {
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "nauvis_fluids:block/pipe_arm",
+        "x": 270,
+        "y": 90
+      },
+      "when": {
+        "east": "true"
+      }
     }
-  }
+  ]
 }
