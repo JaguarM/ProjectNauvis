@@ -17,8 +17,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
  * A steam engine: turns steam into electricity, and is the first thing in the pack that makes any.
@@ -69,7 +74,24 @@ public class SteamEngineBlockEntity extends BlockEntity {
      */
     private final EnergyHandler cableView = new GeneratorAccess(energy, this::wake);
 
-    private int steam;
+    /**
+     * Steam in, along the engine's own axis.
+     *
+     * <p>Not extract-only: an engine is a length of pipe that happens to consume, which is what
+     * makes a row of them work. The one at the far end pulls from the one before it, and so on
+     * back to the boiler - Factorio's arrangement, where you build engines in a line and feed the
+     * first.
+     */
+    private final SteamTank steam = new SteamTank(STEAM_CAPACITY, this::onSteamChanged);
+
+    /**
+     * The two neighbours an engine can draw from, cached so a draw is not a lookup.
+     *
+     * <p>Built on first use rather than in the constructor: a block entity has no level yet, and
+     * the axis is read off the block state.
+     */
+    private @Nullable BlockCapabilityCache<ResourceHandler<FluidResource>, @Nullable Direction> behind;
+    private @Nullable BlockCapabilityCache<ResourceHandler<FluidResource>, @Nullable Direction> ahead;
 
     public SteamEngineBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.STEAM_ENGINE.get(), pos, state);
@@ -84,6 +106,11 @@ public class SteamEngineBlockEntity extends BlockEntity {
     }
 
     public int steam() {
+        return steam.getAmountAsInt(0);
+    }
+
+    /** What a pipe or the next engine along sees. Registered as {@code Capabilities.Fluid.BLOCK}. */
+    public ResourceHandler<FluidResource> steamAccess() {
         return steam;
     }
 
@@ -94,42 +121,95 @@ public class SteamEngineBlockEntity extends BlockEntity {
             return;
         }
 
-        if (steam < STEAM_PER_TICK && !drawSteam()) {
+        if (steam() < STEAM_PER_TICK && !drawSteam(level)) {
             // No steam anywhere it can reach. A boiler gaining fuel, or a boiler being placed
             // beside it, both arrive as a neighbour change.
             return;
         }
 
-        steam -= STEAM_PER_TICK;
+        try (Transaction transaction = Transaction.openRoot()) {
+            steam.extract(SteamTank.steamResource(), STEAM_PER_TICK, transaction);
+            transaction.commit();
+        }
         energy.set(Math.min(ENERGY_CAPACITY, energy.getAmountAsInt() + ENERGY_PER_TICK));
         setChanged();
         level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
     }
 
     /**
-     * Fills the engine's small steam buffer from any boiler it touches.
+     * Fills the engine's small buffer from whatever is on either end of it.
      *
-     * <p>All six sides, including above and below, because a boiler stack is a reasonable thing to
-     * build and refusing it would be an arbitrary rule the player has to learn.
+     * <p>Two faces, not six: an engine has fluid connections along its own axis, which is what
+     * makes its facing mean something and what lets a row of them chain. It reaches through
+     * {@code Capabilities.Fluid.BLOCK}, so a boiler, another engine and a pipe from a mod this one
+     * does not compile against are all the same thing to it.
+     *
+     * <p>It only pulls from a neighbour holding <em>more</em> than it does. Without that rule two
+     * engines side by side would pass the same steam back and forth for ever; with it, steam runs
+     * downhill from the boiler, which holds far more than any engine, to whichever engine is
+     * emptiest.
      */
-    private boolean drawSteam() {
-        if (level == null) {
-            return false;
+    private boolean drawSteam(ServerLevel level) {
+        if (behind == null) {
+            buildCaches(level);
         }
-        for (Direction direction : Direction.values()) {
-            if (steam >= STEAM_CAPACITY) {
-                break;
-            }
-            if (level.getBlockEntity(worldPosition.relative(direction)) instanceof BoilerBlockEntity boiler) {
-                steam += boiler.drawSteam(STEAM_CAPACITY - steam);
+        pullFrom(behind);
+        pullFrom(ahead);
+        return steam() >= STEAM_PER_TICK;
+    }
+
+    private void pullFrom(
+            @Nullable BlockCapabilityCache<ResourceHandler<FluidResource>, @Nullable Direction> cache) {
+        if (cache == null) {
+            return;
+        }
+        ResourceHandler<FluidResource> source = cache.getCapability();
+        if (source == null) {
+            return;
+        }
+
+        int room = STEAM_CAPACITY - steam();
+        if (room <= 0) {
+            return;
+        }
+
+        FluidResource resource = SteamTank.steamResource();
+        // Downhill only. See the note above about two engines and one lump of steam.
+        long theirs = 0;
+        for (int index = 0; index < source.size(); index++) {
+            if (source.getResource(index).equals(resource)) {
+                theirs += source.getAmountAsLong(index);
             }
         }
-        return steam >= STEAM_PER_TICK;
+        if (theirs <= steam()) {
+            return;
+        }
+
+        try (Transaction transaction = Transaction.openRoot()) {
+            int taken = source.extract(resource, room, transaction);
+            if (taken > 0 && steam.insert(resource, taken, transaction) == taken) {
+                transaction.commit();
+            }
+        }
+    }
+
+    private void buildCaches(ServerLevel level) {
+        Direction facing = getBlockState().getValue(SteamEngineBlock.FACING);
+        behind = BlockCapabilityCache.create(Capabilities.Fluid.BLOCK, level,
+                worldPosition.relative(facing.getOpposite()), facing);
+        ahead = BlockCapabilityCache.create(Capabilities.Fluid.BLOCK, level,
+                worldPosition.relative(facing), facing.getOpposite());
     }
 
     @Override
     public void onLoad() {
         super.onLoad();
+        wake();
+    }
+
+    /** Steam arriving is one of the two things that restarts a stopped engine. */
+    private void onSteamChanged() {
+        setChanged();
         wake();
     }
 
@@ -147,14 +227,14 @@ public class SteamEngineBlockEntity extends BlockEntity {
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
         energy.serialize(output.child("Energy"));
-        output.putInt("Steam", steam);
+        steam.serialize(output.child("Steam"));
     }
 
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         input.child("Energy").ifPresent(energy::deserialize);
-        steam = input.getIntOr("Steam", 0);
+        input.child("Steam").ifPresent(steam::deserialize);
     }
 
     @Override

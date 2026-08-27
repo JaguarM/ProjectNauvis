@@ -49,14 +49,19 @@ public class NauvisPowerModels extends ModelProvider {
         blockModels.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(
                 ModBlocks.BOILER.get(), BlockModelGenerators.plainVariant(boiler)));
 
-        Identifier engine = ModelTemplates.CUBE_COLUMN.create(
+        // A horizontal column, laid along the engine's axis, so the two ends steam goes in and out
+        // of are the two ends you can see. An engine that looked the same from every side would
+        // make its facing - which is the whole of how a row of them chains - invisible.
+        Identifier engine = ModelTemplates.CUBE_COLUMN_HORIZONTAL.create(
                 ModBlocks.STEAM_ENGINE.get(),
                 new TextureMapping()
                         .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(Blocks.IRON_BLOCK))
                         .put(TextureSlot.END, TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top")),
                 blockModels.modelOutput);
-        blockModels.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(
-                ModBlocks.STEAM_ENGINE.get(), BlockModelGenerators.plainVariant(engine)));
+        blockModels.blockStateOutput.accept(
+                MultiVariantGenerator.dispatch(ModBlocks.STEAM_ENGINE.get(),
+                                BlockModelGenerators.plainVariant(engine))
+                        .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
 
         pole(blockModels);
     }

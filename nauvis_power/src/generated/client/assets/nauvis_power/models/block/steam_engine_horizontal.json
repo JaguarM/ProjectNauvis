@@ -1,5 +1,5 @@
 {
-  "parent": "minecraft:block/cube_column",
+  "parent": "minecraft:block/cube_column_horizontal",
   "textures": {
     "end": "minecraft:block/blast_furnace_top",
     "side": "minecraft:block/iron_block"

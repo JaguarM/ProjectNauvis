@@ -1,6 +1,7 @@
 package com.jaguarm.nauvisfluids;
 
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
+import com.jaguarm.nauvisfluids.registry.ModFluids;
 import com.jaguarm.nauvisfluids.registry.ModItems;
 
 import net.neoforged.bus.api.IEventBus;
@@ -27,6 +28,8 @@ public class NauvisFluids {
 
     public NauvisFluids(IEventBus modEventBus, ModContainer modContainer) {
         ModBlocks.BLOCKS.register(modEventBus);
+        ModFluids.FLUID_TYPES.register(modEventBus);
+        ModFluids.FLUIDS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModItems.TABS.register(modEventBus);
         modEventBus.addListener(ModPacks::addPackFinders);

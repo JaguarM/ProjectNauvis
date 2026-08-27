@@ -1,7 +1,19 @@
 {
   "variants": {
-    "": {
-      "model": "nauvis_power:block/steam_engine"
+    "facing=east": {
+      "model": "nauvis_power:block/steam_engine_horizontal",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "nauvis_power:block/steam_engine_horizontal"
+    },
+    "facing=south": {
+      "model": "nauvis_power:block/steam_engine_horizontal",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "nauvis_power:block/steam_engine_horizontal",
+      "y": 270
     }
   }
 }

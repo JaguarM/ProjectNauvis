@@ -5,6 +5,7 @@ import com.mojang.serialization.MapCodec;
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -15,7 +16,11 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 
@@ -32,8 +37,35 @@ public class SteamEngineBlock extends BaseEntityBlock {
 
     public static final MapCodec<SteamEngineBlock> CODEC = simpleCodec(SteamEngineBlock::new);
 
+    /**
+     * Which way the engine lies, and therefore which two faces steam goes in and out of.
+     *
+     * <p>Factorio's steam engines are built in a row off one boiler, and the row is the point:
+     * steam runs along the line and every engine on it takes a share. An engine with connections
+     * on all six sides would make that arrangement meaningless and would let you feed one from
+     * below by accident.
+     */
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
+
     public SteamEngineBlock(Properties properties) {
         super(properties);
+        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    /**
+     * Laid along the way the player is looking, so a row of engines is built by walking the line.
+     *
+     * <p>Which of the two ends is "front" does not matter - the engine draws from both - so there
+     * is no wrong way round, only a wrong axis.
+     */
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return defaultBlockState().setValue(FACING, context.getHorizontalDirection());
     }
 
     @Override

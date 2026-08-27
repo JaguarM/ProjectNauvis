@@ -1,5 +1,6 @@
 {
   "block.nauvis_fluids.pipe": "Pipe",
+  "fluid.nauvis_fluids.steam": "Steam",
   "itemGroup.nauvis_fluids": "Project Nauvis: Fluids",
   "pack.nauvis_fluids.crafting_table": "Nauvis Fluids: Crafting Table Recipes"
 }

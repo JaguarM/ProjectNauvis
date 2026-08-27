@@ -26,6 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
@@ -41,7 +42,8 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  *
  * <p>What it does <em>not</em> do is push. Engines pull, which is what lets both ends sleep: the
  * boiler only runs when its own buffer has room, and its buffer only gains room when an engine
- * takes some. See {@link #drawSteam}.
+ * takes some - which happens through {@link SteamAccess}, the extract-only view a pipe or an
+ * engine sees.
  */
 public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -65,7 +67,7 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
             return switch (id) {
                 case BoilerMenu.DATA_BURN_TIME -> burnTime;
                 case BoilerMenu.DATA_BURN_TIME_TOTAL -> burnTimeTotal;
-                case BoilerMenu.DATA_STEAM -> steam;
+                case BoilerMenu.DATA_STEAM -> steam();
                 default -> 0;
             };
         }
@@ -81,7 +83,18 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
         }
     };
 
-    private int steam;
+    /**
+     * Real steam, in a real tank, rather than an int.
+     *
+     * <p>It costs nothing over a counter and buys the thing that matters: a pipe from
+     * {@code nauvis_fluids} can take from it through {@code Capabilities.Fluid.BLOCK} without
+     * either mod compiling against the other. See {@link SteamTank}.
+     */
+    private final SteamTank steam = new SteamTank(STEAM_CAPACITY, this::onSteamChanged);
+
+    /** What a pipe sees: extraction only, and a wake-up on the way out. */
+    private final ResourceHandler<FluidResource> steamAccess = new SteamAccess(steam, this::wake);
+
     private int burnTime;
     private int burnTimeTotal;
 
@@ -97,8 +110,14 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
         return fuel;
     }
 
+    /** How much steam is banked. Read by the screen, by Jade, and by tests. */
     public int steam() {
-        return steam;
+        return steam.getAmountAsInt(0);
+    }
+
+    /** What pipes and engines draw from. Registered as {@code Capabilities.Fluid.BLOCK}. */
+    public ResourceHandler<FluidResource> steamAccess() {
+        return steamAccess;
     }
 
     public int burnTime() {
@@ -109,28 +128,9 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
         return burnTimeTotal;
     }
 
-    /**
-     * Takes steam out, and wakes the boiler because there is now room to make more.
-     *
-     * <p>This is the whole of the engine-to-boiler contract, and the reason the boiler can sleep
-     * with a full buffer and a hopper full of coal: nothing is burnt until somebody draws.
-     *
-     * @return how much was actually taken, which may be less than asked for or nothing at all.
-     */
-    public int drawSteam(int wanted) {
-        int taken = Math.min(wanted, steam);
-        if (taken <= 0) {
-            return 0;
-        }
-        steam -= taken;
-        setChanged();
-        wake();
-        return taken;
-    }
-
     /** Called by {@link BoilerBlock}, and only ever on a tick this boiler asked for. */
     public void serverTick(ServerLevel level) {
-        if (steam >= STEAM_CAPACITY) {
+        if (steam() >= STEAM_CAPACITY) {
             // Nothing to do until an engine draws. Burning fuel to make steam that will not fit
             // is how a burner ends up eating a chest of coal while the factory sits idle.
             return;
@@ -141,7 +141,10 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         burnTime--;
-        steam = Math.min(STEAM_CAPACITY, steam + STEAM_PER_TICK);
+        try (Transaction transaction = Transaction.openRoot()) {
+            steam.insert(SteamTank.steamResource(), STEAM_PER_TICK, transaction);
+            transaction.commit();
+        }
         setChanged();
         level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
     }
@@ -198,6 +201,12 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
         wake();
     }
 
+    /** Room in the tank is the one thing that gives a stopped boiler work again. */
+    private void onSteamChanged() {
+        setChanged();
+        wake();
+    }
+
     @Override
     public Component getDisplayName() {
         return Component.translatable("block.nauvis_power.boiler");
@@ -233,7 +242,7 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
         fuel.serialize(output.child("Fuel"));
-        output.putInt("Steam", steam);
+        steam.serialize(output.child("Steam"));
         output.putInt("BurnTime", burnTime);
         output.putInt("BurnTimeTotal", burnTimeTotal);
     }
@@ -242,7 +251,7 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         input.child("Fuel").ifPresent(fuel::deserialize);
-        steam = input.getIntOr("Steam", 0);
+        input.child("Steam").ifPresent(steam::deserialize);
         burnTime = input.getIntOr("BurnTime", 0);
         burnTimeTotal = input.getIntOr("BurnTimeTotal", 0);
     }

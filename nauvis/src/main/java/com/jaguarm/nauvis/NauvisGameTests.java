@@ -6,7 +6,10 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import org.jspecify.annotations.Nullable;
+
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -197,7 +200,10 @@ public final class NauvisGameTests {
         @Override
         public void run(GameTestHelper helper) {
             place(helper, BOILER, block(helper, "nauvis_power:boiler"));
-            place(helper, ENGINE, block(helper, "nauvis_power:steam_engine"));
+            // East, so the engine lies along the line to the boiler. A steam engine takes steam
+            // through the two faces on its own axis, and the pack mod can say so without knowing
+            // the property: setBlock applies a direction to whatever has a horizontal facing.
+            place(helper, ENGINE, block(helper, "nauvis_power:steam_engine"), Direction.EAST);
             place(helper, NEAR_POLE, block(helper, "nauvis_power:small_electric_pole"));
             place(helper, FAR_POLE, block(helper, "nauvis_power:small_electric_pole"));
             place(helper, ASSEMBLER, block(helper, "nauvis_machines:assembling_machine_1"));
@@ -239,7 +245,16 @@ public final class NauvisGameTests {
          * for everything costs nothing and needs no knowledge of which blocks care.
          */
         private static void place(GameTestHelper helper, BlockPos pos, Block block) {
-            helper.setBlock(pos, block);
+            place(helper, pos, block, null);
+        }
+
+        private static void place(GameTestHelper helper, BlockPos pos, Block block,
+                @Nullable Direction facing) {
+            if (facing == null) {
+                helper.setBlock(pos, block);
+            } else {
+                helper.setBlock(pos, block, facing);
+            }
             BlockPos absolute = helper.absolutePos(pos);
             block.setPlacedBy(helper.getLevel(), absolute,
                     helper.getLevel().getBlockState(absolute), null, ItemStack.EMPTY);

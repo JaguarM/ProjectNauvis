@@ -6,6 +6,7 @@ import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.nauvispower.generator.BoilerBlockEntity;
 import com.jaguarm.nauvispower.generator.BoilerMenu;
+import com.jaguarm.nauvispower.generator.SteamEngineBlock;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
 import com.jaguarm.nauvispower.grid.PolePart;
 import com.jaguarm.nauvispower.grid.PowerNetwork;
@@ -46,6 +47,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.transfer.ResourceHandler;
@@ -89,6 +91,9 @@ public final class NauvisPowerGameTests {
         TEST_TYPES.register("pole_wire_bounds_reach_both_ends", () -> PoleWireBoundsTest.CODEC);
         TEST_TYPES.register("boiler_opens_a_screen", () -> BoilerOpensAScreenTest.CODEC);
         TEST_TYPES.register("boiler_refuses_what_will_not_burn", () -> BoilerRefusesNonFuelTest.CODEC);
+        TEST_TYPES.register("steam_engines_chain", () -> SteamEnginesChainTest.CODEC);
+        TEST_TYPES.register("steam_engine_ignores_its_sides", () -> SteamEngineIgnoresSidesTest.CODEC);
+        TEST_TYPES.register("steam_engine_connects_on_two_faces", () -> SteamEngineFacesTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -119,6 +124,9 @@ public final class NauvisPowerGameTests {
         registerSpaced(event, environment, "pole_wire_bounds_reach_both_ends", PoleWireBoundsTest::new, 100);
         register(event, environment, "boiler_opens_a_screen", BoilerOpensAScreenTest::new, 60);
         register(event, environment, "boiler_refuses_what_will_not_burn", BoilerRefusesNonFuelTest::new, 60);
+        register(event, environment, "steam_engines_chain", SteamEnginesChainTest::new, 200);
+        register(event, environment, "steam_engine_ignores_its_sides", SteamEngineIgnoresSidesTest::new, 100);
+        register(event, environment, "steam_engine_connects_on_two_faces", SteamEngineFacesTest::new, 60);
     }
 
     private interface TestFactory {
@@ -147,10 +155,17 @@ public final class NauvisPowerGameTests {
                         Rotation.NONE, false, 1, 1, false, 24)));
     }
 
-    /** A boiler with coal in it, and an engine touching it. */
+    /**
+     * A boiler with coal in it, and an engine lying along the line to it.
+     *
+     * <p>The facing matters now. An engine takes steam through the two faces on its own axis, so
+     * one laid north-south beside a boiler to its west connects to nothing at all - which is the
+     * point of it being directional, and a thing every test here has to respect.
+     */
     private static void buildChain(GameTestHelper helper, boolean fuelled) {
         helper.setBlock(BOILER, ModBlocks.BOILER.get());
-        helper.setBlock(ENGINE, ModBlocks.STEAM_ENGINE.get());
+        helper.setBlock(ENGINE, ModBlocks.STEAM_ENGINE.get().defaultBlockState()
+                .setValue(SteamEngineBlock.FACING, Direction.EAST));
         if (fuelled) {
             insert(helper.getBlockEntity(BOILER, BoilerBlockEntity.class).fuelAccess(), Items.COAL, 1);
         }
@@ -990,6 +1005,150 @@ public final class NauvisPowerGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("boiler refuses what will not burn");
+        }
+    }
+
+    /**
+     * <b>Engines chain.</b> One boiler, two engines in a line, and the far one runs.
+     *
+     * <p>This is Factorio's arrangement and the reason an engine is a length of pipe that happens
+     * to consume rather than a thing with a private connection to a boiler: steam runs along the
+     * row, and the engine at the end is fed by the one before it. An engine that only drew from
+     * boilers would pass every other test in this file and leave the second engine dead.
+     */
+    public static class SteamEnginesChainTest extends GameTestInstance {
+
+        public static final MapCodec<SteamEnginesChainTest> CODEC =
+                RecordCodecBuilder.<SteamEnginesChainTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SteamEnginesChainTest::info))
+                                .apply(i, SteamEnginesChainTest::new));
+
+        /** Two blocks further along the same east-west line as BOILER and ENGINE. */
+        private static final BlockPos FAR_ENGINE = new BlockPos(2, 1, 0);
+
+        public SteamEnginesChainTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            buildChain(helper, true);
+            helper.setBlock(FAR_ENGINE, ModBlocks.STEAM_ENGINE.get().defaultBlockState()
+                    .setValue(SteamEngineBlock.FACING, Direction.EAST));
+
+            helper.runAfterDelay(60, () -> {
+                helper.assertTrue(
+                        helper.getBlockEntity(ENGINE, SteamEngineBlockEntity.class).energyStored() > 0,
+                        "the engine beside the boiler made no power");
+                helper.assertTrue(
+                        helper.getBlockEntity(FAR_ENGINE, SteamEngineBlockEntity.class).energyStored() > 0,
+                        "the second engine in the row made no power, so steam does not run along "
+                                + "a line of them and only the first one is worth building");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("steam engines chain");
+        }
+    }
+
+    /**
+     * An engine takes steam through its two ends and nowhere else.
+     *
+     * <p>The other half of the same claim. If the connection were on all six faces the facing
+     * would be decoration, a row would be no different from a heap, and you could feed an engine
+     * by burying a boiler under it. The engine here lies north-south with the boiler due west.
+     */
+    public static class SteamEngineIgnoresSidesTest extends GameTestInstance {
+
+        public static final MapCodec<SteamEngineIgnoresSidesTest> CODEC =
+                RecordCodecBuilder.<SteamEngineIgnoresSidesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SteamEngineIgnoresSidesTest::info))
+                                .apply(i, SteamEngineIgnoresSidesTest::new));
+
+        public SteamEngineIgnoresSidesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            helper.setBlock(BOILER, ModBlocks.BOILER.get());
+            insert(helper.getBlockEntity(BOILER, BoilerBlockEntity.class).fuelAccess(), Items.COAL, 1);
+
+            // Across the line rather than along it: the boiler is on the engine's side face.
+            helper.setBlock(ENGINE, ModBlocks.STEAM_ENGINE.get().defaultBlockState()
+                    .setValue(SteamEngineBlock.FACING, Direction.NORTH));
+
+            helper.runAfterDelay(40, () -> {
+                helper.assertValueEqual(
+                        helper.getBlockEntity(ENGINE, SteamEngineBlockEntity.class).energyStored(), 0,
+                        "charge in an engine fed through its side, which has no connection");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("steam engine ignores its sides");
+        }
+    }
+
+    /**
+     * The other side of the connection: what a <em>pipe</em> sees when it looks at an engine.
+     *
+     * <p>{@code steam_engine_ignores_its_sides} covers which way the engine looks. This covers
+     * which faces answer when something looks at it, which is a separate registration and the one
+     * that will decide whether a pipe run can join an engine end-on or barge into its flank. It is
+     * asserted directly because nothing else reaches it until pipes exist - breaking the sided
+     * registration leaves every other test in this file passing.
+     */
+    public static class SteamEngineFacesTest extends GameTestInstance {
+
+        public static final MapCodec<SteamEngineFacesTest> CODEC =
+                RecordCodecBuilder.<SteamEngineFacesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SteamEngineFacesTest::info))
+                                .apply(i, SteamEngineFacesTest::new));
+
+        public SteamEngineFacesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            helper.setBlock(ENGINE, ModBlocks.STEAM_ENGINE.get().defaultBlockState()
+                    .setValue(SteamEngineBlock.FACING, Direction.EAST));
+
+            BlockPos pos = helper.absolutePos(ENGINE);
+            for (Direction side : Direction.values()) {
+                boolean connects = helper.getLevel()
+                        .getCapability(Capabilities.Fluid.BLOCK, pos, side) != null;
+                boolean alongAxis = side.getAxis() == Direction.Axis.X;
+                helper.assertValueEqual(connects, alongAxis,
+                        "whether an east-facing engine offers steam on its " + side + " face");
+            }
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("steam engine connects on two faces");
         }
     }
 }

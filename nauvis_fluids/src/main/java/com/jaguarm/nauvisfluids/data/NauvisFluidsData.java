@@ -52,6 +52,9 @@ public final class NauvisFluidsData {
         protected void addTranslations() {
             add("itemGroup.nauvis_fluids", "Project Nauvis: Fluids");
             addBlock(ModBlocks.PIPE, "Pipe");
+
+            // Steam is never in the world, but Jade and any tank screen will name it.
+            add("fluid.nauvis_fluids.steam", "Steam");
             add("pack.nauvis_fluids.crafting_table", "Nauvis Fluids: Crafting Table Recipes");
         }
     }
