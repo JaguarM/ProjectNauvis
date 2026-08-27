@@ -39,7 +39,14 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
     /** Ticks into the current craft, and how many it needs. Enough to draw an arrow. */
     public static final int DATA_PROGRESS = 0;
     public static final int DATA_CRAFT_TICKS = 1;
-    public static final int DATA_COUNT = 2;
+
+    /**
+     * FE in the buffer. The capacity is not sent: it is a compile-time constant in this same mod,
+     * so the client already has it and a data slot would only be a second copy to disagree with.
+     */
+    public static final int DATA_ENERGY = 2;
+
+    public static final int DATA_COUNT = 3;
 
     /**
      * Where the screen expects to find things. Shared, so the two cannot drift apart.
@@ -129,6 +136,20 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
     public float craftProgress() {
         int total = craftTicks();
         return total <= 0 ? 0.0f : Math.clamp(progress() / (float) total, 0.0f, 1.0f);
+    }
+
+    public int energy() {
+        return data.get(DATA_ENERGY);
+    }
+
+    /** 0 to 1 across the buffer. */
+    public float charge() {
+        return Math.clamp(energy() / (float) AssemblerBlockEntity.ENERGY_CAPACITY, 0.0f, 1.0f);
+    }
+
+    /** Whether the machine has enough in the buffer to advance a craft by one tick. */
+    public boolean hasPower() {
+        return energy() >= AssemblerBlockEntity.ENERGY_PER_TICK;
     }
 
     // ------------------------------------------------------------------ RecipeSelector

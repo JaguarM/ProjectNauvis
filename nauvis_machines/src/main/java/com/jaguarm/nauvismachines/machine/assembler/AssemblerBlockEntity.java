@@ -9,6 +9,8 @@ import com.jaguarm.facrafting.recipe.CraftPlanner;
 import com.jaguarm.facrafting.recipe.FacraftRecipe;
 import com.jaguarm.facrafting.registry.ModRecipes;
 import com.jaguarm.nauvismachines.machine.MachineAccess;
+import com.jaguarm.nauvismachines.machine.MachinePower;
+import com.jaguarm.nauvismachines.machine.PowerAccess;
 import com.jaguarm.nauvismachines.registry.ModBlockEntities;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
@@ -39,6 +41,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
@@ -61,8 +64,22 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * and scheduled ticks are saved with the chunk, so a craft survives a reload.
  *
  * <p>It wakes on anything that could give it something to do: a change to its inventory
- * (ingredients arriving, a result being taken away), a recipe being chosen, or a neighbour
- * changing. A Factorio base is thousands of machines and most of them are idle at any moment.
+ * (ingredients arriving, a result being taken away), a recipe being chosen, a neighbour changing,
+ * or electricity arriving. A Factorio base is thousands of machines and most of them are idle at
+ * any moment.
+ *
+ * <h2>Power</h2>
+ *
+ * <p>It runs on FE and stops when the buffer is empty, which is the whole of it for now -
+ * PLAN.md's brownout, where a machine that cannot refill runs slower instead of stopping, is a
+ * later refinement. What it publishes is an insert-only buffer under NeoForge's energy
+ * capability, so a pole from {@code nauvis_power} fills it without either mod knowing what the
+ * other is, and so would a cable from anywhere else.
+ *
+ * <p>The last item in the wake list is the one that is easy to miss. A machine that ran dry has
+ * stopped scheduling ticks, so the grid coming back has to reach it from outside - see
+ * {@code MachinePower}, and {@code assembler_wakes_when_power_arrives}, which is the test that
+ * fails if it does not.
  */
 public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -74,7 +91,29 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
     public static final int SLOT_COUNT = INPUT_SLOTS + 1;
 
+    /**
+     * FE burnt per tick of a craft.
+     *
+     * <p>Factorio's assembling machine 1 draws 75 kW where a steam engine makes 900, so one
+     * engine runs twelve of them and one boiler runs twenty-four. Those ratios are the number
+     * worth keeping; the FE it is expressed in is not, and neither figure is identity, so both
+     * are tunable. The engine's ENERGY_PER_TICK is the other half of the pair.
+     */
+    public static final int ENERGY_PER_TICK = 10;
+
+    /**
+     * Five seconds of work. Enough to carry on through a gap in supply, small enough that an
+     * assembler is not somewhere the grid can park a surplus.
+     */
+    public static final int ENERGY_CAPACITY = ENERGY_PER_TICK * 100;
+
     private final AssemblerInventory inventory = new AssemblerInventory(SLOT_COUNT, this::onInventoryChanged);
+
+    /** Unrestricted, because the machine spends from it. What the grid sees is {@link #gridView}. */
+    private final MachinePower energy = new MachinePower(ENERGY_CAPACITY, this::onPowerChanged);
+
+    /** Insert only: a machine is not a battery, and a grid must not be able to drain one. */
+    private final EnergyHandler gridView = new PowerAccess(energy);
 
     /** What hoppers, inserters and pipes see. Never the raw inventory - see {@link MachineAccess}. */
     private final ResourceHandler<ItemResource> automationView = new MachineAccess(inventory, INPUT_SLOTS);
@@ -104,6 +143,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
             return switch (id) {
                 case AssemblerMenu.DATA_PROGRESS -> progress;
                 case AssemblerMenu.DATA_CRAFT_TICKS -> craftTicks;
+                case AssemblerMenu.DATA_ENERGY -> energy.getAmountAsInt();
                 default -> 0;
             };
         }
@@ -129,6 +169,15 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
     public ResourceHandler<ItemResource> automationView() {
         return automationView;
+    }
+
+    /** What a power pole fills. Registered as {@code Capabilities.Energy.BLOCK}. */
+    public EnergyHandler gridView() {
+        return gridView;
+    }
+
+    public int energyStored() {
+        return energy.getAmountAsInt();
     }
 
     public @Nullable ResourceKey<Recipe<?>> recipeKey() {
@@ -184,8 +233,17 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
 
+        if (energy.getAmountAsInt() < ENERGY_PER_TICK) {
+            // Out of power, holding the craft where it stands. Nothing here can wake it - the
+            // grid can, and MachinePower is what tells us it has. PLAN.md's brownout, where a
+            // machine that cannot refill runs slower rather than stopping, is the later shape.
+            setChanged();
+            return;
+        }
+
         if (progress < craftTicks) {
             progress++;
+            energy.set(energy.getAmountAsInt() - ENERGY_PER_TICK);
         }
 
         if (progress >= craftTicks) {
@@ -297,6 +355,19 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         wake();
     }
 
+    /**
+     * Electricity arrived, or was spent.
+     *
+     * <p>The wake is the half that matters. A machine that stopped for want of power is not
+     * scheduled for anything, so without this the grid coming back would reach a machine that
+     * never looks again - and it would sit still beside a full pole, which reads as a broken
+     * assembler rather than as a missing wake-up.
+     */
+    private void onPowerChanged() {
+        setChanged();
+        wake();
+    }
+
     @Override
     public Component getDisplayName() {
         return Component.translatable("block.nauvis_machines.assembling_machine_1");
@@ -344,6 +415,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
         inventory.serialize(output.child("Inventory"));
+        energy.serialize(output.child("Energy"));
         output.putInt("Progress", progress);
         if (recipeKey != null) {
             output.putString("Recipe", recipeKey.identifier().toString());
@@ -354,6 +426,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         input.child("Inventory").ifPresent(inventory::deserialize);
+        input.child("Energy").ifPresent(energy::deserialize);
         progress = input.getIntOr("Progress", 0);
         recipeKey = input.getString("Recipe")
                 .map(Identifier::tryParse)

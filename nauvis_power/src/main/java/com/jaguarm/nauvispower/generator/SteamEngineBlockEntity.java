@@ -41,11 +41,13 @@ public class SteamEngineBlockEntity extends BlockEntity {
     /**
      * FE made from one tick's steam.
      *
-     * <p>Factorio's steam engine is 900 kW. There is no honest conversion between that and FE, so
-     * this is a round number chosen to feel right next to vanilla's generators rather than derived
-     * from anything. It is the sort of number to tune once there is something to spend it on.
+     * <p>Factorio's steam engine is 900 kW and its assembling machine 1 draws 75, so one engine
+     * runs twelve assemblers and one boiler - two engines - runs twenty-four. There is no honest
+     * conversion between kilowatts and FE, so what is kept is that ratio: this is twelve times
+     * the assembler's per-tick cost, exactly. Neither number is identity, so both are tunable,
+     * but they are tunable together.
      */
-    public static final int ENERGY_PER_TICK = 90;
+    public static final int ENERGY_PER_TICK = 120;
 
     /** Five seconds of output. Enough to ride out a stutter in the coal supply. */
     public static final int ENERGY_CAPACITY = ENERGY_PER_TICK * 100;

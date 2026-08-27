@@ -44,6 +44,8 @@ public class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
     private static final int COLOR_MUTED = 0xFF909090;
     private static final int COLOR_TRACK = 0xFF2A2A2A;
     private static final int COLOR_FILL = 0xFF55FF55;
+    /** Electricity, in a colour nothing else on this screen uses. */
+    private static final int COLOR_CHARGE = 0xFFFFD24A;
 
     /**
      * The progress bar, in the gap between the ingredient block and the result.
@@ -55,6 +57,19 @@ public class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
     private static final int ARROW_Y = 32;
     private static final int ARROW_WIDTH = 34;
     private static final int ARROW_HEIGHT = 6;
+
+    /**
+     * The charge in the buffer, directly under the progress bar.
+     *
+     * <p>An assembler that has stopped for want of electricity is otherwise indistinguishable
+     * from one that has stopped for want of ingredients, and the two want completely different
+     * things done about them. y=44..48 is clear: the ingredient block ends at x=61, the output
+     * well at y=43, and the status line starts at y=58.
+     */
+    private static final int CHARGE_X = 70;
+    private static final int CHARGE_Y = 44;
+    private static final int CHARGE_WIDTH = 34;
+    private static final int CHARGE_HEIGHT = 4;
 
     /**
      * The status line, clear of both the slots above and vanilla's "Inventory" label below.
@@ -95,6 +110,7 @@ public class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
         }
 
         drawProgress(graphics, x, y);
+        drawCharge(graphics, x, y);
     }
 
     /** Every slot's well, taken from the menu so the screen cannot disagree about where they are. */
@@ -118,6 +134,19 @@ public class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
         int filled = Math.round(ARROW_WIDTH * progress);
         if (filled > 0) {
             graphics.fill(left, top, left + filled, top + ARROW_HEIGHT, COLOR_FILL);
+        }
+    }
+
+    /** How full the buffer is. Empty and idle look the same on a machine that has never run. */
+    private void drawCharge(GuiGraphicsExtractor graphics, int originX, int originY) {
+        int left = originX + CHARGE_X;
+        int top = originY + CHARGE_Y;
+
+        graphics.fill(left, top, left + CHARGE_WIDTH, top + CHARGE_HEIGHT, COLOR_TRACK);
+
+        int filled = Math.round(CHARGE_WIDTH * menu.charge());
+        if (filled > 0) {
+            graphics.fill(left, top, left + filled, top + CHARGE_HEIGHT, COLOR_CHARGE);
         }
     }
 
@@ -149,6 +178,13 @@ public class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
             // than nothing.
             return Component.translatable("screen.nauvis_machines.assembler.unknown");
         }
+
+        // Said before what it is making, because it is the reason nothing is happening. A bar
+        // at zero says the same thing, but only to somebody who already knows to look at it.
+        if (!menu.hasPower()) {
+            return Component.translatable("screen.nauvis_machines.assembler.no_power");
+        }
+
         return Component.translatable("screen.nauvis_machines.assembler.making",
                 holder.value().result().create().getHoverName());
     }

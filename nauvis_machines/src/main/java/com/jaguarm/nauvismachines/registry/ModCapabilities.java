@@ -25,5 +25,13 @@ public final class ModCapabilities {
                 Capabilities.Item.BLOCK,
                 ModBlockEntities.ASSEMBLER.get(),
                 (assembler, side) -> assembler.automationView());
+
+        // Insert only, and NeoForge's capability rather than ours - so a power pole from
+        // nauvis_power fills an assembler without either mod knowing the other exists, and so
+        // would a cable from any other mod. That is the whole reason PLAN.md chose FE.
+        event.registerBlockEntity(
+                Capabilities.Energy.BLOCK,
+                ModBlockEntities.ASSEMBLER.get(),
+                (assembler, side) -> assembler.gridView());
     }
 }

@@ -90,6 +90,10 @@ public final class NauvisMachinesGameTests {
         TEST_TYPES.register("assembler_stalls_when_full", () -> AssemblerStallsWhenFullTest.CODEC);
         TEST_TYPES.register("assembler_spills_when_broken", () -> AssemblerSpillsWhenBrokenTest.CODEC);
         TEST_TYPES.register("assembler_menu_selects_recipe", () -> AssemblerMenuSelectsRecipeTest.CODEC);
+        TEST_TYPES.register("assembler_needs_power", () -> AssemblerNeedsPowerTest.CODEC);
+        TEST_TYPES.register("assembler_wakes_when_power_arrives",
+                () -> AssemblerWakesWhenPowerArrivesTest.CODEC);
+        TEST_TYPES.register("assembler_gives_no_power_back", () -> AssemblerGivesNoPowerBackTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -113,6 +117,11 @@ public final class NauvisMachinesGameTests {
         register(event, environment, "assembler_stalls_when_full", AssemblerStallsWhenFullTest::new, 100);
         register(event, environment, "assembler_spills_when_broken", AssemblerSpillsWhenBrokenTest::new, 60);
         register(event, environment, "assembler_menu_selects_recipe", AssemblerMenuSelectsRecipeTest::new, 60);
+        register(event, environment, "assembler_needs_power", AssemblerNeedsPowerTest::new, 100);
+        register(event, environment, "assembler_wakes_when_power_arrives",
+                AssemblerWakesWhenPowerArrivesTest::new, 100);
+        register(event, environment, "assembler_gives_no_power_back",
+                AssemblerGivesNoPowerBackTest::new, 40);
     }
 
     private interface TestFactory {
@@ -144,6 +153,31 @@ public final class NauvisMachinesGameTests {
         helper.assertTrue(recipe != null,
                 "no timed recipe makes this item - is the generated recipe on disk, and are "
                         + "facrafting and neoprogressivematerials both loaded?");
+        assembler.setRecipe(recipe);
+        charge(assembler);
+        return assembler;
+    }
+
+    /**
+     * Fills the machine's buffer the way a power pole would.
+     *
+     * <p>Every test that expects a craft to happen calls this, because since the assembler became
+     * electric a craft that does not happen is ambiguous. The tests about power do not call it -
+     * that is what they are for.
+     */
+    private static void charge(AssemblerBlockEntity assembler) {
+        try (Transaction transaction = Transaction.openRoot()) {
+            assembler.gridView().insert(AssemblerBlockEntity.ENERGY_CAPACITY, transaction);
+            transaction.commit();
+        }
+    }
+
+    /** Places a machine with a recipe and an empty buffer. */
+    private static AssemblerBlockEntity unpoweredMachineMaking(GameTestHelper helper, Item product) {
+        helper.setBlock(MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
+        AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+        ResourceKey<Recipe<?>> recipe = AssemblerBlockEntity.recipeProducing(helper.getLevel(), product);
+        helper.assertTrue(recipe != null, "no timed recipe makes this item");
         assembler.setRecipe(recipe);
         return assembler;
     }
@@ -537,6 +571,157 @@ public final class NauvisMachinesGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("assembler menu selects recipe");
+        }
+    }
+
+    /**
+     * An assembler with everything except electricity makes nothing.
+     *
+     * <p>Factorio's assembling machine 1 is electric, and this is what makes the boiler, the
+     * engine and the pole part of the factory rather than a demonstration standing beside it.
+     *
+     * <p>It also asserts the machine is <em>asleep</em> rather than merely stalled. A machine
+     * that spins on a craft it cannot pay for costs exactly as much as one that works, and looks
+     * identical from anywhere except a profiler.
+     */
+    public static class AssemblerNeedsPowerTest extends GameTestInstance {
+
+        public static final MapCodec<AssemblerNeedsPowerTest> CODEC =
+                RecordCodecBuilder.<AssemblerNeedsPowerTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AssemblerNeedsPowerTest::info))
+                                .apply(i, AssemblerNeedsPowerTest::new));
+
+        public AssemblerNeedsPowerTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            AssemblerBlockEntity assembler =
+                    unpoweredMachineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
+            feedOneCraft(helper, assembler.automationView());
+
+            helper.runAfterDelay(CRAFT_TICKS * 4, () -> {
+                AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+                helper.assertValueEqual(
+                        machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 0,
+                        "items made by an assembler with no electricity");
+
+                int ingredients = 0;
+                for (int slot = 0; slot < AssemblerBlockEntity.INPUT_SLOTS; slot++) {
+                    ingredients += machine.inventory().getAmountAsInt(slot);
+                }
+                helper.assertValueEqual(ingredients, 3 + 5 + 9,
+                        "ingredients still waiting in an unpowered assembler");
+
+                helper.assertFalse(isScheduled(helper),
+                        "an assembler with no electricity is still scheduled to tick, so it is "
+                                + "spinning on a craft it cannot pay for");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("assembler needs power");
+        }
+    }
+
+    /**
+     * <b>The other half of sleeping, and the half that is easy to get wrong.</b>
+     *
+     * <p>A machine that stopped for want of power is not scheduled for anything, so nothing it
+     * does can start it again - the wake has to arrive from outside, through the energy handler.
+     * Deleting {@code MachinePower}'s callback leaves every other test in this file passing and
+     * fails this one, which is the whole reason it is written separately: a factory that stops
+     * for good the first time the coal runs out is a bug nobody sees until it happens.
+     */
+    public static class AssemblerWakesWhenPowerArrivesTest extends GameTestInstance {
+
+        public static final MapCodec<AssemblerWakesWhenPowerArrivesTest> CODEC =
+                RecordCodecBuilder.<AssemblerWakesWhenPowerArrivesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AssemblerWakesWhenPowerArrivesTest::info))
+                                .apply(i, AssemblerWakesWhenPowerArrivesTest::new));
+
+        public AssemblerWakesWhenPowerArrivesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            AssemblerBlockEntity assembler =
+                    unpoweredMachineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
+            feedOneCraft(helper, assembler.automationView());
+
+            helper.startSequence()
+                    .thenExecuteAfter(CRAFT_TICKS * 2, () -> helper.assertFalse(isScheduled(helper),
+                            "the machine did not stop, so this test cannot prove it restarts"))
+                    .thenExecute(() -> {
+                        charge(helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class));
+                        helper.assertTrue(isScheduled(helper),
+                                "electricity arrived and the machine was not woken - it will sleep "
+                                        + "through the grid coming back");
+                    })
+                    .thenExecuteAfter(CRAFT_TICKS + 2, () -> helper.assertValueEqual(
+                            helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class)
+                                    .inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT),
+                            1,
+                            "items made after the power came back"))
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("assembler wakes when power arrives");
+        }
+    }
+
+    /** A machine is not a battery: what fills it must not be able to empty it again. */
+    public static class AssemblerGivesNoPowerBackTest extends GameTestInstance {
+
+        public static final MapCodec<AssemblerGivesNoPowerBackTest> CODEC =
+                RecordCodecBuilder.<AssemblerGivesNoPowerBackTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AssemblerGivesNoPowerBackTest::info))
+                                .apply(i, AssemblerGivesNoPowerBackTest::new));
+
+        public AssemblerGivesNoPowerBackTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            AssemblerBlockEntity assembler = machineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
+            helper.assertValueEqual(assembler.energyStored(), AssemblerBlockEntity.ENERGY_CAPACITY,
+                    "charge in a machine the grid just filled");
+
+            try (Transaction transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(assembler.gridView().extract(1000, transaction), 0,
+                        "energy taken back out of a machine");
+                transaction.commit();
+            }
+            helper.assertValueEqual(assembler.energyStored(), AssemblerBlockEntity.ENERGY_CAPACITY,
+                    "charge after something tried to drain it");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("assembler gives no power back");
         }
     }
 }

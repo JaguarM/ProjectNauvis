@@ -6,6 +6,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -18,7 +19,14 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -63,6 +71,7 @@ public final class NauvisGameTests {
 
     static {
         TEST_TYPES.register("registry_presence", () -> RegistryPresenceTest.CODEC);
+        TEST_TYPES.register("power_reaches_a_machine", () -> PowerReachesAMachineTest.CODEC);
     }
 
     /** Called from the mod constructor so the test type registers with everything else. */
@@ -91,7 +100,15 @@ public final class NauvisGameTests {
                                 "nauvis_logistics:burner_inserter",
                                 "nauvis_logistics:iron_chest",
                                 "nauvis_fluids:pipe",
-                                "nauvis_power:steam_engine")));
+                                "nauvis_power:steam_engine",
+                                "nauvis_power:small_electric_pole")));
+
+        // Padded: this one builds a factory eleven blocks long, well outside the point-sized
+        // structure it is given, and a pole from the test next door would join its network.
+        event.registerTest(
+                Identifier.fromNamespaceAndPath(Nauvis.MODID, "power_reaches_a_machine"),
+                new PowerReachesAMachineTest(new TestData<>(environment, EMPTY_STRUCTURE, 200, 0,
+                        true, Rotation.NONE, false, 1, 1, false, 24)));
     }
 
     /**
@@ -136,6 +153,97 @@ public final class NauvisGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("registry presence");
+        }
+    }
+
+    /**
+     * <b>Milestone 1, end to end: coal in one place, a machine running in another.</b>
+     *
+     * <p>A boiler, a steam engine beside it, two poles, and an assembler eight blocks from the
+     * generator. Every join in that chain is between two mods that do not compile against each
+     * other - {@code nauvis_logistics} could feed the boiler, {@code nauvis_power} makes and
+     * carries the electricity, {@code nauvis_machines} spends it - and all of it is held together
+     * by NeoForge's capabilities and nothing else. That is exactly the claim non-negotiable #3
+     * makes and the one place it can actually be checked, which is why this test is in the pack
+     * mod rather than in any of them.
+     *
+     * <p>Everything is named by id and reached through a capability, so this file still has no
+     * compile-time dependency on anything.
+     *
+     * <p>The second assembler is the control. It is out of reach of both poles, and it stays at
+     * zero - without it, a bug that handed energy to every machine in the level would pass.
+     */
+    public static class PowerReachesAMachineTest extends GameTestInstance {
+
+        public static final MapCodec<PowerReachesAMachineTest> CODEC =
+                RecordCodecBuilder.<PowerReachesAMachineTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PowerReachesAMachineTest::info))
+                                .apply(i, PowerReachesAMachineTest::new));
+
+        private static final BlockPos BOILER = new BlockPos(0, 1, 0);
+        private static final BlockPos ENGINE = new BlockPos(1, 1, 0);
+        private static final BlockPos NEAR_POLE = new BlockPos(2, 1, 0);
+        /** Six from the first pole, inside the 7.5 wire reach; eight from the engine. */
+        private static final BlockPos FAR_POLE = new BlockPos(8, 1, 0);
+        private static final BlockPos ASSEMBLER = new BlockPos(10, 1, 0);
+        private static final BlockPos UNPOWERED_ASSEMBLER = new BlockPos(10, 6, 0);
+
+        public PowerReachesAMachineTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            helper.setBlock(BOILER, block(helper, "nauvis_power:boiler"));
+            helper.setBlock(ENGINE, block(helper, "nauvis_power:steam_engine"));
+            helper.setBlock(NEAR_POLE, block(helper, "nauvis_power:small_electric_pole"));
+            helper.setBlock(FAR_POLE, block(helper, "nauvis_power:small_electric_pole"));
+            helper.setBlock(ASSEMBLER, block(helper, "nauvis_machines:assembling_machine_1"));
+            helper.setBlock(UNPOWERED_ASSEMBLER, block(helper, "nauvis_machines:assembling_machine_1"));
+
+            ResourceHandler<ItemResource> fuel = helper.getLevel()
+                    .getCapability(Capabilities.Item.BLOCK, helper.absolutePos(BOILER), null);
+            helper.assertTrue(fuel != null, "the boiler published no item capability to fuel it through");
+            try (Transaction transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(fuel.insert(ItemResource.of(Items.COAL), 1, transaction), 1,
+                        "coal accepted by the boiler");
+                transaction.commit();
+            }
+
+            // Coal to steam to electricity to two poles to a machine. Forty ticks is generous for
+            // a chain that moves a tick's worth per tick once it is running.
+            helper.runAfterDelay(40, () -> {
+                helper.assertTrue(charge(helper, ASSEMBLER) > 0,
+                        "an assembler two poles from a running steam engine has no charge, so the "
+                                + "grid is not carrying anything");
+                helper.assertValueEqual(charge(helper, UNPOWERED_ASSEMBLER), 0,
+                        "charge in an assembler no pole can reach");
+                helper.succeed();
+            });
+        }
+
+        private static int charge(GameTestHelper helper, BlockPos pos) {
+            EnergyHandler handler = helper.getLevel()
+                    .getCapability(Capabilities.Energy.BLOCK, helper.absolutePos(pos), null);
+            helper.assertTrue(handler != null, "no energy capability at " + pos);
+            return handler.getAmountAsInt();
+        }
+
+        /** A block by id, so the pack mod can name another mod's block without depending on it. */
+        private static Block block(GameTestHelper helper, String id) {
+            Block block = BuiltInRegistries.BLOCK.getValue(Identifier.parse(id));
+            helper.assertTrue(block != Blocks.AIR, "expected " + id + " to be registered, got air");
+            return block;
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("power reaches a machine");
         }
     }
 }

@@ -70,6 +70,7 @@ public final class NauvisMachinesData {
             add("screen.nauvis_machines.assembler.idle", "Idle - pick a recipe on the right");
             add("screen.nauvis_machines.assembler.making", "Making %s");
             add("screen.nauvis_machines.assembler.unknown", "Making something this client has not been told about");
+            add("screen.nauvis_machines.assembler.no_power", "No power - run a wire to it");
             add("screen.nauvis_machines.assembler.wants", "Wants %s x %s");
         }
     }
