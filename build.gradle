@@ -51,12 +51,18 @@ tasks.register('checkRecipes') {
  * The checks that need no game, wired in so they actually run.
  *
  * Every visual bug this pack has shipped compiled, passed its tests and passed datagen. What
- * caught them was a person looking at the game, which is not a process. These two look at what
- * datagen wrote rather than at what it was asked to write, which is where the difference lives.
+ * caught them was a person looking at the game, which is not a process. These look at what was
+ * actually written rather than at what was asked for, which is where the difference lives - an
+ * unresolvable model reference, a screen drawn through itself, or two copies of a package that
+ * are meant to be identical and quietly are not.
  *
- * Both read files and start nothing, so they cost a second and can run on any tree.
+ * All of them read files and start nothing, so they cost a second and can run on any tree.
  */
-['checkModels': ['tools/check_models.py',
+['checkDuplicated': ['tools/check_duplicated.py',
+                    'Diffs the packages that are deliberately copied between mods.',
+                    'Two copies of a package that must be identical have drifted. Fix the ' +
+                    'original and run: python tools/check_duplicated.py --sync'],
+ 'checkModels': ['tools/check_models.py',
                  'Follows every blockstate, model, parent and texture reference to a real file.',
                  'A model, texture or blockstate the pack names does not exist. Nothing about ' +
                  'that fails a compile or a datagen run - see docs/NEXT.md.'],

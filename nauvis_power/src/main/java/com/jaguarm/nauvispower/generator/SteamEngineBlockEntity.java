@@ -2,6 +2,7 @@ package com.jaguarm.nauvispower.generator;
 
 import org.jspecify.annotations.Nullable;
 
+import com.jaguarm.nauvispower.multiblock.MachineShape;
 import com.jaguarm.nauvispower.registry.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;
@@ -193,12 +194,27 @@ public class SteamEngineBlockEntity extends BlockEntity {
         }
     }
 
+    /**
+     * The two blocks just outside the engine's ends, which is where a pipe has to be.
+     *
+     * <p>Read off {@link SteamEngineShape} rather than stepping one block from the middle. An
+     * engine is five tiles long and its block entity sits in the middle of them, so its ends are
+     * two blocks away and the pipe feeding it is three - and if the numbers were written here
+     * instead of derived, lengthening the machine would leave an engine drawing steam out of its
+     * own third tile with nothing to say so.
+     */
     private void buildCaches(ServerLevel level) {
         Direction facing = getBlockState().getValue(SteamEngineBlock.FACING);
-        behind = BlockCapabilityCache.create(Capabilities.Fluid.BLOCK, level,
-                worldPosition.relative(facing.getOpposite()), facing);
-        ahead = BlockCapabilityCache.create(Capabilities.Fluid.BLOCK, level,
-                worldPosition.relative(facing), facing.getOpposite());
+        behind = endCache(level, facing, SteamEngineShape.SOUTH_END, Direction.SOUTH);
+        ahead = endCache(level, facing, SteamEngineShape.NORTH_END, Direction.NORTH);
+    }
+
+    private BlockCapabilityCache<ResourceHandler<FluidResource>, @Nullable Direction> endCache(
+            ServerLevel level, Direction facing, int end, Direction port) {
+        BlockPos cell = SteamEngineShape.SHAPE.cellPos(worldPosition, end, facing);
+        Direction out = MachineShape.toWorld(port, facing);
+        return BlockCapabilityCache.create(
+                Capabilities.Fluid.BLOCK, level, cell.relative(out), out.getOpposite());
     }
 
     @Override

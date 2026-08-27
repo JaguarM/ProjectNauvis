@@ -5,11 +5,15 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import com.jaguarm.nauvispower.NauvisPower;
+import com.jaguarm.nauvispower.generator.BoilerShape;
+import com.jaguarm.nauvispower.generator.SteamEngineShape;
 import com.jaguarm.nauvispower.grid.PolePart;
 import com.jaguarm.nauvispower.grid.SmallElectricPoleBlock;
+import com.jaguarm.nauvispower.multiblock.MachineShape;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 import com.jaguarm.nauvispower.registry.ModItems;
 
+import net.minecraft.advancements.predicates.StatePropertiesPredicate;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.loot.BlockLootSubProvider;
@@ -17,7 +21,12 @@ import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
@@ -124,12 +133,34 @@ public final class NauvisPowerData {
 
         @Override
         protected void generate() {
-            dropSelf(ModBlocks.BOILER.get());
-            dropSelf(ModBlocks.STEAM_ENGINE.get());
+            // One boiler and one engine, not seven and seventeen. The other cells are torn down
+            // by the block itself, with drops enabled - that is what hands the player their
+            // machine back whichever cell they hit - so only the anchor may carry a drop.
+            add(ModBlocks.BOILER.get(), anchorOnly(ModBlocks.BOILER.get(), BoilerShape.SHAPE));
+            add(ModBlocks.STEAM_ENGINE.get(),
+                    anchorOnly(ModBlocks.STEAM_ENGINE.get(), SteamEngineShape.SHAPE));
             // One pole, not four. The other three parts are torn down by the block itself and
             // must drop nothing, or a pole would be a way to make three more.
             add(ModBlocks.SMALL_ELECTRIC_POLE.get(), createSinglePropConditionTable(
                     ModBlocks.SMALL_ELECTRIC_POLE.get(), SmallElectricPoleBlock.PART, PolePart.FOOT));
+        }
+
+        /**
+         * Vanilla's {@code createSinglePropConditionTable}, for a property that is a number.
+         *
+         * <p>That method wants a {@code StringRepresentable}, which an {@code IntegerProperty} is
+         * not - the pole's {@code PolePart} is an enum and can use it directly. The body is
+         * vanilla's, explosion condition and all, against the {@code Property<Integer>}
+         * overload of {@code hasProperty}.
+         */
+        private LootTable.Builder anchorOnly(Block block, MachineShape shape) {
+            return LootTable.lootTable().withPool(applyExplosionCondition(block,
+                    LootPool.lootPool()
+                            .setRolls(ConstantValue.exactly(1.0F))
+                            .add(LootItem.lootTableItem(block).when(
+                                    LootItemBlockStatePropertyCondition.hasBlockStateProperties(block)
+                                            .setProperties(StatePropertiesPredicate.Builder.properties()
+                                                    .hasProperty(shape.part(), shape.anchor()))))));
         }
 
         @Override

@@ -10,6 +10,15 @@
       "entries": [
         {
           "type": "minecraft:item",
+          "conditions": [
+            {
+              "block": "nauvis_power:steam_engine",
+              "condition": "minecraft:block_state_property",
+              "properties": {
+                "part": "12"
+              }
+            }
+          ],
           "name": "nauvis_power:steam_engine"
         }
       ],

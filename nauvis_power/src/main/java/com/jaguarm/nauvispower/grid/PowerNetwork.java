@@ -1,5 +1,9 @@
 package com.jaguarm.nauvispower.grid;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
+
 import org.jspecify.annotations.Nullable;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -74,6 +78,28 @@ public final class PowerNetwork {
     private final LongOpenHashSet hungrySet = new LongOpenHashSet();
     private final LongArrayList gone = new LongArrayList();
 
+    /**
+     * One machine, one share, however many blocks it is made of.
+     *
+     * <p>A machine with a footprint offers its energy handler at every block it occupies, so that
+     * a pole supplies it if its area covers any part of it - which is Factorio's rule and the
+     * reason the footprints were worth having. The cost is that one steam engine can appear in a
+     * pole's supply area five times over.
+     *
+     * <p>The same handler five times is not five machines. Left alone it would be five shares of
+     * a shortfall to one engine, five entries in the count a player reads off a pole, and - once
+     * something is both a producer and a consumer - a machine sold energy it had just asked for,
+     * through two of its own blocks. So each tick the endpoints are reduced to distinct handlers,
+     * by object identity, and the positions that were duplicates sit the tick out.
+     *
+     * <p>Identity rather than position, because the network has no idea what a multi-block is and
+     * should not learn: any mod whose machine hands out one handler from several blocks gets this
+     * for free, and one that hands out a fresh wrapper each time is no worse off than before.
+     */
+    private final Set<EnergyHandler> distinct =
+            Collections.newSetFromMap(new IdentityHashMap<>());
+    private final LongOpenHashSet duplicates = new LongOpenHashSet();
+
     /** Set when this network has been merged into another and must no longer be ticked. */
     private boolean merged;
 
@@ -107,8 +133,21 @@ public final class PowerNetwork {
         return poles.size();
     }
 
+    /**
+     * How many machines this network reaches - machines, not blocks.
+     *
+     * <p>Counted rather than stored, because it is read when a player right-clicks a pole and
+     * nowhere else. See {@link #distinct} for why the two numbers differ.
+     */
     public int endpointCount() {
-        return endpoints.size();
+        Set<EnergyHandler> machines = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (var cache : endpoints.values()) {
+            EnergyHandler handler = cache.getCapability();
+            if (handler != null) {
+                machines.add(handler);
+            }
+        }
+        return machines.size();
     }
 
     public boolean hasEndpoint(long pos) {
@@ -191,11 +230,18 @@ public final class PowerNetwork {
      */
     private long measureDemand() {
         long demand = 0;
+        distinct.clear();
+        duplicates.clear();
         try (Transaction probe = Transaction.openRoot()) {
             for (var entry : endpoints.long2ObjectEntrySet()) {
                 long pos = entry.getLongKey();
                 EnergyHandler handler = live(pos, entry.getValue());
                 if (handler == null) {
+                    continue;
+                }
+                // Another block of a machine already counted. See distinct.
+                if (!distinct.add(handler)) {
+                    duplicates.add(pos);
                     continue;
                 }
                 int want = handler.insert(MAX_TRANSFER, probe);
@@ -220,8 +266,10 @@ public final class PowerNetwork {
                     break;
                 }
                 // Skip anything that wanted energy, so two half-full machines cannot spend the
-                // tick passing the same joule back and forth.
-                if (hungrySet.contains(entry.getLongKey())) {
+                // tick passing the same joule back and forth - and anything that is another
+                // block of a machine already dealt with, so one cannot do it to itself.
+                if (hungrySet.contains(entry.getLongKey())
+                        || duplicates.contains(entry.getLongKey())) {
                     continue;
                 }
                 EnergyHandler handler = entry.getValue().getCapability();

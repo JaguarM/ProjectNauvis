@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jaguarm.nauvismachines.multiblock.MachineCell;
+import com.jaguarm.nauvismachines.multiblock.MachineParts;
 import com.jaguarm.nauvismachines.multiblock.MachineShape;
 
 /**
@@ -55,48 +56,11 @@ public final class AssemblerShape {
      */
     public static final String FACTORIO_ID = "assembling-machine-1";
 
-    /** Model names. Four files for ten cells: the corners and the edges are one each, turned. */
-    public static final String DECK = "deck";
-    public static final String EDGE = "edge";
-    public static final String CORNER = "corner";
+    /**
+     * The one model name this machine adds. The shell it shares with every other machine in the
+     * pack is {@link MachineParts} - see there for why that is one file and not three.
+     */
     public static final String GEARBOX = "gearbox";
-
-    /**
-     * A full block: the plinth in the middle that the gearbox stands on.
-     *
-     * <p>Full height rather than the recessed floor around it, so the gearbox above meets
-     * something solid. A quarter-block gap under a machine's own mechanism is the sort of thing
-     * you only see once you are standing next to it.
-     */
-    private static final float[][] DECK_BOXES = {
-        {0, 0, 0, 16, 16, 16},
-    };
-
-    /**
-     * A recessed floor with the machine's outer wall along the north edge.
-     *
-     * <p>Nothing here leaves the block it belongs to, which is worth stating because the first
-     * version of this shape did: the wall stood proud at {@code y 16..20} and reached into the
-     * air block above. {@code tools/check_models.py} refused it - an element outside
-     * {@code 0..16} takes its texture coordinates from its own position, so the wall would have
-     * been drawn with the texture running off the end. Keeping the wall inside the block is the
-     * simpler fix and reads better anyway.
-     */
-    private static final float[][] EDGE_BOXES = {
-        {0, 0, 0, 16, 12, 16},
-        {0, 12, 0, 16, 16, 3},
-    };
-
-    /**
-     * The same floor with the wall turning a corner. The two wall boxes meet rather than overlap
-     * - faces sharing a plane and facing the same way z-fight, which looks like the model
-     * flickering.
-     */
-    private static final float[][] CORNER_BOXES = {
-        {0, 0, 0, 16, 12, 16},
-        {0, 12, 0, 16, 16, 3},
-        {0, 12, 3, 3, 16, 16},
-    };
 
     /** The mechanism on top, and the only part of an assembler you have to walk around. */
     private static final float[][] GEARBOX_BOXES = {
@@ -120,19 +84,19 @@ public final class AssemblerShape {
         List<MachineCell> cells = new ArrayList<>();
 
         // Corners, clockwise from north-west. One model, four turns.
-        cells.add(new MachineCell(0, 0, 0, CORNER, 0, CORNER_BOXES));
-        cells.add(new MachineCell(2, 0, 0, CORNER, 1, CORNER_BOXES));
-        cells.add(new MachineCell(2, 0, 2, CORNER, 2, CORNER_BOXES));
-        cells.add(new MachineCell(0, 0, 2, CORNER, 3, CORNER_BOXES));
+        cells.add(new MachineCell(0, 0, 0, MachineParts.CORNER, 0, MachineParts.CORNER_BOXES));
+        cells.add(new MachineCell(2, 0, 0, MachineParts.CORNER, 1, MachineParts.CORNER_BOXES));
+        cells.add(new MachineCell(2, 0, 2, MachineParts.CORNER, 2, MachineParts.CORNER_BOXES));
+        cells.add(new MachineCell(0, 0, 2, MachineParts.CORNER, 3, MachineParts.CORNER_BOXES));
 
         // Edge middles, clockwise from north.
-        cells.add(new MachineCell(1, 0, 0, EDGE, 0, EDGE_BOXES));
-        cells.add(new MachineCell(2, 0, 1, EDGE, 1, EDGE_BOXES));
-        cells.add(new MachineCell(1, 0, 2, EDGE, 2, EDGE_BOXES));
-        cells.add(new MachineCell(0, 0, 1, EDGE, 3, EDGE_BOXES));
+        cells.add(new MachineCell(1, 0, 0, MachineParts.EDGE, 0, MachineParts.EDGE_BOXES));
+        cells.add(new MachineCell(2, 0, 1, MachineParts.EDGE, 1, MachineParts.EDGE_BOXES));
+        cells.add(new MachineCell(1, 0, 2, MachineParts.EDGE, 2, MachineParts.EDGE_BOXES));
+        cells.add(new MachineCell(0, 0, 1, MachineParts.EDGE, 3, MachineParts.EDGE_BOXES));
 
         // The middle of the deck, which is index 8 - see MIDDLE - and the gearbox above it.
-        cells.add(new MachineCell(1, 0, 1, DECK, 0, DECK_BOXES));
+        cells.add(new MachineCell(1, 0, 1, MachineParts.DECK, 0, MachineParts.DECK_BOXES));
         cells.add(new MachineCell(1, 1, 1, GEARBOX, 0, GEARBOX_BOXES));
 
         // Anchor and placement are both the middle: the machine keeps its block entity where you

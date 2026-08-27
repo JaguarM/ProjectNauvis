@@ -221,13 +221,27 @@ public final class NauvisGameTests {
                         i -> i.group(TestData.CODEC.forGetter(PowerReachesAMachineTest::info))
                                 .apply(i, PowerReachesAMachineTest::new));
 
+        /**
+         * The factory, laid out for machines that are the size Factorio made them.
+         *
+         * <p>Everything runs north to south, because that is the axis a steam engine's two steam
+         * ends are on. A boiler is three by two and gives its steam at the back of the block under
+         * its chimney; an engine is five by three and takes steam at the open end of its spine,
+         * two tiles from its middle. So an engine fed by a boiler at the origin is anchored three
+         * blocks behind it, and the poles stand off to the east, clear of both.
+         *
+         * <p>The old layout put these one block apart, which is what a one-block machine allowed.
+         * It is worth knowing what that failed as: the engine was placed <em>inside</em> the
+         * boiler, the boiler's teardown took it down mid-placement, and the crash that came out
+         * was a facing property being read off air.
+         */
         private static final BlockPos BOILER = new BlockPos(0, 1, 0);
-        private static final BlockPos ENGINE = new BlockPos(1, 1, 0);
-        private static final BlockPos NEAR_POLE = new BlockPos(2, 1, 0);
+        private static final BlockPos ENGINE = new BlockPos(0, 1, 3);
+        private static final BlockPos NEAR_POLE = new BlockPos(3, 1, 3);
         /** Six from the first pole, inside the 7.5 wire reach; eight from the engine. */
-        private static final BlockPos FAR_POLE = new BlockPos(8, 1, 0);
-        private static final BlockPos ASSEMBLER = new BlockPos(10, 1, 0);
-        private static final BlockPos UNPOWERED_ASSEMBLER = new BlockPos(10, 6, 0);
+        private static final BlockPos FAR_POLE = new BlockPos(3, 1, 10);
+        private static final BlockPos ASSEMBLER = new BlockPos(5, 1, 11);
+        private static final BlockPos UNPOWERED_ASSEMBLER = new BlockPos(5, 8, 11);
 
         public PowerReachesAMachineTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
             super(info);
@@ -239,7 +253,7 @@ public final class NauvisGameTests {
             // East, so the engine lies along the line to the boiler. A steam engine takes steam
             // through the two faces on its own axis, and the pack mod can say so without knowing
             // the property: setBlock applies a direction to whatever has a horizontal facing.
-            place(helper, ENGINE, block(helper, "nauvis_power:steam_engine"), Direction.EAST);
+            place(helper, ENGINE, block(helper, "nauvis_power:steam_engine"), Direction.NORTH);
             place(helper, NEAR_POLE, block(helper, "nauvis_power:small_electric_pole"));
             place(helper, FAR_POLE, block(helper, "nauvis_power:small_electric_pole"));
             place(helper, ASSEMBLER, block(helper, "nauvis_machines:assembling_machine_1"));
@@ -304,10 +318,18 @@ public final class NauvisGameTests {
                         i -> i.group(TestData.CODEC.forGetter(SteamTravelsDownAPipeTest::info))
                                 .apply(i, SteamTravelsDownAPipeTest::new));
 
+        /**
+         * A boiler, a run of pipe out of the back of it, and an engine at the far end.
+         *
+         * <p>North to south, and the numbers come off the shapes: the boiler's steam leaves the
+         * south face of the block under its chimney, so the first pipe is one block south of the
+         * anchor; the engine takes steam at the open end of its spine, which is two tiles from
+         * its middle, so its anchor is three blocks past the last pipe.
+         */
         private static final BlockPos BOILER = new BlockPos(0, 1, 0);
         private static final int PIPES = 4;
         /** Just past the last pipe, laid along the line so its ends face the run. */
-        private static final BlockPos ENGINE = new BlockPos(PIPES + 1, 1, 0);
+        private static final BlockPos ENGINE = new BlockPos(0, 1, PIPES + 3);
 
         public SteamTravelsDownAPipeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
             super(info);
@@ -316,10 +338,10 @@ public final class NauvisGameTests {
         @Override
         public void run(GameTestHelper helper) {
             place(helper, BOILER, block(helper, "nauvis_power:boiler"));
-            for (int x = 1; x <= PIPES; x++) {
-                place(helper, new BlockPos(x, 1, 0), block(helper, "nauvis_fluids:pipe"));
+            for (int z = 1; z <= PIPES; z++) {
+                place(helper, new BlockPos(0, 1, z), block(helper, "nauvis_fluids:pipe"));
             }
-            place(helper, ENGINE, block(helper, "nauvis_power:steam_engine"), Direction.EAST);
+            place(helper, ENGINE, block(helper, "nauvis_power:steam_engine"), Direction.NORTH);
 
             ResourceHandler<ItemResource> fuel = helper.getLevel()
                     .getCapability(Capabilities.Item.BLOCK, helper.absolutePos(BOILER), null);

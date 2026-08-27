@@ -4,10 +4,13 @@ import java.util.List;
 
 import org.jspecify.annotations.Nullable;
 
+import com.jaguarm.nauvispower.generator.BoilerBlock;
 import com.jaguarm.nauvispower.generator.BoilerBlockEntity;
+import com.jaguarm.nauvispower.generator.BoilerShape;
 import com.jaguarm.nauvispower.generator.BoilerMenu;
 import com.jaguarm.nauvispower.generator.SteamEngineBlock;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
+import com.jaguarm.nauvispower.generator.SteamEngineShape;
 import com.jaguarm.nauvispower.grid.PolePart;
 import com.jaguarm.nauvispower.grid.PowerNetwork;
 import com.jaguarm.nauvispower.grid.PowerNetworkManager;
@@ -47,6 +50,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -69,13 +73,24 @@ public final class NauvisPowerGameTests {
 
     private static final Identifier EMPTY_STRUCTURE = Identifier.withDefaultNamespace("empty");
 
+    /**
+     * Where the chain stands, now that a boiler is seven blocks and an engine is seventeen.
+     *
+     * <p>Both are anchored on the block that holds their block entity, and both face north. A
+     * boiler's steam leaves the back of the block under its chimney; an engine takes steam at the
+     * open end of its spine, which is two tiles from its middle, so the engine that a boiler at
+     * the origin can feed is anchored three blocks behind it. Every one of those numbers comes off
+     * {@link BoilerShape} and {@link SteamEngineShape} - which is the point of them being there -
+     * and none of them is a guess.
+     */
     private static final BlockPos BOILER = new BlockPos(0, 1, 0);
-    private static final BlockPos ENGINE = new BlockPos(1, 1, 0);
+    private static final BlockPos ENGINE = new BlockPos(0, 1, 3);
 
     private static final DeferredRegister<MapCodec<? extends GameTestInstance>> TEST_TYPES =
             DeferredRegister.create(Registries.TEST_INSTANCE_TYPE, NauvisPower.MODID);
 
     static {
+        TEST_TYPES.register("boiler_turns_as_one", () -> BoilerTurnsAsOneTest.CODEC);
         TEST_TYPES.register("boiler_makes_steam", () -> BoilerMakesSteamTest.CODEC);
         TEST_TYPES.register("steam_engine_makes_power", () -> SteamEngineMakesPowerTest.CODEC);
         TEST_TYPES.register("power_chain_sleeps", () -> PowerChainSleepsTest.CODEC);
@@ -106,6 +121,9 @@ public final class NauvisPowerGameTests {
                 Identifier.fromNamespaceAndPath(NauvisPower.MODID, "default"),
                 new TestEnvironmentDefinition.AllOf(List.of()));
 
+        register(event, environment, "boiler_turns_as_one", BoilerTurnsAsOneTest::new, 40);
+        register(event, environment, "engine_breaks_as_one", EngineBreaksAsOneTest::new, 40);
+        register(event, environment, "power_machines_tile_walkably", PowerMachinesTileWalkablyTest::new, 40);
         register(event, environment, "boiler_makes_steam", BoilerMakesSteamTest::new, 100);
         register(event, environment, "steam_engine_makes_power", SteamEngineMakesPowerTest::new, 100);
         register(event, environment, "power_chain_sleeps", PowerChainSleepsTest::new, 400);
@@ -133,26 +151,36 @@ public final class NauvisPowerGameTests {
         GameTestInstance create(TestData<Holder<TestEnvironmentDefinition<?>>> info);
     }
 
+    /**
+     * How much empty world to leave around each test.
+     *
+     * <p>A grid test builds outside the structure it was given - the empty structure is a point -
+     * and the things built here are no longer one block each. A steam engine is five tiles long,
+     * a chain of two reaches ten blocks from the anchor, and a wire reaches 7.5 in every
+     * direction. Without room between them the machines of one test land in the next test along,
+     * where they are broken by its blocks or joined to its network, and the failure appears in
+     * whichever test happened to run second. That is the worst kind of flake: real, silent, and
+     * blamed on the wrong code.
+     */
+    private static final int PADDING = 24;
+
     private static void register(RegisterGameTestsEvent event,
             Holder<TestEnvironmentDefinition<?>> environment, String name, TestFactory factory, int maxTicks) {
         event.registerTest(
                 Identifier.fromNamespaceAndPath(NauvisPower.MODID, name),
-                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true, Rotation.NONE)));
+                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true,
+                        Rotation.NONE, false, 1, 1, false, PADDING)));
     }
 
     /**
-     * The same, with room around it.
+     * Kept as a separate name because the pole tests say what they need at the call site.
      *
-     * <p>A grid test builds outside the structure it was given - the empty structure is a point,
-     * and a wire reaches 7.5 blocks. Without padding the poles of one test would be inside the
-     * wire reach of the next one along, and the two would merge into a network neither expected.
+     * <p>It used to be the only spaced one. Now every test here is spaced - see {@link #PADDING} -
+     * because every test here builds something bigger than a block.
      */
     private static void registerSpaced(RegisterGameTestsEvent event,
             Holder<TestEnvironmentDefinition<?>> environment, String name, TestFactory factory, int maxTicks) {
-        event.registerTest(
-                Identifier.fromNamespaceAndPath(NauvisPower.MODID, name),
-                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true,
-                        Rotation.NONE, false, 1, 1, false, 24)));
+        register(event, environment, name, factory, maxTicks);
     }
 
     /**
@@ -163,9 +191,8 @@ public final class NauvisPowerGameTests {
      * point of it being directional, and a thing every test here has to respect.
      */
     private static void buildChain(GameTestHelper helper, boolean fuelled) {
-        helper.setBlock(BOILER, ModBlocks.BOILER.get());
-        helper.setBlock(ENGINE, ModBlocks.STEAM_ENGINE.get().defaultBlockState()
-                .setValue(SteamEngineBlock.FACING, Direction.EAST));
+        place(helper, BOILER, ModBlocks.BOILER.get());
+        placeEngine(helper, ENGINE);
         if (fuelled) {
             insert(helper.getBlockEntity(BOILER, BoilerBlockEntity.class).fuelAccess(), Items.COAL, 1);
         }
@@ -177,6 +204,20 @@ public final class NauvisPowerGameTests {
             transaction.commit();
             return inserted;
         }
+    }
+
+    /** How high anything you would stand on reaches in this column, counting from its floor. */
+    private static double surface(GameTestHelper helper, BlockPos floor, int layers) {
+        double top = 0;
+        for (int layer = 0; layer < layers; layer++) {
+            BlockPos pos = floor.above(layer);
+            VoxelShape shape = helper.getBlockState(pos)
+                    .getCollisionShape(helper.getLevel(), helper.absolutePos(pos));
+            if (!shape.isEmpty()) {
+                top = Math.max(top, layer + shape.max(Direction.Axis.Y));
+            }
+        }
+        return top;
     }
 
     private static boolean isScheduled(GameTestHelper helper, BlockPos pos, Block block) {
@@ -191,10 +232,27 @@ public final class NauvisPowerGameTests {
      * {@code setPlacedBy}. A test that skipped it would be testing a pole that cannot exist.
      */
     private static void place(GameTestHelper helper, BlockPos pos, Block block) {
-        helper.setBlock(pos, block);
+        place(helper, pos, block.defaultBlockState());
+    }
+
+    /**
+     * The same, for a block that has to be turned a particular way.
+     *
+     * <p>The state must carry the machine's <em>anchor</em> part, which the default state does, so
+     * that {@code setPlacedBy} builds the rest of the machine around this position rather than
+     * around some corner of it.
+     */
+    private static void place(GameTestHelper helper, BlockPos pos, BlockState state) {
+        helper.setBlock(pos, state);
         BlockPos absolute = helper.absolutePos(pos);
-        block.setPlacedBy(helper.getLevel(), absolute,
+        state.getBlock().setPlacedBy(helper.getLevel(), absolute,
                 helper.getLevel().getBlockState(absolute), null, ItemStack.EMPTY);
+    }
+
+    /** An engine lying north-south, which is the axis its two steam ends are on. */
+    private static void placeEngine(GameTestHelper helper, BlockPos pos) {
+        place(helper, pos, ModBlocks.STEAM_ENGINE.get().defaultBlockState()
+                .setValue(SteamEngineBlock.FACING, Direction.NORTH));
     }
 
     /** Which part of a pole, if any, stands at a test-relative position. */
@@ -234,7 +292,7 @@ public final class NauvisPowerGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            helper.setBlock(BOILER, ModBlocks.BOILER.get());
+            place(helper, BOILER, ModBlocks.BOILER.get());
             BoilerBlockEntity boiler = helper.getBlockEntity(BOILER, BoilerBlockEntity.class);
             helper.assertValueEqual(boiler.steam(), 0, "steam in a cold boiler");
             helper.assertValueEqual(insert(boiler.fuelAccess(), Items.COAL, 1), 1, "coal accepted");
@@ -361,7 +419,7 @@ public final class NauvisPowerGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            helper.setBlock(ENGINE, ModBlocks.STEAM_ENGINE.get());
+            placeEngine(helper, ENGINE);
             SteamEngineBlockEntity engine = helper.getBlockEntity(ENGINE, SteamEngineBlockEntity.class);
 
             try (Transaction transaction = Transaction.openRoot()) {
@@ -473,19 +531,31 @@ public final class NauvisPowerGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            // The engine is two blocks from the pole, inside the 5x5 supply area. The second one
-            // is four away, outside it - a supply area that was really the wire reach in disguise
-            // would pick up both, and nothing else would notice.
-            helper.setBlock(ENGINE, ModBlocks.STEAM_ENGINE.get());
-            helper.setBlock(OUT_OF_RANGE, ModBlocks.STEAM_ENGINE.get());
+            // The near engine has blocks inside the pole's 5x5 supply area; the other is four
+            // above it, outside - a supply area that was really the wire reach in disguise would
+            // pick up both, and nothing else would notice.
+            //
+            // Note what a footprint changed here. The engine is powered because part of it is in
+            // the area, not because its middle is: its anchor is three blocks from the pole and
+            // out of range on its own. That is Factorio's rule - a pole powers a machine its area
+            // touches - and it is why every block of a machine publishes the energy capability.
+            // What that costs is a machine seen several times over, which PowerNetwork settles by
+            // counting distinct handlers rather than positions.
+            placeEngine(helper, ENGINE);
+            placeEngine(helper, OUT_OF_RANGE);
             place(helper, POLE, ModBlocks.SMALL_ELECTRIC_POLE.get());
 
             helper.runAfterDelay(5, () -> {
                 PowerNetwork network = requireNetwork(helper, POLE, "the pole has no network");
                 helper.assertValueEqual(network.endpointCount(), 1,
                         "machines a pole found in its supply area");
-                helper.assertTrue(network.hasEndpoint(helper.absolutePos(ENGINE).asLong()),
-                        "the machine two blocks from the pole is not the one it found");
+                boolean foundTheEngine = false;
+                for (int part = 0; part < SteamEngineShape.SHAPE.cellCount(); part++) {
+                    BlockPos cell = SteamEngineShape.SHAPE.cellPos(ENGINE, part, Direction.NORTH);
+                    foundTheEngine |= network.hasEndpoint(helper.absolutePos(cell).asLong());
+                }
+                helper.assertTrue(foundTheEngine,
+                        "the machine beside the pole is not the one it found");
                 helper.succeed();
             });
         }
@@ -532,7 +602,7 @@ public final class NauvisPowerGameTests {
                             requireNetwork(helper, POLE, "the pole has no network").endpointCount(),
                             0,
                             "machines found beside a pole standing on its own"))
-                    .thenExecute(() -> helper.setBlock(ENGINE, ModBlocks.STEAM_ENGINE.get()))
+                    .thenExecute(() -> placeEngine(helper, ENGINE))
                     .thenExecuteAfter(10, () -> helper.assertValueEqual(
                             requireNetwork(helper, POLE, "the pole lost its network").endpointCount(),
                             1,
@@ -939,7 +1009,7 @@ public final class NauvisPowerGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            helper.setBlock(BOILER, ModBlocks.BOILER.get());
+            place(helper, BOILER, ModBlocks.BOILER.get());
             BoilerBlockEntity boiler = helper.getBlockEntity(BOILER, BoilerBlockEntity.class);
             insert(boiler.fuelAccess(), Items.COAL, 1);
 
@@ -987,7 +1057,7 @@ public final class NauvisPowerGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            helper.setBlock(BOILER, ModBlocks.BOILER.get());
+            place(helper, BOILER, ModBlocks.BOILER.get());
             BoilerBlockEntity boiler = helper.getBlockEntity(BOILER, BoilerBlockEntity.class);
 
             helper.assertValueEqual(insert(boiler.fuelAccess(), Items.DIAMOND, 1), 0,
@@ -1023,8 +1093,15 @@ public final class NauvisPowerGameTests {
                         i -> i.group(TestData.CODEC.forGetter(SteamEnginesChainTest::info))
                                 .apply(i, SteamEnginesChainTest::new));
 
-        /** Two blocks further along the same east-west line as BOILER and ENGINE. */
-        private static final BlockPos FAR_ENGINE = new BlockPos(2, 1, 0);
+        /**
+         * The next engine along the same line, chained off the far end of the first.
+         *
+         * <p>Five blocks past {@link #ENGINE}: two to reach the end of its spine, one for the seam
+         * where the two machines touch, and two more to the middle of the second. A row of engines
+         * off one boiler is the arrangement this subsystem exists for, and this is what one costs
+         * now that an engine is the size Factorio made it.
+         */
+        private static final BlockPos FAR_ENGINE = new BlockPos(0, 1, 8);
 
         public SteamEnginesChainTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
             super(info);
@@ -1033,8 +1110,7 @@ public final class NauvisPowerGameTests {
         @Override
         public void run(GameTestHelper helper) {
             buildChain(helper, true);
-            helper.setBlock(FAR_ENGINE, ModBlocks.STEAM_ENGINE.get().defaultBlockState()
-                    .setValue(SteamEngineBlock.FACING, Direction.EAST));
+            placeEngine(helper, FAR_ENGINE);
 
             helper.runAfterDelay(60, () -> {
                 helper.assertTrue(
@@ -1079,12 +1155,16 @@ public final class NauvisPowerGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            helper.setBlock(BOILER, ModBlocks.BOILER.get());
+            place(helper, BOILER, ModBlocks.BOILER.get());
             insert(helper.getBlockEntity(BOILER, BoilerBlockEntity.class).fuelAccess(), Items.COAL, 1);
 
-            // Across the line rather than along it: the boiler is on the engine's side face.
-            helper.setBlock(ENGINE, ModBlocks.STEAM_ENGINE.get().defaultBlockState()
-                    .setValue(SteamEngineBlock.FACING, Direction.NORTH));
+            // Across the line rather than along it. The engine sits where a working one would,
+            // and is turned a quarter turn - so its two open ends now point east and west, at
+            // nothing, while the boiler's steam leaves to the north of it against a flank the
+            // engine offers nothing on. Turning a machine has to be able to break a connection,
+            // or its facing means nothing.
+            place(helper, ENGINE, ModBlocks.STEAM_ENGINE.get().defaultBlockState()
+                    .setValue(SteamEngineBlock.FACING, Direction.EAST));
 
             helper.runAfterDelay(40, () -> {
                 helper.assertValueEqual(
@@ -1127,18 +1207,44 @@ public final class NauvisPowerGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            helper.setBlock(ENGINE, ModBlocks.STEAM_ENGINE.get().defaultBlockState()
-                    .setValue(SteamEngineBlock.FACING, Direction.EAST));
+            placeEngine(helper, ENGINE);
 
-            BlockPos pos = helper.absolutePos(ENGINE);
-            for (Direction side : Direction.values()) {
-                boolean connects = helper.getLevel()
-                        .getCapability(Capabilities.Fluid.BLOCK, pos, side) != null;
-                boolean alongAxis = side.getAxis() == Direction.Axis.X;
-                helper.assertValueEqual(connects, alongAxis,
-                        "whether an east-facing engine offers steam on its " + side + " face");
+            // The two open ends of the spine, and the face each one opens through. A north-facing
+            // engine runs north to south, so its ends are two blocks either side of the middle.
+            BlockPos north = SteamEngineShape.SHAPE.cellPos(
+                    ENGINE, SteamEngineShape.NORTH_END, Direction.NORTH);
+            BlockPos south = SteamEngineShape.SHAPE.cellPos(
+                    ENGINE, SteamEngineShape.SOUTH_END, Direction.NORTH);
+
+            helper.assertValueEqual(north, ENGINE.north(2), "where the north end of a spine is");
+            helper.assertValueEqual(south, ENGINE.south(2), "where the south end of a spine is");
+
+            helper.assertTrue(offersSteam(helper, north, Direction.NORTH),
+                    "no steam at the north end of the engine, which is where a pipe goes");
+            helper.assertTrue(offersSteam(helper, south, Direction.SOUTH),
+                    "no steam at the south end of the engine");
+
+            // Everywhere else, on every face: nothing. An engine is fed at its ends or not at
+            // all, which is what makes a row of them a row rather than a heap - and now that it
+            // has a footprint, "its ends" means two particular blocks rather than two faces of
+            // one. The flanks are the interesting case: they are as close to a pipe as the ends
+            // are, and they must still refuse it.
+            for (int part = 0; part < SteamEngineShape.SHAPE.cellCount(); part++) {
+                BlockPos cell = SteamEngineShape.SHAPE.cellPos(ENGINE, part, Direction.NORTH);
+                for (Direction side : Direction.values()) {
+                    boolean isPort = (cell.equals(north) && side == Direction.NORTH)
+                            || (cell.equals(south) && side == Direction.SOUTH);
+                    helper.assertValueEqual(offersSteam(helper, cell, side), isPort,
+                            "whether the engine offers steam at " + cell + " on its " + side
+                                    + " face");
+                }
             }
             helper.succeed();
+        }
+
+        private static boolean offersSteam(GameTestHelper helper, BlockPos pos, Direction side) {
+            return helper.getLevel().getCapability(
+                    Capabilities.Fluid.BLOCK, helper.absolutePos(pos), side) != null;
         }
 
         @Override
@@ -1149,6 +1255,266 @@ public final class NauvisPowerGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("steam engine connects on two faces");
+        }
+    }
+
+    /**
+     * A boiler turned every way it can be, and everything about it turning with it.
+     *
+     * <p><b>This is the test the whole multiblock framework was missing.</b> The assembler has no
+     * facing - a Factorio assembler has no direction - so until there was a boiler, the rotation
+     * in {@code Boxes} and {@code MachineShape} was written, compiled, and never once run in
+     * anger. Three things have to turn together and none of them checks the others: where the
+     * cells land, which way the geometry points, and which face the steam leaves by.
+     *
+     * <p>So the footprint is measured rather than asked for. A boiler facing north is three blocks
+     * across and two deep; turned a quarter, it is two across and three deep, and its steam leaves
+     * to the west instead of the south. Those are written out below as flat numbers, because a
+     * test that computed them from the same rotation it is checking would agree with any rotation
+     * at all, including a mirrored one.
+     */
+    public static class BoilerTurnsAsOneTest extends GameTestInstance {
+
+        public static final MapCodec<BoilerTurnsAsOneTest> CODEC =
+                RecordCodecBuilder.<BoilerTurnsAsOneTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(BoilerTurnsAsOneTest::info))
+                                .apply(i, BoilerTurnsAsOneTest::new));
+
+        public BoilerTurnsAsOneTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        /** Facing, then the footprint it should occupy around the anchor, then where steam goes. */
+        private record Turned(Direction facing, int minX, int maxX, int minZ, int maxZ,
+                Direction port) {}
+
+        private static final List<Turned> EXPECTED = List.of(
+                new Turned(Direction.NORTH, -1, 1, -1, 0, Direction.SOUTH),
+                new Turned(Direction.EAST, 0, 1, -1, 1, Direction.WEST),
+                new Turned(Direction.SOUTH, -1, 1, 0, 1, Direction.NORTH),
+                new Turned(Direction.WEST, -1, 0, -1, 1, Direction.EAST));
+
+        @Override
+        public void run(GameTestHelper helper) {
+            for (Turned expected : EXPECTED) {
+                check(helper, expected);
+            }
+            helper.succeed();
+        }
+
+        private void check(GameTestHelper helper, Turned expected) {
+            clear(helper);
+            place(helper, BOILER, ModBlocks.BOILER.get().defaultBlockState()
+                    .setValue(BoilerBlock.FACING, expected.facing()));
+
+            int minX = 99;
+            int maxX = -99;
+            int minZ = 99;
+            int maxZ = -99;
+            int blocks = 0;
+            BlockPos steamAt = null;
+            Direction steamSide = null;
+            int ports = 0;
+
+            for (int x = -3; x <= 3; x++) {
+                for (int y = 0; y <= 2; y++) {
+                    for (int z = -3; z <= 3; z++) {
+                        BlockPos pos = BOILER.offset(x, y, z);
+                        if (!helper.getBlockState(pos).is(ModBlocks.BOILER.get())) {
+                            continue;
+                        }
+                        blocks++;
+                        minX = Math.min(minX, x);
+                        maxX = Math.max(maxX, x);
+                        minZ = Math.min(minZ, z);
+                        maxZ = Math.max(maxZ, z);
+
+                        for (Direction side : Direction.values()) {
+                            if (helper.getLevel().getCapability(Capabilities.Fluid.BLOCK,
+                                    helper.absolutePos(pos), side) != null) {
+                                ports++;
+                                steamAt = pos;
+                                steamSide = side;
+                            }
+                        }
+                    }
+                }
+            }
+
+            String turned = "a boiler facing " + expected.facing();
+            helper.assertValueEqual(blocks, 7, turned + " is not seven blocks");
+            helper.assertValueEqual(minX, expected.minX(), turned + ": western edge");
+            helper.assertValueEqual(maxX, expected.maxX(), turned + ": eastern edge");
+            helper.assertValueEqual(minZ, expected.minZ(), turned + ": northern edge");
+            helper.assertValueEqual(maxZ, expected.maxZ(), turned + ": southern edge");
+
+            helper.assertValueEqual(ports, 1, turned + " offers steam in more than one place");
+            helper.assertValueEqual(steamAt, BOILER, turned + ": which block steam leaves by");
+            helper.assertValueEqual(steamSide, expected.port(), turned + ": which face steam leaves by");
+        }
+
+        /** The machine from the last facing, out of the way of the next one. */
+        private void clear(GameTestHelper helper) {
+            for (int x = -3; x <= 3; x++) {
+                for (int y = 0; y <= 2; y++) {
+                    for (int z = -3; z <= 3; z++) {
+                        BlockPos pos = BOILER.offset(x, y, z);
+                        if (helper.getBlockState(pos).is(ModBlocks.BOILER.get())) {
+                            helper.setBlock(pos, Blocks.AIR);
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a boiler turns as one");
+        }
+    }
+
+    /**
+     * Break one block of an engine and all seventeen go, giving back exactly one engine.
+     *
+     * <p>A flank is broken rather than the middle: it is two blocks from the block entity, it has
+     * no loot of its own, and everything that happens after it is the teardown rule crossing the
+     * footprint. Seventeen is also the first machine big enough for that cascade to be worth
+     * doubting - the two ways it fails are blocks left standing that nothing can break, and
+     * seventeen engines dropped where one was placed.
+     */
+    public static class EngineBreaksAsOneTest extends GameTestInstance {
+
+        public static final MapCodec<EngineBreaksAsOneTest> CODEC =
+                RecordCodecBuilder.<EngineBreaksAsOneTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(EngineBreaksAsOneTest::info))
+                                .apply(i, EngineBreaksAsOneTest::new));
+
+        public EngineBreaksAsOneTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            placeEngine(helper, ENGINE);
+
+            int standing = 0;
+            for (int part = 0; part < SteamEngineShape.SHAPE.cellCount(); part++) {
+                BlockPos cell = SteamEngineShape.SHAPE.cellPos(ENGINE, part, Direction.NORTH);
+                helper.assertBlockPresent(ModBlocks.STEAM_ENGINE.get(), cell);
+                standing++;
+            }
+            helper.assertValueEqual(standing, 17, "blocks in a steam engine");
+
+            // A corner of the west flank, as far from the block entity as anything gets.
+            helper.getLevel().destroyBlock(helper.absolutePos(ENGINE.offset(-1, 0, -2)), true);
+
+            helper.runAfterDelay(2, () -> {
+                for (int part = 0; part < SteamEngineShape.SHAPE.cellCount(); part++) {
+                    helper.assertBlockPresent(Blocks.AIR,
+                            SteamEngineShape.SHAPE.cellPos(ENGINE, part, Direction.NORTH));
+                }
+                helper.assertItemEntityCountIs(
+                        ModItems.STEAM_ENGINE.get(), ENGINE, 6.0, 1);
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an engine breaks as one");
+        }
+    }
+
+    /**
+     * A power plant you can walk across: boilers in a row, and an engine crossed at its waist.
+     *
+     * <p>The same requirement the assembler was shaped around, applied to the two machines a
+     * player builds first and packs tightest. A boiler row and an engine chain are the standard
+     * Factorio arrangement, and a wall of them would fence the player out of their own power
+     * plant.
+     *
+     * <p>Two things are asserted. Boilers chained side by side leave a lane between their
+     * chimneys, because the chimney is on the middle tile of three rather than on a corner. And
+     * an engine can be crossed at the tile between its two flywheels, which is why there are two
+     * of them with a gap rather than one long housing.
+     */
+    public static class PowerMachinesTileWalkablyTest extends GameTestInstance {
+
+        public static final MapCodec<PowerMachinesTileWalkablyTest> CODEC =
+                RecordCodecBuilder.<PowerMachinesTileWalkablyTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PowerMachinesTileWalkablyTest::info))
+                                .apply(i, PowerMachinesTileWalkablyTest::new));
+
+        public PowerMachinesTileWalkablyTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        private static final double STEP = 0.6;
+        private static final double JUMP = 1.25;
+
+        @Override
+        public void run(GameTestHelper helper) {
+            // Two boilers shoulder to shoulder, and the row across their front.
+            place(helper, BOILER, ModBlocks.BOILER.get());
+            place(helper, BOILER.offset(3, 0, 0), ModBlocks.BOILER.get());
+            walk(helper, BOILER.offset(-1, 0, -1), Direction.EAST, 6, "the front of a boiler row");
+
+            // An engine, crossed at the waist between its flywheels.
+            placeEngine(helper, ENGINE);
+            walk(helper, ENGINE.offset(-2, 0, 0), Direction.EAST, 5, "the waist of an engine");
+
+            // And the flywheels really are two blocks tall, so this cannot pass by going flat.
+            helper.assertValueEqual(surface(helper, ENGINE.north(1), 2), 2.0,
+                    "height of the first flywheel");
+            helper.assertValueEqual(surface(helper, ENGINE.south(1), 2), 2.0,
+                    "height of the second flywheel");
+            helper.assertValueEqual(surface(helper, BOILER, 2), 2.0, "height of a chimney");
+            helper.succeed();
+        }
+
+        /** Walks a line one column at a time, and complains about the first step too big to take. */
+        private void walk(GameTestHelper helper, BlockPos from, Direction along, int columns,
+                String what) {
+            double previous = 0;
+            for (int step = 0; step < columns; step++) {
+                BlockPos column = from.relative(along, step);
+                double top = surface(helper, column, 2);
+
+                helper.assertTrue(top <= JUMP, what + ": the column at " + column + " stands "
+                        + top + " blocks high, more than the " + JUMP + " a player can jump onto");
+                // Getting onto the machine in the first place is a jump, and is allowed to be
+                // one. Everything after that has to be a step, or crossing a factory is hopping.
+                // Only the climbs. Walking off the far side of a machine is a drop, and a
+                // drop of one block costs a player nothing at all.
+                double climb = top - previous;
+                double allowed = previous == 0 ? JUMP : STEP;
+                helper.assertTrue(step == 0 || climb <= allowed,
+                        what + ": the step up onto " + column + " is " + climb + " blocks, more "
+                                + "than the " + allowed + " a player manages from " + previous);
+                helper.assertTrue(helper.getBlockState(column.above(2)).isAir(),
+                        what + ": no headroom over " + column);
+                previous = top;
+            }
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("power machines tile walkably");
         }
     }
 }

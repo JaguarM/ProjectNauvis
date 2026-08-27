@@ -1,4 +1,4 @@
-package com.jaguarm.nauvismachines.multiblock;
+package com.jaguarm.nauvispower.multiblock;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

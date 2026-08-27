@@ -146,11 +146,25 @@ public final class NauvisMachinesGameTests {
         GameTestInstance create(TestData<Holder<TestEnvironmentDefinition<?>>> info);
     }
 
+    /**
+     * How much empty world to leave around each test.
+     *
+     * <p>A grid test builds outside the structure it was given - the empty structure is a point -
+     * and the things built here are no longer one block each. A steam engine is five tiles long,
+     * a chain of two reaches ten blocks from the anchor, and a wire reaches 7.5 in every
+     * direction. Without room between them the machines of one test land in the next test along,
+     * where they are broken by its blocks or joined to its network, and the failure appears in
+     * whichever test happened to run second. That is the worst kind of flake: real, silent, and
+     * blamed on the wrong code.
+     */
+    private static final int PADDING = 24;
+
     private static void register(RegisterGameTestsEvent event,
             Holder<TestEnvironmentDefinition<?>> environment, String name, TestFactory factory, int maxTicks) {
         event.registerTest(
                 Identifier.fromNamespaceAndPath(NauvisMachines.MODID, name),
-                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true, Rotation.NONE)));
+                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true,
+                        Rotation.NONE, false, 1, 1, false, PADDING)));
     }
 
     /**
@@ -987,10 +1001,16 @@ public final class NauvisMachinesGameTests {
                 helper.assertTrue(top <= JUMP,
                         "the lane at x=" + x + " stands " + top + " blocks high, which is more "
                                 + "than the " + JUMP + " a player can jump onto");
-                helper.assertTrue(x == -1 || Math.abs(top - previous) <= STEP,
-                        "the step from x=" + (x - 1) + " to x=" + x + " is "
-                                + Math.abs(top - previous) + " blocks, more than the " + STEP
-                                + " a player takes for free");
+                // Getting onto the machine in the first place is a jump, and is allowed to be
+                // one. Everything after that has to be a step, or crossing a factory is hopping.
+                // Only the climbs. Walking off the far side of a machine is a drop, and a
+                // drop of one block costs a player nothing at all.
+                double climb = top - previous;
+                double allowed = previous == 0 ? JUMP : STEP;
+                helper.assertTrue(x == -1 || climb <= allowed,
+                        "the step up from x=" + (x - 1) + " to x=" + x + " is " + climb
+                                + " blocks, more than the " + allowed + " a player manages from "
+                                + previous);
                 helper.assertTrue(helper.getBlockState(column.above(2)).isAir(),
                         "no headroom over the lane at x=" + x);
                 previous = top;

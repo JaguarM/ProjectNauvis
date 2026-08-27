@@ -1,18 +1,267 @@
 {
   "variants": {
-    "facing=east": {
-      "model": "nauvis_power:block/steam_engine_horizontal",
+    "facing=east,part=0": {
+      "model": "nauvis_power:block/steam_engine_corner",
       "y": 90
     },
-    "facing=north": {
-      "model": "nauvis_power:block/steam_engine_horizontal"
+    "facing=east,part=1": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 90
     },
-    "facing=south": {
-      "model": "nauvis_power:block/steam_engine_horizontal",
+    "facing=east,part=10": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 90
+    },
+    "facing=east,part=11": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 90
+    },
+    "facing=east,part=12": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 90
+    },
+    "facing=east,part=13": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 90
+    },
+    "facing=east,part=14": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 90
+    },
+    "facing=east,part=15": {
+      "model": "nauvis_power:block/steam_engine_flywheel",
+      "y": 90
+    },
+    "facing=east,part=16": {
+      "model": "nauvis_power:block/steam_engine_flywheel",
+      "y": 90
+    },
+    "facing=east,part=2": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 90
+    },
+    "facing=east,part=3": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 90
+    },
+    "facing=east,part=4": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 90
+    },
+    "facing=east,part=5": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 90
+    },
+    "facing=east,part=6": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 90
+    },
+    "facing=east,part=7": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 90
+    },
+    "facing=east,part=8": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 90
+    },
+    "facing=east,part=9": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 90
+    },
+    "facing=north,part=0": {
+      "model": "nauvis_power:block/steam_engine_corner"
+    },
+    "facing=north,part=1": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 90
+    },
+    "facing=north,part=10": {
+      "model": "nauvis_power:block/steam_engine_deck"
+    },
+    "facing=north,part=11": {
+      "model": "nauvis_power:block/steam_engine_deck"
+    },
+    "facing=north,part=12": {
+      "model": "nauvis_power:block/steam_engine_deck"
+    },
+    "facing=north,part=13": {
+      "model": "nauvis_power:block/steam_engine_deck"
+    },
+    "facing=north,part=14": {
+      "model": "nauvis_power:block/steam_engine_deck"
+    },
+    "facing=north,part=15": {
+      "model": "nauvis_power:block/steam_engine_flywheel"
+    },
+    "facing=north,part=16": {
+      "model": "nauvis_power:block/steam_engine_flywheel"
+    },
+    "facing=north,part=2": {
+      "model": "nauvis_power:block/steam_engine_corner",
       "y": 180
     },
-    "facing=west": {
-      "model": "nauvis_power:block/steam_engine_horizontal",
+    "facing=north,part=3": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 270
+    },
+    "facing=north,part=4": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 270
+    },
+    "facing=north,part=5": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 270
+    },
+    "facing=north,part=6": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 270
+    },
+    "facing=north,part=7": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 90
+    },
+    "facing=north,part=8": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 90
+    },
+    "facing=north,part=9": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 90
+    },
+    "facing=south,part=0": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 180
+    },
+    "facing=south,part=1": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 180
+    },
+    "facing=south,part=10": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 180
+    },
+    "facing=south,part=11": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 180
+    },
+    "facing=south,part=12": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 180
+    },
+    "facing=south,part=13": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 180
+    },
+    "facing=south,part=14": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 180
+    },
+    "facing=south,part=15": {
+      "model": "nauvis_power:block/steam_engine_flywheel",
+      "y": 180
+    },
+    "facing=south,part=16": {
+      "model": "nauvis_power:block/steam_engine_flywheel",
+      "y": 180
+    },
+    "facing=south,part=2": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 180
+    },
+    "facing=south,part=3": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 180
+    },
+    "facing=south,part=4": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 180
+    },
+    "facing=south,part=5": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 180
+    },
+    "facing=south,part=6": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 180
+    },
+    "facing=south,part=7": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 180
+    },
+    "facing=south,part=8": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 180
+    },
+    "facing=south,part=9": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 180
+    },
+    "facing=west,part=0": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 270
+    },
+    "facing=west,part=1": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 270
+    },
+    "facing=west,part=10": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 270
+    },
+    "facing=west,part=11": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 270
+    },
+    "facing=west,part=12": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 270
+    },
+    "facing=west,part=13": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 270
+    },
+    "facing=west,part=14": {
+      "model": "nauvis_power:block/steam_engine_deck",
+      "y": 270
+    },
+    "facing=west,part=15": {
+      "model": "nauvis_power:block/steam_engine_flywheel",
+      "y": 270
+    },
+    "facing=west,part=16": {
+      "model": "nauvis_power:block/steam_engine_flywheel",
+      "y": 270
+    },
+    "facing=west,part=2": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 270
+    },
+    "facing=west,part=3": {
+      "model": "nauvis_power:block/steam_engine_corner",
+      "y": 270
+    },
+    "facing=west,part=4": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 270
+    },
+    "facing=west,part=5": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 270
+    },
+    "facing=west,part=6": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 270
+    },
+    "facing=west,part=7": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 270
+    },
+    "facing=west,part=8": {
+      "model": "nauvis_power:block/steam_engine_edge",
+      "y": 270
+    },
+    "facing=west,part=9": {
+      "model": "nauvis_power:block/steam_engine_edge",
       "y": 270
     }
   }
