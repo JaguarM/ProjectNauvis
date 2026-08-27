@@ -1,7 +1,10 @@
-// 26.2	2026-08-26T19:33:10.4943195	Model Definitions - nauvis_logistics
+// 26.2	2026-08-27T11:29:18.7713849	Model Definitions - nauvis_logistics
 76d1ae31e9711aade5c80c52efe84f14d5767487 assets/nauvis_logistics/blockstates/burner_inserter.json
+ccb9d25e4d600156a8d799280caba2ae75ac41a6 assets/nauvis_logistics/blockstates/inserter.json
 3ce786355f8465c8177cc184295ae4b69e498662 assets/nauvis_logistics/blockstates/iron_chest.json
 ebd9dae131b31184249c94738dc3a75c013b2874 assets/nauvis_logistics/items/burner_inserter.json
+1ccb44e36ab44eb35a19b623dffaaffcb7d7fcab assets/nauvis_logistics/items/inserter.json
 8a7db1caf2b7490a1c5327facddb0fee38f3073e assets/nauvis_logistics/items/iron_chest.json
 1d77b5969674da0287f434d1159dec9bc0cc2355 assets/nauvis_logistics/models/block/burner_inserter.json
+879edc434194c8bd52733c4256095c8a8abd4661 assets/nauvis_logistics/models/block/inserter.json
 110f075014707c854e46bb12967d979b200ab6f9 assets/nauvis_logistics/models/block/iron_chest.json

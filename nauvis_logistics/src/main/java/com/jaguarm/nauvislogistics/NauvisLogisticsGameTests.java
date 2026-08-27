@@ -5,7 +5,8 @@ import java.util.List;
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
 import com.jaguarm.nauvislogistics.storage.IronChestBlockEntity;
 import com.jaguarm.nauvislogistics.transport.InserterBlock;
-import com.jaguarm.nauvislogistics.transport.InserterBlockEntity;
+import com.jaguarm.nauvislogistics.transport.BurnerInserterBlockEntity;
+import com.jaguarm.nauvislogistics.transport.ElectricInserterBlockEntity;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -73,6 +74,8 @@ public final class NauvisLogisticsGameTests {
         TEST_TYPES.register("inserter_ignores_bystanders", () -> InserterIgnoresBystandersTest.CODEC);
         TEST_TYPES.register("iron_chest_holds_items", () -> IronChestHoldsItemsTest.CODEC);
         TEST_TYPES.register("inserter_fills_iron_chest", () -> InserterFillsIronChestTest.CODEC);
+        TEST_TYPES.register("electric_inserter_moves_items", () -> ElectricInserterMovesItemsTest.CODEC);
+        TEST_TYPES.register("electric_inserter_needs_power", () -> ElectricInserterNeedsPowerTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -92,6 +95,10 @@ public final class NauvisLogisticsGameTests {
         register(event, environment, "inserter_ignores_bystanders", InserterIgnoresBystandersTest::new, 100);
         register(event, environment, "iron_chest_holds_items", IronChestHoldsItemsTest::new, 60);
         register(event, environment, "inserter_fills_iron_chest", InserterFillsIronChestTest::new, 200);
+        register(event, environment, "electric_inserter_moves_items",
+                ElectricInserterMovesItemsTest::new, 200);
+        register(event, environment, "electric_inserter_needs_power",
+                ElectricInserterNeedsPowerTest::new, 200);
     }
 
     private interface TestFactory {
@@ -117,9 +124,38 @@ public final class NauvisLogisticsGameTests {
                 .setValue(InserterBlock.FACING, Direction.EAST));
 
         if (fuelled) {
-            InserterBlockEntity inserter = helper.getBlockEntity(INSERTER, InserterBlockEntity.class);
+            BurnerInserterBlockEntity inserter = helper.getBlockEntity(INSERTER, BurnerInserterBlockEntity.class);
             insert(inserter.fuelAccess(), Items.COAL, 1);
         }
+    }
+
+    /**
+     * The same line with the electric inserter in the middle.
+     *
+     * @param charged false to leave it with an empty buffer and no pole anywhere near it.
+     */
+    private static void buildElectricLine(GameTestHelper helper, boolean charged) {
+        helper.setBlock(SOURCE, Blocks.CHEST);
+        helper.setBlock(DESTINATION, Blocks.CHEST);
+        helper.setBlock(INSERTER, ModBlocks.INSERTER.get().defaultBlockState()
+                .setValue(InserterBlock.FACING, Direction.EAST));
+
+        if (charged) {
+            charge(helper.getBlockEntity(INSERTER, ElectricInserterBlockEntity.class));
+        }
+    }
+
+    /** Fills the buffer the way a pole would, through the capability the pole would use. */
+    private static void charge(ElectricInserterBlockEntity inserter) {
+        try (Transaction transaction = Transaction.openRoot()) {
+            inserter.gridView().insert(ElectricInserterBlockEntity.ENERGY_CAPACITY, transaction);
+            transaction.commit();
+        }
+    }
+
+    private static boolean isElectricScheduled(GameTestHelper helper) {
+        return helper.getLevel().getBlockTicks()
+                .hasScheduledTick(helper.absolutePos(INSERTER), ModBlocks.INSERTER.get());
     }
 
     /** A neighbour's inventory, reached exactly the way the inserter reaches it. */
@@ -178,13 +214,13 @@ public final class NauvisLogisticsGameTests {
                     "ingots put in the source chest");
 
             // One swing, plus a tick to wake on and a little slack.
-            helper.runAfterDelay(InserterBlockEntity.SWING_TICKS + 5, () -> {
+            helper.runAfterDelay(BurnerInserterBlockEntity.SWING_TICKS + 5, () -> {
                 helper.assertValueEqual(countIn(container(helper, DESTINATION), Items.IRON_INGOT), 1,
                         "ingots delivered after one swing");
                 helper.assertValueEqual(countIn(container(helper, SOURCE), Items.IRON_INGOT), 2,
                         "ingots left in the source chest");
                 helper.assertTrue(
-                        helper.getBlockEntity(INSERTER, InserterBlockEntity.class).burnTime() > 0,
+                        helper.getBlockEntity(INSERTER, BurnerInserterBlockEntity.class).burnTime() > 0,
                         "the inserter moved an item without burning anything");
                 helper.succeed();
             });
@@ -268,7 +304,7 @@ public final class NauvisLogisticsGameTests {
                                 + "is what this whole design rests on, so check it still reaches the block");
 
                 // And having woken, it does the work rather than merely stirring.
-                helper.runAfterDelay(InserterBlockEntity.SWING_TICKS + 5, () -> {
+                helper.runAfterDelay(BurnerInserterBlockEntity.SWING_TICKS + 5, () -> {
                     helper.assertValueEqual(countIn(container(helper, DESTINATION), Items.IRON_INGOT), 1,
                             "ingots delivered after waking");
                     helper.assertFalse(isScheduled(helper),
@@ -307,7 +343,7 @@ public final class NauvisLogisticsGameTests {
             helper.assertValueEqual(insert(container(helper, SOURCE), Items.IRON_INGOT, 3), 3,
                     "ingots put in the source chest");
 
-            helper.runAfterDelay(InserterBlockEntity.SWING_TICKS + 5, () -> {
+            helper.runAfterDelay(BurnerInserterBlockEntity.SWING_TICKS + 5, () -> {
                 helper.assertValueEqual(countIn(container(helper, DESTINATION), Items.IRON_INGOT), 0,
                         "ingots moved by an inserter with no fuel");
                 helper.assertFalse(isScheduled(helper),
@@ -315,11 +351,11 @@ public final class NauvisLogisticsGameTests {
 
                 // Coal is the other thing that has to wake it, and it arrives in its own slot
                 // rather than a neighbour's.
-                InserterBlockEntity inserter = helper.getBlockEntity(INSERTER, InserterBlockEntity.class);
+                BurnerInserterBlockEntity inserter = helper.getBlockEntity(INSERTER, BurnerInserterBlockEntity.class);
                 insert(inserter.fuelAccess(), Items.COAL, 1);
                 helper.assertTrue(isScheduled(helper), "fuel arriving did not wake the inserter");
 
-                helper.runAfterDelay(InserterBlockEntity.SWING_TICKS + 5, () -> {
+                helper.runAfterDelay(BurnerInserterBlockEntity.SWING_TICKS + 5, () -> {
                     helper.assertValueEqual(countIn(container(helper, DESTINATION), Items.IRON_INGOT), 1,
                             "ingots delivered once it was fuelled");
                     helper.succeed();
@@ -455,7 +491,7 @@ public final class NauvisLogisticsGameTests {
             helper.setBlock(DESTINATION, ModBlocks.IRON_CHEST.get());
             helper.setBlock(INSERTER, ModBlocks.BURNER_INSERTER.get().defaultBlockState()
                     .setValue(InserterBlock.FACING, Direction.EAST));
-            insert(helper.getBlockEntity(INSERTER, InserterBlockEntity.class).fuelAccess(), Items.COAL, 1);
+            insert(helper.getBlockEntity(INSERTER, BurnerInserterBlockEntity.class).fuelAccess(), Items.COAL, 1);
 
             helper.runAfterDelay(20, () -> {
                 helper.assertFalse(isScheduled(helper), "the inserter never went to sleep to begin with");
@@ -464,7 +500,7 @@ public final class NauvisLogisticsGameTests {
                 helper.assertTrue(isScheduled(helper),
                         "an iron chest gaining an item did not wake the inserter beside it");
 
-                helper.runAfterDelay(InserterBlockEntity.SWING_TICKS + 5, () -> {
+                helper.runAfterDelay(BurnerInserterBlockEntity.SWING_TICKS + 5, () -> {
                     helper.assertValueEqual(countIn(container(helper, DESTINATION), Items.IRON_INGOT), 1,
                             "ingots delivered into the iron chest");
                     helper.assertValueEqual(countIn(container(helper, SOURCE), Items.IRON_INGOT), 0,
@@ -482,6 +518,116 @@ public final class NauvisLogisticsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("inserter fills iron chest");
+        }
+    }
+
+    /**
+     * The electric inserter does the same job on electricity, and does it faster.
+     *
+     * <p>The speed is asserted rather than waited out. Twenty-four ticks against the burner's
+     * thirty is the whole reason to build one, and a tier that quietly swings at the same rate as
+     * the one it replaces would pass any test that only checked the item arrived.
+     */
+    public static class ElectricInserterMovesItemsTest extends GameTestInstance {
+
+        public static final MapCodec<ElectricInserterMovesItemsTest> CODEC =
+                RecordCodecBuilder.<ElectricInserterMovesItemsTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ElectricInserterMovesItemsTest::info))
+                                .apply(i, ElectricInserterMovesItemsTest::new));
+
+        public ElectricInserterMovesItemsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            buildElectricLine(helper, true);
+            helper.assertValueEqual(insert(container(helper, SOURCE), Items.IRON_INGOT, 1), 1,
+                    "iron accepted by the source chest");
+
+            helper.startSequence()
+                    .thenExecuteAfter(BurnerInserterBlockEntity.SWING_TICKS - 4, () ->
+                            helper.assertValueEqual(
+                                    countIn(container(helper, DESTINATION), Items.IRON_INGOT), 1,
+                                    "iron delivered by the time a burner would still be swinging"))
+                    .thenExecute(() -> {
+                        helper.assertValueEqual(countIn(container(helper, SOURCE), Items.IRON_INGOT), 0,
+                                "iron left in the source chest");
+                        helper.assertTrue(
+                                helper.getBlockEntity(INSERTER, ElectricInserterBlockEntity.class)
+                                        .energyStored() < ElectricInserterBlockEntity.ENERGY_CAPACITY,
+                                "the inserter swung without spending any electricity");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("electric inserter moves items");
+        }
+    }
+
+    /**
+     * <b>Why this item waited for the grid.</b>
+     *
+     * <p>An electric inserter with no pole in range must be a paperweight - otherwise it is
+     * strictly better than the burner for free, and the tier it is meant to be an upgrade from
+     * has no reason to exist.
+     *
+     * <p>The second half is the wake, checked the same way the assembler's is: it has to be
+     * asleep first, or the restart proves nothing.
+     */
+    public static class ElectricInserterNeedsPowerTest extends GameTestInstance {
+
+        public static final MapCodec<ElectricInserterNeedsPowerTest> CODEC =
+                RecordCodecBuilder.<ElectricInserterNeedsPowerTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ElectricInserterNeedsPowerTest::info))
+                                .apply(i, ElectricInserterNeedsPowerTest::new));
+
+        public ElectricInserterNeedsPowerTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            buildElectricLine(helper, false);
+            helper.assertValueEqual(insert(container(helper, SOURCE), Items.IRON_INGOT, 1), 1,
+                    "iron accepted by the source chest");
+
+            helper.startSequence()
+                    .thenExecuteAfter(ElectricInserterBlockEntity.SWING_TICKS * 2, () -> {
+                        helper.assertValueEqual(
+                                countIn(container(helper, DESTINATION), Items.IRON_INGOT), 0,
+                                "items moved by an inserter with no electricity");
+                        helper.assertFalse(isElectricScheduled(helper),
+                                "an inserter with no electricity is still scheduled to tick");
+                    })
+                    .thenExecute(() -> {
+                        charge(helper.getBlockEntity(INSERTER, ElectricInserterBlockEntity.class));
+                        helper.assertTrue(isElectricScheduled(helper),
+                                "electricity arrived and the inserter was not woken - it will sleep "
+                                        + "through the grid coming back");
+                    })
+                    .thenExecuteAfter(ElectricInserterBlockEntity.SWING_TICKS + 2, () ->
+                            helper.assertValueEqual(
+                                    countIn(container(helper, DESTINATION), Items.IRON_INGOT), 1,
+                                    "items moved after the power came back"))
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("electric inserter needs power");
         }
     }
 }

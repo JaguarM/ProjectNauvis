@@ -2,7 +2,8 @@ package com.jaguarm.nauvislogistics.registry;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
 import com.jaguarm.nauvislogistics.storage.IronChestBlock;
-import com.jaguarm.nauvislogistics.transport.InserterBlock;
+import com.jaguarm.nauvislogistics.transport.BurnerInserterBlock;
+import com.jaguarm.nauvislogistics.transport.ElectricInserterBlock;
 
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.MapColor;
@@ -13,16 +14,26 @@ public final class ModBlocks {
 
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(NauvisLogistics.MODID);
 
-    /**
-     * The burner inserter, and for now the only one.
-     *
-     * <p>The electric {@code inserter} costs an electronic circuit and runs on power, so it waits
-     * for {@code nauvis_power}. Registering it now would mean an item that works without the grid
-     * it is supposed to need, which is the kind of thing that quietly ruins progression.
-     */
-    public static final DeferredBlock<InserterBlock> BURNER_INSERTER = BLOCKS.registerBlock(
+    /** The one you can build before there is a grid. */
+    public static final DeferredBlock<BurnerInserterBlock> BURNER_INSERTER = BLOCKS.registerBlock(
             "burner_inserter",
-            InserterBlock::new,
+            BurnerInserterBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.METAL)
+                    .strength(2.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops());
+
+    /**
+     * The electric inserter: an electronic circuit, and useless without a pole in range.
+     *
+     * <p>It was deliberately left unregistered until {@code nauvis_power} could supply it. An
+     * electric inserter that ran on nothing would be strictly better than the burner for free,
+     * and progression that can be skipped is progression that will be.
+     */
+    public static final DeferredBlock<ElectricInserterBlock> INSERTER = BLOCKS.registerBlock(
+            "inserter",
+            ElectricInserterBlock::new,
             properties -> properties
                     .mapColor(MapColor.METAL)
                     .strength(2.0F, 6.0F)

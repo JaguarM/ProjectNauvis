@@ -98,6 +98,7 @@ public final class NauvisGameTests {
                                 "neoprogressiveautomation:burner_drill",
                                 "nauvis_machines:assembling_machine_1",
                                 "nauvis_logistics:burner_inserter",
+                                "nauvis_logistics:inserter",
                                 "nauvis_logistics:iron_chest",
                                 "nauvis_fluids:pipe",
                                 "nauvis_power:steam_engine",

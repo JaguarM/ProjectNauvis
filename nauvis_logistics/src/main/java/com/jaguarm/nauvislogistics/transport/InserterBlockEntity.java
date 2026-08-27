@@ -2,8 +2,6 @@ package com.jaguarm.nauvislogistics.transport;
 
 import org.jspecify.annotations.Nullable;
 
-import com.jaguarm.nauvislogistics.registry.ModBlockEntities;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -12,10 +10,9 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.Containers;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -26,13 +23,17 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
- * A burner inserter: takes one item from the block behind it, puts it into the block in front,
- * over and over, burning coal to do it.
+ * An inserter: takes one item from the block behind it, puts it into the block in front, over and
+ * over. Everything here except what pays for the swing.
  *
  * <p>It knows nothing about what is on either side. Both are reached through
  * {@code Capabilities.Item.BLOCK}, so a vanilla chest, a furnace, an assembling machine and
  * another mod's machine are all the same thing to it. That is the whole reason inserters are
  * worth building before belts: one block makes every container in the game automatable.
+ *
+ * <p>What differs between tiers is only the drive - {@link BurnerInserterBlockEntity} burns coal,
+ * {@link ElectricInserterBlockEntity} draws from the grid - and how fast it swings. Reach, filters
+ * and stack size will join them later; none of those is a different block entity either.
  *
  * <h2>Sleeping, and how it hears about work</h2>
  *
@@ -56,55 +57,34 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * contract forbids touching the level from inside it, and every case it would report is one
  * {@code neighborChanged} already reports from a context where scheduling is safe.
  */
-public class InserterBlockEntity extends BlockEntity {
+public abstract class InserterBlockEntity extends BlockEntity {
 
-    /** The only slot: what it burns. Fuel goes in, nothing comes out. */
-    public static final int FUEL_SLOT = 0;
-    public static final int SLOT_COUNT = 1;
-
-    /**
-     * Ticks per item moved.
-     *
-     * <p>The one number in this mod that is not from Factorio's dump, because the dump is
-     * recipes and this is behaviour. Factorio's burner inserter manages roughly 0.6 items a
-     * second, which is 33 ticks here; 30 is that rounded to something a person can count. Being
-     * visibly slow is the point of the burner tier - it is the one you are supposed to want to
-     * replace.
-     */
-    public static final int SWING_TICKS = 30;
-
-    private final InserterFuel fuel = new InserterFuel(SLOT_COUNT, this::onFuelChanged);
-
-    /** What a player or another inserter can put fuel into. Insert-only: see {@link FuelAccess}. */
-    private final ResourceHandler<ItemResource> fuelAccess = new FuelAccess(fuel);
-
-    /** Ticks of fuel left. Burns only while actually swinging, so an idle inserter wastes none. */
-    private int burnTime;
-
-    /** What the last item of fuel was worth, so a progress display can show a fraction. */
-    private int burnTimeTotal;
-
-    /** Ticks into the current swing. Reaching {@link #SWING_TICKS} delivers the item. */
+    /** Ticks into the current swing. Reaching {@link #swingTicks} delivers the item. */
     private int swing;
 
     private @Nullable BlockCapabilityCache<ResourceHandler<ItemResource>, @Nullable Direction> source;
     private @Nullable BlockCapabilityCache<ResourceHandler<ItemResource>, @Nullable Direction> destination;
 
-    public InserterBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.INSERTER.get(), pos, state);
+    protected InserterBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
     }
 
-    public ResourceHandler<ItemResource> fuelAccess() {
-        return fuelAccess;
-    }
+    /** Ticks per item moved. Behaviour rather than identity, so tiers may tune it. */
+    public abstract int swingTicks();
 
-    public InserterFuel fuel() {
-        return fuel;
-    }
+    /**
+     * Whether there is anything to pay a tick of swinging with, readying it if there is.
+     *
+     * <p>Called before the inserter looks for work, so a tier that has to light something - the
+     * burner - lights it here rather than in the middle of a swing.
+     */
+    protected abstract boolean readyToSwing(ServerLevel level);
 
-    public int burnTime() {
-        return burnTime;
-    }
+    /** Spends one tick's worth of whatever {@link #readyToSwing} promised. */
+    protected abstract void spendOneTick();
+
+    /** Whether it could run right now, for the status line a player sees. */
+    public abstract boolean running();
 
     public int swing() {
         return swing;
@@ -125,8 +105,9 @@ public class InserterBlockEntity extends BlockEntity {
 
     /** Called by {@link InserterBlock}, and only ever on a tick this inserter asked for. */
     public void serverTick(ServerLevel level) {
-        if (burnTime <= 0 && !refuel(level)) {
-            // Out of coal. Fuel arriving in the slot wakes it; nothing else can help.
+        if (!readyToSwing(level)) {
+            // Out of coal, or out of electricity. Whatever supplies it wakes it again; nothing
+            // this inserter can do will.
             if (swing != 0) {
                 swing = 0;
                 setChanged();
@@ -140,10 +121,10 @@ public class InserterBlockEntity extends BlockEntity {
             return;
         }
 
-        burnTime--;
+        spendOneTick();
         swing++;
 
-        if (swing >= SWING_TICKS) {
+        if (swing >= swingTicks()) {
             if (!move(true)) {
                 // The item went away mid-swing, or the destination filled up. Hold the swing and
                 // sleep; either side changing wakes it again.
@@ -195,33 +176,6 @@ public class InserterBlockEntity extends BlockEntity {
         return false;
     }
 
-    /** Burns one item of fuel. @return whether there is now fuel to spend. */
-    private boolean refuel(ServerLevel level) {
-        ItemResource candidate = fuel.getResource(FUEL_SLOT);
-        if (candidate.isEmpty()) {
-            return false;
-        }
-
-        // getBurnTime rather than FuelValues.burnDuration, which is deprecated in favour of it -
-        // the null recipe type asks for the plain furnace-fuel value.
-        int worth = candidate.toStack(1).getBurnTime(null, level.fuelValues());
-        if (worth <= 0) {
-            return false;
-        }
-
-        try (Transaction transaction = Transaction.openRoot()) {
-            if (fuel.extract(FUEL_SLOT, candidate, 1, transaction) != 1) {
-                return false;
-            }
-            transaction.commit();
-        }
-
-        burnTime = worth;
-        burnTimeTotal = worth;
-        setChanged();
-        return true;
-    }
-
     /**
      * The neighbour's item handler, through a cache built on first use.
      *
@@ -264,44 +218,21 @@ public class InserterBlockEntity extends BlockEntity {
         }
     }
 
-    private void onFuelChanged() {
+    /** Anything that could give this inserter work again. */
+    protected void onSupplyChanged() {
         setChanged();
         wake();
-    }
-
-    /**
-     * Spilled when the inserter is broken. See the note in the assembler: this is the hook, not
-     * {@code Block#affectNeighborsAfterRemoval}, and getting it wrong silently eats the coal.
-     */
-    @Override
-    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
-        super.preRemoveSideEffects(pos, state);
-        if (level == null) {
-            return;
-        }
-        int amount = fuel.getAmountAsInt(FUEL_SLOT);
-        if (amount > 0) {
-            ItemStack stack = fuel.getResource(FUEL_SLOT).toStack(amount);
-            fuel.set(FUEL_SLOT, ItemResource.EMPTY, 0);
-            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), stack);
-        }
     }
 
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
-        fuel.serialize(output.child("Fuel"));
-        output.putInt("BurnTime", burnTime);
-        output.putInt("BurnTimeTotal", burnTimeTotal);
         output.putInt("Swing", swing);
     }
 
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
-        input.child("Fuel").ifPresent(fuel::deserialize);
-        burnTime = input.getIntOr("BurnTime", 0);
-        burnTimeTotal = input.getIntOr("BurnTimeTotal", 0);
         swing = input.getIntOr("Swing", 0);
     }
 

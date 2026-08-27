@@ -47,6 +47,21 @@ public class NauvisLogisticsModels extends ModelProvider {
                 MultiVariantGenerator.dispatch(ModBlocks.BURNER_INSERTER.get(), BlockModelGenerators.plainVariant(model))
                         .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
 
+        // The same furnace body, in blast-furnace colours: the two inserters have to be told
+        // apart on a belt line at a glance, and the front face still has to say which way it
+        // points, which is the one thing the model genuinely has to communicate.
+        Identifier electric = ModelTemplates.CUBE_ORIENTABLE.create(
+                ModBlocks.INSERTER.get(),
+                new TextureMapping()
+                        .put(TextureSlot.FRONT, TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_front"))
+                        .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_side"))
+                        .put(TextureSlot.TOP, TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top")),
+                blockModels.modelOutput);
+
+        blockModels.blockStateOutput.accept(
+                MultiVariantGenerator.dispatch(ModBlocks.INSERTER.get(), BlockModelGenerators.plainVariant(electric))
+                        .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
+
         // Iron sides with a barrel's lid: reads as a metal container at a glance, and does not
         // read as a block of iron, which is what a plain iron cube would have looked like.
         Identifier chest = ModelTemplates.CUBE_TOP.create(

@@ -1,10 +1,12 @@
 {
   "block.nauvis_logistics.burner_inserter": "Burner inserter",
+  "block.nauvis_logistics.inserter": "Inserter",
   "block.nauvis_logistics.iron_chest": "Iron chest",
   "itemGroup.nauvis_logistics": "Project Nauvis: Logistics",
   "nauvis_logistics.inserter.fuelled": "Burning %s",
   "nauvis_logistics.inserter.full": "Its fuel slot is full of %s",
   "nauvis_logistics.inserter.no_fuel": "Out of fuel. Give it coal.",
+  "nauvis_logistics.inserter.no_power": "No power. Put a pole within two blocks.",
   "nauvis_logistics.inserter.not_fuel": "%s does not burn",
   "nauvis_logistics.inserter.running": "Taking from behind, giving to the %s",
   "pack.nauvis_logistics.crafting_table": "Nauvis Logistics: Crafting Table Recipes"

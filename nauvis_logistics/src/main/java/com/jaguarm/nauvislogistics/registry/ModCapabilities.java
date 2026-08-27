@@ -29,8 +29,15 @@ public final class ModCapabilities {
     static void register(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(
                 Capabilities.Item.BLOCK,
-                ModBlockEntities.INSERTER.get(),
+                ModBlockEntities.BURNER_INSERTER.get(),
                 (inserter, side) -> inserter.fuelAccess());
+
+        // The electric one has no slot to fill and no charge to give back - only somewhere for a
+        // pole to put energy. NeoForge's capability, not ours, so any grid can drive it.
+        event.registerBlockEntity(
+                Capabilities.Energy.BLOCK,
+                ModBlockEntities.ELECTRIC_INSERTER.get(),
+                (inserter, side) -> inserter.gridView());
 
         event.registerBlockEntity(
                 Capabilities.Item.BLOCK,

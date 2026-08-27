@@ -58,6 +58,7 @@ public final class NauvisLogisticsData {
         protected void addTranslations() {
             add("itemGroup.nauvis_logistics", "Project Nauvis: Logistics");
             addBlock(ModBlocks.BURNER_INSERTER, "Burner inserter");
+            addBlock(ModBlocks.INSERTER, "Inserter");
             addBlock(ModBlocks.IRON_CHEST, "Iron chest");
             add("pack.nauvis_logistics.crafting_table", "Nauvis Logistics: Crafting Table Recipes");
 
@@ -67,6 +68,7 @@ public final class NauvisLogisticsData {
             add("nauvis_logistics.inserter.not_fuel", "%s does not burn");
             add("nauvis_logistics.inserter.running", "Taking from behind, giving to the %s");
             add("nauvis_logistics.inserter.no_fuel", "Out of fuel. Give it coal.");
+            add("nauvis_logistics.inserter.no_power", "No power. Put a pole within two blocks.");
         }
     }
 
@@ -80,6 +82,7 @@ public final class NauvisLogisticsData {
         @Override
         protected void generate() {
             dropSelf(ModBlocks.BURNER_INSERTER.get());
+            dropSelf(ModBlocks.INSERTER.get());
             dropSelf(ModBlocks.IRON_CHEST.get());
         }
 

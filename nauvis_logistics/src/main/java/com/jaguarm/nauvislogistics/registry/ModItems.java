@@ -24,6 +24,9 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> BURNER_INSERTER =
             ITEMS.registerSimpleBlockItem(ModBlocks.BURNER_INSERTER);
 
+    public static final DeferredItem<BlockItem> INSERTER =
+            ITEMS.registerSimpleBlockItem(ModBlocks.INSERTER);
+
     public static final DeferredItem<BlockItem> IRON_CHEST =
             ITEMS.registerSimpleBlockItem(ModBlocks.IRON_CHEST);
 
@@ -35,6 +38,7 @@ public final class ModItems {
                     .icon(() -> new ItemStack(BURNER_INSERTER.get()))
                     .displayItems((parameters, output) -> {
                         output.accept(BURNER_INSERTER.get());
+                        output.accept(INSERTER.get());
                         output.accept(IRON_CHEST.get());
                     })
                     .build());
