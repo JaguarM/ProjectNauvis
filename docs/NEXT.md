@@ -4,7 +4,7 @@ Next session
 Written 2026-08-28 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
 Delete or rewrite it when the job below is done — it describes one job, not the project.
 
-**Seventy-seven gametests pass and the pack builds clean.** Every machine is the size Factorio made
+**Seventy-nine gametests pass and the pack builds clean.** Every machine is the size Factorio made
 it, the lab exists, five checks run in `./gradlew build`, and — as of this session — **the transport
 belt works, with items you can watch move along it.** You no longer have to carry everything by
 hand.
@@ -30,6 +30,8 @@ visibly full of moving items and that stay cheap, and the shortcut cannot be eit
 | `BeltRun.java` | one line: its blocks, its two lanes, its tick, and how it hands to the next line |
 | `BeltLines.java` | every run in a level, and how lines are cut and joined when a belt is placed |
 | `client/BeltRenderer.java` | the items you can see |
+| `BeltBlock.stepOn` | why standing on a belt carries you, and why that is not `entityInside` |
+| `texture-workshop/make_belt_textures.py` | the art, and why the tread scrolls at exactly 1.875 tiles a second |
 
 Three things about it are load-bearing for whatever comes next:
 
@@ -44,6 +46,10 @@ Three things about it are load-bearing for whatever comes next:
 - **A run is awake while it has items, not while it is moving.** Unlike the pipe and power
   networks there is no dormant sweep and no wake-up plumbing, because `BeltLane` makes a jammed
   belt cost the same as an empty one.
+- **A closed ring of belts is one run that wraps.** A loop has no beginning, so it is broken open
+  at an arbitrary block and joined back up by `BeltRun.loops()`. Do not let the underground belt or
+  the splitter quietly break that: `belt_loop_carries_round` measures where an item is a lap later
+  and is the test that caught it reading as a tunnel to the middle of the square.
 
 ### What is left, in order
 
@@ -62,7 +68,10 @@ Three things about it are load-bearing for whatever comes next:
 4. **Curved belt models.** Items already go round corners — a run turns and `BeltRun.pointAt`
    carries them through the middle of the block — but the *model* is straight, so a corner reads as
    two belts at right angles rather than as a bend. A `SHAPE` blockstate property computed the way
-   `PipeBlock`'s connections are, and three models.
+   `PipeBlock`'s connections are, three models, and a fourth ASCII map in
+   `texture-workshop/make_belt_textures.py` with the chevrons turning. Note that a curved tread
+   cannot scroll the way the straight one does — rolling the image only moves it in a straight
+   line — so a corner either animates by hand-drawn frames or does not animate.
 5. **Rewrite this file** for milestone 3.
 
 Each step ends with `./gradlew build`, `:nauvis:runGameTestServer`, and a client boot. The client
@@ -205,7 +214,7 @@ Where the pack stands
 | | |
 |---|---|
 | `nauvis_machines:assembling_machine_1` | 3×3 and ten blocks; recipe selector, six slots, timed craft, screen, 10 FE a tick |
-| `nauvis_logistics:transport_belt` | half a block high and walked over; a run is one object however long, two lanes, items you can watch |
+| `nauvis_logistics:transport_belt` | half a block high and walked over; a run is one object however long, two lanes, items you can watch, and it carries you |
 | `nauvis_logistics:burner_inserter` | takes from behind, gives in front, 30-tick swing, screen with a fuel slot |
 | `nauvis_logistics:inserter` | the same on 2 FE a tick and a 24-tick swing. No slot, so no screen |
 | `nauvis_logistics:iron_chest` | 36 slots on vanilla's four-row screen |
@@ -248,6 +257,7 @@ How to run everything
 | `python tools/check_duplicated.py` | the copied packages, against each other. `--sync` to fix |
 | `python tools/check_gametests.py` | every gametest, for a type registered as well as an instance |
 | `python tools/check_gui_layout.py` | every machine screen's boxes, for overlaps |
+| `python texture-workshop/make_belt_textures.py` | the belt's art, from ASCII maps. `--preview` for a sheet |
 
 The last five are `checkRecipes`, `checkModels`, `checkDuplicated`, `checkGameTests` and
 `checkGuiLayout` in the root `build.gradle`, and all of them hang off `:nauvis:check`. They read
@@ -396,6 +406,17 @@ Silent failures — these compile, pass tests, and are still wrong
   `nauvis:pack_loads` registered under type `nauvis:registry_presence` is fine - so
   `tools/check_gametests.py` matches every `GameTestInstance` that is registered to run against
   the codecs handed to `TEST_TYPES`.
+- **A horizontal `Entity.move` tells the entity it is falling.** `Entity.move` only decides
+  whether something is standing on anything when the movement had a vertical component, so a push
+  along a belt with `y = 0` clears `onGround`. Nothing looks wrong for a tick — and then the next
+  tick's `stepOn` does not run, because that hook only fires for something on the ground, so the
+  belt carries in stutters. For a player it also breaks fall damage and step sounds, both of which
+  are worked out from the same flag. `BeltBlock.stepOn` reads `onGround()` before the move and puts
+  it back after.
+- **`GameTestHelper.spawnItem(Item, BlockPos)` spawns at the block's corner, not its middle.** An
+  item dropped over a one-block-wide thing therefore hangs half off it and behaves like something
+  standing beside it rather than on it. Use the `(float, float, float)` overload and add the half.
+  This cost an hour of reading `ItemEntity` for a bug that was in the test.
 - **Asking for a capability in an unloaded chunk loads it.** Check `level.isLoaded` first — not as
   an optimisation, but so a network at the edge of the loaded world does not drag chunks in.
 
@@ -429,6 +450,13 @@ hand-off — if it is ever wanted the other way. `belt_does_not_load_a_chest` pi
 
 **A belt corner is drawn as two straight belts.** The items go round it properly; the model does
 not bend. See the fourth item in the job list.
+
+**Crouching stops a belt carrying you**, which Factorio does not do — there a belt has you whatever
+you do. It is in for the Minecraft reflex: without it, placing a machine beside a working belt means
+being carried off mid-click. One line in `BeltBlock.stepOn` if it is ever unwanted.
+
+**A belt does not turn you as it carries you.** An entity on a corner is pushed the way that block
+faces, so going round a bend on a belt is two straight shoves rather than an arc. Items do curve.
 
 **Two belt tiers meeting is two runs, not one.** Correct — Factorio's transport lines split at a
 tier change too — but there is only one tier so far, so it has never been looked at.

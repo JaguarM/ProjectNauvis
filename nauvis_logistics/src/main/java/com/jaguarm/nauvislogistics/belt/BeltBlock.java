@@ -2,6 +2,8 @@ package com.jaguarm.nauvislogistics.belt;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -11,6 +13,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -41,6 +45,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * <p>{@link Belts#HEIGHT} is 0.5, under vanilla's 0.6 step height, so crossing a belt is walking
  * rather than jumping. Collision and silhouette agree exactly here, which for something meant to
  * be walked across is the whole point.
+ *
+ * <p>And it carries you. See {@link #stepOn}.
  */
 public abstract class BeltBlock extends BaseEntityBlock {
 
@@ -84,6 +90,54 @@ public abstract class BeltBlock extends BaseEntityBlock {
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return SHAPE;
+    }
+
+    /**
+     * Carries whatever is standing on it, at the speed it carries everything else.
+     *
+     * <p>Factorio's belts move the player, and a base is laid out on the assumption that they do -
+     * a long bus is something you ride rather than walk beside. You can still walk against a belt,
+     * or across one, because this is added to what the entity was already doing rather than
+     * replacing it.
+     *
+     * <p><b>Crouching stops it.</b> That is not Factorio's rule - there, a belt has you whatever
+     * you do - but it is Minecraft's, the same reflex that keeps a player on an edge or off a
+     * slime block, and without it placing a machine beside a working belt means being carried away
+     * mid-click. One line, if it is ever unwanted.
+     *
+     * <h2>Why this hook</h2>
+     *
+     * <p>Not {@code entityInside}: a belt is a bottom slab and something standing on top of it is
+     * inside the block <em>above</em>, so that never fires. {@code stepOn} is called from
+     * {@code Entity.applyEffectsFromBlocks} for whatever the entity is standing on, every tick it
+     * is on the ground and whether or not it is moving - which is exactly a conveyor's question.
+     *
+     * <p>It runs on the server, and on a client for the player it is that client's own - the guard
+     * is in {@code LivingEntity.aiStep} - so the two agree and being carried is not laggy.
+     */
+    @Override
+    public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
+        super.stepOn(level, pos, state, entity);
+        if (entity.isPassenger() || entity.isShiftKeyDown()) {
+            return;
+        }
+        Direction travel = state.getValue(FACING);
+        double step = speed() / (double) Belts.UNITS_PER_BLOCK;
+
+        // move rather than a nudge to the velocity: a velocity decays against friction, so the
+        // speed something is actually carried at would be some fraction of the belt's rather than
+        // the belt's. This is outside Entity.move - aiStep calls it after travel - so it is not
+        // re-entrant, and it collides properly against whatever is in the way.
+        //
+        // The standing is put back afterwards, and that is not tidiness. A move with no vertical
+        // component makes Entity.move decide nothing was landed on and clear onGround, and an
+        // entity that is told it is falling while it stands on a belt loses its footing for a
+        // tick: the next tick's stepOn does not run, because that hook only fires for something on
+        // the ground, so the belt would carry it in stutters. For a player it is worse - fall
+        // damage and step sounds are both worked out from this.
+        boolean standing = entity.onGround();
+        entity.move(MoverType.SELF, new Vec3(travel.getStepX() * step, 0.0, travel.getStepZ() * step));
+        entity.setOnGround(standing);
     }
 
     // Nothing wakes a belt from a neighbour, and nothing needs to. A run is awake exactly while it

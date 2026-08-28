@@ -82,18 +82,31 @@ public final class BeltRun extends SnapshotJournal<Integer> {
 
     private final BeltLane[] lanes = {new BeltLane(), new BeltLane()};
 
+    /**
+     * Whether the head of this run feeds its own tail: four belts turning in a square, or any
+     * longer loop.
+     *
+     * <p>A loop has no beginning, so the run is broken open at an arbitrary block and the two ends
+     * are joined back up here. Two things then have to know: an item leaving the head wraps round
+     * to the tail rather than being handed to a run, and the tail's incoming edge is the one it
+     * shares with the head rather than the one behind it.
+     */
+    private final boolean loops;
+
     /** Undo entries for the transaction in progress, and the messages it would send if it holds. */
     private final List<Op> journal = new ArrayList<>();
 
     private boolean dissolved;
 
-    BeltRun(Level level, BeltLines lines, BeltBlock block, List<BlockPos> blocks, Direction[] facings) {
+    BeltRun(Level level, BeltLines lines, BeltBlock block, List<BlockPos> blocks, Direction[] facings,
+            boolean loops) {
         this.level = level;
         this.lines = lines;
         this.block = block;
         this.speed = block.speed();
         this.blocks = List.copyOf(blocks);
         this.facings = facings;
+        this.loops = loops;
         indexByBlock.defaultReturnValue(-1);
         for (int i = 0; i < this.blocks.size(); i++) {
             indexByBlock.put(this.blocks.get(i).asLong(), i);
@@ -124,6 +137,11 @@ public final class BeltRun extends SnapshotJournal<Integer> {
 
     public boolean isDissolved() {
         return dissolved;
+    }
+
+    /** Whether this run's head feeds its own tail - a closed loop of belts. */
+    public boolean loops() {
+        return loops;
     }
 
     void dissolve() {
@@ -173,7 +191,7 @@ public final class BeltRun extends SnapshotJournal<Integer> {
         int index = blockAt((int) position);
         BlockPos pos = blocks.get(index);
         Direction out = facings[index];
-        Direction in = index > 0 ? directionBetween(pos, blocks.get(index - 1)) : out.getOpposite();
+        Direction in = entrySide(index);
 
         // 0 at the back edge of the block, 1 at the forward edge.
         double progress = 1.0 - (position - frontEdge(index)) / Belts.UNITS_PER_BLOCK;
@@ -194,6 +212,24 @@ public final class BeltRun extends SnapshotJournal<Integer> {
 
         Direction side = Belts.sideOf(travel, lane);
         return point.add(side.getStepX() * Belts.LANE_OFFSET, 0, side.getStepZ() * Belts.LANE_OFFSET);
+    }
+
+    /**
+     * Which edge of block {@code index} items arrive over.
+     *
+     * <p>The edge shared with the block before it - or, on a closed loop, the edge the tail shares
+     * with the head, because a loop's first block is only first by an arbitrary choice of where to
+     * break the ring open. Getting this wrong on a loop puts the tail's entry on its outside edge,
+     * so items appear from nowhere in the middle of the block instead of coming round the corner.
+     */
+    private Direction entrySide(int index) {
+        if (index > 0) {
+            return directionBetween(blocks.get(index), blocks.get(index - 1));
+        }
+        if (loops) {
+            return directionBetween(blocks.get(0), blocks.get(blocks.size() - 1));
+        }
+        return facings[0].getOpposite();
     }
 
     private static Direction directionBetween(BlockPos from, BlockPos to) {
@@ -233,6 +269,10 @@ public final class BeltRun extends SnapshotJournal<Integer> {
      * {@link BeltAccess}.
      */
     private void handOff(int lane) {
+        if (loops) {
+            wrapRound(lane);
+            return;
+        }
         int head = blocks.size() - 1;
         Direction out = facings[head];
         BlockPos target = blocks.get(head).relative(out);
@@ -268,6 +308,24 @@ public final class BeltRun extends SnapshotJournal<Integer> {
         // other. Both ends say so; a run moving items along itself does not.
         markChanged(blocks.get(head));
         other.markChanged(target);
+    }
+
+    /**
+     * Carries the leading item off the head of a loop and back on at its tail.
+     *
+     * <p>The two are the same face, so nothing about this is a jump: the item crosses one edge, as
+     * it does at every other block boundary on the run. It keeps its lane, because going round a
+     * corner does not swap a Factorio belt's lanes over.
+     *
+     * <p>Nothing here talks to another run, which is what makes a loop cheap: a ring of belts is
+     * one object that never hands anything to anyone.
+     */
+    private void wrapRound(int lane) {
+        if (!lanes[lane].hasRoomAt(length())) {
+            // The ring is full, all the way round to its own tail. It jams, as it should.
+            return;
+        }
+        lanes[lane].insertAt(length(), lanes[lane].removeAt(0));
     }
 
     // --- what the world puts on and takes off ---------------------------------------------------

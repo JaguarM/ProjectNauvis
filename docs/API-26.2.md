@@ -41,6 +41,7 @@ Confirmed renames and signature changes
 | `Level.isClientSide` (field) | private — `level.isClientSide()` |
 | `Blocks.YELLOW_TERRACOTTA` and every other dyed block | **gone.** They are `ColorCollection`s: `Blocks.DYED_TERRACOTTA.pick(DyeColor.YELLOW)`. Same for wool, concrete, glass and the rest |
 | `new ChunkPos(BlockPos)` | **gone.** `ChunkPos` is a record of two ints: `new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4)` |
+| `TextureMapping#put(TextureSlot, ResourceLocation)` | takes a **`Material`** — `net.minecraft.client.resources.model.sprite.Material`, not the `resources.model` one. `TextureMapping.getBlockTexture` returns one; for a texture of your own that no block is named after, `new Material(Identifier.fromNamespaceAndPath(modid, "block/<name>"))` |
 
 Other confirmed details:
 
@@ -93,6 +94,30 @@ Inventories: `ResourceHandler`, and the class that already implements it
 out of the block without committing rolls everything back. That is what makes "spend the
 ingredients and bank the result, or neither" one method — and passing `commit = false` turns
 the same code into a simulation, so there is no second copy that can drift.
+
+Moving an entity that is standing on your block
+-----------------------------------------------
+
+There is no conveyor in vanilla, so there is no obvious hook, and the obvious wrong one is
+`entityInside` — which never fires for something standing *on* a block that is less than a full
+cube, because the entity is then inside the block above.
+
+**`Block#stepOn(Level, BlockPos, BlockState, Entity)` is the one.** `Entity.applyEffectsFromBlocks`
+calls it for `getOnPosLegacy()` on every tick the entity is on the ground, moving or not — which is
+exactly a conveyor's question. It reaches players (`LivingEntity.aiStep`), items, experience orbs,
+falling blocks, primed TNT and arrows. On a client it runs only for that client's own player, so
+the two sides agree and being carried is not laggy.
+
+Two things to know once you are in there:
+
+- **Push by moving, not by adding to the velocity.** A velocity decays against friction every tick,
+  so an entity nudged by *v* is carried at some fraction of *v* rather than at *v*. `stepOn` is
+  called from `aiStep` *after* `travel`, so calling `entity.move(MoverType.SELF, ...)` from inside
+  it is not re-entrant, and it collides properly.
+- **`Entity.move` with no vertical component clears `onGround`.** It only decides what the entity
+  is standing on when the movement had a `y`, so a purely horizontal push leaves the entity
+  believing it is falling — which stops the *next* tick's `stepOn`, and for a player also breaks
+  fall damage and step sounds. Read `onGround()` before and `setOnGround(...)` after.
 
 Ticking without a ticker
 ------------------------
@@ -326,6 +351,12 @@ Silent failures — these compile and then do nothing
   error; the block just silently drops nothing.
 - **Recipes use `result.id`**, not `result.item`.
 - **Flat item icons need both** `assets/<ns>/items/<name>.json` and `models/item/<name>.json`.
+- **`GameTestHelper.spawnItem(Item, BlockPos)` spawns at the block's corner**, not its centre —
+  it passes the position straight through as floats. Over a one-block-wide thing the item hangs
+  half off it. The `(float, float, float)` overload plus a half is what you meant.
+- **A texture animates from a vertical strip plus a `.mcmeta`**, and the `frames` list may name
+  the same frame more than once and in any order. That is how a scroll lands on a speed that is
+  not a whole number of pixels a tick: see `texture-workshop/make_belt_textures.py`.
 
 Gradle
 ------

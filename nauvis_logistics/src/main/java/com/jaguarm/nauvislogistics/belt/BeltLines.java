@@ -212,12 +212,18 @@ public final class BeltLines {
 
         List<BlockPos> members = new ArrayList<>();
         LongOpenHashSet inRun = new LongOpenHashSet();
+        boolean loops = false;
         BlockPos at = tail;
         while (true) {
             members.add(at);
             inRun.add(at.asLong());
             BlockPos next = successor(at, block);
-            if (next == null || inRun.contains(next.asLong()) || feederCount(next, block) != 1) {
+            if (next == null || feederCount(next, block) != 1) {
+                break;
+            }
+            if (inRun.contains(next.asLong())) {
+                // Back where we started: a ring of belts with no beginning, broken open here.
+                loops = next.equals(members.get(0));
                 break;
             }
             take(next, pending, parked);
@@ -229,7 +235,7 @@ public final class BeltLines {
             facings[i] = facing(members.get(i));
         }
 
-        BeltRun run = new BeltRun(level, this, block, members, facings);
+        BeltRun run = new BeltRun(level, this, block, members, facings, loops);
         for (BlockPos member : members) {
             runByBelt.put(member.asLong(), run);
         }

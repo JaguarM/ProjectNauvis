@@ -11,18 +11,21 @@ import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.client.data.models.model.TextureMapping;
 import net.minecraft.client.data.models.model.TextureSlot;
 import net.minecraft.data.PackOutput;
+import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
 /**
  * Block and item models.
  *
- * <p>Textures are placeholders and point at <em>vanilla</em> ones on purpose. A model naming a
- * texture this mod does not ship renders as the magenta-and-black checkerboard, which reads as a
- * broken model rather than as art nobody has drawn yet - and the difference matters when the
- * person judging whether a machine looks right is looking at it in game.
+ * <p>Most textures here are placeholders and point at <em>vanilla</em> ones on purpose. A model
+ * naming a texture this mod does not ship renders as the magenta-and-black checkerboard, which
+ * reads as a broken model rather than as art nobody has drawn yet - and the difference matters
+ * when the person judging whether a machine looks right is looking at it in game.
+ *
+ * <p><b>The belt is the exception and has art of its own</b>, from
+ * {@code texture-workshop/make_belt_textures.py}. It had to: a belt's facing has to be legible at
+ * a glance, and its tread has to move, neither of which a borrowed texture can do.
  *
  * <p>A furnace body gives the inserter a distinct front face, which is the one thing its model
  * genuinely has to communicate: an inserter that is facing the wrong way looks exactly like one
@@ -31,8 +34,16 @@ import net.minecraft.world.level.block.Blocks;
  */
 public class NauvisLogisticsModels extends ModelProvider {
 
-    /** The dyed blocks are a {@code ColorCollection} in 26.2; there is no {@code YELLOW_TERRACOTTA} field. */
-    private static final Block YELLOW_TERRACOTTA = Blocks.DYED_TERRACOTTA.pick(DyeColor.YELLOW);
+    /**
+     * One of ours, from {@code texture-workshop/}, rather than a vanilla stand-in.
+     *
+     * <p>A {@code Material} rather than an {@code Identifier}: {@code TextureMapping.put} takes
+     * one in 26.2, and {@code TextureMapping.getBlockTexture} - which every other model here uses
+     * - only names blocks in a registry, which our own PNG files are not.
+     */
+    private static Material texture(String name) {
+        return new Material(Identifier.fromNamespaceAndPath(NauvisLogistics.MODID, "block/" + name));
+    }
 
     public NauvisLogisticsModels(PackOutput output) {
         super(output, NauvisLogistics.MODID);
@@ -67,16 +78,19 @@ public class NauvisLogisticsModels extends ModelProvider {
                 MultiVariantGenerator.dispatch(ModBlocks.INSERTER.get(), BlockModelGenerators.plainVariant(electric))
                         .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
 
-        // The belt: a bottom slab, because it is half a block high and you walk over it. The top
-        // texture is the one thing this model has to get right - a belt facing the wrong way looks
-        // exactly like a belt that is working - so it is a piston side, whose diagonals show which
-        // way the blockstate has turned it. Yellow flanks, because Factorio's first belt is yellow.
+        // The belt: a bottom slab, because it is half a block high and you walk over it.
+        //
+        // The only art in this mod that is ours rather than a vanilla placeholder, because the
+        // belt is the one block here whose facing has to be legible at a glance - a belt pointing
+        // the wrong way looks exactly like a belt that is working. The top carries a chevron and
+        // it scrolls, at exactly the speed the belt carries things, which is what
+        // `texture-workshop/make_belt_textures.py` goes to some trouble over.
         Identifier belt = ModelTemplates.SLAB_BOTTOM.create(
                 ModBlocks.TRANSPORT_BELT.get(),
                 new TextureMapping()
-                        .put(TextureSlot.TOP, TextureMapping.getBlockTexture(Blocks.PISTON, "_side"))
-                        .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(YELLOW_TERRACOTTA))
-                        .put(TextureSlot.BOTTOM, TextureMapping.getBlockTexture(YELLOW_TERRACOTTA)),
+                        .put(TextureSlot.TOP, texture("transport_belt_top"))
+                        .put(TextureSlot.SIDE, texture("transport_belt_side"))
+                        .put(TextureSlot.BOTTOM, texture("transport_belt_bottom")),
                 blockModels.modelOutput);
 
         blockModels.blockStateOutput.accept(

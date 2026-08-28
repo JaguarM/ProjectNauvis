@@ -3,6 +3,7 @@ package com.jaguarm.nauvislogistics;
 import java.util.List;
 
 import com.jaguarm.nauvislogistics.belt.BeltBlock;
+import com.jaguarm.nauvislogistics.belt.BeltLane;
 import com.jaguarm.nauvislogistics.belt.BeltLines;
 import com.jaguarm.nauvislogistics.belt.BeltRun;
 import com.jaguarm.nauvislogistics.belt.Belts;
@@ -26,10 +27,12 @@ import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -96,6 +99,8 @@ public final class NauvisLogisticsBeltGameTests {
         TEST_TYPES.register("belt_survives_being_cut", () -> SurvivesBeingCutTest.CODEC);
         TEST_TYPES.register("belt_drops_what_it_carried", () -> DropsWhatItCarriedTest.CODEC);
         TEST_TYPES.register("belt_is_walked_over", () -> WalkedOverTest.CODEC);
+        TEST_TYPES.register("belt_loop_carries_round", () -> LoopCarriesRoundTest.CODEC);
+        TEST_TYPES.register("belt_carries_what_stands_on_it", () -> CarriesWhatStandsOnItTest.CODEC);
         TEST_TYPES.register("inserter_loads_a_belt", () -> InserterLoadsABeltTest.CODEC);
         TEST_TYPES.register("inserter_takes_from_a_belt", () -> InserterTakesFromABeltTest.CODEC);
     }
@@ -122,6 +127,9 @@ public final class NauvisLogisticsBeltGameTests {
         register(event, environment, "belt_survives_being_cut", SurvivesBeingCutTest::new, 60);
         register(event, environment, "belt_drops_what_it_carried", DropsWhatItCarriedTest::new, 60);
         register(event, environment, "belt_is_walked_over", WalkedOverTest::new, 60);
+        register(event, environment, "belt_loop_carries_round", LoopCarriesRoundTest::new, 200);
+        register(event, environment, "belt_carries_what_stands_on_it",
+                CarriesWhatStandsOnItTest::new, 200);
         register(event, environment, "inserter_loads_a_belt", InserterLoadsABeltTest::new, 200);
         register(event, environment, "inserter_takes_from_a_belt", InserterTakesFromABeltTest::new, 200);
     }
@@ -143,9 +151,14 @@ public final class NauvisLogisticsBeltGameTests {
     /** A straight line of belts running east from {@link #TAIL}. */
     private static void line(GameTestHelper helper, int length) {
         for (int i = 0; i < length; i++) {
-            helper.setBlock(TAIL.east(i), ModBlocks.TRANSPORT_BELT.get().defaultBlockState()
-                    .setValue(BeltBlock.FACING, Direction.EAST));
+            place(helper, TAIL.east(i), Direction.EAST);
         }
+    }
+
+    /** One belt, pointing a given way. */
+    private static void place(GameTestHelper helper, BlockPos pos, Direction facing) {
+        helper.setBlock(pos, ModBlocks.TRANSPORT_BELT.get().defaultBlockState()
+                .setValue(BeltBlock.FACING, facing));
     }
 
     private static BeltLines lines(GameTestHelper helper) {
@@ -738,6 +751,129 @@ public final class NauvisLogisticsBeltGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a belt is walked over");
+        }
+    }
+
+    /**
+     * <b>Four belts turning in a square carry an item round and round, and it comes back where it
+     * started.</b>
+     *
+     * <p>A ring of belts has no beginning, so the run is broken open at an arbitrary block and the
+     * two ends joined back up - see {@code BeltRun.loops()}. Get that wrong and an item leaving the
+     * head is handed to the run's own tail as though it were a stranger, which lands it in the
+     * middle of that block rather than at the edge it just crossed: items vanish at one corner and
+     * appear out of the middle of another. It read as a tunnel to the centre of the square.
+     *
+     * <p>So this measures where an item <em>is</em>, through the same {@code pointAt} the renderer
+     * draws it with, one lap later. Half a block of drift a lap is what the bug cost.
+     */
+    public static class LoopCarriesRoundTest extends GameTestInstance {
+
+        public static final MapCodec<LoopCarriesRoundTest> CODEC =
+                RecordCodecBuilder.<LoopCarriesRoundTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(LoopCarriesRoundTest::info))
+                                .apply(i, LoopCarriesRoundTest::new));
+
+        public LoopCarriesRoundTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos corner = TAIL;
+            place(helper, corner, Direction.EAST);
+            place(helper, corner.east(), Direction.SOUTH);
+            place(helper, corner.east().south(), Direction.WEST);
+            place(helper, corner.south(), Direction.NORTH);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                BeltRun run = runAt(helper, corner);
+                helper.assertValueEqual(run.blocks().size(), 4, "belts in the ring");
+                helper.assertTrue(run.loops(), "four belts in a square did not read as a loop");
+
+                put(belt(helper, corner, null), Items.IRON_INGOT, 1);
+                BeltLane lane = run.lane(Belts.LEFT);
+                helper.assertValueEqual(lane.size(), 1, "items on the loop");
+                Vec3 started = run.pointAt(lane.position(0), Belts.LEFT);
+
+                // A lap is four blocks of sixty-four units at six a tick, so forty-three ticks
+                // carries it round once and two units further - a thirtieth of a block.
+                helper.runAfterDelay(43, () -> {
+                    BeltRun now = runAt(helper, corner);
+                    helper.assertValueEqual(now.itemCount(), 1, "items still going round");
+                    Vec3 ended = now.pointAt(now.lane(Belts.LEFT).position(0), Belts.LEFT);
+                    double drift = ended.distanceTo(started);
+                    helper.assertTrue(drift < 0.2,
+                            "an item is " + drift + " blocks from where it set off a lap ago, so the "
+                                    + "loop is losing ground where it joins back up");
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a loop of belts carries an item round");
+        }
+    }
+
+    /**
+     * A belt carries what is standing on it, which in Factorio includes the player.
+     *
+     * <p>A dropped item stands in for one here - a gametest has no player to walk about, and it is
+     * the same {@code stepOn} hook either way. What it pins is that the hook fires at all: a belt
+     * is a bottom slab, so anything on top of it is inside the block <em>above</em> and the obvious
+     * {@code entityInside} never runs.
+     */
+    public static class CarriesWhatStandsOnItTest extends GameTestInstance {
+
+        public static final MapCodec<CarriesWhatStandsOnItTest> CODEC =
+                RecordCodecBuilder.<CarriesWhatStandsOnItTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(CarriesWhatStandsOnItTest::info))
+                                .apply(i, CarriesWhatStandsOnItTest::new));
+
+        public CarriesWhatStandsOnItTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            line(helper, 8);
+            helper.runAfterDelay(SETTLED, () -> {
+                // Over the middle of the tile, not its corner: spawnItem(Item, BlockPos) takes the
+                // block's corner, which would leave half of the item hanging over the gap beside
+                // the belt.
+                ItemEntity rider = helper.spawnItem(Items.IRON_INGOT,
+                        TAIL.getX() + 0.5F, TAIL.getY() + 1.0F, TAIL.getZ() + 0.5F);
+                double from = rider.getX();
+
+                // Long enough to fall the half block onto the belt and then be carried. A belt
+                // moves 1.875 blocks a second, so two blocks in three seconds is a low bar.
+                helper.runAfterDelay(60, () -> {
+                    helper.assertTrue(rider.isAlive(), "the item fell out of the world");
+                    double carried = rider.getX() - from;
+                    helper.assertTrue(carried > 2.0,
+                            "something standing on an eastbound belt moved " + carried
+                                    + " blocks east (resting at y=" + rider.getY() + ", on the ground: "
+                                    + rider.onGround() + "), so the belt is not carrying it");
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a belt carries what stands on it");
         }
     }
 
