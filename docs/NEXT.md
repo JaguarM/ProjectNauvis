@@ -32,7 +32,7 @@ visibly full of moving items and that stay cheap, and the shortcut cannot be eit
 | `client/BeltRenderer.java` | the items you can see |
 | `BeltBlock.stepOn` | why standing on a belt carries you, and why that is not `entityInside` |
 | `BeltShape.java` | how a corner knows it is one, and why there are two of them rather than eight |
-| `BeltBlock.useItemOn` | a belt in hand turns the belt you click on; crouch to place instead |
+| `BeltBlock.useItemOn` | a belt in hand points the belt you click on the way you are facing; crouch to place instead |
 | `texture-workshop/make_belt_textures.py` | the art, and why the tread scrolls at exactly 1.875 tiles a second |
 
 Three things about it are load-bearing for whatever comes next:
@@ -71,7 +71,23 @@ Three things about it are load-bearing for whatever comes next:
 3. **The splitter**, 2×1 and directional — the first multi-block that is not square. `multiblock/`
    is the framework and is copied into four mods already. The belt side of it is a run that ends at
    the splitter and two runs that start after it, with the splitter alternating between them.
-4. **Rewrite this file** for milestone 3.
+4. **Fast-replace by tier.** A belt in hand already points the belt you click on the way you are
+   facing, which is half of Factorio's belt-laying gesture. The other half is that a *faster* belt
+   in hand **replaces** a slower one, which is how a bus gets upgraded, and it cannot be written
+   until there is a second tier to hold. It is `BeltBlock.useItemOn`, and what changes is:
+
+   - swap the *block* rather than set a property — `server.setBlock(pos, other.defaultBlockState()
+     .setValue(FACING, placed), UPDATE_ALL)`. That does remove and remake the block entity, so
+     `beltPlaced`/`beltRemoved` fire and `beltTurned` is not wanted on this path;
+   - **the items on that block have to survive it**, and they will not for free: the block entity
+     goes, taking its `stored` list with it. Take them off the run first, the way
+     `preRemoveSideEffects` does, and put them back after — there is a gametest shape for this in
+     `belt_survives_being_cut`;
+   - hand the old belt back and pay for the new one, unless the player is in creative;
+   - refuse to *downgrade*, or Factorio players will wreck their own bus with a stray click.
+
+   The run needs no thought: a run never spans two tiers, so the line splits and rejoins by itself.
+5. **Rewrite this file** for milestone 3.
 
 Corners are done: `BeltShape` is worked out from the neighbours the way a pipe works out its
 connections, and the corner texture is the straight one warped through a quarter turn by `bend` in

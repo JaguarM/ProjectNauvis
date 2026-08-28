@@ -168,6 +168,11 @@ public final class NauvisLogisticsBeltGameTests {
         }
     }
 
+    /** A belt item, the thing you hold to point a belt somewhere. */
+    private static ItemStack belt() {
+        return new ItemStack(ModItems.TRANSPORT_BELT.get());
+    }
+
     /** One belt, pointing a given way. */
     private static void place(GameTestHelper helper, BlockPos pos, Direction facing) {
         helper.setBlock(pos, ModBlocks.TRANSPORT_BELT.get().defaultBlockState()
@@ -192,10 +197,15 @@ public final class NauvisLogisticsBeltGameTests {
         return handler;
     }
 
-    /** Right-clicks a block with something in hand, the way a player's click arrives at it. */
-    private static void click(GameTestHelper helper, BlockPos pos, ItemStack held) {
+    /**
+     * Right-clicks a block with something in hand, the way a player's click arrives at it.
+     *
+     * @param facing which way the player is looking, which is what a belt takes from the click.
+     */
+    private static void click(GameTestHelper helper, BlockPos pos, ItemStack held, Direction facing) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
         player.setItemInHand(InteractionHand.MAIN_HAND, held);
+        player.setYRot(facing.toYRot());
         BlockPos absolute = helper.absolutePos(pos);
         helper.getLevel().getBlockState(absolute).useItemOn(held, helper.getLevel(), player,
                 InteractionHand.MAIN_HAND,
@@ -914,7 +924,7 @@ public final class NauvisLogisticsBeltGameTests {
     }
 
     /**
-     * A belt in hand turns the belt you click on, and the line follows it round.
+     * A belt in hand points the belt you click on the way you are facing, and the line follows it.
      *
      * <p>The turn itself is the easy half. The half worth a test is that <b>the run is rebuilt</b>:
      * turning a belt only changes a block state, so its block entity is never removed and neither
@@ -942,8 +952,9 @@ public final class NauvisLogisticsBeltGameTests {
                 helper.assertValueEqual(runAt(helper, TAIL).blocks().size(), 3, "belts in the line");
                 put(belt(helper, TAIL, null), Items.IRON_INGOT, 1);
 
-                click(helper, TAIL.east(), new ItemStack(ModItems.TRANSPORT_BELT.get()));
-
+                // Clicked by a player looking south, so it points south - the same direction a
+                // belt placed there by that player would have.
+                click(helper, TAIL.east(), belt(), Direction.SOUTH);
                 helper.assertBlockProperty(TAIL.east(), BeltBlock.FACING, Direction.SOUTH);
 
                 // The line did not break, it bent: the belt behind still feeds the turned one, so
@@ -955,10 +966,14 @@ public final class NauvisLogisticsBeltGameTests {
                 helper.assertValueEqual(runAt(helper, TAIL).itemCount(), 1,
                         "items still on the belt they were standing on");
 
-                // Four clicks is all the way round.
-                for (int turn = 0; turn < 3; turn++) {
-                    click(helper, TAIL.east(), new ItemStack(ModItems.TRANSPORT_BELT.get()));
-                }
+                // Clicking it again from the same place changes nothing, which is what makes
+                // running a belt along a row you have already built safe.
+                click(helper, TAIL.east(), belt(), Direction.SOUTH);
+                helper.assertBlockProperty(TAIL.east(), BeltBlock.FACING, Direction.SOUTH);
+                helper.assertValueEqual(runAt(helper, TAIL).itemCount(), 1, "items after a second click");
+
+                // And facing back along the line puts it back, in one click rather than three.
+                click(helper, TAIL.east(), belt(), Direction.EAST);
                 helper.assertBlockProperty(TAIL.east(), BeltBlock.FACING, Direction.EAST);
                 helper.assertValueEqual(runAt(helper, TAIL).blocks().size(), 3,
                         "belts in the line once the turned belt points along it again");

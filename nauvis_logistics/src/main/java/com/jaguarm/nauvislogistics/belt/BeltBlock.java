@@ -212,13 +212,18 @@ public abstract class BeltBlock extends BaseEntityBlock {
      * - see {@code ServerPlayerGameMode.useItemOn}. So the two things you want to do with a belt in
      * your hand are the two things the same button already does.
      *
-     * <p>A quarter turn a click rather than "point it where I am standing", so that a corner can be
-     * made from wherever you happen to be rather than by walking round to face the way you want the
-     * items to leave.
+     * <p><b>It points the way a belt you placed there would have pointed</b> - the way you are
+     * facing - rather than turning by a quarter each click. So laying a line and fixing a line are
+     * the same action with the same result, and running a belt in hand along a row you have already
+     * built rewrites the lot to face the way you are walking, which is how a belt gets laid.
      *
-     * <p>Any belt turns any belt, whatever the tier. Holding a faster belt against a slower one is
-     * how Factorio upgrades a line rather than how it turns one, and when there is more than one
-     * tier that will want deciding; until then the friendly reading is the only one.
+     * <p><b>The tier is the other half of this, and it is not done.</b> Holding a <em>faster</em>
+     * belt against a slower one should replace it - that is how Factorio upgrades a line, and it is
+     * the same gesture for the same reason. Today any belt merely re-points any belt, because
+     * only one tier is registered and a path nothing can run is a path nothing checks. What it
+     * will need when a second tier lands is written up in {@code docs/NEXT.md}: the block swapped
+     * rather than the state set, the old belt handed back, the stack paid, and the run rebuilt -
+     * which it already is, since a run never spans two tiers.
      */
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
@@ -230,8 +235,12 @@ public abstract class BeltBlock extends BaseEntityBlock {
             return InteractionResult.SUCCESS;
         }
 
-        Direction turned = state.getValue(FACING).getClockWise();
-        server.setBlock(pos, withShape(state.setValue(FACING, turned), server, pos), Block.UPDATE_ALL);
+        Direction placed = player.getDirection();
+        if (placed == state.getValue(FACING)) {
+            // Already pointing that way. Saying so costs a graph rebuild and a sound.
+            return InteractionResult.SUCCESS;
+        }
+        server.setBlock(pos, withShape(state.setValue(FACING, placed), server, pos), Block.UPDATE_ALL);
 
         // The lines through it are different lines now, and nothing else will say so: the block
         // entity was never removed, so neither of the hooks that maintain the graph has fired.
