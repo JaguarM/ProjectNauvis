@@ -2,6 +2,14 @@ package com.jaguarm.nauvislogistics.belt;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -189,6 +197,53 @@ public abstract class BeltBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new BeltBlockEntity(pos, state);
+    }
+
+    /**
+     * A belt in hand turns the belt you click on, a quarter at a time.
+     *
+     * <p>Laying a line means getting a lot of belts pointing the right way, and the alternative is
+     * breaking one and putting it back - which drops what was on it and, halfway along a line,
+     * cuts the line in two to do it. Turning is what Factorio gives you and it is what the belt in
+     * your hand is already for.
+     *
+     * <p><b>Crouch to place instead.</b> That needs no code: vanilla skips a block's own use when
+     * the player is crouching with something in hand, and falls through to putting the block down
+     * - see {@code ServerPlayerGameMode.useItemOn}. So the two things you want to do with a belt in
+     * your hand are the two things the same button already does.
+     *
+     * <p>A quarter turn a click rather than "point it where I am standing", so that a corner can be
+     * made from wherever you happen to be rather than by walking round to face the way you want the
+     * items to leave.
+     *
+     * <p>Any belt turns any belt, whatever the tier. Holding a faster belt against a slower one is
+     * how Factorio upgrades a line rather than how it turns one, and when there is more than one
+     * tier that will want deciding; until then the friendly reading is the only one.
+     */
+    @Override
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+            Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (!(stack.getItem() instanceof BlockItem item) || !(item.getBlock() instanceof BeltBlock)) {
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
+        }
+        if (!(level instanceof ServerLevel server)) {
+            return InteractionResult.SUCCESS;
+        }
+
+        Direction turned = state.getValue(FACING).getClockWise();
+        server.setBlock(pos, withShape(state.setValue(FACING, turned), server, pos), Block.UPDATE_ALL);
+
+        // The lines through it are different lines now, and nothing else will say so: the block
+        // entity was never removed, so neither of the hooks that maintain the graph has fired.
+        BeltLines.of(server).beltTurned(pos);
+        // The belts either side may have stopped being corners, or started. setBlock tells them
+        // through updateShape, but only about the block that changed - so say it plainly.
+        refreshShapes(server, pos);
+
+        SoundType sound = state.getSoundType(server, pos, player);
+        server.playSound(null, pos, sound.getPlaceSound(), SoundSource.BLOCKS,
+                sound.getVolume() * 0.6F, sound.getPitch() * 1.2F);
+        return InteractionResult.SUCCESS;
     }
 
     // No getTicker override, deliberately. The run ticks; see BeltRun.

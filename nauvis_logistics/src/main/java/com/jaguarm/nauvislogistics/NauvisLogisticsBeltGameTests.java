@@ -10,6 +10,7 @@ import com.jaguarm.nauvislogistics.belt.BeltShape;
 import com.jaguarm.nauvislogistics.belt.Belts;
 import com.jaguarm.nauvislogistics.belt.TransportBeltBlock;
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
+import com.jaguarm.nauvislogistics.registry.ModItems;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlockEntity;
 import com.jaguarm.nauvislogistics.transport.InserterBlock;
 import com.mojang.serialization.MapCodec;
@@ -28,11 +29,16 @@ import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -102,6 +108,7 @@ public final class NauvisLogisticsBeltGameTests {
         TEST_TYPES.register("belt_is_walked_over", () -> WalkedOverTest.CODEC);
         TEST_TYPES.register("belt_loop_carries_round", () -> LoopCarriesRoundTest.CODEC);
         TEST_TYPES.register("belt_bends_the_way_it_carries", () -> BendsTheWayItCarriesTest.CODEC);
+        TEST_TYPES.register("belt_turns_when_clicked_with_a_belt", () -> TurnsWhenClickedTest.CODEC);
         TEST_TYPES.register("belt_carries_what_stands_on_it", () -> CarriesWhatStandsOnItTest.CODEC);
         TEST_TYPES.register("inserter_loads_a_belt", () -> InserterLoadsABeltTest.CODEC);
         TEST_TYPES.register("inserter_takes_from_a_belt", () -> InserterTakesFromABeltTest.CODEC);
@@ -132,6 +139,8 @@ public final class NauvisLogisticsBeltGameTests {
         register(event, environment, "belt_loop_carries_round", LoopCarriesRoundTest::new, 200);
         register(event, environment, "belt_bends_the_way_it_carries",
                 BendsTheWayItCarriesTest::new, 60);
+        register(event, environment, "belt_turns_when_clicked_with_a_belt",
+                TurnsWhenClickedTest::new, 60);
         register(event, environment, "belt_carries_what_stands_on_it",
                 CarriesWhatStandsOnItTest::new, 200);
         register(event, environment, "inserter_loads_a_belt", InserterLoadsABeltTest::new, 200);
@@ -181,6 +190,16 @@ public final class NauvisLogisticsBeltGameTests {
                 .getCapability(Capabilities.Item.BLOCK, helper.absolutePos(pos), side);
         helper.assertTrue(handler != null, "expected an item handler on the belt at " + pos);
         return handler;
+    }
+
+    /** Right-clicks a block with something in hand, the way a player's click arrives at it. */
+    private static void click(GameTestHelper helper, BlockPos pos, ItemStack held) {
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.setItemInHand(InteractionHand.MAIN_HAND, held);
+        BlockPos absolute = helper.absolutePos(pos);
+        helper.getLevel().getBlockState(absolute).useItemOn(held, helper.getLevel(), player,
+                InteractionHand.MAIN_HAND,
+                new BlockHitResult(Vec3.atCenterOf(absolute), Direction.UP, absolute, false));
     }
 
     private static ResourceHandler<ItemResource> container(GameTestHelper helper, BlockPos pos) {
@@ -891,6 +910,70 @@ public final class NauvisLogisticsBeltGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a belt bends the way it carries");
+        }
+    }
+
+    /**
+     * A belt in hand turns the belt you click on, and the line follows it round.
+     *
+     * <p>The turn itself is the easy half. The half worth a test is that <b>the run is rebuilt</b>:
+     * turning a belt only changes a block state, so its block entity is never removed and neither
+     * of the two hooks that maintain the graph fires - while the lines through it are now entirely
+     * different lines. Miss that and a belt visibly points one way while carrying things another,
+     * which is the worst kind of wrong: it looks like a rendering bug and is not one.
+     *
+     * <p>And that what was standing on it is still standing on it afterwards.
+     */
+    public static class TurnsWhenClickedTest extends GameTestInstance {
+
+        public static final MapCodec<TurnsWhenClickedTest> CODEC =
+                RecordCodecBuilder.<TurnsWhenClickedTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(TurnsWhenClickedTest::info))
+                                .apply(i, TurnsWhenClickedTest::new));
+
+        public TurnsWhenClickedTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            line(helper, 3);
+            helper.runAfterDelay(SETTLED, () -> {
+                helper.assertValueEqual(runAt(helper, TAIL).blocks().size(), 3, "belts in the line");
+                put(belt(helper, TAIL, null), Items.IRON_INGOT, 1);
+
+                click(helper, TAIL.east(), new ItemStack(ModItems.TRANSPORT_BELT.get()));
+
+                helper.assertBlockProperty(TAIL.east(), BeltBlock.FACING, Direction.SOUTH);
+
+                // The line did not break, it bent: the belt behind still feeds the turned one, so
+                // the run follows it round and the belt beyond it is left on its own.
+                helper.assertValueEqual(runAt(helper, TAIL).blocks().size(), 2, "belts in the bent line");
+                helper.assertValueEqual(runAt(helper, TAIL.east(2)).blocks().size(), 1,
+                        "belts in what is left beyond the turn");
+                helper.assertBlockProperty(TAIL.east(), BeltBlock.SHAPE, BeltShape.FROM_RIGHT);
+                helper.assertValueEqual(runAt(helper, TAIL).itemCount(), 1,
+                        "items still on the belt they were standing on");
+
+                // Four clicks is all the way round.
+                for (int turn = 0; turn < 3; turn++) {
+                    click(helper, TAIL.east(), new ItemStack(ModItems.TRANSPORT_BELT.get()));
+                }
+                helper.assertBlockProperty(TAIL.east(), BeltBlock.FACING, Direction.EAST);
+                helper.assertValueEqual(runAt(helper, TAIL).blocks().size(), 3,
+                        "belts in the line once the turned belt points along it again");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a belt in hand turns a belt");
         }
     }
 

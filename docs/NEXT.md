@@ -4,7 +4,7 @@ Next session
 Written 2026-08-28 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
 Delete or rewrite it when the job below is done — it describes one job, not the project.
 
-**Eighty gametests pass and the pack builds clean.** Every machine is the size Factorio made
+**Eighty-one gametests pass and the pack builds clean.** Every machine is the size Factorio made
 it, the lab exists, five checks run in `./gradlew build`, and — as of this session — **the transport
 belt works, with items you can watch move along it.** You no longer have to carry everything by
 hand.
@@ -32,6 +32,7 @@ visibly full of moving items and that stay cheap, and the shortcut cannot be eit
 | `client/BeltRenderer.java` | the items you can see |
 | `BeltBlock.stepOn` | why standing on a belt carries you, and why that is not `entityInside` |
 | `BeltShape.java` | how a corner knows it is one, and why there are two of them rather than eight |
+| `BeltBlock.useItemOn` | a belt in hand turns the belt you click on; crouch to place instead |
 | `texture-workshop/make_belt_textures.py` | the art, and why the tread scrolls at exactly 1.875 tiles a second |
 
 Three things about it are load-bearing for whatever comes next:
@@ -44,6 +45,10 @@ Three things about it are load-bearing for whatever comes next:
   are ever sent — an item put on the belt from outside, and an item taken off it — because those
   are the only two a client cannot work out. See `net/ModNetwork.java`. **Anything added to belts
   must keep that property**, or the reason belts are affordable goes away.
+- **A block state change does not touch the graph.** Turning a belt leaves its block entity where
+  it is, so neither `beltPlaced` nor `beltRemoved` fires while the lines through it become entirely
+  different lines. `BeltLines.beltTurned` is the third way in, and anything else that edits a belt
+  in place - an upgrade to a faster tier, say - will need it too.
 - **A run is awake while it has items, not while it is moving.** Unlike the pipe and power
   networks there is no dormant sweep and no wake-up plumbing, because `BeltLane` makes a jammed
   belt cost the same as an empty one.

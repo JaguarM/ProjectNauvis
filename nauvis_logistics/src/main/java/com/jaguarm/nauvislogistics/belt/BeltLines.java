@@ -110,6 +110,21 @@ public final class BeltLines {
         rebuildAround(pos);
     }
 
+    /**
+     * A belt is still there but points somewhere else.
+     *
+     * <p>Nothing else notices. Turning a belt only changes a block state, so its block entity is
+     * never removed and never reloaded, and neither {@link #beltPlaced} nor {@link #beltRemoved}
+     * ever hears about it - while the lines through it are now entirely different lines. The items
+     * on them are put back where they were standing, block by block, exactly as they are when a
+     * line is cut.
+     */
+    public void beltTurned(BlockPos pos) {
+        if (belts.contains(pos.asLong())) {
+            rebuildAround(pos);
+        }
+    }
+
     // --- the tick -------------------------------------------------------------------------------
 
     void tick() {
