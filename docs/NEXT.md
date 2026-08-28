@@ -97,6 +97,14 @@ boot is not optional: three of the last four bugs found in this pack were found 
 at the game, and one of them — see the rotation entry in the silent-failures list — passed sixty-
 three tests while being visibly wrong from three sides.
 
+**The burner inserter work has not had one, and that debt is owed before anything below.** It added
+no model, fluid or plugin, so the usual client-boot risks do not apply and `check_gametests.py`
+already covers the one new registration — but the thing actually worth doing is not a boot, it is
+*watching it*: lay a coal belt, put a burner inserter beside it with an empty slot, and see it pick
+its own fuel off the line and keep running. Then put an inserter on each side of one belt and check
+they fill two lanes rather than fighting over one. Both behaviours are new, both are things a player
+sees rather than things a test can look at, and neither has been seen by anybody yet.
+
 ### One test is marginal, and it is not the code's fault
 
 `belt_carries_what_stands_on_it` failed once in about six runs while this session's work was going
@@ -149,12 +157,16 @@ Four things about it are load-bearing for anything built on top:
   the blocks beside a belt rather than to a client.
 - **A run is awake while it has items, not while it is moving.** No dormant sweep and no wake-up
   plumbing, because `BeltLane` makes a jammed belt cost the same as an empty one.
-- **A belt is the one source in the pack that has to say out loud that something arrived.**
-  Everything else — a chest, a furnace, an assembler — calls `setChanged` when its contents change
-  and gets the six-sided notification for free. A belt moves items without touching a block entity,
-  so `BeltRun.announceArrivals` exists to say it, and an inserter beside a belt is asleep and deaf
-  without it. Anything else that ever moves items without a block entity behind them inherits this
-  problem.
+- **A belt is the one source in the pack that has to say out loud that something arrived**, and
+  the reason is worth stating exactly, because the loose version of it is wrong. It is not "it has
+  no block entity". `FluidNetwork` and `PowerNetwork` move things without one too and are perfectly
+  audible — because they **push**: `FluidNetwork.push` calls `handler.insert` on the endpoint, and
+  the `SteamTank` or `MachinePower` it lands in fires its callback. The consumer is woken by being
+  filled. **The belt is the only subsystem that deliberately never pushes** — a belt running into a
+  chest backs up, which is Factorio's rule and the reason inserters exist — so nothing it does ever
+  touches the machine beside it, and `BeltRun.announceArrivals` is the only thing that can speak
+  for it. The rule to carry forward: *a subsystem that moves things and never pushes them into the
+  consumer has to announce, because nothing else will.*
 - **A closed ring of belts is one run that wraps**, and **a block state change does not touch the
   graph** — turning a belt leaves its block entity alone, so `BeltLines.beltTurned` is a third way
   in that anything editing a belt in place will need.
