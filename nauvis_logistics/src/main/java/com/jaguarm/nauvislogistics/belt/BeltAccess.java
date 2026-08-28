@@ -29,15 +29,41 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  * one nearest the far end. {@code ResourceHandler} asks implementations to be lenient about a size
  * that changes, and this is exactly that case.
  *
- * <h2>Which lane, and why the far one</h2>
+ * <h2>Which lane, and why giving and taking are not the same rule</h2>
  *
  * <p>Whoever is asking is standing on one side of the belt, and that side is the one the
- * capability was looked up with. Factorio's inserters reach across to the <em>far</em> lane, both
- * to take and to give - it is what lets one belt feed two rows of machines - so the far lane is
- * offered first, and the near lane only when the far one cannot help. A hopper above or below has
- * no side, and gets the left lane first.
+ * capability was looked up with. From there Factorio's two rules pull in opposite directions, and
+ * conflating them is what made a single inserter fill a whole belt here:
+ *
+ * <ul>
+ *   <li><b>Giving is the far lane, and only the far lane.</b> "Inserters only place items onto one
+ *       side of the belt, either the far side from the inserter's perspective or, if the belt is
+ *       going the same or the opposite direction as the inserter, the right side from the belt's
+ *       perspective." A full far lane is a <em>wait</em>, never a fall back to the near one - that
+ *       is what lets one belt feed two rows of machines, and why a player puts inserters down both
+ *       sides of a bus.</li>
+ *   <li><b>Taking prefers the <em>near</em> lane.</b> The opposite way round, and for a reason
+ *       that is nothing to do with throughput: the arm has less distance to travel, so "this
+ *       favors inserters taking from the inner lane". The far lane is still taken from when the
+ *       near one is empty.</li>
+ * </ul>
+ *
+ * <p>Both quotes are the Factorio wiki's, and both cases have a <em>third</em> reading for an
+ * asker whose side tells us nothing about a near and a far:
+ *
+ * <ul>
+ *   <li><b>In line with the belt</b> - facing along its axis rather than across it, where there is
+ *       no near side. Factorio names an absolute lane instead: the belt's right to give to, the
+ *       belt's left to take from.</li>
+ *   <li><b>No side at all</b> - a hopper above or below, or a capability looked up with
+ *       {@code null}. It gets both lanes both ways. Factorio has no hoppers so nothing is being
+ *       contradicted, and a hopper that could only ever half fill a belt would just be broken.</li>
+ * </ul>
  */
 public final class BeltAccess implements ResourceHandler<ItemResource> {
+
+    /** Left and right, in that order. Shared because nothing here ever writes through it. */
+    private static final int[] BOTH = {Belts.LEFT, Belts.RIGHT};
 
     private final BeltBlockEntity belt;
     private final @Nullable Direction side;
@@ -61,7 +87,7 @@ public final class BeltAccess implements ResourceHandler<ItemResource> {
         }
 
         List<Where> found = new ArrayList<>();
-        for (int lane : lanePreference(run, block)) {
+        for (int lane : lanesToTakeFrom(run, block)) {
             var positions = run.lane(lane).positions();
             for (int i = 0; i < positions.size(); i++) {
                 if (run.blockAt(positions.getInt(i)) == block) {
@@ -72,15 +98,38 @@ public final class BeltAccess implements ResourceHandler<ItemResource> {
         return found;
     }
 
-    /** The far lane first, then the near one. See the class note. */
-    private int[] lanePreference(BeltRun run, int block) {
+    /**
+     * The one lane this asker may put things on. See the class note.
+     *
+     * <p>Deliberately not the same method as {@link #lanesToTakeFrom} with a flag. They are two
+     * rules that happen to be computed from the same two facts, and the whole bug this replaced
+     * was one rule being used for both jobs. A flag would let that quietly grow back.
+     */
+    private int[] lanesToGiveTo(BeltRun run, int block) {
+        if (side == null || !side.getAxis().isHorizontal()) {
+            return BOTH;
+        }
+        int near = Belts.laneFor(run.travelAt(block), side);
+        if (near < 0) {
+            // In line with the belt rather than beside it: the belt's own right-hand lane.
+            return new int[] {Belts.RIGHT};
+        }
+        return new int[] {far(near)};
+    }
+
+    /** The near lane first, then the far one. See the class note. */
+    private int[] lanesToTakeFrom(BeltRun run, int block) {
         if (side != null && side.getAxis().isHorizontal()) {
             int near = Belts.laneFor(run.travelAt(block), side);
             if (near >= 0) {
-                return new int[] {near == Belts.LEFT ? Belts.RIGHT : Belts.LEFT, near};
+                return new int[] {near, far(near)};
             }
         }
-        return new int[] {Belts.LEFT, Belts.RIGHT};
+        return BOTH;
+    }
+
+    private static int far(int lane) {
+        return lane == Belts.LEFT ? Belts.RIGHT : Belts.LEFT;
     }
 
     @Override
@@ -126,7 +175,7 @@ public final class BeltAccess implements ResourceHandler<ItemResource> {
             return 0;
         }
 
-        int[] lanes = lanePreference(run, block);
+        int[] lanes = lanesToGiveTo(run, block);
         int placed = 0;
         while (placed < amount) {
             boolean any = false;

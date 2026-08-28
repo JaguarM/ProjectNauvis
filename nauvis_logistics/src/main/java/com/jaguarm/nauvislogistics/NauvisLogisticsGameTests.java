@@ -75,6 +75,7 @@ public final class NauvisLogisticsGameTests {
         TEST_TYPES.register("inserter_sleeps", () -> InserterSleepsTest.CODEC);
         TEST_TYPES.register("inserter_wakes_when_source_fills", () -> InserterWakesTest.CODEC);
         TEST_TYPES.register("inserter_needs_fuel", () -> InserterNeedsFuelTest.CODEC);
+        TEST_TYPES.register("burner_inserter_fuels_itself", () -> BurnerFuelsItselfTest.CODEC);
         TEST_TYPES.register("inserter_ignores_bystanders", () -> InserterIgnoresBystandersTest.CODEC);
         TEST_TYPES.register("iron_chest_holds_items", () -> IronChestHoldsItemsTest.CODEC);
         TEST_TYPES.register("inserter_fills_iron_chest", () -> InserterFillsIronChestTest.CODEC);
@@ -97,6 +98,7 @@ public final class NauvisLogisticsGameTests {
         register(event, environment, "inserter_sleeps", InserterSleepsTest::new, 100);
         register(event, environment, "inserter_wakes_when_source_fills", InserterWakesTest::new, 200);
         register(event, environment, "inserter_needs_fuel", InserterNeedsFuelTest::new, 200);
+        register(event, environment, "burner_inserter_fuels_itself", BurnerFuelsItselfTest::new, 200);
         register(event, environment, "inserter_ignores_bystanders", InserterIgnoresBystandersTest::new, 100);
         register(event, environment, "iron_chest_holds_items", IronChestHoldsItemsTest::new, 60);
         register(event, environment, "inserter_fills_iron_chest", InserterFillsIronChestTest::new, 200);
@@ -378,6 +380,67 @@ public final class NauvisLogisticsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("inserter needs fuel");
+        }
+    }
+
+    /**
+     * A burner inserter with an empty slot, standing beside coal, fuels itself out of the coal.
+     *
+     * <p>Factorio calls it leeching, and it is the reason the burner tier is playable at all: the
+     * first inserter a player ever places is fed by hand once and then feeds itself, rather than
+     * dying quietly the moment its lump runs out. Without it the burner inserter is a block you
+     * have to keep visiting.
+     *
+     * <p>The second half of the test is the half that would be missed. It must take <em>one</em>
+     * lump, not fill its slot - the wiki triggers leeching only "whenever the internal fuel
+     * inventory reaches zero" - because an inserter that hoards is an inserter taking coal out of
+     * a line that is feeding a furnace.
+     */
+    public static class BurnerFuelsItselfTest extends GameTestInstance {
+
+        public static final MapCodec<BurnerFuelsItselfTest> CODEC =
+                RecordCodecBuilder.<BurnerFuelsItselfTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(BurnerFuelsItselfTest::info))
+                                .apply(i, BurnerFuelsItselfTest::new));
+
+        public BurnerFuelsItselfTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            buildLine(helper, false);
+            helper.assertValueEqual(insert(container(helper, SOURCE), Items.COAL, 8), 8,
+                    "coal put in the source chest");
+
+            helper.runAfterDelay(BurnerInserterBlockEntity.SWING_TICKS + 5, () -> {
+                BurnerInserterBlockEntity inserter =
+                        helper.getBlockEntity(INSERTER, BurnerInserterBlockEntity.class);
+
+                helper.assertTrue(inserter.burnTime() > 0,
+                        "an inserter nobody fuelled, with coal right behind it, never lit itself");
+                helper.assertValueEqual(countIn(container(helper, DESTINATION), Items.COAL), 1,
+                        "coal delivered by an inserter that fuelled itself");
+                helper.assertValueEqual(
+                        inserter.fuel().getAmountAsInt(BurnerInserterBlockEntity.FUEL_SLOT), 0,
+                        "coal hoarded in the fuel slot - it should take one lump and burn it, not "
+                                + "fill up out of a line that is feeding something else");
+
+                // One lump for itself and one delivered: the source is down exactly two.
+                helper.assertValueEqual(countIn(container(helper, SOURCE), Items.COAL), 6,
+                        "coal left in the source chest");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a burner inserter fuels itself");
         }
     }
 

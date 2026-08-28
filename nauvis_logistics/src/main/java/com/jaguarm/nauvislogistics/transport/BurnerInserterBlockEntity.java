@@ -102,9 +102,23 @@ public class BurnerInserterBlockEntity extends InserterBlockEntity implements Me
         return burnTime > 0;
     }
 
+    /**
+     * Something to burn: what is already lit, then the slot, then what it is picking up.
+     *
+     * <p>The third clause is the one that makes the burner tier playable. A burner inserter
+     * working a coal belt fuels itself out of the coal going past, which is why you can build one
+     * before you have a grid and why the first inserter a player places does not quietly die.
+     * The wiki calls it leeching and says it is "triggered whenever the internal fuel inventory
+     * reaches zero" - so it is the last resort, tried only once the slot is empty as well, and it
+     * is one lump rather than a stack. An inserter that filled its slot would be hoarding coal
+     * out of a line that is feeding a furnace.
+     */
     @Override
     protected boolean readyToSwing(ServerLevel level) {
-        return burnTime > 0 || refuel(level);
+        if (burnTime > 0) {
+            return true;
+        }
+        return refuel(level) || (leech() && refuel(level));
     }
 
     @Override
@@ -137,6 +151,53 @@ public class BurnerInserterBlockEntity extends InserterBlockEntity implements Me
         burnTimeTotal = worth;
         setChanged();
         return true;
+    }
+
+    /**
+     * Takes one item of fuel out of whatever this inserter is picking up from.
+     *
+     * <p>Costs nothing and takes no swing. Factorio charges energy for the grab, but it can only
+     * do that because a burner inserter there has an energy buffer that is not its fuel slot; here
+     * {@code burnTime} <em>is</em> the buffer, and this runs precisely when it is empty, so a
+     * price would have to be paid out of an empty purse. Free is also the behaviour a player
+     * wants to see: an inserter on a coal belt never visibly stops.
+     *
+     * <p>"Is this fuel?" is asked as "will my own slot take it?" - {@link InserterFuel#isValid} is
+     * already the rule and a second copy of it would be a second thing to keep in step.
+     *
+     * <p>One transaction spans the extract and the insert, exactly as {@link #move} does, because
+     * half of this transfer is an item destroyed. Walking every slot of the source also means both
+     * lanes of a belt are searched, which is what Factorio settled on in 0.12.16.
+     *
+     * <p>It takes from the source even when there is nothing to deliver - Factorio's 0.12.11
+     * change, "grabs fuel for itself even if the target doesn't need it" - and it will happily
+     * take a lump out of the coal it is feeding a furnace with. That is what the fuel is for.
+     *
+     * @return whether a lump of fuel is now in the slot.
+     */
+    private boolean leech() {
+        ResourceHandler<ItemResource> from = sourceHandler();
+        if (from == null) {
+            return false;
+        }
+        for (int index = 0; index < from.size(); index++) {
+            ItemResource candidate = from.getResource(index);
+            if (candidate.isEmpty() || !fuel.isValid(FUEL_SLOT, candidate)) {
+                continue;
+            }
+            try (Transaction transaction = Transaction.openRoot()) {
+                if (from.extract(index, candidate, 1, transaction) != 1) {
+                    continue;
+                }
+                if (fuel.insert(FUEL_SLOT, candidate, 1, transaction) != 1) {
+                    // Rolls back on the way out of the block: the lump is still on the belt.
+                    continue;
+                }
+                transaction.commit();
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

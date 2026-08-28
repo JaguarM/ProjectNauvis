@@ -179,6 +179,26 @@ vanilla chest and checks the inserter is scheduled **in the same tick**. Deletin
 `inserter_moves_items` passing, because a test that only checks items move never notices that the
 wake is broken.
 
+### Sending the signal yourself, without dirtying a chunk
+
+The free ride above only works for a source whose items live in a block entity. **A subsystem that
+moves items without one — the belt run does — is silent, and everything watching it sleeps through
+its work.** `BeltRun.announceArrivals` is the fix and the API is:
+
+```java
+level.updateNeighbourForOutputSignal(pos, block);   // public on Level, all six sides
+```
+
+That is precisely the half of `setChanged` that carries the news. The other half —
+`level.blockEntityChanged(pos)` — marks the chunk unsaved, which is right when something crosses
+the boundary between your subsystem and the world and wrong when it is just an item shuffling
+forward twenty times a second. Verified against the patched `Level.java`: the Neo comment above the
+loop reads *"send update to vertical directions as well, after horizontal ones"*, and it already
+checks `hasChunkAt` per neighbour, so it will not drag an unloaded chunk in.
+
+Send it only on a real transition — the belt sends on empty-becomes-occupied, per block — or it is
+a poll with extra steps.
+
 Hearing that *any* block changed, anywhere
 ------------------------------------------
 

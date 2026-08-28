@@ -177,6 +177,22 @@ public abstract class InserterBlockEntity extends BlockEntity {
     }
 
     /**
+     * What this inserter is picking up from, or null if there is nothing behind it.
+     *
+     * <p>For a tier that has to look at the items before it moves them. The burner is the only
+     * one so far - it takes its own fuel out of whatever it is picking up, which is what keeps a
+     * burner inserter on a coal belt alive; see {@link BurnerInserterBlockEntity}.
+     *
+     * <p>Read through the same {@link BlockCapabilityCache} {@link #move} uses, and read afresh
+     * every time rather than handed out to keep: there is no second cache to invalidate, and a
+     * subclass cannot end up holding a handler the neighbour has since replaced. Null until the
+     * first {@link #wake()}, which always happens before the first tick.
+     */
+    protected @Nullable ResourceHandler<ItemResource> sourceHandler() {
+        return handler(source);
+    }
+
+    /**
      * The neighbour's item handler, through a cache built on first use.
      *
      * <p>The caches cannot be made in the constructor: a block entity has no level yet, and the

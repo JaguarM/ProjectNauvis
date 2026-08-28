@@ -1,6 +1,7 @@
 package com.jaguarm.nauvislogistics.belt;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 import org.jspecify.annotations.Nullable;
@@ -97,6 +98,18 @@ public final class BeltRun extends SnapshotJournal<Integer> {
     private final List<Op> journal = new ArrayList<>();
 
     private boolean dissolved;
+
+    /**
+     * Which blocks had something standing on them when {@link #announceArrivals} last looked, and
+     * the scratch set it works the current answer out in. Two sets rather than one because the
+     * news is the difference between them.
+     *
+     * <p>Safe to hold against block indices for the life of the run: {@link #blocks} is copied in
+     * the constructor and a line that is cut, joined or turned is rebuilt as new runs rather than
+     * edited in place.
+     */
+    private final BitSet occupied = new BitSet();
+    private final BitSet arriving = new BitSet();
 
     BeltRun(Level level, BeltLines lines, BeltBlock block, List<BlockPos> blocks, Direction[] facings,
             boolean loops) {
@@ -256,7 +269,71 @@ public final class BeltRun extends SnapshotJournal<Integer> {
             }
             moved |= lanes[lane].advance(speed);
         }
+        if (moved) {
+            announceArrivals();
+        }
         return moved;
+    }
+
+    /**
+     * Tells the world about every block of this run that has just gained its first item.
+     *
+     * <p><b>This is what wakes an inserter beside a belt, and without it the belt is a machine no
+     * other machine can hear.</b> An inserter with nothing to do schedules no ticks - non-negotiable
+     * #5 - so the signal that there is work again has to arrive from outside it. Every other source
+     * in the pack manages that for free, because a chest or a furnace gaining an item calls
+     * {@code setChanged}, which NeoForge routes to all six neighbours. A belt does not: an item
+     * <em>travelling</em> into the tile beside an inserter changes no block entity and touches no
+     * chunk, so until this existed a dry burner inserter beside a working coal belt, or any
+     * inserter unloading a belt with a gap in it, went to sleep and never woke up. It was found by
+     * putting coal four tiles upstream of a sleeping inserter and watching it arrive and jam.
+     *
+     * <p><b>It is deliberately not {@code setChanged}.</b> {@link #markChanged} is the boundary
+     * signal and it dirties the chunk, which is right for an item crossing between the belt and the
+     * world and wrong twenty times a second: an item shuffling forward is not a reason to save a
+     * chunk. {@code updateNeighbourForOutputSignal} is the half of {@code setChanged} that carries
+     * the news, without the half that costs disk.
+     *
+     * <p>Two filters keep it quiet enough to be affordable:
+     *
+     * <ul>
+     *   <li><b>Only a run that moved.</b> A jammed run is skipped outright, so
+     *       {@link BeltLane}'s promise that a jam costs the same as an empty belt survives.</li>
+     *   <li><b>Only empty to occupied.</b> A compressed belt's blocks never fall empty, so a busy
+     *       belt sends nothing at all - the notifications happen where the gaps are, which is
+     *       exactly where an inserter can have gone to sleep. Notifying every occupied block every
+     *       tick would be a poll with extra steps.</li>
+     * </ul>
+     *
+     * <p>The cost is one pass over the run's items per moving run per tick, to work out which
+     * blocks are occupied. That is the one thing here that is not O(1), and it is the price of the
+     * belt being audible; the alternative is inserters registering interest in particular blocks,
+     * which is a subscription to keep in step with every cut, join and turn. If it ever shows up in
+     * a profile, the thing to do is make the occupancy incremental rather than to drop the signal.
+     *
+     * <p>Server only. The client runs this same simulation and has nothing to wake.
+     */
+    private void announceArrivals() {
+        if (!(level instanceof ServerLevel)) {
+            return;
+        }
+
+        arriving.clear();
+        for (BeltLane lane : lanes) {
+            IntArrayList positions = lane.positions();
+            for (int i = 0; i < positions.size(); i++) {
+                arriving.set(blockAt(positions.getInt(i)));
+            }
+        }
+
+        for (int index = arriving.nextSetBit(0); index >= 0; index = arriving.nextSetBit(index + 1)) {
+            if (!occupied.get(index)) {
+                level.updateNeighbourForOutputSignal(blocks.get(index), block);
+            }
+        }
+
+        occupied.clear();
+        occupied.or(arriving);
     }
 
     /**

@@ -112,6 +112,12 @@ public final class NauvisLogisticsBeltGameTests {
         TEST_TYPES.register("belt_carries_what_stands_on_it", () -> CarriesWhatStandsOnItTest.CODEC);
         TEST_TYPES.register("inserter_loads_a_belt", () -> InserterLoadsABeltTest.CODEC);
         TEST_TYPES.register("inserter_takes_from_a_belt", () -> InserterTakesFromABeltTest.CODEC);
+        TEST_TYPES.register("inserter_fills_only_the_far_lane", () -> OnlyTheFarLaneTest.CODEC);
+        TEST_TYPES.register("inserter_takes_the_near_lane_first", () -> NearLaneFirstTest.CODEC);
+        TEST_TYPES.register("burner_inserter_fuels_itself_from_a_belt",
+                () -> FuelsItselfFromABeltTest.CODEC);
+        TEST_TYPES.register("belt_wakes_an_inserter_when_an_item_arrives",
+                () -> BeltWakesAnInserterTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -145,6 +151,12 @@ public final class NauvisLogisticsBeltGameTests {
                 CarriesWhatStandsOnItTest::new, 200);
         register(event, environment, "inserter_loads_a_belt", InserterLoadsABeltTest::new, 200);
         register(event, environment, "inserter_takes_from_a_belt", InserterTakesFromABeltTest::new, 200);
+        register(event, environment, "inserter_fills_only_the_far_lane", OnlyTheFarLaneTest::new, 60);
+        register(event, environment, "inserter_takes_the_near_lane_first", NearLaneFirstTest::new, 60);
+        register(event, environment, "burner_inserter_fuels_itself_from_a_belt",
+                FuelsItselfFromABeltTest::new, 200);
+        register(event, environment, "belt_wakes_an_inserter_when_an_item_arrives",
+                BeltWakesAnInserterTest::new, 200);
     }
 
     private interface TestFactory {
@@ -1139,6 +1151,272 @@ public final class NauvisLogisticsBeltGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("an inserter takes from a belt");
+        }
+    }
+
+    /** Whether an inserter has a block tick coming - which is what "awake" means here. */
+    private static boolean isScheduled(GameTestHelper helper, BlockPos pos) {
+        return helper.getLevel().getBlockTicks()
+                .hasScheduledTick(helper.absolutePos(pos), ModBlocks.BURNER_INSERTER.get());
+    }
+
+    /**
+     * A belt fed from one side only ever fills half: four items on the far lane, and then it
+     * refuses, with the near lane empty and visible.
+     *
+     * <p>This is the rule {@code belt_holds_four_items_a_tile} does <em>not</em> catch, because
+     * that one asks with no side at all and is entitled to both lanes. Falling back to the near
+     * lane when the far one is full looks generous, and it is the difference between one belt
+     * feeding two rows of machines and one inserter filling a whole belt on its own. A player
+     * putting inserters down both sides of a bus is relying on this and on nothing else.
+     */
+    public static class OnlyTheFarLaneTest extends GameTestInstance {
+
+        public static final MapCodec<OnlyTheFarLaneTest> CODEC =
+                RecordCodecBuilder.<OnlyTheFarLaneTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OnlyTheFarLaneTest::info))
+                                .apply(i, OnlyTheFarLaneTest::new));
+
+        public OnlyTheFarLaneTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            line(helper, 1);
+            helper.runAfterDelay(SETTLED, () -> {
+                // North of an eastbound belt is its left, so the far lane from there is the right.
+                helper.assertValueEqual(put(belt(helper, TAIL, Direction.NORTH), Items.IRON_INGOT, 64),
+                        4, "items one tile took from a single side");
+
+                BeltRun run = runAt(helper, TAIL);
+                helper.assertValueEqual(run.lane(Belts.RIGHT).size(), 4, "items on the far lane");
+                helper.assertValueEqual(run.lane(Belts.LEFT).size(), 0,
+                        "an inserter on one side filled the near lane too, so one belt can no "
+                                + "longer feed two rows of machines");
+
+                // And the near lane is not unreachable, only not this asker's to fill.
+                helper.assertValueEqual(put(belt(helper, TAIL, Direction.SOUTH), Items.COPPER_INGOT, 64),
+                        4, "items the other side took");
+                helper.assertValueEqual(runAt(helper, TAIL).lane(Belts.LEFT).size(), 4,
+                        "items the far lane from the south holds");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an inserter fills only the far lane");
+        }
+    }
+
+    /**
+     * Taking is the other way round: the <em>near</em> lane first.
+     *
+     * <p>Not a mirror of giving, and not an oversight. Factorio's inserter reaches across to give
+     * because that is what makes a belt feed two rows, and grabs from the near side because the arm
+     * has less distance to cover - "this favors inserters taking from the inner lane". The two
+     * rules genuinely disagree, which is why {@code BeltAccess} has two methods rather than one
+     * with a flag: a flag is an invitation to use the same rule for both jobs again.
+     */
+    public static class NearLaneFirstTest extends GameTestInstance {
+
+        public static final MapCodec<NearLaneFirstTest> CODEC =
+                RecordCodecBuilder.<NearLaneFirstTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(NearLaneFirstTest::info))
+                                .apply(i, NearLaneFirstTest::new));
+
+        public NearLaneFirstTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            line(helper, 1);
+            helper.runAfterDelay(SETTLED, () -> {
+                // One item a lane, each put on from the side it is far from.
+                put(belt(helper, TAIL, Direction.NORTH), Items.IRON_INGOT, 1);
+                put(belt(helper, TAIL, Direction.SOUTH), Items.COPPER_INGOT, 1);
+
+                BeltRun run = runAt(helper, TAIL);
+                helper.assertTrue(run.lane(Belts.RIGHT).item(0).getItem() == Items.IRON_INGOT,
+                        "the iron did not land on the right lane");
+                helper.assertTrue(run.lane(Belts.LEFT).item(0).getItem() == Items.COPPER_INGOT,
+                        "the copper did not land on the left lane");
+
+                // Both lanes are still offered - the far one is second, not refused.
+                ResourceHandler<ItemResource> fromNorth = belt(helper, TAIL, Direction.NORTH);
+                helper.assertValueEqual(fromNorth.size(), 2, "items an asker to the north can see");
+                helper.assertTrue(fromNorth.getResource(0).getItem() == Items.COPPER_INGOT,
+                        "an asker to the north should reach its near lane, the left one, first");
+
+                ResourceHandler<ItemResource> fromSouth = belt(helper, TAIL, Direction.SOUTH);
+                helper.assertTrue(fromSouth.getResource(0).getItem() == Items.IRON_INGOT,
+                        "an asker to the south should reach its near lane, the right one, first");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an inserter takes the near lane first");
+        }
+    }
+
+    /**
+     * The whole point of the burner tier, in one arrangement: a dry inserter beside a coal belt.
+     *
+     * <p>Two claims, and the first is the one that would rot silently. <b>Coal reaching the belt
+     * behind it wakes it in the same tick.</b> An inserter with nothing to burn schedules no ticks,
+     * so nothing it does can ever restart it and the wake has to arrive from outside. It does:
+     * the belt marks the block an item crossed onto, that is a {@code setChanged}, and NeoForge
+     * routes it to all six neighbours, where {@code InserterBlock.onNeighborChange} turns it into
+     * a scheduled tick. If that ever stops being true the inserter still passes every test that
+     * hands it its work directly, and is dead on a real belt.
+     *
+     * <p>The second is that it then fuels itself and gets on with the job, with nobody having given
+     * it anything.
+     */
+    public static class FuelsItselfFromABeltTest extends GameTestInstance {
+
+        public static final MapCodec<FuelsItselfFromABeltTest> CODEC =
+                RecordCodecBuilder.<FuelsItselfFromABeltTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(FuelsItselfFromABeltTest::info))
+                                .apply(i, FuelsItselfFromABeltTest::new));
+
+        public FuelsItselfFromABeltTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos inserter = new BlockPos(0, 1, 1);
+            BlockPos chest = new BlockPos(0, 1, 2);
+
+            // One belt, so the coal jams at its own end and is still there for the swing.
+            line(helper, 1);
+            helper.setBlock(inserter, ModBlocks.BURNER_INSERTER.get().defaultBlockState()
+                    .setValue(InserterBlock.FACING, Direction.SOUTH));
+            helper.setBlock(chest, Blocks.CHEST);
+
+            helper.runAfterDelay(20, () -> {
+                helper.assertFalse(isScheduled(helper, inserter),
+                        "an inserter with no fuel and an empty belt behind it is still ticking");
+
+                put(belt(helper, TAIL, Direction.SOUTH), Items.COAL, 4);
+
+                helper.assertTrue(isScheduled(helper, inserter),
+                        "coal reaching the belt behind a dry inserter did not wake it in the same "
+                                + "tick - the belt marks the block an item crossed onto, and "
+                                + "InserterBlock.onNeighborChange is what turns that into a tick");
+
+                helper.runAfterDelay(BurnerInserterBlockEntity.SWING_TICKS + 10, () -> {
+                    BurnerInserterBlockEntity burner =
+                            helper.getBlockEntity(inserter, BurnerInserterBlockEntity.class);
+                    helper.assertTrue(burner.burnTime() > 0,
+                            "the inserter never took a lump off the belt to burn");
+                    helper.assertValueEqual(countIn(container(helper, chest), Items.COAL), 1,
+                            "coal an unfuelled inserter moved off a coal belt");
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a burner inserter fuels itself from a belt");
+        }
+    }
+
+    /**
+     * <b>The test the belt subsystem most needed and did not have.</b>
+     *
+     * <p>An item put onto a belt from outside announces itself - that is a transaction committing,
+     * and {@code BeltRun.markChanged} tells the neighbours. An item that <em>travels</em> into a
+     * tile announces nothing on its own: no block entity changed and no chunk was touched. So an
+     * inserter that had gone to sleep beside an empty stretch of belt slept through the item
+     * arriving, and the first thing a player builds - a burner inserter beside a coal belt - died
+     * the moment there was a gap in the coal.
+     *
+     * <p>Everything else in the pack gets this for free, which is exactly why it was missed: a
+     * chest, a furnace and an assembler all call {@code setChanged} when their contents change, and
+     * every existing test hands the inserter its work directly, on its own tile. This one puts the
+     * coal <em>four tiles upstream</em> and makes it walk.
+     *
+     * <p>See {@code BeltRun.announceArrivals}. If it is ever deleted as an optimisation, this test
+     * is what says no.
+     */
+    public static class BeltWakesAnInserterTest extends GameTestInstance {
+
+        public static final MapCodec<BeltWakesAnInserterTest> CODEC =
+                RecordCodecBuilder.<BeltWakesAnInserterTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(BeltWakesAnInserterTest::info))
+                                .apply(i, BeltWakesAnInserterTest::new));
+
+        public BeltWakesAnInserterTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos last = TAIL.east(4);
+            BlockPos inserter = last.south();
+            BlockPos chest = inserter.south();
+
+            line(helper, 5);
+            helper.setBlock(inserter, ModBlocks.BURNER_INSERTER.get().defaultBlockState()
+                    .setValue(InserterBlock.FACING, Direction.SOUTH));
+            helper.setBlock(chest, Blocks.CHEST);
+
+            helper.runAfterDelay(20, () -> {
+                helper.assertFalse(isScheduled(helper, inserter),
+                        "an inserter with no fuel and an empty belt behind it is still ticking");
+
+                // Onto the tail, four tiles upstream: nothing crosses the belt's boundary anywhere
+                // near the inserter, so only the arrival itself can wake it.
+                put(belt(helper, TAIL, Direction.SOUTH), Items.COAL, 4);
+                helper.assertFalse(isScheduled(helper, inserter),
+                        "coal four tiles upstream woke an inserter it cannot reach - the arrival "
+                                + "signal is meant to be per block, not per run");
+
+                // Four tiles at 6/64 of a block a tick is about 43 ticks, then a swing.
+                helper.runAfterDelay(120, () -> {
+                    BurnerInserterBlockEntity burner =
+                            helper.getBlockEntity(inserter, BurnerInserterBlockEntity.class);
+                    helper.assertTrue(burner.burnTime() > 0,
+                            "coal reached the tile beside a sleeping inserter and it never woke - "
+                                    + "an item travelling along a belt changes no block entity, so "
+                                    + "BeltRun.announceArrivals is the only thing that can say so");
+                    helper.assertTrue(countIn(container(helper, chest), Items.COAL) >= 1,
+                            "the inserter woke and lit itself but delivered nothing");
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a belt wakes an inserter when an item arrives");
         }
     }
 }
