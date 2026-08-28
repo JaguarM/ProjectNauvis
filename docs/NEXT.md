@@ -4,51 +4,67 @@ Next session
 Written 2026-08-29 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
 Delete or rewrite it when the job below is done — it describes one job, not the project.
 
-**Eighty-six gametests pass and the pack builds clean.** Every machine is the size Factorio made
-it, the lab exists, five checks run in `./gradlew build`, the transport belt works, and **the
-burner inserter now behaves the way a Factorio player's hands expect**: it fuels itself out of what
-it is picking up, it loads only the far lane of a belt, and — the part that turned out to be
-missing underneath both — a belt now wakes the inserter beside it when an item *arrives* there.
+**Eighty-nine gametests pass and the pack builds clean.** Every machine is the size Factorio made
+it, the lab exists, five checks run in `./gradlew build`, the transport belt works, the burner
+inserter fuels itself off the belt it is unloading, and **the long-handed inserter reaches two
+blocks** — over a belt, over a walkway, over a row of machines.
 
-What that last one was, because it is the interesting one
----------------------------------------------------------
+What that last one cost, because it is the interesting part
+-----------------------------------------------------------
 
-The previous session's plan asserted that the wake already worked "twice over". It did not, and
-the mistake is worth keeping written down because it is the shape of mistake this pack keeps
-making: **the thing that was tested was not the thing that happens.**
+The previous session's plan called the long-handed inserter "the cheapest thing on this list" and
+"the same two classes again". The reach was: it is `InserterBlock.reach()`, `buildCaches` and the
+neighbour filter, and that part took an hour. What it missed is that **the whole sleeping design
+has a radius of one block, and reaching two puts a machine outside it.**
 
-Every existing test handed an inserter its work directly — an item put onto its own tile, which is
-a transaction committing, which is `BeltRun.markChanged`, which is a `setChanged`, which NeoForge
-routes to all six neighbours. That path was real and worked. But an item **travelling** into a tile
-changes no block entity and touches no chunk, so it said nothing at all. A sleeping inserter beside
-a working belt therefore never woke. Proved by putting coal four tiles upstream of a dry inserter
-and watching it arrive, jam against the end of the run, and sit there while the inserter slept.
+`BlockEntity.setChanged()` ends in `Level.updateNeighbourForOutputSignal`, which walks the six
+positions touching the block that changed and stops. That is the signal every machine in this pack
+is woken by. A long-handed inserter's source and destination are **both two away**, so neither of
+its own ends can ever wake it: a chest filling up beside a machine says nothing at all to the arm
+reaching over that machine, and there is no vanilla or NeoForge hook that carries the news any
+further. There is no `BlockEntityChangedEvent`; the only thing in that method that travels two
+blocks is `getWeakChanges`, and it fires only through a full redstone conductor — over a wall, but
+never over a belt or a gap, which is what a long arm is actually for.
 
-It was not a burner-inserter bug. **Any** inserter unloading **any** belt stalled the first time
-there was a gap in the flow; the self-fuelling work simply made it impossible to miss, because a
-burner inserter that cannot hear a coal belt is a burner inserter that dies. `BeltRun.announceArrivals`
-is the answer and `belt_wakes_an_inserter_when_an_item_arrives` is what stops it being deleted as
-an optimisation.
+So this one inserter **looks again rather than sleeping**: `InserterBlockEntity.IDLE_RECHECK_TICKS`,
+one second, one energy comparison and one simulated move per look. That is not a new compromise —
+it is the one `PowerNetwork` already makes when it re-checks a network that moved nothing every ten
+ticks, and for the same reason: *a fact nothing owes you a signal for is a fact you have to look
+at*. It is kept as small as it can be, and the three limits are the point:
 
-Two things about it that the next person should not have to rediscover:
+- **an unpowered one still costs nothing.** Electricity arriving *is* an exact wake-up, so a tier
+  that cannot swing sleeps outright and only a powered inserter with nothing to move pays;
+- **a working one never pays it.** A move that succeeds schedules the next tick immediately, so the
+  timer only ever runs across a gap in the work;
+- **a reach of one never pays it at all**, so nothing that already existed got slower.
 
-- **It is not `setChanged`.** `markChanged` dirties the chunk, which is right at the boundary and
-  wrong twenty times a second. `Level.updateNeighbourForOutputSignal(pos, block)` is the half of
-  `setChanged` that carries the news without the half that costs disk, and NeoForge has widened it
-  to all six sides.
-- **It is filtered to empty-becomes-occupied, on a run that moved.** A jammed run is skipped, so
-  `BeltLane`'s promise that a jam costs the same as an empty belt survives; and a compressed belt
-  never has a block fall empty, so a busy belt sends nothing. The notifications happen where the
-  gaps are, which is exactly where an inserter can have gone to sleep.
+Two things about it the next person should not have to rediscover:
 
-The cost is one pass over a moving run's items per tick to work out which blocks are occupied —
-the one thing in the belt tick that is not O(1). If it ever shows up in a profile the answer is to
-make the occupancy incremental, not to drop the signal.
+- **The filter moved, it did not widen.** `onNeighborChange` now compares against
+  `pos.relative(facing, reach)` on both sides, which for a reach of two means it rejects every
+  notification it will ever be handed. That is correct and it is deliberate: widening it to "any
+  neighbour" would wake the inserter for the six blocks it can neither take from nor give to and
+  *still* never hear the two it can. `long_handed_inserter_ignores_its_neighbours` asserts both
+  halves, including the one that is a fact about Minecraft rather than about our code — a chest two
+  away notifies nobody — so if that ever changes, the test says the re-check can go.
+- **`long_handed_inserter_looks_again` is the test that earns its keep**, and it is the same shape
+  as `belt_wakes_an_inserter_when_an_item_arrives`: the work **arrives from out of earshot** rather
+  than being handed to a machine that is already awake. Delete the re-check and it is the only test
+  that goes red, while a long-handed inserter would work perfectly until the first gap in its
+  supply and then never move again. All three new tests were watched failing before they were
+  trusted — reach set to 1, swing set to the basic arm's 24, the re-check stubbed out.
+
+The rest of it is small and worth stating once. **A tier is a block, not a block entity.** Reach,
+swing time and draw are three numbers on `ElectricInserterBlock`, `LongHandedInserterBlock`
+overrides them and a codec, and one block entity type is registered against both blocks — which is
+what `ModBlockEntities` had predicted the fast and filter arms would need. Reach in particular
+*has* to be on the block: the neighbour filter must know it before it looks a block entity up, and
+looking one up to find out would be the lookup the filter exists to avoid.
 
 The job: the rest of milestone 2
 --------------------------------
 
-Two blocks and a gesture, in the order they get harder. Nothing here needs new architecture.
+Two things, in the order they get harder. Neither needs new architecture.
 
 **There is no underground belt on this list, and there will not be a `pipe-to-ground` either.**
 Factorio needs both because it is flat — two belts that must cross have nowhere to go but under.
@@ -58,26 +74,13 @@ Minecraft player already knows how to build and needs no item for. All four ids
 `data/mapping.json` with the reason; nothing else in the recipe graph uses any of them, so the
 graph stays closed and `gen_recipes.py --check` counts them as skipped rather than missing.
 
-### 1. `long-handed-inserter`
-
-The existing inserter with a reach of two. The cheapest thing on this list and the same two classes
-again — `InserterBlock` and `InserterBlockEntity`, where reach is currently the constant `1` hidden
-inside `buildCaches` and `onNeighborChange`. Three things it must get right:
-
-- it reaches **over** the block between, which the current one never had to think about;
-- `onNeighborChange`'s filter is two positions today and becomes two *different* positions. That
-  filter is what `inserter_ignores_bystanders` pins, and the long-handed one wants its own copy of
-  that test, because a filter that is merely wider is a filter that has stopped filtering;
-- reach is behaviour, not identity, so it may live in the block entity. The id and the recipe are
-  identity and are already generated.
-
-### 2. The splitter
+### 1. The splitter
 
 2×1 and directional — the first multi-block that is not square. `multiblock/` is the framework and
 is copied into four mods already. The belt side of it is a run that ends at the splitter and two
 that start after it, with the splitter alternating between them.
 
-### 3. Fast-replace by tier
+### 2. Fast-replace by tier
 
 A belt in hand already points the belt you click on the way you are facing, which is half of
 Factorio's belt-laying gesture. The other half is that a *faster* belt replaces a slower one, and
@@ -94,20 +97,29 @@ boot is not optional: three of the last four bugs found in this pack were found 
 at the game, and one of them — see the rotation entry in the silent-failures list — passed sixty-
 three tests while being visibly wrong from three sides.
 
-**The burner inserter work has not had one, and that debt is owed before anything below.** It added
-no model, fluid or plugin, so the usual client-boot risks do not apply and `check_gametests.py`
-already covers the one new registration — but the thing actually worth doing is not a boot, it is
-*watching it*: lay a coal belt, put a burner inserter beside it with an empty slot, and see it pick
-its own fuel off the line and keep running. Then put an inserter on each side of one belt and check
-they fill two lanes rather than fighting over one. Both behaviours are new, both are things a player
-sees rather than things a test can look at, and neither has been seen by anybody yet.
+**Two sessions of work have not had one, and that debt is owed before anything below.** The
+long-handed inserter did add a model — a smoker-coloured cube, so it is the third furnace body on
+a belt line and wants a proper look — but neither session added a fluid or a plugin, and
+`check_gametests.py` and `check_models.py` cover the registrations and the references between
+files. What is actually owed is not a boot, it is *watching four things no test can look at*:
+
+- lay a coal belt, put a burner inserter beside it with an empty slot, and see it pick its own fuel
+  off the line and keep running;
+- put an inserter on each side of one belt and check they fill two lanes rather than fighting over
+  one;
+- put a long-handed inserter across a belt from a machine and watch it reach over — and, once it
+  runs dry, watch how long the pause feels. `IDLE_RECHECK_TICKS` is one second, chosen on
+  arithmetic and never on somebody's eye. **If it reads as a jam rather than as an arm, halve it**;
+  it is one constant and the cost is linear in it;
+- and tell the three of them apart at a glance on the same line, which is what the borrowed furnace
+  textures are being asked to do and may well not do.
 
 ### One test is marginal, and it is not the code's fault
 
-`belt_carries_what_stands_on_it` failed once in about six runs while this session's work was going
-in, then passed five times running, including three consecutive full-suite runs afterwards. It is
-not a regression from anything here — it went red purely because *adding tests to the file* moved
-it, and here is why that is enough:
+`belt_carries_what_stands_on_it` failed once in about six runs while the belt-wake work was going
+in, then passed five times running, including three consecutive full-suite runs afterwards, and
+every run since. It is not a regression from anything — it went red purely because *adding tests
+to the file* moved it, and here is why that is enough:
 
 `ItemEntity.tick` only calls `move()` when the item is off the ground, has horizontal momentum, or
 `(tickCount + getId()) % 4 == 0`. A dropped item **resting** on a belt has none of the first two, so
@@ -121,7 +133,9 @@ entity erratically and at some fraction of belt speed. Factorio has no dropped i
 nothing about this is identity, but a Minecraft player will absolutely throw something onto a belt.
 Two honest options and neither is this session's to pick: loosen the test to what a resting item
 entity can actually do, or give `stepOn` a way to keep an item entity moving so it stops resting.
-Leaving it as is means a red test roughly one run in six, which is the worst of the three.
+Leaving it as is means a red test roughly one run in six, which is the worst of the three. It has
+survived two sessions of tests being added around it since, so it has not got worse — but nothing
+about it has got better either, and the entity-id arithmetic that decides it is still there.
 
 ### The belt, if you have to touch it
 
@@ -267,6 +281,7 @@ Where the pack stands
 | `nauvis_logistics:transport_belt` | half a block high and walked over; a run is one object however long, two lanes, items you can watch, and it carries you |
 | `nauvis_logistics:burner_inserter` | takes from behind, gives in front, 30-tick swing, screen with a fuel slot. Fuels itself from what it picks up, so a coal belt keeps it alive |
 | `nauvis_logistics:inserter` | the same on 2 FE a tick and a 24-tick swing. No slot, so no screen |
+| `nauvis_logistics:long_handed_inserter` | the same arm reaching two blocks, over whatever is between. 3 FE a tick, a 17-tick swing, and the only block in the pack that does not sleep perfectly |
 | `nauvis_logistics:iron_chest` | 36 slots on vanilla's four-row screen |
 | `nauvis_fluids:pipe` | carries steam; a run is one object however long, with visible connections |
 | `nauvis_fluids:steam` | a real fluid, so pipes and machines meet at NeoForge's capability |
@@ -484,6 +499,17 @@ Silent failures — these compile, pass tests, and are still wrong
   tiles away and making it walk. **When a new subsystem moves things, the test to write first is
   the one where the work arrives from a distance rather than being handed over.**
 
+- **The wake signal has a radius of exactly one block, and nothing says so.**
+  `updateNeighbourForOutputSignal` walks the six positions touching the block entity that changed.
+  Every machine here is woken by that, and every machine here happened to have its work land next
+  door — so "a `setChanged` reaches whoever cares" reads like a general fact right up until
+  something reaches further than it does. The long-handed inserter is the first thing in the pack
+  to have both of its ends outside that radius, and it fails *silently and late*: it works while
+  items keep arriving and stops dead at the first gap, which is the same shape as the belt bug
+  above and was found the same way, by making the work arrive from a distance instead of handing it
+  over. **Anything that reaches past its own neighbours has to answer this question before it is
+  written**, and the answer is in `InserterBlockEntity`.
+
 - **Asking for a capability in an unloaded chunk loads it.** Check `level.isLoaded` first — not as
   an optimisation, but so a network at the edge of the loaded world does not drag chunks in.
 
@@ -497,6 +523,12 @@ accumulator until milestone 3.
 **A network that moved nothing is re-checked every ten ticks rather than woken exactly.** It hears
 about members and machines appearing the moment they do, but "a generator elsewhere filled up" is a
 fact about a handler in another mod that owes us no signal.
+
+**A long-handed inserter with power and nothing to do costs one look a second**, for the reason at
+the top of this file: the wake signal has a radius of one block and its ends are two away. Every
+other machine in the pack sleeps for free. Two things would remove it and neither exists — a hook
+that fires when the block entity at a watched position changes, or a reason to believe every source
+a long arm reaches is one of ours and can be made to announce.
 
 **No brownout.** PLAN.md wants a machine whose buffer cannot refill to run *slower*; ours stops.
 
@@ -523,7 +555,7 @@ being carried off mid-click. One line in `BeltBlock.stepOn` if it is ever unwant
 only reaches `stepOn` — when the item is airborne, has horizontal momentum, or the tick count plus
 its entity id is divisible by four, so something *resting* on a belt is pushed on a fraction of
 ticks and at a phase that depends on its id. A player is carried properly; a thrown item is not.
-See the marginal-test note near the top, which is the same fact wearing a red X.
+See the marginal-test note in the job section, which is the same fact wearing a red X.
 
 **A belt does not turn you as it carries you.** An entity on a corner is pushed the way that block
 faces, so going round a bend on a belt is two straight shoves rather than an arc. Items do curve.

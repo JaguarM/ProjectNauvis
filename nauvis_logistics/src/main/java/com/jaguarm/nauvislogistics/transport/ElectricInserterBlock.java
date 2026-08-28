@@ -18,13 +18,49 @@ import net.minecraft.world.phys.BlockHitResult;
  *
  * <p>Right-clicking says which of the two things is wrong, because "no power" and "pointing the
  * wrong way" are the two reasons an inserter stands still and they look identical from outside.
+ *
+ * <h2>Where a tier's numbers live</h2>
+ *
+ * <p>The three of them - how fast it swings, what that costs, how far it reaches - are on the
+ * block rather than on {@link ElectricInserterBlockEntity}, because <b>a tier is a block</b>: one
+ * block entity type serves every electric inserter there will be, and it saves the same charge
+ * and the same swing whichever arm is holding it. {@link LongHandedInserterBlock} is then three
+ * overridden numbers and a codec, which is what a variant should cost.
  */
 public class ElectricInserterBlock extends InserterBlock {
 
     public static final MapCodec<ElectricInserterBlock> CODEC = simpleCodec(ElectricInserterBlock::new);
 
+    /**
+     * Ticks per item moved.
+     *
+     * <p>Factorio's inserter manages about 0.83 items a second against a burner inserter's 0.6,
+     * so this is 24 ticks where the burner is 30. Behaviour rather than identity, like the
+     * burner's number, and derived from the same place.
+     */
+    public static final int SWING_TICKS = 24;
+
+    /**
+     * FE per tick of a swing.
+     *
+     * <p>Factorio's inserter draws 13 kW where a steam engine makes 900. At this pack's scale -
+     * an engine is 120 FE a tick - that is 1.7, and two is the nearest whole number. An inserter
+     * is cheap to run on purpose: a base has thousands of them and a handful of assemblers.
+     */
+    public static final int ENERGY_PER_TICK = 2;
+
     public ElectricInserterBlock(Properties properties) {
         super(properties);
+    }
+
+    /** Ticks per item moved, for the block entity that is doing the swinging. */
+    public int swingTicks() {
+        return SWING_TICKS;
+    }
+
+    /** FE spent per tick of a swing. */
+    public int energyPerTick() {
+        return ENERGY_PER_TICK;
     }
 
     @Override

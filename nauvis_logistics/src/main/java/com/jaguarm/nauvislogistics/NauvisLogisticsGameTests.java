@@ -7,7 +7,10 @@ import com.jaguarm.nauvislogistics.storage.IronChestBlockEntity;
 import com.jaguarm.nauvislogistics.transport.InserterBlock;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlockEntity;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterMenu;
+import com.jaguarm.nauvislogistics.transport.ElectricInserterBlock;
 import com.jaguarm.nauvislogistics.transport.ElectricInserterBlockEntity;
+import com.jaguarm.nauvislogistics.transport.InserterBlockEntity;
+import com.jaguarm.nauvislogistics.transport.LongHandedInserterBlock;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -67,6 +70,26 @@ public final class NauvisLogisticsGameTests {
     /** Beside the inserter but not in its way: a container it must learn to ignore. */
     private static final BlockPos BYSTANDER = new BlockPos(1, 1, 1);
 
+    /**
+     * The long arm's line: chest, gap, inserter, gap, chest. Five blocks for a reach of two, and
+     * the two gaps are the point - a long-handed inserter is bought to reach <em>over</em>
+     * something, so the tests put something there.
+     */
+    private static final BlockPos LONG_SOURCE = new BlockPos(0, 1, 0);
+    private static final BlockPos LONG_BEHIND = new BlockPos(1, 1, 0);
+    private static final BlockPos LONG_INSERTER = new BlockPos(2, 1, 0);
+    private static final BlockPos LONG_AHEAD = new BlockPos(3, 1, 0);
+    private static final BlockPos LONG_DESTINATION = new BlockPos(4, 1, 0);
+
+    /**
+     * Room around each test.
+     *
+     * <p>Zero was survivable while every test here was three blocks long. The long arm's line is
+     * five, and a test whose blocks land in the next test along fails whichever of the two ran
+     * second - see the silent-failures list in docs/NEXT.md.
+     */
+    private static final int PADDING = 8;
+
     private static final DeferredRegister<MapCodec<? extends GameTestInstance>> TEST_TYPES =
             DeferredRegister.create(Registries.TEST_INSTANCE_TYPE, NauvisLogistics.MODID);
 
@@ -82,6 +105,10 @@ public final class NauvisLogisticsGameTests {
         TEST_TYPES.register("electric_inserter_moves_items", () -> ElectricInserterMovesItemsTest.CODEC);
         TEST_TYPES.register("electric_inserter_needs_power", () -> ElectricInserterNeedsPowerTest.CODEC);
         TEST_TYPES.register("burner_inserter_opens_a_screen", () -> BurnerInserterOpensAScreenTest.CODEC);
+        TEST_TYPES.register("long_handed_inserter_reaches_over", () -> LongHandedReachesOverTest.CODEC);
+        TEST_TYPES.register("long_handed_inserter_ignores_its_neighbours",
+                () -> LongHandedIgnoresNeighboursTest.CODEC);
+        TEST_TYPES.register("long_handed_inserter_looks_again", () -> LongHandedLooksAgainTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -108,6 +135,12 @@ public final class NauvisLogisticsGameTests {
                 ElectricInserterNeedsPowerTest::new, 200);
         register(event, environment, "burner_inserter_opens_a_screen",
                 BurnerInserterOpensAScreenTest::new, 60);
+        register(event, environment, "long_handed_inserter_reaches_over",
+                LongHandedReachesOverTest::new, 200);
+        register(event, environment, "long_handed_inserter_ignores_its_neighbours",
+                LongHandedIgnoresNeighboursTest::new, 100);
+        register(event, environment, "long_handed_inserter_looks_again",
+                LongHandedLooksAgainTest::new, 200);
     }
 
     private interface TestFactory {
@@ -118,7 +151,8 @@ public final class NauvisLogisticsGameTests {
             Holder<TestEnvironmentDefinition<?>> environment, String name, TestFactory factory, int maxTicks) {
         event.registerTest(
                 Identifier.fromNamespaceAndPath(NauvisLogistics.MODID, name),
-                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true, Rotation.NONE)));
+                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true,
+                        Rotation.NONE, false, 1, 1, false, PADDING)));
     }
 
     /**
@@ -152,6 +186,27 @@ public final class NauvisLogisticsGameTests {
         if (charged) {
             charge(helper.getBlockEntity(INSERTER, ElectricInserterBlockEntity.class));
         }
+    }
+
+    /**
+     * The long arm's line, with nothing yet in either gap.
+     *
+     * @param charged false to leave it with an empty buffer and no pole anywhere near it.
+     */
+    private static void buildLongLine(GameTestHelper helper, boolean charged) {
+        helper.setBlock(LONG_SOURCE, Blocks.CHEST);
+        helper.setBlock(LONG_DESTINATION, Blocks.CHEST);
+        helper.setBlock(LONG_INSERTER, ModBlocks.LONG_HANDED_INSERTER.get().defaultBlockState()
+                .setValue(InserterBlock.FACING, Direction.EAST));
+
+        if (charged) {
+            charge(helper.getBlockEntity(LONG_INSERTER, ElectricInserterBlockEntity.class));
+        }
+    }
+
+    private static boolean isLongScheduled(GameTestHelper helper) {
+        return helper.getLevel().getBlockTicks()
+                .hasScheduledTick(helper.absolutePos(LONG_INSERTER), ModBlocks.LONG_HANDED_INSERTER.get());
     }
 
     /** Fills the buffer the way a pole would, through the capability the pole would use. */
@@ -670,7 +725,7 @@ public final class NauvisLogisticsGameTests {
                     "iron accepted by the source chest");
 
             helper.startSequence()
-                    .thenExecuteAfter(ElectricInserterBlockEntity.SWING_TICKS * 2, () -> {
+                    .thenExecuteAfter(ElectricInserterBlock.SWING_TICKS * 2, () -> {
                         helper.assertValueEqual(
                                 countIn(container(helper, DESTINATION), Items.IRON_INGOT), 0,
                                 "items moved by an inserter with no electricity");
@@ -683,7 +738,7 @@ public final class NauvisLogisticsGameTests {
                                 "electricity arrived and the inserter was not woken - it will sleep "
                                         + "through the grid coming back");
                     })
-                    .thenExecuteAfter(ElectricInserterBlockEntity.SWING_TICKS + 2, () ->
+                    .thenExecuteAfter(ElectricInserterBlock.SWING_TICKS + 2, () ->
                             helper.assertValueEqual(
                                     countIn(container(helper, DESTINATION), Items.IRON_INGOT), 1,
                                     "items moved after the power came back"))
@@ -753,6 +808,198 @@ public final class NauvisLogisticsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("burner inserter opens a screen");
+        }
+    }
+
+    /**
+     * The long arm takes from two blocks behind and gives two blocks in front, over whatever is
+     * in between and without touching it.
+     *
+     * <p>Both gaps are filled, and with different things on purpose. Ahead of it is stone, which
+     * is the ordinary case - reaching over a wall or a walkway. Behind it is <b>a chest holding
+     * something else</b>, which is the case that would fail quietly: a long-handed inserter that
+     * had kept the basic arm's reach would find that chest, move the wrong item, and look like it
+     * was working. Asserting the gold is untouched is the difference between testing that it
+     * moves things and testing that it moves the right ones.
+     *
+     * <p>The delivery deadline is the basic arm's swing time, so a long arm that quietly swung at
+     * the speed of the tier it upgrades from fails here rather than passing on throughput nobody
+     * measured.
+     */
+    public static class LongHandedReachesOverTest extends GameTestInstance {
+
+        public static final MapCodec<LongHandedReachesOverTest> CODEC =
+                RecordCodecBuilder.<LongHandedReachesOverTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(LongHandedReachesOverTest::info))
+                                .apply(i, LongHandedReachesOverTest::new));
+
+        public LongHandedReachesOverTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            helper.setBlock(LONG_BEHIND, Blocks.CHEST);
+            helper.setBlock(LONG_AHEAD, Blocks.STONE);
+            buildLongLine(helper, true);
+
+            helper.assertValueEqual(insert(container(helper, LONG_SOURCE), Items.IRON_INGOT, 1), 1,
+                    "iron accepted by the chest two blocks behind");
+            helper.assertValueEqual(insert(container(helper, LONG_BEHIND), Items.GOLD_INGOT, 1), 1,
+                    "gold accepted by the chest it is reaching over");
+
+            helper.startSequence()
+                    .thenExecuteAfter(ElectricInserterBlock.SWING_TICKS - 2, () -> {
+                        helper.assertValueEqual(
+                                countIn(container(helper, LONG_DESTINATION), Items.IRON_INGOT), 1,
+                                "iron delivered two blocks ahead, over the stone, by the time the "
+                                        + "basic arm would still be swinging");
+                        helper.assertValueEqual(
+                                countIn(container(helper, LONG_SOURCE), Items.IRON_INGOT), 0,
+                                "iron left in the chest two blocks behind");
+                        helper.assertValueEqual(
+                                countIn(container(helper, LONG_BEHIND), Items.GOLD_INGOT), 1,
+                                "the long arm robbed the chest it should have reached over - its "
+                                        + "reach is one, not two");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("long-handed inserter reaches over");
+        }
+    }
+
+    /**
+     * <b>Nothing within one block of a long-handed inserter is its business, and nothing two
+     * blocks away can tell it anything.</b> Both halves of that are asserted here, and the second
+     * one is the reason {@link InserterBlockEntity#IDLE_RECHECK_TICKS} exists.
+     *
+     * <p>The short inserter's twin of this test - {@code inserter_ignores_bystanders} - proves a
+     * filter that rejects a chest it cannot reach and still accepts its source. This one cannot
+     * end that way, because the filter's two positions have moved out of earshot:
+     * {@code updateNeighbourForOutputSignal} walks the six blocks touching whatever changed and
+     * stops, so a chest two away reaches nobody here. A filter that had been widened to "any
+     * neighbour" instead of moved would therefore wake on the useless six and still never hear
+     * the useful two, which is the worst of both and passes any test that only watches items
+     * arrive.
+     *
+     * <p>Left with no power for the whole test, because an unpowered inserter is the one state
+     * where a scheduled tick means only one thing. A powered one always has the re-check coming
+     * and could not tell the two apart.
+     */
+    public static class LongHandedIgnoresNeighboursTest extends GameTestInstance {
+
+        public static final MapCodec<LongHandedIgnoresNeighboursTest> CODEC =
+                RecordCodecBuilder.<LongHandedIgnoresNeighboursTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(LongHandedIgnoresNeighboursTest::info))
+                                .apply(i, LongHandedIgnoresNeighboursTest::new));
+
+        public LongHandedIgnoresNeighboursTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            helper.setBlock(LONG_BEHIND, Blocks.CHEST);
+            buildLongLine(helper, false);
+
+            helper.runAfterDelay(20, () -> {
+                helper.assertFalse(isLongScheduled(helper),
+                        "an inserter with no power never went to sleep");
+
+                insert(container(helper, LONG_BEHIND), Items.IRON_INGOT, 1);
+                helper.assertFalse(isLongScheduled(helper),
+                        "the chest it reaches over woke it - the filter in "
+                                + "InserterBlock.onNeighborChange has been widened rather than moved");
+
+                // Not a bug being pinned, a fact: this is the wake that does not arrive, and the
+                // re-check in InserterBlockEntity is the whole answer to it.
+                insert(container(helper, LONG_SOURCE), Items.IRON_INGOT, 1);
+                helper.assertFalse(isLongScheduled(helper),
+                        "a block two away notified this one, which Minecraft does not do - if that "
+                                + "has changed, the re-check can go");
+
+                // The wake that does arrive, so the test cannot pass by the inserter being broken.
+                charge(helper.getBlockEntity(LONG_INSERTER, ElectricInserterBlockEntity.class));
+                helper.assertTrue(isLongScheduled(helper),
+                        "electricity arriving did not wake it either");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("long-handed inserter ignores its neighbours");
+        }
+    }
+
+    /**
+     * An item that appears two blocks behind a long-handed inserter that has gone quiet is picked
+     * up anyway, because it looks again.
+     *
+     * <p>This is the one that earns its keep, and it is the same shape of test as
+     * {@code belt_wakes_an_inserter_when_an_item_arrives}: the work <b>arrives from out of
+     * earshot</b> rather than being handed over while the machine is already awake. Every other
+     * inserter test here fills a chest the inserter is touching, which is a wake-up; this one
+     * fills a chest that says nothing to anybody, and the only thing that can find it is
+     * {@link InserterBlockEntity#IDLE_RECHECK_TICKS}.
+     *
+     * <p>Delete the re-check and this is the only test that goes red - and a long-handed inserter
+     * would then work perfectly right up until the first gap in its supply and never move again.
+     */
+    public static class LongHandedLooksAgainTest extends GameTestInstance {
+
+        public static final MapCodec<LongHandedLooksAgainTest> CODEC =
+                RecordCodecBuilder.<LongHandedLooksAgainTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(LongHandedLooksAgainTest::info))
+                                .apply(i, LongHandedLooksAgainTest::new));
+
+        public LongHandedLooksAgainTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            buildLongLine(helper, true);
+
+            helper.startSequence()
+                    // Long enough to have woken, found an empty chest and settled into looking.
+                    .thenExecuteAfter(40, () -> {
+                        helper.assertTrue(isLongScheduled(helper),
+                                "a powered long-handed inserter stopped looking, so nothing will "
+                                        + "ever tell it about an item two blocks behind");
+                        helper.assertValueEqual(insert(
+                                container(helper, LONG_SOURCE), Items.IRON_INGOT, 1), 1,
+                                "iron accepted by the chest two blocks behind");
+                    })
+                    .thenExecuteAfter(
+                            InserterBlockEntity.IDLE_RECHECK_TICKS + LongHandedInserterBlock.SWING_TICKS + 8,
+                            () -> helper.assertValueEqual(
+                                    countIn(container(helper, LONG_DESTINATION), Items.IRON_INGOT), 1,
+                                    "an item that turned up two blocks behind was never noticed"))
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("long-handed inserter looks again");
         }
     }
 }

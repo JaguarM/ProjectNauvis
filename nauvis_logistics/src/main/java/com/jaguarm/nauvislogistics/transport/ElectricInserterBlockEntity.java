@@ -12,6 +12,11 @@ import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 /**
  * The inserter that runs on the grid: faster than the burner, and useless without a pole.
  *
+ * <p>Every electric tier is this class - the basic arm and the long-handed one both - because
+ * what differs between them is a swing time, a draw and a reach, and all three are facts about
+ * the block. It reads them through {@link #tier()}, which is why there is one block entity type
+ * for the two blocks and why a third tier will need none of its own.
+ *
  * <p>This is the item that closes milestone 1, and it was deliberately left unregistered until
  * there was a grid to plug it into. An electric inserter that worked without electricity would be
  * strictly better than the burner for nothing, and progression that can be skipped is progression
@@ -23,25 +28,13 @@ import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 public class ElectricInserterBlockEntity extends InserterBlockEntity {
 
     /**
-     * Ticks per item moved.
+     * Ten seconds of the basic arm's swinging, and rather less of a hungrier one's.
      *
-     * <p>Factorio's inserter manages about 0.83 items a second against a burner inserter's 0.6,
-     * so this is 24 ticks where the burner is 30. Behaviour rather than identity, like the
-     * burner's number, and derived from the same place.
+     * <p>One number for every electric tier on purpose. A buffer is not a tank - an inserter is
+     * not somewhere to park a surplus - so what it is for is riding out the tick or two between a
+     * pole's rounds, and that is the same job whatever the arm on top costs to move.
      */
-    public static final int SWING_TICKS = 24;
-
-    /**
-     * FE per tick of a swing.
-     *
-     * <p>Factorio's inserter draws 13 kW where a steam engine makes 900. At this pack's scale -
-     * an engine is 120 FE a tick - that is 1.7, and two is the nearest whole number. An inserter
-     * is cheap to run on purpose: a base has thousands of them and a handful of assemblers.
-     */
-    public static final int ENERGY_PER_TICK = 2;
-
-    /** Ten seconds of swinging. Small: an inserter is not somewhere to park a surplus. */
-    public static final int ENERGY_CAPACITY = ENERGY_PER_TICK * 200;
+    public static final int ENERGY_CAPACITY = ElectricInserterBlock.ENERGY_PER_TICK * 200;
 
     /** Unrestricted, because the inserter spends from it. What the grid sees is {@link #gridView}. */
     private final InserterPower energy = new InserterPower(ENERGY_CAPACITY, this::onSupplyChanged);
@@ -61,14 +54,19 @@ public class ElectricInserterBlockEntity extends InserterBlockEntity {
         return energy.getAmountAsInt();
     }
 
+    /** The tier's own numbers. See {@link ElectricInserterBlock}. */
+    private ElectricInserterBlock electricTier() {
+        return (ElectricInserterBlock) tier();
+    }
+
     @Override
     public int swingTicks() {
-        return SWING_TICKS;
+        return electricTier().swingTicks();
     }
 
     @Override
     public boolean running() {
-        return energy.getAmountAsInt() >= ENERGY_PER_TICK;
+        return energy.getAmountAsInt() >= electricTier().energyPerTick();
     }
 
     @Override
@@ -78,7 +76,7 @@ public class ElectricInserterBlockEntity extends InserterBlockEntity {
 
     @Override
     protected void spendOneTick() {
-        energy.set(energy.getAmountAsInt() - ENERGY_PER_TICK);
+        energy.set(energy.getAmountAsInt() - electricTier().energyPerTick());
     }
 
     @Override

@@ -33,8 +33,10 @@ public final class ModCapabilities {
                 ModBlockEntities.BURNER_INSERTER.get(),
                 (inserter, side) -> inserter.fuelAccess());
 
-        // The electric one has no slot to fill and no charge to give back - only somewhere for a
-        // pole to put energy. NeoForge's capability, not ours, so any grid can drive it.
+        // The electric ones have no slot to fill and no charge to give back - only somewhere for
+        // a pole to put energy. NeoForge's capability, not ours, so any grid can drive them. One
+        // registration covers the basic arm and the long-handed one, because a capability is
+        // registered against the block entity type and they share it.
         event.registerBlockEntity(
                 Capabilities.Energy.BLOCK,
                 ModBlockEntities.ELECTRIC_INSERTER.get(),

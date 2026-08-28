@@ -95,6 +95,26 @@ public class NauvisLogisticsModels extends ModelProvider {
                 MultiVariantGenerator.dispatch(ModBlocks.INSERTER.get(), BlockModelGenerators.plainVariant(electric))
                         .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
 
+        // And once more in smoker colours, for the long arm. Three inserters on one belt line
+        // have to be told apart at a glance - the two electric ones do the same job at different
+        // reaches, so mistaking one for the other is a line that silently misses a machine.
+        //
+        // Nothing here says the arm is longer, which is the one thing this model ought to
+        // communicate and the one thing a borrowed cube cannot. Real art is Yannic's half.
+        Identifier longHanded = ModelTemplates.CUBE_ORIENTABLE.create(
+                ModBlocks.LONG_HANDED_INSERTER.get(),
+                new TextureMapping()
+                        .put(TextureSlot.FRONT, TextureMapping.getBlockTexture(Blocks.SMOKER, "_front"))
+                        .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(Blocks.SMOKER, "_side"))
+                        .put(TextureSlot.TOP, TextureMapping.getBlockTexture(Blocks.SMOKER, "_top")),
+                blockModels.modelOutput);
+
+        blockModels.blockStateOutput.accept(
+                MultiVariantGenerator.dispatch(
+                                ModBlocks.LONG_HANDED_INSERTER.get(),
+                                BlockModelGenerators.plainVariant(longHanded))
+                        .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
+
         // The belt: a bottom slab, because it is half a block high and you walk over it.
         //
         // The only art in this mod that is ours rather than a vanilla placeholder, because the

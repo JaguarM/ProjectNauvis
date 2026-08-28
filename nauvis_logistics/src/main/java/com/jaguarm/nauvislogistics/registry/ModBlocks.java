@@ -5,6 +5,7 @@ import com.jaguarm.nauvislogistics.belt.TransportBeltBlock;
 import com.jaguarm.nauvislogistics.storage.IronChestBlock;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlock;
 import com.jaguarm.nauvislogistics.transport.ElectricInserterBlock;
+import com.jaguarm.nauvislogistics.transport.LongHandedInserterBlock;
 
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.MapColor;
@@ -35,6 +36,22 @@ public final class ModBlocks {
     public static final DeferredBlock<ElectricInserterBlock> INSERTER = BLOCKS.registerBlock(
             "inserter",
             ElectricInserterBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.METAL)
+                    .strength(2.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops());
+
+    /**
+     * The long arm: the same inserter reaching two blocks instead of one, so a line can be fed
+     * over a belt, a walkway or a row of machines.
+     *
+     * <p>Costs an inserter to build, which is Factorio's recipe and the right shape for what it
+     * is - not a faster inserter but a differently placed one.
+     */
+    public static final DeferredBlock<LongHandedInserterBlock> LONG_HANDED_INSERTER = BLOCKS.registerBlock(
+            "long_handed_inserter",
+            LongHandedInserterBlock::new,
             properties -> properties
                     .mapColor(MapColor.METAL)
                     .strength(2.0F, 6.0F)

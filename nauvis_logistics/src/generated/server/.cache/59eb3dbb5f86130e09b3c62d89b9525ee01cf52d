@@ -1,5 +1,6 @@
-// 26.2	2026-08-28T20:50:08.3535237	Loot Tables
+// 26.2	2026-08-29T01:14:11.1031025	Loot Tables
 809d202122724e2aed272034566324ea3f38f57f data/nauvis_logistics/loot_table/blocks/burner_inserter.json
 908d05821dce1761f88673c2d6db1899e128a3fc data/nauvis_logistics/loot_table/blocks/inserter.json
 b5d38753fba484cb754d377178ee672a5bbf3d10 data/nauvis_logistics/loot_table/blocks/iron_chest.json
+54bc9e5e6a8d235b61390bdca0022d88cd1d65eb data/nauvis_logistics/loot_table/blocks/long_handed_inserter.json
 b1c824ad917d25af00895991ab01e80e67953990 data/nauvis_logistics/loot_table/blocks/transport_belt.json

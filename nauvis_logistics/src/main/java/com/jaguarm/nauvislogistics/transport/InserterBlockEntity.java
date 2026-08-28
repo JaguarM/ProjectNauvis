@@ -31,9 +31,10 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * another mod's machine are all the same thing to it. That is the whole reason inserters are
  * worth building before belts: one block makes every container in the game automatable.
  *
- * <p>What differs between tiers is only the drive - {@link BurnerInserterBlockEntity} burns coal,
- * {@link ElectricInserterBlockEntity} draws from the grid - and how fast it swings. Reach, filters
- * and stack size will join them later; none of those is a different block entity either.
+ * <p>What differs between tiers is the drive - {@link BurnerInserterBlockEntity} burns coal,
+ * {@link ElectricInserterBlockEntity} draws from the grid - how fast it swings, and how far it
+ * reaches. None of those is a different block entity: the numbers live on the block, which is
+ * what a tier actually is. Filters and stack size will join them the same way.
  *
  * <h2>Sleeping, and how it hears about work</h2>
  *
@@ -51,13 +52,51 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * turns that into a scheduled tick, and this entity stops scheduling the moment it has nothing
  * to do. An idle inserter is not visited at all.
  *
- * <p>{@link BlockCapabilityCache} does the other half: it holds each neighbour's handler so a
- * swing is not a lookup, and drops it by itself when that neighbour is replaced or its chunk
- * cycles. Its invalidation listener is deliberately <em>not</em> used as a wake-up — the
- * contract forbids touching the level from inside it, and every case it would report is one
+ * <p>{@link BlockCapabilityCache} does the other half: it holds each end's handler so a swing is
+ * not a lookup, and drops it by itself when that block is replaced or its chunk cycles. Its
+ * invalidation listener is deliberately <em>not</em> used as a wake-up — the contract forbids
+ * touching the level from inside it, and every case it would report is one
  * {@code neighborChanged} already reports from a context where scheduling is safe.
+ *
+ * <h2>Except when it reaches two, and then it has to look</h2>
+ *
+ * <p>All of that rests on the signal reaching this block, and the signal travels exactly one
+ * block: {@code updateNeighbourForOutputSignal} walks the six positions touching the block entity
+ * that changed, and stops. A long-handed inserter's source and destination are both two away, so
+ * <b>neither of its own ends can ever wake it</b> - a chest filling up beside a machine says
+ * nothing to the arm reaching over that machine, and no vanilla hook carries the news further.
+ *
+ * <p>So an inserter that reaches past its own neighbours re-checks on a timer rather than
+ * sleeping outright: {@link #IDLE_RECHECK_TICKS} between looks, each look being one energy
+ * comparison and one simulated move. This is the bargain {@code PowerNetwork} already strikes
+ * when it re-checks a network that moved nothing every ten ticks - a fact nothing owes us a
+ * signal for is a fact that has to be looked at - and it is kept as small as it can be:
+ *
+ * <ul>
+ *   <li><b>an unpowered one still costs nothing.</b> A tier that cannot swing sleeps outright,
+ *       because electricity arriving <em>is</em> an exact wake-up; only a powered inserter with
+ *       nothing to move pays for the timer;</li>
+ *   <li><b>a working one never pays it.</b> A move that succeeds schedules the next tick
+ *       immediately, so the re-check only ever runs across a gap in the work;</li>
+ *   <li><b>a reach of one never pays it at all</b>, so nothing that exists today gets slower.</li>
+ * </ul>
+ *
+ * <p>What it costs where a player can see it is up to {@link #IDLE_RECHECK_TICKS} of delay after
+ * a gap, which reads as a long arm taking a moment to notice the first item of a new batch. If a
+ * general "tell me when the block entity at this position changes" hook ever exists, this is the
+ * thing in the pack waiting for it.
  */
 public abstract class InserterBlockEntity extends BlockEntity {
+
+    /**
+     * How long an inserter that reaches past its own neighbours waits before looking again.
+     *
+     * <p>A second: long enough that a thousand of them cost fifty simulated moves a tick between
+     * them, short enough that the pause after a gap reads as an arm swinging rather than as a
+     * jam. Only a tier with {@link InserterBlock#reach()} above one ever uses it, and the class
+     * comment says why one has to exist at all.
+     */
+    public static final int IDLE_RECHECK_TICKS = 20;
 
     /** Ticks into the current swing. Reaching {@link #swingTicks} delivers the item. */
     private int swing;
@@ -91,6 +130,17 @@ public abstract class InserterBlockEntity extends BlockEntity {
     }
 
     /**
+     * The block this inserter is wearing, which is where a tier's numbers live.
+     *
+     * <p>A hard cast, because the block entity type is registered against these blocks and no
+     * others. If it ever fails the registration is wrong, and saying so loudly beats running with
+     * some other tier's reach.
+     */
+    protected InserterBlock tier() {
+        return (InserterBlock) getBlockState().getBlock();
+    }
+
+    /**
      * A chunk that has just loaded has an inserter that has never been woken.
      *
      * <p>Without this, an inserter that went to sleep before a restart, beside a chest that is
@@ -118,6 +168,7 @@ public abstract class InserterBlockEntity extends BlockEntity {
         // Whether there is anything to move is asked once, as a swing starts. Checking it every
         // tick would be a simulated transaction per inserter per tick across a whole base.
         if (swing == 0 && !move(false)) {
+            lookAgainIfOutOfEarshot(level);
             return;
         }
 
@@ -127,8 +178,10 @@ public abstract class InserterBlockEntity extends BlockEntity {
         if (swing >= swingTicks()) {
             if (!move(true)) {
                 // The item went away mid-swing, or the destination filled up. Hold the swing and
-                // sleep; either side changing wakes it again.
+                // sleep; either side changing wakes it again - unless it reaches too far to hear
+                // either side, which is what the re-check is for.
                 setChanged();
+                lookAgainIfOutOfEarshot(level);
                 return;
             }
             swing = 0;
@@ -136,6 +189,19 @@ public abstract class InserterBlockEntity extends BlockEntity {
 
         setChanged();
         level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
+    }
+
+    /**
+     * Going to sleep, for an inserter whose ends are too far away to wake it.
+     *
+     * <p>Nothing at all for a reach of one, which is every inserter that hears its own
+     * neighbours; one scheduled look for a reach of two, which is one that cannot. See the class
+     * comment: the wake signal travels exactly one block, and no vanilla hook carries it further.
+     */
+    private void lookAgainIfOutOfEarshot(ServerLevel level) {
+        if (tier().reach() > 1) {
+            level.scheduleTick(worldPosition, getBlockState().getBlock(), IDLE_RECHECK_TICKS);
+        }
     }
 
     /**
@@ -177,7 +243,7 @@ public abstract class InserterBlockEntity extends BlockEntity {
     }
 
     /**
-     * What this inserter is picking up from, or null if there is nothing behind it.
+     * What this inserter is picking up from, or null if there is nothing within reach behind it.
      *
      * <p>For a tier that has to look at the items before it moves them. The burner is the only
      * one so far - it takes its own fuel out of whatever it is picking up, which is what keeps a
@@ -204,14 +270,23 @@ public abstract class InserterBlockEntity extends BlockEntity {
         return cache == null ? null : cache.getCapability();
     }
 
+    /**
+     * Where this inserter's two ends are.
+     *
+     * <p>{@link InserterBlock#reach()} blocks away rather than one, and nothing looks at what is
+     * in between: a long-handed inserter reaches straight over a belt, a wall or a machine
+     * without asking, exactly as it does in Factorio. A capability query at a position does not
+     * have to travel there.
+     */
     private void buildCaches(ServerLevel level) {
         Direction facing = getBlockState().getValue(InserterBlock.FACING);
+        int reach = tier().reach();
 
-        // The context is the face of the neighbour being touched, which points back at us.
+        // The context is the face of the block being touched, which points back at us.
         source = BlockCapabilityCache.create(
-                Capabilities.Item.BLOCK, level, worldPosition.relative(facing.getOpposite()), facing);
+                Capabilities.Item.BLOCK, level, worldPosition.relative(facing.getOpposite(), reach), facing);
         destination = BlockCapabilityCache.create(
-                Capabilities.Item.BLOCK, level, worldPosition.relative(facing), facing.getOpposite());
+                Capabilities.Item.BLOCK, level, worldPosition.relative(facing, reach), facing.getOpposite());
     }
 
     /**

@@ -59,6 +59,7 @@ public final class NauvisLogisticsData {
             add("itemGroup.nauvis_logistics", "Project Nauvis: Logistics");
             addBlock(ModBlocks.BURNER_INSERTER, "Burner inserter");
             addBlock(ModBlocks.INSERTER, "Inserter");
+            addBlock(ModBlocks.LONG_HANDED_INSERTER, "Long handed inserter");
             addBlock(ModBlocks.IRON_CHEST, "Iron chest");
             addBlock(ModBlocks.TRANSPORT_BELT, "Transport belt");
             add("pack.nauvis_logistics.crafting_table", "Nauvis Logistics: Crafting Table Recipes");
@@ -96,6 +97,7 @@ public final class NauvisLogisticsData {
         protected void generate() {
             dropSelf(ModBlocks.BURNER_INSERTER.get());
             dropSelf(ModBlocks.INSERTER.get());
+            dropSelf(ModBlocks.LONG_HANDED_INSERTER.get());
             dropSelf(ModBlocks.IRON_CHEST.get());
             dropSelf(ModBlocks.TRANSPORT_BELT.get());
         }

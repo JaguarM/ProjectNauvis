@@ -21,9 +21,10 @@ public final class ModBlockEntities {
      * burn timer, the electric one has a charge. Everything else about an inserter - the swing,
      * the neighbour caches, the moving - is in the shared base class rather than duplicated.
      *
-     * <p>The fast, filter and long-handed variants will differ in speed, reach and what they will
-     * pick up, none of which is a different entity; they will share whichever of these two they
-     * are powered like.
+     * <p>The long-handed inserter is the first variant to prove that: it differs in speed, draw
+     * and reach, all three of which are numbers on the block, so it is registered against the
+     * electric type below rather than getting one of its own. The fast and filter arms will
+     * arrive the same way, each sharing whichever of these two it is powered like.
      */
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BurnerInserterBlockEntity>>
             BURNER_INSERTER = BLOCK_ENTITIES.register(
@@ -37,7 +38,8 @@ public final class ModBlockEntities {
                     "inserter",
                     () -> new BlockEntityType<>(
                             ElectricInserterBlockEntity::new,
-                            ModBlocks.INSERTER.get()));
+                            ModBlocks.INSERTER.get(),
+                            ModBlocks.LONG_HANDED_INSERTER.get()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IronChestBlockEntity>> IRON_CHEST =
             BLOCK_ENTITIES.register(
