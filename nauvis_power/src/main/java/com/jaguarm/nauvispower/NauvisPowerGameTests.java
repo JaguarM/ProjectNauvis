@@ -91,6 +91,9 @@ public final class NauvisPowerGameTests {
 
     static {
         TEST_TYPES.register("boiler_turns_as_one", () -> BoilerTurnsAsOneTest.CODEC);
+        TEST_TYPES.register("engine_breaks_as_one", () -> EngineBreaksAsOneTest.CODEC);
+        TEST_TYPES.register("power_machines_tile_walkably",
+                () -> PowerMachinesTileWalkablyTest.CODEC);
         TEST_TYPES.register("boiler_makes_steam", () -> BoilerMakesSteamTest.CODEC);
         TEST_TYPES.register("steam_engine_makes_power", () -> SteamEngineMakesPowerTest.CODEC);
         TEST_TYPES.register("power_chain_sleeps", () -> PowerChainSleepsTest.CODEC);

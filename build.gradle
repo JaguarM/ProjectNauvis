@@ -58,7 +58,11 @@ tasks.register('checkRecipes') {
  *
  * All of them read files and start nothing, so they cost a second and can run on any tree.
  */
-['checkDuplicated': ['tools/check_duplicated.py',
+['checkGameTests': ['tools/check_gametests.py',
+                   'Checks that every gametest has its type registered as well as its instance.',
+                   'A gametest is registered to run and its codec is not, so the test passes and ' +
+                   'a client cannot serialise it. See tools/check_gametests.py.'],
+ 'checkDuplicated': ['tools/check_duplicated.py',
                     'Diffs the packages that are deliberately copied between mods.',
                     'Two copies of a package that must be identical have drifted. Fix the ' +
                     'original and run: python tools/check_duplicated.py --sync'],

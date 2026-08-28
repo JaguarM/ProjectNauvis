@@ -428,10 +428,11 @@ How to run everything
 | `python tools/gen_recipes.py --check` | the same recipe diff, on its own |
 | `python tools/check_models.py` | every model, texture and blockstate reference, resolved |
 | `python tools/check_duplicated.py` | the copied packages, against each other. `--sync` to fix |
+| `python tools/check_gametests.py` | every gametest, for a type registered as well as an instance |
 | `python tools/check_gui_layout.py` | every machine screen's boxes, for overlaps |
 
-The last four are `checkRecipes`, `checkModels`, `checkDuplicated` and `checkGuiLayout` in the
-root `build.gradle`, and all of them hang off `:nauvis:check`. They read files and start nothing,
+The last five are `checkRecipes`, `checkModels`, `checkDuplicated`, `checkGameTests` and
+`checkGuiLayout` in the root `build.gradle`, and all of them hang off `:nauvis:check`. They read files and start nothing,
 so they cost a second between them.
 
 Adding a subsystem mod is routine: a subproject in `settings.gradle`, a `build.gradle` copied with
@@ -552,6 +553,16 @@ Silent failures — these compile, pass tests, and are still wrong
   five-value `part` property and a nine-value default state. It threw at registration, which was
   luck — the same mistake between two shapes of equal size would have been silent. Answer with a
   constant on a subclass, which exists long before any block does.
+- **A gametest whose type was never registered passes anyway, and breaks a client.** A test is
+  two registrations: the instance, which runs, and the `MapCodec` type in
+  `Registries.TEST_INSTANCE_TYPE`, which exists so a test *could* come from a datapack. Ours never
+  do, so the type reads as dead paperwork - but the instance registry is synced to clients, and an
+  entry with no codec throws `Failed to serialize ResourceKey[minecraft:test_instance / ...]` on a
+  client boot while `runGameTestServer` stays green. Two went missing here for a day. The
+  invariant is per *class*, not per name - a test id and a type id are different registries, and
+  `nauvis:pack_loads` registered under type `nauvis:registry_presence` is fine - so
+  `tools/check_gametests.py` matches every `GameTestInstance` that is registered to run against
+  the codecs handed to `TEST_TYPES`.
 - **Asking for a capability in an unloaded chunk loads it.** Check `level.isLoaded` first — not as
   an optimisation, but so a network at the edge of the loaded world does not drag chunks in.
 

@@ -177,14 +177,16 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 // Recipes are generated, never hand-written - so a build that would ship a hand-edited one
-// should not succeed. The other three catch what compiles, tests clean and is still wrong: an
-// unresolvable model reference, a screen drawn through itself, and a copied package that has
-// drifted from the copy it is meant to match. See the root build.gradle.
+// should not succeed. The others catch what compiles, tests clean and is still wrong: an
+// unresolvable model reference, a screen drawn through itself, a copied package that has
+// drifted from the copy it is meant to match, and a gametest whose type was never
+// registered - which passes, and breaks a client. See the root build.gradle.
 tasks.named('check') {
     dependsOn rootProject.tasks.named('checkRecipes')
     dependsOn rootProject.tasks.named('checkModels')
     dependsOn rootProject.tasks.named('checkGuiLayout')
     dependsOn rootProject.tasks.named('checkDuplicated')
+    dependsOn rootProject.tasks.named('checkGameTests')
 }
 
 idea {
