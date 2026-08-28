@@ -31,6 +31,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.Blocks;
 
 /**
@@ -76,22 +77,28 @@ public class NauvisPowerModels extends ModelProvider {
                     name -> cellModel(blockModels, block, cell, side, top));
         }
 
-        PropertyDispatch.C1<MultiVariant, Integer> dispatch = PropertyDispatch.initial(shape.part());
+        // One dispatch over both properties, and the two rotations added by hand.
+        //
+        // NOT `.with(dispatch).with(ROTATION_HORIZONTAL_FACING)`, which is what this used to be
+        // and which is wrong in a way you only see in three of the four directions: a
+        // VariantMutator *sets* `y` rather than adding to it, so the facing overwrote each cell's
+        // own turn and every corner of an east-facing boiler pointed the same way. The collision
+        // boxes were right the whole time, because MachineCell adds the two - so the machine you
+        // saw and the machine you walked into were different objects, which is the exact failure
+        // Boxes warns about.
+        //
+        // `tools/check_models.py` now checks this sum against the shape, so it cannot come back.
+        PropertyDispatch.C2<MultiVariant, Integer, Direction> dispatch =
+                PropertyDispatch.initial(shape.part(), BlockStateProperties.HORIZONTAL_FACING);
         for (int index = 0; index < shape.cellCount(); index++) {
             MachineCell cell = shape.cell(index);
-            dispatch = dispatch.select(index, BlockModelGenerators
-                    .plainVariant(models.get(cell.model()))
-                    .with(turn(cell.turns())));
+            for (Direction facing : Direction.Plane.HORIZONTAL) {
+                dispatch = dispatch.select(index, facing, BlockModelGenerators
+                        .plainVariant(models.get(cell.model()))
+                        .with(turn(cell.turns() + Boxes.quarterTurns(facing))));
+            }
         }
-
-        // Two dispatches, composed: which cell this is, and which way the whole machine looks.
-        // The facing rotation lands on top of each cell's own turn, which is exactly what
-        // MachineCell does to the collision boxes - it adds the two before building the shape.
-        // These are the same rotation applied to the two halves of one machine, and the day they
-        // stop agreeing is the day you can see through a wall you cannot walk through.
-        blockModels.blockStateOutput.accept(MultiVariantGenerator.dispatch(block)
-                .with(dispatch)
-                .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
+        blockModels.blockStateOutput.accept(MultiVariantGenerator.dispatch(block).with(dispatch));
 
         blockModels.registerSimpleItemModel(block,
                 inventoryModel(blockModels, block, shape, side, top));

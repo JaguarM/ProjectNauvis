@@ -10,15 +10,14 @@
     },
     "facing=east,part=2": {
       "model": "nauvis_power:block/boiler_corner",
-      "y": 90
+      "y": 180
     },
     "facing=east,part=3": {
-      "model": "nauvis_power:block/boiler_corner",
-      "y": 90
+      "model": "nauvis_power:block/boiler_corner"
     },
     "facing=east,part=4": {
       "model": "nauvis_power:block/boiler_corner",
-      "y": 90
+      "y": 270
     },
     "facing=east,part=5": {
       "model": "nauvis_power:block/boiler_deck",
@@ -62,15 +61,14 @@
     },
     "facing=south,part=2": {
       "model": "nauvis_power:block/boiler_corner",
-      "y": 180
+      "y": 270
     },
     "facing=south,part=3": {
       "model": "nauvis_power:block/boiler_corner",
-      "y": 180
+      "y": 90
     },
     "facing=south,part=4": {
-      "model": "nauvis_power:block/boiler_corner",
-      "y": 180
+      "model": "nauvis_power:block/boiler_corner"
     },
     "facing=south,part=5": {
       "model": "nauvis_power:block/boiler_deck",
@@ -89,16 +87,15 @@
       "y": 270
     },
     "facing=west,part=2": {
-      "model": "nauvis_power:block/boiler_corner",
-      "y": 270
+      "model": "nauvis_power:block/boiler_corner"
     },
     "facing=west,part=3": {
       "model": "nauvis_power:block/boiler_corner",
-      "y": 270
+      "y": 180
     },
     "facing=west,part=4": {
       "model": "nauvis_power:block/boiler_corner",
-      "y": 270
+      "y": 90
     },
     "facing=west,part=5": {
       "model": "nauvis_power:block/boiler_deck",

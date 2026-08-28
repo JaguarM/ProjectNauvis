@@ -27,6 +27,10 @@ Footprints are the third thing: a machine's cells, read back out of its `*Shape.
 the `size` recorded for that Factorio entity in `data/mapping.json`. A footprint is identity, so
 it is checked rather than remembered - the same argument that makes recipes generated.
 
+And the fourth is rotation. A multi-block turns twice over - each cell has its own quarter turn,
+and the whole machine has a facing - and the model and the collision shape have to add those the
+same way. They did not, for a day: see `check_rotations`.
+
 Run it as `python tools/check_models.py`; `./gradlew build` runs it too. It reads only files, so
 it is safe to run at any time and needs no client.
 """
@@ -286,7 +290,8 @@ def check_footprints():
         for path in sorted(source.rglob('*Shape.java')):
             text = path.read_text(encoding='utf-8')
             constructions = len(re.findall(r'new MachineCell\(', text))
-            cell_calls = re.findall(r'new MachineCell\(\s*(-?\d+),\s*(-?\d+),\s*(-?\d+),', text)
+            cell_calls = re.findall(
+                r'new MachineCell\(\s*(-?\d+),\s*(-?\d+),\s*(-?\d+),\s*[\w.]+,\s*(-?\d+),', text)
             if not constructions:
                 continue  # the framework itself, not a machine
 
@@ -309,7 +314,7 @@ def check_footprints():
                 continue
 
             factorio_id = id_match.group(1)
-            cells = [(int(x), int(z)) for x, _, z in cell_calls]
+            cells = [(int(x), int(z)) for x, _, z, _turns in cell_calls]
             width = max(x for x, _ in cells) - min(x for x, _ in cells) + 1
             depth = max(z for _, z in cells) - min(z for _, z in cells) + 1
 
@@ -324,6 +329,67 @@ def check_footprints():
             if sorted([width, depth]) != sorted(wanted):
                 fail(path.name, f'is {width}x{depth}, and Factorio\'s {factorio_id} is '
                                 f'{wanted[0]}x{wanted[1]} - see data/mapping.json')
+
+            check_rotations(path, mod, entry, [int(turns) for _x, _y, _z, turns in cell_calls])
+
+
+# North, east, south, west, in quarter turns clockwise - the same order Boxes uses.
+QUARTER_TURNS = {'north': 0, 'east': 1, 'south': 2, 'west': 3}
+
+
+def check_rotations(path, mod, entry, turns):
+    """Every variant's `y` against the cell's own turn plus the machine's facing.
+
+    The bug this exists for shipped, and was visible in three directions out of four. The models
+    were generated with `.with(cellDispatch).with(ROTATION_HORIZONTAL_FACING)`, and a
+    `VariantMutator` **sets** `y` rather than adding to it - so the facing overwrote each cell's
+    own turn and every corner of an east-facing boiler pointed the same way.
+
+    Nothing caught it. The collision boxes were right the whole time, because `MachineCell` adds
+    the two rotations before building its `VoxelShape`; so the machine you saw and the machine you
+    walked into were different objects, and every test passed because tests look at collision.
+    That is the failure `Boxes` warns about in as many words, and it happened anyway.
+
+    So it is arithmetic now: `y` must be `90 * (turns + facing) mod 360`, from the same two
+    numbers the shape uses.
+    """
+    namespace, _, name = entry.get('item', '').partition(':')
+    if not namespace or not name:
+        return
+
+    for root in ASSET_ROOTS:
+        blockstate = ROOT / mod / root / namespace / 'blockstates' / f'{name}.json'
+        if blockstate.is_file():
+            break
+    else:
+        return  # no blockstate here; check_references already reports a block with none
+
+    content = json.loads(blockstate.read_text(encoding='utf-8'))
+    variants = content.get('variants')
+    if not variants:
+        return  # multipart, which no machine shape uses
+
+    for key, variant in variants.items():
+        if isinstance(variant, list):
+            continue  # a weighted list, which no machine uses
+        properties = dict(pair.split('=', 1) for pair in key.split(',') if '=' in pair)
+        if 'part' not in properties:
+            continue
+
+        part = int(properties['part'])
+        if part >= len(turns):
+            fail(f'{namespace}:{name}', f'has a variant for part={part} and its shape has '
+                                        f'{len(turns)} cells')
+            continue
+
+        facing = QUARTER_TURNS.get(properties.get('facing', 'north'), 0)
+        wanted = 90 * ((turns[part] + facing) % 4)
+        found = variant.get('y', 0)
+        if found != wanted:
+            fail(f'{namespace}:{name}', f'draws {key} turned {found} degrees, and its shape turns '
+                                        f'that cell {wanted} - the model and the collision box '
+                                        f'disagree, so it is see-through on one side and solid on '
+                                        f'the other')
 
 
 def check_fluid_models(assets):

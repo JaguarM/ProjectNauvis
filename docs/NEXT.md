@@ -553,6 +553,19 @@ Silent failures — these compile, pass tests, and are still wrong
   five-value `part` property and a nine-value default state. It threw at registration, which was
   luck — the same mistake between two shapes of equal size would have been silent. Answer with a
   constant on a subclass, which exists long before any block does.
+- **A `VariantMutator` sets `y`, it does not add to it.** A multi-block turns twice over: each
+  cell has its own quarter turn, and the machine has a facing. Generating that as
+  `.with(cellDispatch).with(ROTATION_HORIZONTAL_FACING)` looks exactly right and is wrong in three
+  directions out of four - the facing *overwrites* each cell's turn, so every corner of an
+  east-facing boiler points the same way. Dispatch over both properties at once and add the two
+  turns by hand.
+
+  What makes it worth its own entry is how long it survived. `MachineCell` adds the two rotations
+  before building its `VoxelShape`, so the collision was right the whole time and **the machine
+  you saw and the machine you walked into were different objects** - which is the failure `Boxes`
+  warns about in as many words, in a file written to prevent it. Every test passed, because tests
+  look at collision and nobody can see a model from a gametest. It was found by a person turning a
+  boiler round. `check_models.py` now checks each variant's `y` against the shape's own arithmetic.
 - **A gametest whose type was never registered passes anyway, and breaks a client.** A test is
   two registrations: the instance, which runs, and the `MapCodec` type in
   `Registries.TEST_INSTANCE_TYPE`, which exists so a test *could* come from a datapack. Ours never

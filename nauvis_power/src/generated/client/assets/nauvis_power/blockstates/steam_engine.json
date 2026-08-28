@@ -6,7 +6,7 @@
     },
     "facing=east,part=1": {
       "model": "nauvis_power:block/steam_engine_corner",
-      "y": 90
+      "y": 180
     },
     "facing=east,part=10": {
       "model": "nauvis_power:block/steam_engine_deck",
@@ -38,35 +38,31 @@
     },
     "facing=east,part=2": {
       "model": "nauvis_power:block/steam_engine_corner",
-      "y": 90
+      "y": 270
     },
     "facing=east,part=3": {
-      "model": "nauvis_power:block/steam_engine_corner",
-      "y": 90
+      "model": "nauvis_power:block/steam_engine_corner"
     },
     "facing=east,part=4": {
-      "model": "nauvis_power:block/steam_engine_edge",
-      "y": 90
+      "model": "nauvis_power:block/steam_engine_edge"
     },
     "facing=east,part=5": {
-      "model": "nauvis_power:block/steam_engine_edge",
-      "y": 90
+      "model": "nauvis_power:block/steam_engine_edge"
     },
     "facing=east,part=6": {
-      "model": "nauvis_power:block/steam_engine_edge",
-      "y": 90
+      "model": "nauvis_power:block/steam_engine_edge"
     },
     "facing=east,part=7": {
       "model": "nauvis_power:block/steam_engine_edge",
-      "y": 90
+      "y": 180
     },
     "facing=east,part=8": {
       "model": "nauvis_power:block/steam_engine_edge",
-      "y": 90
+      "y": 180
     },
     "facing=east,part=9": {
       "model": "nauvis_power:block/steam_engine_edge",
-      "y": 90
+      "y": 180
     },
     "facing=north,part=0": {
       "model": "nauvis_power:block/steam_engine_corner"
@@ -134,7 +130,7 @@
     },
     "facing=south,part=1": {
       "model": "nauvis_power:block/steam_engine_corner",
-      "y": 180
+      "y": 270
     },
     "facing=south,part=10": {
       "model": "nauvis_power:block/steam_engine_deck",
@@ -165,44 +161,42 @@
       "y": 180
     },
     "facing=south,part=2": {
-      "model": "nauvis_power:block/steam_engine_corner",
-      "y": 180
+      "model": "nauvis_power:block/steam_engine_corner"
     },
     "facing=south,part=3": {
       "model": "nauvis_power:block/steam_engine_corner",
-      "y": 180
+      "y": 90
     },
     "facing=south,part=4": {
       "model": "nauvis_power:block/steam_engine_edge",
-      "y": 180
+      "y": 90
     },
     "facing=south,part=5": {
       "model": "nauvis_power:block/steam_engine_edge",
-      "y": 180
+      "y": 90
     },
     "facing=south,part=6": {
       "model": "nauvis_power:block/steam_engine_edge",
-      "y": 180
+      "y": 90
     },
     "facing=south,part=7": {
       "model": "nauvis_power:block/steam_engine_edge",
-      "y": 180
+      "y": 270
     },
     "facing=south,part=8": {
       "model": "nauvis_power:block/steam_engine_edge",
-      "y": 180
+      "y": 270
     },
     "facing=south,part=9": {
       "model": "nauvis_power:block/steam_engine_edge",
-      "y": 180
+      "y": 270
     },
     "facing=west,part=0": {
       "model": "nauvis_power:block/steam_engine_corner",
       "y": 270
     },
     "facing=west,part=1": {
-      "model": "nauvis_power:block/steam_engine_corner",
-      "y": 270
+      "model": "nauvis_power:block/steam_engine_corner"
     },
     "facing=west,part=10": {
       "model": "nauvis_power:block/steam_engine_deck",
@@ -234,35 +228,32 @@
     },
     "facing=west,part=2": {
       "model": "nauvis_power:block/steam_engine_corner",
-      "y": 270
+      "y": 90
     },
     "facing=west,part=3": {
       "model": "nauvis_power:block/steam_engine_corner",
-      "y": 270
+      "y": 180
     },
     "facing=west,part=4": {
       "model": "nauvis_power:block/steam_engine_edge",
-      "y": 270
+      "y": 180
     },
     "facing=west,part=5": {
       "model": "nauvis_power:block/steam_engine_edge",
-      "y": 270
+      "y": 180
     },
     "facing=west,part=6": {
       "model": "nauvis_power:block/steam_engine_edge",
-      "y": 270
+      "y": 180
     },
     "facing=west,part=7": {
-      "model": "nauvis_power:block/steam_engine_edge",
-      "y": 270
+      "model": "nauvis_power:block/steam_engine_edge"
     },
     "facing=west,part=8": {
-      "model": "nauvis_power:block/steam_engine_edge",
-      "y": 270
+      "model": "nauvis_power:block/steam_engine_edge"
     },
     "facing=west,part=9": {
-      "model": "nauvis_power:block/steam_engine_edge",
-      "y": 270
+      "model": "nauvis_power:block/steam_engine_edge"
     }
   }
 }

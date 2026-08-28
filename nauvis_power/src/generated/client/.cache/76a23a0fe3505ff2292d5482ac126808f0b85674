@@ -1,7 +1,7 @@
-// 26.2	2026-08-28T00:25:32.7332679	Model Definitions - nauvis_power
-b80f3ba37597509d3868541442f15a0ad5a57930 assets/nauvis_power/blockstates/boiler.json
+// 26.2	2026-08-28T09:37:31.0401134	Model Definitions - nauvis_power
+952b1f60e2f3c16a26281e53606f78cd540ecb6f assets/nauvis_power/blockstates/boiler.json
 248732094817628bf5dadcb7531f9d066c8a3564 assets/nauvis_power/blockstates/small_electric_pole.json
-63d940ede817a009a74cbb5a4b29acece0948d48 assets/nauvis_power/blockstates/steam_engine.json
+90f53831522683b528f0db6840f5ac6ccce94635 assets/nauvis_power/blockstates/steam_engine.json
 563174d4cebe9690e552ded8b6b8f6df87635f81 assets/nauvis_power/items/boiler.json
 eec7547dbffce37a5023808023fd1f7a92ba16b6 assets/nauvis_power/items/small_electric_pole.json
 903421e4409e9d29e1a2a5a8edd897ccf669e1bc assets/nauvis_power/items/steam_engine.json
