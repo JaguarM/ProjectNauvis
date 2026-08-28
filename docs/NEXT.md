@@ -2,85 +2,196 @@ Next session
 ============
 
 Written 2026-08-29 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
-Delete or rewrite it when the job below is done — it describes one job, not the project.
+Delete or rewrite it when the jobs below are done — it describes the work in front of us, not the
+project.
 
 **Eighty-nine gametests pass and the pack builds clean.** Every machine is the size Factorio made
 it, the lab exists, five checks run in `./gradlew build`, the transport belt works, the burner
 inserter fuels itself off the belt it is unloading, and **the long-handed inserter reaches two
 blocks** — over a belt, over a walkway, over a row of machines.
 
-What that last one cost, because it is the interesting part
------------------------------------------------------------
+What the long arm cost, in one paragraph
+----------------------------------------
 
-The previous session's plan called the long-handed inserter "the cheapest thing on this list" and
-"the same two classes again". The reach was: it is `InserterBlock.reach()`, `buildCaches` and the
-neighbour filter, and that part took an hour. What it missed is that **the whole sleeping design
-has a radius of one block, and reaching two puts a machine outside it.**
+The reach itself was an afternoon: `InserterBlock.reach()`, `buildCaches`, and a neighbour filter
+that *moves* rather than widens. What was not an afternoon is that **the whole sleeping design has
+a radius of one block.** `setChanged()` ends in `Level.updateNeighbourForOutputSignal`, which walks
+the six positions touching the block that changed and stops — so a long arm's source and
+destination are both outside it and *neither of its own ends can ever wake it*. There is no
+`BlockEntityChangedEvent`, and the one path in that method that travels two blocks needs a full
+redstone conductor in between: over a wall, never over a belt or a gap. So that one inserter looks
+again every second instead of sleeping, bounded so that an unpowered one, a working one and a
+reach of one all still cost nothing. The full argument is in `InserterBlockEntity`'s class comment;
+the trap is in the silent-failures list below, where the next thing that reaches past its own
+neighbours will find it. `long_handed_inserter_looks_again` is the test that stops it being
+deleted, and all three new tests were watched failing before they were trusted.
 
-`BlockEntity.setChanged()` ends in `Level.updateNeighbourForOutputSignal`, which walks the six
-positions touching the block that changed and stops. That is the signal every machine in this pack
-is woken by. A long-handed inserter's source and destination are **both two away**, so neither of
-its own ends can ever wake it: a chest filling up beside a machine says nothing at all to the arm
-reaching over that machine, and there is no vanilla or NeoForge hook that carries the news any
-further. There is no `BlockEntityChangedEvent`; the only thing in that method that travels two
-blocks is `getWeakChanges`, and it fires only through a full redstone conductor — over a wall, but
-never over a belt or a gap, which is what a long arm is actually for.
+**A tier is a block, not a block entity.** Reach, swing time and draw are three numbers on
+`ElectricInserterBlock`; `LongHandedInserterBlock` overrides them and a codec; one block entity
+type is registered against both blocks. The fast and filter arms arrive the same way.
 
-So this one inserter **looks again rather than sleeping**: `InserterBlockEntity.IDLE_RECHECK_TICKS`,
-one second, one energy comparison and one simulated move per look. That is not a new compromise —
-it is the one `PowerNetwork` already makes when it re-checks a network that moved nothing every ten
-ticks, and for the same reason: *a fact nothing owes you a signal for is a fact you have to look
-at*. It is kept as small as it can be, and the three limits are the point:
+The jobs, in the order Yannic asked for them
+--------------------------------------------
 
-- **an unpowered one still costs nothing.** Electricity arriving *is* an exact wake-up, so a tier
-  that cannot swing sleeps outright and only a powered inserter with nothing to move pays;
-- **a working one never pays it.** A move that succeeds schedules the next tick immediately, so the
-  timer only ever runs across a gap in the work;
-- **a reach of one never pays it at all**, so nothing that already existed got slower.
+The first two came out of playing the pack. The last two are what was left of milestone 2 and are
+untouched by either, so they can be done in any order after.
 
-Two things about it the next person should not have to rediscover:
+### 1. The crafting panel's tabs are Factorio's four, not one per mod
 
-- **The filter moved, it did not widen.** `onNeighborChange` now compares against
-  `pos.relative(facing, reach)` on both sides, which for a reach of two means it rejects every
-  notification it will ever be handed. That is correct and it is deliberate: widening it to "any
-  neighbour" would wake the inserter for the six blocks it can neither take from nor give to and
-  *still* never hear the two it can. `long_handed_inserter_ignores_its_neighbours` asserts both
-  halves, including the one that is a fact about Minecraft rather than about our code — a chest two
-  away notifies nobody — so if that ever changes, the test says the re-check can go.
-- **`long_handed_inserter_looks_again` is the test that earns its keep**, and it is the same shape
-  as `belt_wakes_an_inserter_when_an_item_arrives`: the work **arrives from out of earshot** rather
-  than being handed to a machine that is already awake. Delete the re-check and it is the only test
-  that goes red, while a long-handed inserter would work perfectly until the first gap in its
-  supply and then never move again. All three new tests were watched failing before they were
-  trusted — reach set to 1, swing set to the basic arm's 24, the re-check stubbed out.
+**The complaint, and it is right:** the recipe panel groups by mod. Factorio groups by category.
 
-The rest of it is small and worth stating once. **A tier is a block, not a block entity.** Reach,
-swing time and draw are three numbers on `ElectricInserterBlock`, `LongHandedInserterBlock`
-overrides them and a codec, and one block entity type is registered against both blocks — which is
-what `ModBlockEntities` had predicted the fast and filter arms would need. Reach in particular
-*has* to be on the block: the neighbour filter must know it before it looks a block entity up, and
-looking one up to find out would be the lookup the filter exists to avoid.
+**Why it happens.** `Facrafting/client/RecipeTabs` already has three ways to slice the list —
+`CATEGORY` (the *creative tab* the result item lives in), `MOD`, and `GROUP` (the recipe's own
+`group` field, which exists precisely so a pack author can lay the strip out by hand). The default
+is `CATEGORY`, and **every subsystem mod here registers its own creative tab** — deliberately, so
+each is usable standalone — so grouping by creative tab *is* grouping by mod. Pressing the mode
+button changes nothing worth having, because the groups on disk are wrong too.
 
-The job: the rest of milestone 2
---------------------------------
+**The groups on disk are Factorio's item types, not its crafting-menu tabs.**
+`tools/gen_recipes.py` derives `group` from each dump entry's `type` field — `Machinery`, `Item`,
+`Intermediate product`, `Logic`, `Science pack`, and seven more. Factorio's crafting menu has
+**four** tabs, and the dump already carries them in a different field, `category`:
 
-Two things, in the order they get harder. Neither needs new architecture.
+| `category` | entries | becomes |
+|---|---|---|
+| `Logistics` | 62 | `logistics` |
+| `Intermediate product` | 61 | `intermediate` |
+| `Combat` | 55 | `combat` |
+| `Production` | 35 | `production` |
 
-**There is no underground belt on this list, and there will not be a `pipe-to-ground` either.**
-Factorio needs both because it is flat — two belts that must cross have nowhere to go but under.
-This pack is the same game with a Y axis, so a belt crosses another by changing level, which a
-Minecraft player already knows how to build and needs no item for. All four ids
-(`underground-belt` and its two upper tiers, and `pipe-to-ground`) are marked `skip` in
-`data/mapping.json` with the reason; nothing else in the recipe graph uses any of them, so the
-graph stays closed and `gen_recipes.py --check` counts them as skipped rather than missing.
+The 214th is `category_TODO`, on `deconstruction-planner`, which `data/mapping.json` already marks
+`skip` — so it never reaches the generator, and the generator should **throw on an unknown
+category** rather than quietly emitting an empty group.
 
-### 1. The splitter
+**The work, in order:**
+
+1. `tools/gen_recipes.py`: replace `GROUP_BY_TYPE` (keyed on `type`) with a table keyed on
+   `category`, four entries, and a `GenError` for anything else.
+2. Regenerate every mod's recipes and copy across only the files for items that exist, the usual
+   way. What actually moves: everything in `nauvis_logistics` from `machine` to `logistics`; the
+   assembler, boiler, steam engine and lab to `production`; the pipe and the poles to `logistics`;
+   `science_pack_1` from `science` to `intermediate`. **Neo Progressive Materials does not change
+   at all** — all eighteen of its items are `Intermediate product` and its group key is already
+   `intermediate`. **Neo Progressive Automation changes**: both drills go `machine` → `production`.
+   That is a released repo, and a `group` is a display hint rather than anything in a save, so it
+   is safe — but it wants its own commit over there and it is not ours to push.
+3. Lang, following the convention NPM and NPA already set — each mod ships
+   `tab.facrafting.group.<key>` for the groups it uses. Factorio's own names: "Logistics",
+   "Production", "Intermediate products", "Combat". NPM's existing value should change from
+   "Intermediates" to "Intermediate products" to match.
+4. **Facrafting's default mode.** Flipping the constant from `CATEGORY` to `GROUP` is one line and
+   is wrong for every other pack: a pack that sets no groups would open on a single "Ungrouped"
+   tab with a mode button as the only way out. The honest rule is *adaptive* — when the recipes
+   arrive, if a useful fraction of them carry a `group`, the pack author has laid the strip out and
+   `GROUP` is the default; otherwise `CATEGORY`. Decide it once per login in
+   `ClientRecipes.onRecipesReceived`, and not at all once the player has touched the mode button
+   (a flag beside `mode`, cleared on logout with the rest).
+
+**There is a second half to this and it is worth doing at the same time.** Within a tab, the grid
+is ordered by `ClientRecipes`'s sort: the recipe id as a string. Ids are namespaced, so **inside
+every tab the items are still clustered by mod** — which is very likely half of what the complaint
+is actually about. Factorio orders within a tab by subgroup and then by a per-item `order` string,
+and `reference/factorio/recipes.json` carries neither: its own file order is alphabetical by
+display name, which is a signal but not Factorio's. Two ways out, and this one wants Yannic's eye
+rather than a decision made here:
+
+- **cheap and better than today** — sort within a tab by the result item's display name, which is
+  what the dump's own order amounts to;
+- **right** — add an optional `order` string to `FacraftRecipe` (Factorio has exactly this field),
+  generate it, and sort on it. That is a Facrafting recipe-format change, so it wants doing once
+  and doing properly.
+
+### 2. A science tree that unlocks recipes
+
+This is milestone 3 and the biggest thing in the pack that is not a machine. **Do not start
+writing until the two decisions at the bottom of this section are made** — one of them decides
+whether the job is "write a generator" or "write eight JSON files".
+
+**What already exists and was built for this.** `LabBlockEntity` counts cycles and says so in its
+own comment: Factorio's lab does not know what it is researching either, it is told which packs a
+technology wants, consumes one of each, and reports a cycle done. `cycles()` is the hand-off point
+and the handing over is the only part of the lab that changes. `TICKS_PER_CYCLE` is explicitly a
+stand-in, because in Factorio the time comes from the technology.
+
+**The model, which is Factorio's and should not be invented afresh.** A technology has an id,
+prerequisites, a cost of *N units*, a set of science packs consumed one of each per unit, seconds
+per unit, and effects — of which the only one that matters now is "unlock recipe X". A lab works on
+the level's current research; each cycle consumes one of each pack and reports a unit; at N units
+the technology completes and its recipes unlock.
+
+**Four decisions that are already made by the pack's own rules:**
+
+- **Research is per-world, not per-player.** Factorio's research belongs to a force, and two
+  players in one base with different unlocks is the wrong game. A `SavedData` on the server,
+  synced to clients for display.
+- **The tree is datapack data**, a datapack registry through
+  `DataPackRegistryEvent.NewRegistry`, so a technology is a JSON file and not a Java constant. Same
+  argument as recipes: it is data, and data is edited without a compile.
+- **It belongs to `nauvis_research`.** One mod per subsystem.
+- **Facrafting must not learn what a technology is.** Arrows point one way: a subsystem mod may
+  depend on Facrafting, never the reverse. So the lock is a *hook* Facrafting owns and
+  `nauvis_research` fills in — a predicate over a recipe id, defaulting to "everything is
+  unlocked", installed by whoever wants to gate.
+
+**Where the hook has to be consulted — four places, and missing one is the whole feature:**
+
+| | |
+|---|---|
+| `ModNetwork.handleQueue` | a client can send any recipe key; this is the real gate |
+| `ModNetwork.handleSelectRecipe` | pointing a *machine* at a locked recipe is the same bypass |
+| `CraftResolver` | intermediates are queued for you, so it must not resolve through a locked step |
+| the panel | display only, and it needs the unlock set on the client to hide what is locked |
+
+The first three are server-side and are the enforcement; the fourth is presentation and must never
+be the only check. Note the shape: `OnDatapackSyncEvent#sendRecipes` sends every facraft recipe to
+every client, so hiding is a client-side filter over a synced unlock set rather than a smaller
+list — which is right, since the set changes while the player is logged in.
+
+**Two smaller things that fall out:**
+
+- `nauvis_research` declares `facrafting` **optional** today. Installing a hook against a
+  Facrafting type makes it required and the toml has to say so — *or* the installer goes in a
+  `compat/facrafting/` package loaded only when the mod is present, which is exactly the trick the
+  Jade plugins already use. The second keeps the mod standalone and is probably right, because the
+  standalone bench recipes exist precisely for Facrafting's absence.
+- **The `crafting_table` datapack is a hole in any gate**, and it already is one — it is off by
+  default and its whole purpose is to let a pack author trade the timed crafts away. Either the
+  gate covers those recipes too, or the datapack's description says out loud that it skips
+  research.
+
+**The two decisions, and they are Yannic's:**
+
+1. **Where does the tree's data come from?** `reference/factorio/recipes.json` has no
+   technologies, so unlike every recipe in this pack a technology's cost cannot be generated from
+   anything we hold. Either a `technologies.json` dump arrives beside it and
+   `tools/gen_technologies.py` gets written — which is what non-negotiable #2's argument implies,
+   because a research cost is the same kind of fact as a craft time and lives in the same place, a
+   player's memory — or the first tree is hand-written for the handful of technologies the pack can
+   currently reach, and generated later. **Ask before assuming.** The costs must not come from the
+   model's memory of Factorio either way; that is exactly what the recipe dump exists to prevent.
+2. **How much tree screen?** PLAN.md's shortcut for research is "lab consumes packs, grants
+   vanilla advancements; recipes gate on them", with "a real tech tree screen with costs and
+   prerequisites" as the rewrite. The minimum that is playable is a *list* of technologies whose
+   prerequisites are met, click one to make it the current research — no graph, no layout. That is
+   a screen in `nauvis_research`, and it should grow out of Facrafting's panel the way every other
+   screen here does rather than sit beside it.
+
+**And the thing to be careful about, because this pack has been bitten by it twice:** an unlock
+that is only ever tested by handing a recipe to a player who already has it is not tested. The test
+to write first is the one where a technology completes *while the panel is open* and the locked
+recipe appears — the work arriving from a distance, again.
+
+**PLAN.md wants one more thing here**: the vanilla-replacement datapack lands at milestone 3,
+because once research gates progression there is somewhere for stripped vanilla recipes to go. It
+is a separate job and probably a KubeJS one once KubeJS ports; see the note at the bottom.
+
+### 3. The splitter
 
 2×1 and directional — the first multi-block that is not square. `multiblock/` is the framework and
 is copied into four mods already. The belt side of it is a run that ends at the splitter and two
 that start after it, with the splitter alternating between them.
 
-### 2. Fast-replace by tier
+### 4. Fast-replace by tier
 
 A belt in hand already points the belt you click on the way you are facing, which is half of
 Factorio's belt-laying gesture. The other half is that a *faster* belt replaces a slower one, and
@@ -92,12 +203,24 @@ back and pay for the new one unless the player is in creative; and refuse to *do
 stray click wrecks a bus. The run needs no thought — a run never spans two tiers, so the line
 splits and rejoins by itself.
 
-Each step ends with `./gradlew build`, `:nauvis:runGameTestServer`, and a client boot. The client
+**There is no underground belt on any of this, and there will not be a `pipe-to-ground` either.**
+Factorio needs both because it is flat — two belts that must cross have nowhere to go but under.
+This pack is the same game with a Y axis, so a belt crosses another by changing level, which a
+Minecraft player already knows how to build and needs no item for. All four ids
+(`underground-belt` and its two upper tiers, and `pipe-to-ground`) are marked `skip` in
+`data/mapping.json` with the reason; nothing else in the recipe graph uses any of them, so the
+graph stays closed and `gen_recipes.py --check` counts them as skipped rather than missing.
+
+The playtest, which is happening before any of the above
+--------------------------------------------------------
+
+Each job ends with `./gradlew build`, `:nauvis:runGameTestServer`, and a client boot. The client
 boot is not optional: three of the last four bugs found in this pack were found by a person looking
 at the game, and one of them — see the rotation entry in the silent-failures list — passed sixty-
-three tests while being visibly wrong from three sides.
+three tests while being visibly wrong from three sides. **The tab complaint that is now job 1 came
+out of exactly this**, which is the argument making itself.
 
-**Two sessions of work have not had one, and that debt is owed before anything below.** The
+**Two sessions of work have not had one, and Yannic is running that playtest next.** The
 long-handed inserter did add a model — a smoker-coloured cube, so it is the third furnace body on
 a belt line and wants a proper look — but neither session added a fluid or a plugin, and
 `check_gametests.py` and `check_models.py` cover the registrations and the references between
@@ -185,7 +308,7 @@ Four things about it are load-bearing for anything built on top:
 The rules a machine is built to
 -------------------------------
 
-These outlive the job above and are the answer to "how big, how tall, and can you walk on it".
+These outlive the jobs above and are the answer to "how big, how tall, and can you walk on it".
 
 ### Footprint is identity. Height is ours.
 
