@@ -5,23 +5,126 @@ Written 2026-08-28 for whoever picks this up cold. Read `../CLAUDE.md` first, th
 Delete or rewrite it when the job below is done — it describes one job, not the project.
 
 **Eighty-one gametests pass and the pack builds clean.** Every machine is the size Factorio made
-it, the lab exists, five checks run in `./gradlew build`, and — as of this session — **the transport
-belt works, with items you can watch move along it.** You no longer have to carry everything by
-hand.
+it, the lab exists, five checks run in `./gradlew build`, and the transport belt works — items you
+can watch move along it, corners that look like corners, and a belt that carries you. What is left
+is not a missing block. It is that **the inserter beside the belt does not behave the way a
+Factorio player expects**, and both of the ways it is wrong are ones you only notice once there is
+a belt to notice them against.
 
-The job: the rest of milestone 2
---------------------------------
+The job: polish the burner inserter
+----------------------------------
 
-Milestone 2 is four items — `transport-belt`, `underground-belt`, `splitter`,
-`long-handed-inserter`. **The transport belt is done.** The other three are left, and none of them
-is the engineering lift the belt was: the architecture they need now exists.
+Two behaviours, no new blocks, no new architecture. Both are *identity* in the sense
+non-negotiable #1 means — they are what a player's hands already know how to do — and both are
+small. Do them in either order; the second is the smaller.
 
-### What was decided, and what it means for the rest
+### 1. A burner inserter should fuel itself
 
-`PLAN.md` allowed a shortcut — a block entity per belt passing items to the next one — and this
-session **took the other road and wrote the run**, because the request was for belts that are
-visibly full of moving items and that stay cheap, and the shortcut cannot be either. Read
-`nauvis_logistics/.../belt/` in this order and the whole thing falls out:
+Today it burns what is in its slot and, when that runs out, stops and sleeps until somebody puts
+coal in it. In Factorio it takes fuel from **what it is picking up**: a burner inserter working a
+coal belt keeps itself going, which is the whole reason the burner tier is playable before there is
+a grid. Right now the first thing a new player builds is an inserter that dies quietly.
+
+Where it goes: `BurnerInserterBlockEntity.readyToSwing`, which is already the one place that asks
+"can I afford a tick?" and already returns `burnTime > 0 || refuel(level)`. It wants a third
+clause — take a fuel item out of the source and put it in the fuel slot — and the pieces are all
+in hand:
+
+- **the source is already cached.** `InserterBlockEntity` holds a `BlockCapabilityCache` for the
+  block behind it. It is `private`; either widen it or add a `protected` accessor. Do not build a
+  second cache.
+- **the filter is already written.** `InserterFuel.isValid` rejects anything that will not burn, so
+  "is this fuel?" is "will my own slot take it?" and needs no second copy of the rule.
+- **one transaction**, extract-then-insert, exactly as `InserterBlockEntity.move` does it. Half a
+  transfer would be an item destroyed.
+
+Three things to decide, and the first wants a pass against the wiki because it is from memory:
+
+- **Does it top up, or only when empty?** Factorio's fuel slot holds a stack, and I believe a
+  burner inserter fills it rather than taking one lump at a time — but that is memory, and the
+  difference is visible: an inserter that hoards takes coal out of a line that is feeding a
+  furnace. Check `https://wiki.factorio.com/Burner_inserter` before choosing.
+- **Does taking the fuel cost a swing?** If it does, an inserter that runs dry pauses visibly and
+  the player can see what happened. If it does not, it simply never stops. The second is kinder and
+  I think it is Factorio's; the wiki will say.
+- **What if the source is the thing it is meant to be feeding?** A burner inserter taking from a
+  coal belt and feeding a furnace will eat a lump now and then, and that is correct — it is what
+  the fuel is for. Do not add a rule against it.
+
+**The sleeping already works and must keep working.** An inserter with no fuel schedules no ticks,
+so nothing it does can restart it: the wake has to arrive from outside. It already does, twice
+over — `InserterFuel.onContentsChanged` for coal put in by hand, and `InserterBlock.onNeighborChange`
+for the source's contents changing, which is filtered to the two positions an inserter can use.
+That second one is what will wake it when coal reaches the belt behind it. **Assert it**, the way
+`inserter_wakes_when_source_fills` asserts the existing case: put coal on the belt behind a dry
+inserter and check it is scheduled *in the same tick*.
+
+### 2. An inserter should load only the far lane of a belt
+
+A Factorio inserter puts things on the **far** lane and, when that lane is full, waits. It does not
+switch to the near one. That is not a detail — it is why one belt can feed two rows of machines,
+and why a player puts inserters on both sides of a bus.
+
+Ours drops onto the far lane and then falls back to the near one, so a single inserter fills a whole
+belt. The fallback is five lines in `BeltAccess.insert`, which walks the array `lanePreference`
+returns.
+
+The fix is to tell insertion and extraction apart, because they do not want the same rule:
+
+- **inserting** is far lane only, when the asker is on a side at all;
+- **extracting** keeps its preference — far lane first, near lane second. That one is *also* from
+  memory and also wants the wiki: an inserter certainly picks from the far side, but whether it
+  will take from the near lane when the far one is empty is the part I am unsure of.
+
+`lanePreference` is used by both `insert` and `here()`, so it has to become two methods rather than
+one with a flag — a flag would let a later edit quietly re-couple them.
+
+Two cases to keep in mind and one thing not to break:
+
+- **an asker with no side** — a hopper above or below, or a capability looked up with `null` — has
+  no far lane. Let it use both. Factorio has no hoppers, so nothing is being contradicted, and a
+  hopper that could not fill a belt would just be broken.
+- **`belt_holds_four_items_a_tile` asks from `null`** and expects eight. That stays true and should
+  stay in. The new test is the sided one: fill from the north, and the fifth item is refused while
+  the left lane is empty and visible.
+- **the inserter already waits properly.** `InserterBlockEntity.move` spans both halves in one
+  transaction and rolls back, so a full far lane holds the swing rather than dropping the item.
+  Nothing there needs touching, and it would be easy to "fix" it into losing items.
+
+### After this: the rest of milestone 2
+
+Three items and a job, all still open, in the order they get easier:
+
+1. **`long-handed-inserter`.** The existing inserter with a reach of two. No new architecture; note
+   it must reach *over* the block between, which the current one never had to think about. Doing
+   this straight after the fuel work is cheap, because it is the same two classes again.
+2. **The underground belt.** Two blocks that find each other and a gap the run treats as
+   continuous. The natural fit is a third rule in `BeltLines.successor` — an underground entrance's
+   successor is its matching exit rather than the block in front — after which the run needs to know
+   nothing else. Factorio's maximum distance between the two ends is **5** for the yellow tier, 7
+   fast, 9 express; that is identity and belongs in `data/mapping.json` beside `speed`, with a check
+   in `tools/check_models.py` like the one `speed` now has.
+3. **The splitter**, 2×1 and directional — the first multi-block that is not square. `multiblock/`
+   is the framework and is copied into four mods already. The belt side of it is a run that ends at
+   the splitter and two that start after it, with the splitter alternating between them.
+4. **Fast-replace by tier.** A belt in hand already points the belt you click on the way you are
+   facing, which is half of Factorio's belt-laying gesture. The other half is that a *faster* belt
+   replaces a slower one, and it cannot be written until there is a second tier to hold. It is
+   `BeltBlock.useItemOn`, and what changes is: swap the *block* rather than set a property — which
+   does remake the block entity, so `beltPlaced`/`beltRemoved` fire and `beltTurned` is not wanted
+   on that path; carry the items on that block across the block entity being remade, which will not
+   happen for free; hand the old belt back and pay for the new one unless the player is in creative;
+   and refuse to *downgrade*, or a stray click wrecks a bus. The run needs no thought — a run never
+   spans two tiers, so the line splits and rejoins by itself.
+
+Each step ends with `./gradlew build`, `:nauvis:runGameTestServer`, and a client boot. The client
+boot is not optional: three of the last four bugs found in this pack were found by a person looking
+at the game, and one of them — see the rotation entry in the silent-failures list — passed sixty-
+three tests while being visibly wrong from three sides.
+
+### The belt, if you have to touch it
+
+Read `nauvis_logistics/.../belt/` in this order and the whole thing falls out:
 
 | | |
 |---|---|
@@ -29,115 +132,29 @@ visibly full of moving items and that stay cheap, and the shortcut cannot be eit
 | `BeltLane.java` | **the idea.** Items are stored as the gaps between them, not as positions, so a flowing belt writes one number a tick and a jammed one writes none |
 | `BeltRun.java` | one line: its blocks, its two lanes, its tick, and how it hands to the next line |
 | `BeltLines.java` | every run in a level, and how lines are cut and joined when a belt is placed |
-| `client/BeltRenderer.java` | the items you can see |
-| `BeltBlock.stepOn` | why standing on a belt carries you, and why that is not `entityInside` |
+| `BeltAccess.java` | **where job 2 lives** — how everything else in the game meets a belt |
 | `BeltShape.java` | how a corner knows it is one, and why there are two of them rather than eight |
-| `BeltBlock.useItemOn` | a belt in hand points the belt you click on the way you are facing; crouch to place instead |
+| `BeltBlock.stepOn` | why standing on a belt carries you, and why that is not `entityInside` |
+| `BeltBlock.useItemOn` | a belt in hand points the belt you click on the way you are facing |
+| `client/BeltRenderer.java` | the items you can see |
 | `texture-workshop/make_belt_textures.py` | the art, and why the tread scrolls at exactly 1.875 tiles a second |
 
-Three things about it are load-bearing for whatever comes next:
+Four things about it are load-bearing for anything built on top:
 
 - **Items are pinned to a block and an offset into it**, never to a distance along a run. That is
-  what makes cutting, joining and lengthening a line safe, and it is asserted by
-  `belt_survives_being_cut`. An underground belt or a splitter that rebuilds runs gets this free.
+  what makes cutting, joining, lengthening and turning a line safe, and it is asserted by
+  `belt_survives_being_cut`.
 - **The client runs the same simulation.** It builds the same runs out of the same block states and
-  moves the items itself, so a belt full of items costs no network traffic at all. Only two things
-  are ever sent — an item put on the belt from outside, and an item taken off it — because those
-  are the only two a client cannot work out. See `net/ModNetwork.java`. **Anything added to belts
-  must keep that property**, or the reason belts are affordable goes away.
-- **A block state change does not touch the graph.** Turning a belt leaves its block entity where
-  it is, so neither `beltPlaced` nor `beltRemoved` fires while the lines through it become entirely
-  different lines. `BeltLines.beltTurned` is the third way in, and anything else that edits a belt
-  in place - an upgrade to a faster tier, say - will need it too.
-- **A run is awake while it has items, not while it is moving.** Unlike the pipe and power
-  networks there is no dormant sweep and no wake-up plumbing, because `BeltLane` makes a jammed
-  belt cost the same as an empty one.
-- **A closed ring of belts is one run that wraps.** A loop has no beginning, so it is broken open
-  at an arbitrary block and joined back up by `BeltRun.loops()`. Do not let the underground belt or
-  the splitter quietly break that: `belt_loop_carries_round` measures where an item is a lap later
-  and is the test that caught it reading as a tunnel to the middle of the square.
-
-### What is left, in order
-
-1. **`long-handed-inserter`.** The existing inserter with a reach of two. No new architecture; the
-   `InserterBlock` and its two block entities are already the shape for it. Note it must reach
-   *over* the block between, which the current inserter never had to think about.
-2. **The underground belt.** Two blocks that find each other and a gap the run treats as
-   continuous. The natural fit is a third rule in `BeltLines.successor` — an underground entrance's
-   successor is its matching exit rather than the block in front — after which the run does not
-   need to know anything else. Factorio's maximum distance between the two ends is **5** for the
-   yellow tier, 7 fast, 9 express; that is identity and belongs in `data/mapping.json` beside
-   `speed`, with a check in `tools/check_models.py` like the one `speed` now has.
-3. **The splitter**, 2×1 and directional — the first multi-block that is not square. `multiblock/`
-   is the framework and is copied into four mods already. The belt side of it is a run that ends at
-   the splitter and two runs that start after it, with the splitter alternating between them.
-4. **Fast-replace by tier.** A belt in hand already points the belt you click on the way you are
-   facing, which is half of Factorio's belt-laying gesture. The other half is that a *faster* belt
-   in hand **replaces** a slower one, which is how a bus gets upgraded, and it cannot be written
-   until there is a second tier to hold. It is `BeltBlock.useItemOn`, and what changes is:
-
-   - swap the *block* rather than set a property — `server.setBlock(pos, other.defaultBlockState()
-     .setValue(FACING, placed), UPDATE_ALL)`. That does remove and remake the block entity, so
-     `beltPlaced`/`beltRemoved` fire and `beltTurned` is not wanted on this path;
-   - **the items on that block have to survive it**, and they will not for free: the block entity
-     goes, taking its `stored` list with it. Take them off the run first, the way
-     `preRemoveSideEffects` does, and put them back after — there is a gametest shape for this in
-     `belt_survives_being_cut`;
-   - hand the old belt back and pay for the new one, unless the player is in creative;
-   - refuse to *downgrade*, or Factorio players will wreck their own bus with a stray click.
-
-   The run needs no thought: a run never spans two tiers, so the line splits and rejoins by itself.
-5. **Rewrite this file** for milestone 3.
-
-Corners are done: `BeltShape` is worked out from the neighbours the way a pipe works out its
-connections, and the corner texture is the straight one warped through a quarter turn by `bend` in
-the texture workshop rather than drawn a second time, so the two can never drift apart. What a
-corner still does *not* do is turn the player as it carries them — `stepOn` pushes along the block's
-facing, so a bend is two straight shoves. Items curve properly.
-
-Each step ends with `./gradlew build`, `:nauvis:runGameTestServer`, and a client boot. The client
-boot is not optional: three of the last four bugs found in this pack were found by a person looking
-at the game, and one of them — see the rotation entry in the silent-failures list — passed
-sixty-three tests while being visibly wrong from three sides.
-
-### The numbers are identity and are not in the dump
-
-`reference/factorio/recipes.json` has recipes and nothing else. A belt's **speed** and an
-underground belt's **maximum gap** are identity in the sense non-negotiable #1 means — they live in
-the player's head and decide what a factory looks like — and neither is in the file.
-
-Speed is now done the way footprints were: `data/mapping.json` carries a `speed` in tiles per
-second for all nine belt-ish entries, and `tools/check_models.py` fails the build if a belt block's
-`SPEED` constant stops agreeing with it. **Throughput is not a second number** — four items to a
-tile a lane, two lanes, so 1.875 tiles a second *is* the wiki's 15 items a second.
-
-The gap is the one still to record. Do it the same way.
-
-### What to read, and what each one is for
-
-**The two that matter are already on the shelf**, and they are the two opposite answers to the one
-question a belt asks — *are the items on it real things, or numbers?* This session answered
-"numbers", the way Create and Factorio both do. Both are still worth reading before touching the
-underground belt or the splitter.
-
-| | |
-|---|---|
-| `reference/create-src/.../kinetics/belt/transport/` | **The architecture that was reimplemented.** `TransportedItemStack` is an item with a position along the belt; `BeltInventory` owns the whole run and segment blocks delegate to one controller. Ours differs in two ways worth knowing: it stores gaps rather than positions, so a full belt is cheap to tick, and it has two lanes. Code is MIT with attribution; **assets are All Rights Reserved** |
-| `reference/ImmersiveEngineering-src/.../conveyor/` | **The other answer, worth reading to reject.** IE's conveyors move real `ItemEntity`s along blocks. It is far simpler, it works, and it is why IE conveyors are not Factorio belts: entities cost, they cannot compress, and they cannot be two lanes |
-
-**Still the one real gap:** **Mekanism**'s logistical transporters — clone the 1.21.1 branch into
-`reference/Mekanism-src/`. `TransporterStack` and `LogisticalTransporterBase` are a third opinion,
-and the half Create is weakest on is the half that took the longest here: *many moving items, drawn
-cheaply, synced to clients without a packet per item per tick.* This pack's answer is to have the
-client simulate and send only what crosses the boundary; Mekanism's is worth comparing against
-before the splitter, which is the first thing that will strain it.
-
-That is the whole list. Everything else in the tech ecosystem — Industrial Foregoing, Thermal,
-EnderIO — solves this with conveyors or conduits that are variations on IE's answer or Mekanism's,
-and none of them is a third idea.
-
-**None of these can be shipped.** The whole tech ecosystem stopped at 1.21.1 (PLAN.md's survey);
-they are read and reimplemented, with attribution in the commit, and their assets are never copied.
+  moves the items itself, so a belt full of items costs no network traffic. Only two things are ever
+  sent — an item put on the belt from outside, and one taken off — because those are the only two a
+  client cannot work out. **Anything added to belts must keep that property**, or the reason belts
+  are affordable goes away. Job 2 does not touch it: refusing a lane is a decision made before the
+  message that reports the insert.
+- **A run is awake while it has items, not while it is moving.** No dormant sweep and no wake-up
+  plumbing, because `BeltLane` makes a jammed belt cost the same as an empty one.
+- **A closed ring of belts is one run that wraps**, and **a block state change does not touch the
+  graph** — turning a belt leaves its block entity alone, so `BeltLines.beltTurned` is a third way
+  in that anything editing a belt in place will need.
 
 The rules a machine is built to
 -------------------------------
