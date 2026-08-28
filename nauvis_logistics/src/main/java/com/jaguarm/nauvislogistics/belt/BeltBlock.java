@@ -14,6 +14,10 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -56,12 +60,23 @@ public abstract class BeltBlock extends BaseEntityBlock {
      */
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-    private static final VoxelShape SHAPE =
-            Block.box(0, 0, 0, 16, Belts.HEIGHT * 16, 16);
+    /**
+     * Whether this block is drawn straight or as a bend, and which way it bends.
+     *
+     * <p>Worked out from the neighbours and kept in the block state rather than asked of the run,
+     * because a client has to draw a belt in a chunk whose run it may not have built yet - and
+     * because a block state is what a model is chosen by. See {@link #withShape}.
+     */
+    public static final EnumProperty<BeltShape> SHAPE = EnumProperty.create("shape", BeltShape.class);
+
+    /** Half a block, and the same box for collision and outline. */
+    private static final VoxelShape BOX = Block.box(0, 0, 0, 16, Belts.HEIGHT * 16, 16);
 
     protected BeltBlock(Properties properties) {
         super(properties);
-        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH));
+        registerDefaultState(getStateDefinition().any()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(SHAPE, BeltShape.STRAIGHT));
     }
 
     /** How far an item on this belt moves in one tick, in {@link Belts#UNITS_PER_BLOCK}ths. */
@@ -72,12 +87,103 @@ public abstract class BeltBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, SHAPE);
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(FACING, context.getHorizontalDirection());
+        return withShape(defaultBlockState().setValue(FACING, context.getHorizontalDirection()),
+                context.getLevel(), context.getClickedPos());
+    }
+
+    /**
+     * Re-reads the bend when anything beside this belt changes.
+     *
+     * <p>All four sides every time, not just the one that changed, because a bend is a fact about
+     * how many feeders there are rather than about any one of them: a second belt joining turns a
+     * corner back into a straight, and it does that by existing rather than by being the neighbour
+     * the notification happens to name.
+     */
+    @Override
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks,
+            BlockPos pos, Direction direction, BlockPos neighbourPos, BlockState neighbourState,
+            RandomSource random) {
+        return withShape(state, level, pos);
+    }
+
+    /**
+     * Which way this belt bends, given what is around it.
+     *
+     * <p>One feeder, arriving from a side, is a corner. None, one from directly behind, or more
+     * than one, is a straight - two feeders being a side-load, which Factorio draws as a straight
+     * belt something joins rather than as a bend.
+     *
+     * <p>The test for a feeder is the same one {@link BeltLines} builds runs with, and it has to
+     * stay that way or a belt will be drawn bending in a direction nothing travels. It is written
+     * out twice rather than shared because the two ask different things: this one asks a
+     * {@code LevelReader} mid-update, and that one asks the set of belts it already knows about.
+     */
+    public static BlockState withShape(BlockState state, LevelReader level, BlockPos pos) {
+        Direction travel = state.getValue(FACING);
+        Direction from = null;
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            if (!feeds(level, pos.relative(side), side.getOpposite(), state)) {
+                continue;
+            }
+            if (from != null) {
+                // Two of them: a side-load, and a straight belt.
+                return state.setValue(SHAPE, BeltShape.STRAIGHT);
+            }
+            from = side;
+        }
+
+        BeltShape shape = BeltShape.STRAIGHT;
+        if (from == travel.getCounterClockWise()) {
+            shape = BeltShape.FROM_LEFT;
+        } else if (from == travel.getClockWise()) {
+            shape = BeltShape.FROM_RIGHT;
+        }
+        return state.setValue(SHAPE, shape);
+    }
+
+    /**
+     * Re-reads the bend on this belt and on every belt beside it.
+     *
+     * <p>Called when a belt joins the graph, which covers the two ways a belt can arrive already
+     * pointing at something without {@code getStateForPlacement} ever having run: put there by a
+     * command, a structure or another mod, and loaded from disk with its neighbour in a chunk that
+     * had not arrived yet. Both leave a corner drawn as a straight belt, which works perfectly and
+     * looks like a mistake.
+     *
+     * <p>Its neighbours as well as itself, because the two halves of a corner learn about each
+     * other at different moments and only one of them gets a notification.
+     */
+    public static void refreshShapes(ServerLevel level, BlockPos pos) {
+        refresh(level, pos);
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            refresh(level, pos.relative(side));
+        }
+    }
+
+    private static void refresh(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (!(state.getBlock() instanceof BeltBlock)) {
+            return;
+        }
+        BlockState fixed = withShape(state, level, pos);
+        if (fixed != state) {
+            level.setBlock(pos, fixed, Block.UPDATE_ALL);
+        }
+    }
+
+    /** Whether the block at {@code from} is a belt of this kind handing to us, {@code towards}. */
+    private static boolean feeds(LevelReader level, BlockPos from, Direction towards, BlockState self) {
+        BlockState neighbour = level.getBlockState(from);
+        if (!neighbour.is(self.getBlock())) {
+            return false;
+        }
+        return neighbour.getValue(FACING) == towards
+                && self.getValue(FACING) != towards.getOpposite();
     }
 
     @Override
@@ -89,7 +195,7 @@ public abstract class BeltBlock extends BaseEntityBlock {
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+        return BOX;
     }
 
     /**

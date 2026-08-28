@@ -46,6 +46,16 @@ two, then one — averaging exactly three pixels every two ticks and returning t
 started after sixteen ticks, so it loops without a jump. `frame_schedule` works that out
 from the speed in `data/mapping.json`, so a fast belt at twice the speed needs no thought.
 
+**Corners are the straight top bent, not a second map.** `bend` warps it through a quarter turn,
+pixel for pixel: each destination pixel becomes a distance *along* the belt and a distance *across*
+it, and those two are the straight map's row and column. So the rails become arcs and the chevrons
+follow them round without being drawn again, edits to one move both, and a corner meets a straight
+at a seam because they are the same picture. The along coordinate is stretched to a full sixteen
+pixels — a quarter arc of radius eight is only 12.6 long, and a tile that is not a whole number of
+tread repeats puts the chevrons out of phase at every seam. The inside of the turn collapses to a
+point, because a belt is as wide as the radius it turns through; that is what a tight corner is,
+and Factorio's own does the same.
+
 Two rules hold the top map together, and both bite if you ignore them:
 
 - **the rails are constant down each column.** The whole image is rolled to animate it, so

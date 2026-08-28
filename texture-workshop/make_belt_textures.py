@@ -13,6 +13,14 @@ Legend for the maps:
     m  mid material                  l  light material
     h  highlight
 
+Corners are the straight tile bent
+----------------------------------
+
+There is no map for a corner. `bend` warps the straight top through a quarter turn, pixel for
+pixel, so the rails become arcs and the chevrons follow them round without being drawn a second
+time. Edit the chevrons and the corner turns with them; they meet at a seam because they are the
+same picture.
+
 The moving part
 ---------------
 
@@ -188,6 +196,50 @@ def render(rows, tone, roll=0):
     return img
 
 
+
+def bend(rows, plate, tone, roll=0):
+    """The straight top, bent through a quarter turn: in at the west edge, out at the north.
+
+    **Nothing is drawn twice.** A corner is the straight tile warped, pixel for pixel, rather than
+    a second map that has to be kept in step with the first: edit the chevrons and the corner
+    turns with them, and the two meet at a seam because they are the same picture.
+
+    The bend is a quarter circle about the north-west corner of the tile. Each destination pixel
+    is turned into a distance *along* the belt and a distance *across* it, and those two are the
+    straight tile's row and column - so the rails bend into arcs and the chevrons bend into the
+    turn without either being described again.
+
+    Two details worth knowing:
+
+    - **The along coordinate is stretched to sixteen pixels.** A quarter arc of radius eight is
+      only 12.6 pixels long, and a tile that was not a whole number of tread repeats would put the
+      chevrons out of phase at every seam between a corner and a straight.
+    - **The inside of the turn collapses to a point**, because a belt is as wide as the radius it
+      turns through. That is what a tight corner is, and Factorio's own corner does the same.
+      Anything falling outside the belt - the far corner of the tile - is plate.
+    """
+    colours = {
+        ".": tone["K"], "d": tone["D"], "m": tone["M"],
+        "l": tone["L"], "h": tone["H"],
+        "a": tone["A"], "b": tone["B"],
+    }
+    img = Image.new("RGBA", (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            dx, dy = x + 0.5, y + 0.5
+            radius = math.hypot(dx, dy)
+            angle = math.atan2(dy, dx)
+
+            column = int(math.floor(radius - 8.0 + 8.0))
+            row = int(math.floor(angle / (math.pi / 2) * 16))
+            if 0 <= column < 16 and 0 <= row < 16:
+                px[x, y] = rgba(colours[rows[(row + roll) % 16][column]])
+            else:
+                px[x, y] = rgba(colours[plate[y][x]])
+    return img
+
+
 def speeds():
     """Belt speeds in tiles per second, read from the mapping rather than typed here."""
     path = os.path.join(HERE, os.pardir, "data", "mapping.json")
@@ -237,28 +289,36 @@ def main():
     written = []
     for tier in tiers:
         tone = TIERS[tier]
-
-        # The top is a vertical strip of frames, one per pixel the tread can sit at.
-        strip = Image.new("RGBA", (16, 16 * TREAD_PERIOD))
-        for roll in range(TREAD_PERIOD):
-            strip.paste(render(top, tone, roll=roll), (0, 16 * roll))
-        path = os.path.join(OUT, "%s_top.png" % tier)
-        strip.save(path)
-
         schedule = frame_schedule(tile_speeds[tier])
-        with open(path + ".mcmeta", "w", encoding="utf-8") as handle:
-            json.dump({"animation": {"frametime": 1, "frames": schedule}}, handle, indent=2)
-            handle.write("\n")
 
-        written.append((tier, "top", render(top, tone)))
+        # Three tops, all animated: straight, and the two hands of a quarter turn. The right-hand
+        # corner is the left one mirrored, which also swaps its lanes over - which is right, since
+        # the far lane of a belt turning one way is the near lane of one turning the other.
+        tops = {
+            "top": lambda roll: render(top, tone, roll=roll),
+            "top_left": lambda roll: bend(top, bottom, tone, roll=roll),
+            "top_right": lambda roll: bend(top, bottom, tone, roll=roll)
+                .transpose(Image.FLIP_LEFT_RIGHT),
+        }
+        for name, frame in tops.items():
+            strip = Image.new("RGBA", (16, 16 * TREAD_PERIOD))
+            for roll in range(TREAD_PERIOD):
+                strip.paste(frame(roll), (0, 16 * roll))
+            path = os.path.join(OUT, "%s_%s.png" % (tier, name))
+            strip.save(path)
+            with open(path + ".mcmeta", "w", encoding="utf-8") as handle:
+                json.dump({"animation": {"frametime": 1, "frames": schedule}}, handle, indent=2)
+                handle.write("\n")
+            written.append((tier, name, frame(0)))
+
         for name, img in (("side", render(side, tone)), ("bottom", render(bottom, tone))):
             img.save(os.path.join(OUT, "%s_%s.png" % (tier, name)))
             written.append((tier, name, img))
 
-        print("%s: %d frames, %d ticks to a loop, %s tiles a second"
+        print("%s: %d frames a top, %d ticks to a loop, %s tiles a second"
               % (tier, TREAD_PERIOD, len(schedule), tile_speeds[tier]))
 
-    print("wrote %d textures to %s" % (len(written) + len(tiers), os.path.normpath(OUT)))
+    print("wrote %d textures to %s" % (len(written), os.path.normpath(OUT)))
 
     if "--preview" in sys.argv:
         scale, pad, cols = 8, 6, 3

@@ -4,7 +4,7 @@ Next session
 Written 2026-08-28 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
 Delete or rewrite it when the job below is done — it describes one job, not the project.
 
-**Seventy-nine gametests pass and the pack builds clean.** Every machine is the size Factorio made
+**Eighty gametests pass and the pack builds clean.** Every machine is the size Factorio made
 it, the lab exists, five checks run in `./gradlew build`, and — as of this session — **the transport
 belt works, with items you can watch move along it.** You no longer have to carry everything by
 hand.
@@ -31,6 +31,7 @@ visibly full of moving items and that stay cheap, and the shortcut cannot be eit
 | `BeltLines.java` | every run in a level, and how lines are cut and joined when a belt is placed |
 | `client/BeltRenderer.java` | the items you can see |
 | `BeltBlock.stepOn` | why standing on a belt carries you, and why that is not `entityInside` |
+| `BeltShape.java` | how a corner knows it is one, and why there are two of them rather than eight |
 | `texture-workshop/make_belt_textures.py` | the art, and why the tread scrolls at exactly 1.875 tiles a second |
 
 Three things about it are load-bearing for whatever comes next:
@@ -65,14 +66,13 @@ Three things about it are load-bearing for whatever comes next:
 3. **The splitter**, 2×1 and directional — the first multi-block that is not square. `multiblock/`
    is the framework and is copied into four mods already. The belt side of it is a run that ends at
    the splitter and two runs that start after it, with the splitter alternating between them.
-4. **Curved belt models.** Items already go round corners — a run turns and `BeltRun.pointAt`
-   carries them through the middle of the block — but the *model* is straight, so a corner reads as
-   two belts at right angles rather than as a bend. A `SHAPE` blockstate property computed the way
-   `PipeBlock`'s connections are, three models, and a fourth ASCII map in
-   `texture-workshop/make_belt_textures.py` with the chevrons turning. Note that a curved tread
-   cannot scroll the way the straight one does — rolling the image only moves it in a straight
-   line — so a corner either animates by hand-drawn frames or does not animate.
-5. **Rewrite this file** for milestone 3.
+4. **Rewrite this file** for milestone 3.
+
+Corners are done: `BeltShape` is worked out from the neighbours the way a pipe works out its
+connections, and the corner texture is the straight one warped through a quarter turn by `bend` in
+the texture workshop rather than drawn a second time, so the two can never drift apart. What a
+corner still does *not* do is turn the player as it carries them — `stepOn` pushes along the block's
+facing, so a bend is two straight shoves. Items curve properly.
 
 Each step ends with `./gradlew build`, `:nauvis:runGameTestServer`, and a client boot. The client
 boot is not optional: three of the last four bugs found in this pack were found by a person looking
@@ -406,6 +406,13 @@ Silent failures — these compile, pass tests, and are still wrong
   `nauvis:pack_loads` registered under type `nauvis:registry_presence` is fine - so
   `tools/check_gametests.py` matches every `GameTestInstance` that is registered to run against
   the codecs handed to `TEST_TYPES`.
+- **A block put down by anything but a player never runs `getStateForPlacement`.** A command, a
+  structure, another mod or `GameTestHelper.setBlock` all write the state you hand them, so a block
+  that works out how it looks from its neighbours is drawn wrong and stays wrong: nothing changes
+  beside it afterwards, so no `updateShape` ever comes. Belt corners were straight lines for
+  exactly this reason, and only in a gametest, which is the lucky version of it. `BeltBlock`
+  re-reads its own shape and its neighbours' when it joins the graph, which also covers the belt
+  whose corner is in a chunk that had not loaded yet.
 - **A horizontal `Entity.move` tells the entity it is falling.** `Entity.move` only decides
   whether something is standing on anything when the movement had a vertical component, so a push
   along a belt with `y = 0` clears `onGround`. Nothing looks wrong for a tick — and then the next
@@ -447,9 +454,6 @@ the screen. The modal is the more faithful one. A Facrafting change, and it want
 **A belt does not load a chest.** Deliberate and Factorio-faithful: a belt running into a container
 backs up, and taking things off a belt is what inserters are for. It is one method — `BeltRun`'s
 hand-off — if it is ever wanted the other way. `belt_does_not_load_a_chest` pins it.
-
-**A belt corner is drawn as two straight belts.** The items go round it properly; the model does
-not bend. See the fourth item in the job list.
 
 **Crouching stops a belt carrying you**, which Factorio does not do — there a belt has you whatever
 you do. It is in for the Minecraft reflex: without it, placing a machine beside a working belt means

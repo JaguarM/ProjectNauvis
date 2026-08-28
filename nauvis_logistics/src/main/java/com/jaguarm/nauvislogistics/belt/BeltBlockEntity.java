@@ -13,6 +13,7 @@ import com.jaguarm.nauvislogistics.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -112,6 +113,12 @@ public class BeltBlockEntity extends BlockEntity {
         }
         BeltLines.of(level).beltPlaced(worldPosition);
         handOverStored();
+        if (level instanceof ServerLevel server) {
+            // Whether this is drawn as a bend is worked out from its neighbours, and there are two
+            // ways to arrive without anyone having asked: put here by a command or a structure, or
+            // loaded from disk beside a chunk that had not arrived yet. See BeltBlock.refreshShapes.
+            BeltBlock.refreshShapes(server, worldPosition);
+        }
     }
 
     @Override

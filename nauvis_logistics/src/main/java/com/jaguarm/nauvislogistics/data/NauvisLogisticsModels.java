@@ -1,12 +1,16 @@
 package com.jaguarm.nauvislogistics.data;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
+import com.jaguarm.nauvislogistics.belt.BeltBlock;
+import com.jaguarm.nauvislogistics.belt.BeltShape;
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
+import net.minecraft.client.data.models.MultiVariant;
 import net.minecraft.client.data.models.ItemModelGenerators;
 import net.minecraft.client.data.models.ModelProvider;
 import net.minecraft.client.data.models.blockstates.MultiVariantGenerator;
+import net.minecraft.client.data.models.blockstates.PropertyDispatch;
 import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.client.data.models.model.TextureMapping;
 import net.minecraft.client.data.models.model.TextureSlot;
@@ -33,6 +37,19 @@ import net.minecraft.world.level.block.Blocks;
  * {@code ../NeoProgressiveAutomation/texture-workshop/}.
  */
 public class NauvisLogisticsModels extends ModelProvider {
+
+    /** One belt model: a bottom slab, with the given top. */
+    private static Identifier beltModel(BlockModelGenerators blockModels, String suffix, String top) {
+        TextureMapping textures = new TextureMapping()
+                .put(TextureSlot.TOP, texture(top))
+                .put(TextureSlot.SIDE, texture("transport_belt_side"))
+                .put(TextureSlot.BOTTOM, texture("transport_belt_bottom"));
+        return suffix.isEmpty()
+                ? ModelTemplates.SLAB_BOTTOM.create(
+                        ModBlocks.TRANSPORT_BELT.get(), textures, blockModels.modelOutput)
+                : ModelTemplates.SLAB_BOTTOM.createWithSuffix(
+                        ModBlocks.TRANSPORT_BELT.get(), suffix, textures, blockModels.modelOutput);
+    }
 
     /**
      * One of ours, from {@code texture-workshop/}, rather than a vanilla stand-in.
@@ -85,20 +102,28 @@ public class NauvisLogisticsModels extends ModelProvider {
         // the wrong way looks exactly like a belt that is working. The top carries a chevron and
         // it scrolls, at exactly the speed the belt carries things, which is what
         // `texture-workshop/make_belt_textures.py` goes to some trouble over.
-        Identifier belt = ModelTemplates.SLAB_BOTTOM.create(
-                ModBlocks.TRANSPORT_BELT.get(),
-                new TextureMapping()
-                        .put(TextureSlot.TOP, texture("transport_belt_top"))
-                        .put(TextureSlot.SIDE, texture("transport_belt_side"))
-                        .put(TextureSlot.BOTTOM, texture("transport_belt_bottom")),
-                blockModels.modelOutput);
+        // Three of it: straight, and the two hands of a corner. They differ only in which top
+        // texture they name - the slab and its sides are the same object whichever way it bends.
+        Identifier belt = beltModel(blockModels, "", "transport_belt_top");
+        Identifier left = beltModel(blockModels, "_left", "transport_belt_top_left");
+        Identifier right = beltModel(blockModels, "_right", "transport_belt_top_right");
+
+        // Two properties, and they do not fight: the shape picks a model and the facing sets the
+        // rotation. That is the arrangement the boiler could not use - there both the cell and the
+        // machine wanted to set `y`, and a VariantMutator sets rather than adds.
+        PropertyDispatch.C1<MultiVariant, BeltShape> bend = PropertyDispatch.initial(BeltBlock.SHAPE)
+                .select(BeltShape.STRAIGHT, BlockModelGenerators.plainVariant(belt))
+                .select(BeltShape.FROM_LEFT, BlockModelGenerators.plainVariant(left))
+                .select(BeltShape.FROM_RIGHT, BlockModelGenerators.plainVariant(right));
 
         blockModels.blockStateOutput.accept(
-                MultiVariantGenerator.dispatch(ModBlocks.TRANSPORT_BELT.get(), BlockModelGenerators.plainVariant(belt))
+                MultiVariantGenerator.dispatch(ModBlocks.TRANSPORT_BELT.get())
+                        .with(bend)
                         .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
 
         // Said out loud rather than left to the default, because the default is "block/<name>" and
-        // a template that adds a suffix silently breaks it. See the silent-failures list.
+        // a template that adds a suffix silently breaks it. See the silent-failures list. In hand
+        // it is a straight belt, whatever it would become once placed.
         blockModels.registerSimpleItemModel(ModBlocks.TRANSPORT_BELT.get(), belt);
 
         // Iron sides with a barrel's lid: reads as a metal container at a glance, and does not

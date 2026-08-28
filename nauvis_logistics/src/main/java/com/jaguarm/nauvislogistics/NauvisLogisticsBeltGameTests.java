@@ -6,6 +6,7 @@ import com.jaguarm.nauvislogistics.belt.BeltBlock;
 import com.jaguarm.nauvislogistics.belt.BeltLane;
 import com.jaguarm.nauvislogistics.belt.BeltLines;
 import com.jaguarm.nauvislogistics.belt.BeltRun;
+import com.jaguarm.nauvislogistics.belt.BeltShape;
 import com.jaguarm.nauvislogistics.belt.Belts;
 import com.jaguarm.nauvislogistics.belt.TransportBeltBlock;
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
@@ -100,6 +101,7 @@ public final class NauvisLogisticsBeltGameTests {
         TEST_TYPES.register("belt_drops_what_it_carried", () -> DropsWhatItCarriedTest.CODEC);
         TEST_TYPES.register("belt_is_walked_over", () -> WalkedOverTest.CODEC);
         TEST_TYPES.register("belt_loop_carries_round", () -> LoopCarriesRoundTest.CODEC);
+        TEST_TYPES.register("belt_bends_the_way_it_carries", () -> BendsTheWayItCarriesTest.CODEC);
         TEST_TYPES.register("belt_carries_what_stands_on_it", () -> CarriesWhatStandsOnItTest.CODEC);
         TEST_TYPES.register("inserter_loads_a_belt", () -> InserterLoadsABeltTest.CODEC);
         TEST_TYPES.register("inserter_takes_from_a_belt", () -> InserterTakesFromABeltTest.CODEC);
@@ -128,6 +130,8 @@ public final class NauvisLogisticsBeltGameTests {
         register(event, environment, "belt_drops_what_it_carried", DropsWhatItCarriedTest::new, 60);
         register(event, environment, "belt_is_walked_over", WalkedOverTest::new, 60);
         register(event, environment, "belt_loop_carries_round", LoopCarriesRoundTest::new, 200);
+        register(event, environment, "belt_bends_the_way_it_carries",
+                BendsTheWayItCarriesTest::new, 60);
         register(event, environment, "belt_carries_what_stands_on_it",
                 CarriesWhatStandsOnItTest::new, 200);
         register(event, environment, "inserter_loads_a_belt", InserterLoadsABeltTest::new, 200);
@@ -819,6 +823,74 @@ public final class NauvisLogisticsBeltGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a loop of belts carries an item round");
+        }
+    }
+
+    /**
+     * A corner is drawn bending the way its items actually travel.
+     *
+     * <p>Worth a test of its own because getting it back to front is invisible to every other one
+     * here: the items still go round, at the right speed, on the right lane. It is only wrong to
+     * look at - and a belt that looks wrong is one a player rips up and lays again, which is the
+     * failure mode the rotation bug in the boiler had.
+     *
+     * <p>Also that two feeders is <em>not</em> a bend. Factorio draws a side-load as a straight
+     * belt something joins, and a bend there would say the line goes somewhere it does not.
+     */
+    public static class BendsTheWayItCarriesTest extends GameTestInstance {
+
+        public static final MapCodec<BendsTheWayItCarriesTest> CODEC =
+                RecordCodecBuilder.<BendsTheWayItCarriesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(BendsTheWayItCarriesTest::info))
+                                .apply(i, BendsTheWayItCarriesTest::new));
+
+        public BendsTheWayItCarriesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            // Coming in from the west, leaving to the north: the items arrive on the corner's left.
+            BlockPos corner = TAIL.east();
+            place(helper, TAIL, Direction.EAST);
+            place(helper, corner, Direction.NORTH);
+
+            // And the mirror of it, well clear: in from the east, out to the north.
+            BlockPos mirror = TAIL.south(4).east();
+            place(helper, mirror.east(), Direction.WEST);
+            place(helper, mirror, Direction.NORTH);
+
+            // A plain line, which must stay straight.
+            BlockPos straight = TAIL.south(8);
+            place(helper, straight, Direction.EAST);
+            place(helper, straight.east(), Direction.EAST);
+
+            // And a side-load: fed from behind and from the side at once.
+            BlockPos joined = TAIL.south(12).east();
+            place(helper, joined, Direction.EAST);
+            place(helper, joined.west(), Direction.EAST);
+            place(helper, joined.north(), Direction.SOUTH);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                helper.assertBlockProperty(corner, BeltBlock.SHAPE, BeltShape.FROM_LEFT);
+                helper.assertBlockProperty(mirror, BeltBlock.SHAPE, BeltShape.FROM_RIGHT);
+                helper.assertBlockProperty(straight.east(), BeltBlock.SHAPE, BeltShape.STRAIGHT);
+                helper.assertBlockProperty(joined, BeltBlock.SHAPE, BeltShape.STRAIGHT);
+
+                // The one that feeds the corner is not itself a corner.
+                helper.assertBlockProperty(TAIL, BeltBlock.SHAPE, BeltShape.STRAIGHT);
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a belt bends the way it carries");
         }
     }
 
