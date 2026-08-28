@@ -1,26 +1,134 @@
 Next session
 ============
 
-Written 2026-08-27 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
+Written 2026-08-28 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
 Delete or rewrite it when the job below is done — it describes one job, not the project.
 
-**Fifty-seven gametests pass and the pack builds clean.** Milestone 1 is closed, steam runs through
-pipes, and the machines say what they are doing. **Every machine in the pack is now the size
-Factorio made it** — assembler 3×3, boiler 3×2, steam engine 5×3, and the two drills 2×2 and 3×3 in
-Neo Progressive Automation 2.0.0. This job is done; what is below is the record of how, and the
-belts are next.
+**Sixty-three gametests pass and the pack builds clean.** Every machine is the size Factorio made
+it, the lab exists, and five checks run in `./gradlew build` that between them catch the classes of
+bug this pack keeps shipping. What is missing is the thing the whole game is about: **you still
+have to carry everything by hand.**
 
-The job: machines the size Factorio made them
----------------------------------------------
+The job: belts
+--------------
 
-Yannic's words: *the current one block machines are a joke.* They are. An assembling machine is one
-cube. So is a boiler that should be six tiles, and so is a steam engine that should be fifteen. The
-power poles are the one thing in the pack that reads correctly, and they read correctly for exactly
-one reason: a pole is four real blocks rather than one block pretending to be four.
+Milestone 2, and four items: `transport-belt`, `underground-belt`, `splitter`,
+`long-handed-inserter`. The smallest item count in the plan and by a distance the largest
+engineering lift, which is why belts get their own decision below before any code.
 
-So every machine gets its Factorio footprint, in real blocks. **The model work queued by the last
-session happens inside this change, not before it** — modelling a one-block assembler and then
-modelling it again at 3×3 is doing the job twice, and the second time is the only one that counts.
+A belt is the first thing in this pack that is not a machine. Everything so far has been a block
+that owns some items and thinks once in a while; a belt is a *line* that things are on, and the
+line is longer than any of its blocks.
+
+### Decide this first: a block entity per belt, or a run that owns its items
+
+**PLAN.md settled this, and the ground has shifted under it.** Its shortcut table says
+*"BlockEntity per block passing items along"*, with the real model — Create's, where a run is one
+object and items are positions along it — as the rewrite. That was written when the pack had no
+example of the second thing.
+
+It now has two. `PowerNetwork` and `FluidNetwork` are both "one object per connected thing", both
+with a manager, join-and-leave, sleeping and chunk-load handling, and `docs/NEXT.md` has been
+saying *"and belts next"* since the pipes landed. A belt run is the third instance of a pattern
+this codebase already knows how to write, and the pipe's own header explains why it was the
+easier of the two.
+
+So: **the recommendation is to skip the shortcut and write the run**, because the shortcut is
+precisely the thing PLAN.md calls expensive to reverse, and the reversal is no longer the leap it
+was. But PLAN.md is a settled decision and this is Yannic's call — **ask before starting**, and if
+the answer is "take the shortcut", take it without arguing. It is a real answer: it ships milestone
+2 sooner and belts have their own mod so the rewrite stays contained.
+
+The rest of this section assumes the run.
+
+### What a belt is, concretely
+
+- **A run is one object.** `nauvis_logistics` gets a `BeltNetwork` beside the pipe's
+  `FluidNetwork`: segments join and leave, the run ticks once however long it is, and a run with
+  nothing on it drops out of the active set. Read `nauvis_fluids/.../pipe/` first — it is the
+  smaller of the two existing ones and its header says exactly why.
+- **Items are positions, not entities.** Never `ItemEntity`. A run holds items each with a
+  distance along it, which is how Factorio moves millions and the only model that makes the
+  rendering tractable.
+- **Two lanes.** A Factorio belt has a left and a right lane and they do not mix. That is identity,
+  not detail: it is why a splitter behaves as it does, why an inserter takes from the far lane, and
+  why half a belt of iron and half of copper is a thing players build. Getting this wrong is a
+  rewrite, so do it now.
+- **1×1, and you walk over it.** Collision at 0.25 or below — see the walkability rules below. A
+  belt you have to jump is not a belt.
+- **A splitter is 2×1 and directional**, which makes it the first multi-block that is not square.
+  The framework is in `multiblock/` and is copied into four mods already; `check_duplicated.py`
+  keeps the copies honest. This should be the easy half.
+- **Insertion and extraction are capabilities.** A belt publishes `Capabilities.Item.BLOCK` so an
+  inserter, a hopper or another mod's machine can put things on it without knowing what a belt is —
+  the same rule everything else in the pack meets at.
+
+### The numbers are identity and are not in the dump
+
+`reference/factorio/recipes.json` has recipes and nothing else. A belt's **speed**, its
+**throughput per lane**, and an underground belt's **maximum gap** are all identity in the sense
+non-negotiable #1 means — they live in the player's head and decide what a factory looks like —
+and none of them is in the file.
+
+This is the same hole footprints were in, and it has the same fix: record them in
+`data/mapping.json` beside the ids, check them, and never type them again. Every entry already
+carries a `wiki_link`, which is the citation. Add fields the way `size` was added, and teach
+`tools/check_models.py` to hold the code to them.
+
+Numbers worth having in front of you before starting, **all of which want one pass against the
+wiki because they are from memory**: a transport belt moves 15 items a second over two lanes;
+fast and express belts are 30 and 45; an underground belt spans a gap of about five tiles. The
+belt item is 1×1, the splitter 2×1, and both are already in `mapping.json` with those sizes.
+
+### The order to do it in
+
+1. **`long-handed-inserter` first.** It is the existing inserter with a reach of two, it needs no
+   new architecture, and it proves the milestone is moving on the first day. `InserterBlock` and
+   its two block entities are already the shape for it.
+2. **The transport belt.** All of the risk. Get one run moving one item before anything else
+   exists — no splitters, no undergrounds, no two lanes if it helps — then add lanes, then make it
+   sleep, then make it render.
+3. **The underground belt**, which is two blocks that find each other and a gap the run has to
+   treat as continuous.
+4. **The splitter**, last, because it needs the run's internals to be settled.
+5. **Rewrite this file** for milestone 3.
+
+Each step ends with `./gradlew build`, `:nauvis:runGameTestServer`, and a client boot. The client
+boot is not optional: three of the last four bugs found in this pack were found by a person
+looking at the game, and one of them — see the rotation entry in the silent-failures list — passed
+sixty-three tests while being visibly wrong from three sides.
+
+### What to read, and what each one is for
+
+**The two that matter are already on the shelf**, and they are the two opposite answers to the one
+question a belt asks — *are the items on it real things, or numbers?*
+
+| | |
+|---|---|
+| `reference/create-src/.../kinetics/belt/transport/` | **The architecture to reimplement.** `TransportedItemStack` is an item with a position along the belt; `BeltInventory` owns the whole run and segment blocks delegate to one controller. That is Factorio's model and the one recommended above. Read `BeltInventory` first, then `TransportedItemStack`, then `ItemHandlerBeltSegment` for how the run meets a capability. Code is MIT with attribution; **assets are All Rights Reserved** |
+| `reference/ImmersiveEngineering-src/.../conveyor/` | **The other answer, worth reading to reject.** IE's conveyors move real `ItemEntity`s along blocks. It is far simpler, it works, and it is why IE conveyors are not Factorio belts: entities cost, they cannot compress, and they cannot be two lanes. Fifteen minutes here will settle the argument for good |
+
+**Worth adding, and the one real gap:** **Mekanism**'s logistical transporters — clone the 1.21.1
+branch into `reference/Mekanism-src/`. `TransporterStack` and `LogisticalTransporterBase` are a
+third opinion on the same problem, and the half Create is weakest on is exactly the half that will
+hurt: *many moving items, drawn cheaply, synced to clients without a packet per item per tick.*
+Mekanism has shipped that at scale for a decade, and its transporter-plus-network split is the same
+shape as `PowerNetwork` and `FluidNetwork` already are here.
+
+That is the whole list. Everything else in the tech ecosystem — Industrial Foregoing, Thermal,
+EnderIO — solves this with conveyors or conduits that are variations on IE's answer or Mekanism's,
+and none of them is a third idea. **Applied Energistics 2** is the only large mod anywhere near our
+Minecraft version, on 26.1.2, so it is the best place to see current rendering and networking APIs
+in anger — but it has nothing to say about belts, so fetch it only if 26.x API archaeology is what
+is blocking you.
+
+**None of these can be shipped.** The whole tech ecosystem stopped at 1.21.1 (PLAN.md's survey);
+they are read and reimplemented, with attribution in the commit, and their assets are never copied.
+
+The rules a machine is built to
+-------------------------------
+
+These outlive the job above and are the answer to "how big, how tall, and can you walk on it".
 
 ### Footprint is identity. Height is ours.
 
@@ -31,57 +139,17 @@ feeds a *row* of engines. Get it wrong and every blueprint a player carries in t
 and fixing it later moves every machine in every world.
 
 Height is the opposite. Factorio is two-dimensional and has no opinion, so height is ours to choose,
-free to change, and the place to spend effort on making a machine look like something. Treat the two
-differently: footprints go in `data/mapping.json` beside the ids and are checked; heights live in
-the shape class next to the models and are tuned by looking at them.
+free to change, and the place to spend effort on making a machine look like something.
 
-### The sizes
-
-Footprints in tiles. The recipe dump carries no sizes, but every entry has a `wiki_link` — that is
-the citation. **These are now in `data/mapping.json` as a `size` field, and `check_models.py`
-holds every machine to its own**, so this table is a summary rather than the record. They were
-entered from knowledge of the game rather than read out of a dump: **the four marked `?` are worth
-one pass against the wiki**, and correcting one is a one-line edit to the mapping that fails the
-build until the shape agrees.
-
-| Entity | Footprint | Proposed height | |
-|---|---|---|---|
-| assembling machine 1/2/3 | 3×3 | 2 | in the pack |
-| boiler | 3×2 | 2, chimney to 2.5 | in the pack |
-| steam engine | 5×3 | 2, flywheel to 2.5 | in the pack — **not 3×4** |
-| burner mining drill | 2×2 | 2 | released, see below |
-| electric mining drill | 3×3 | 0.5 solid, head to 1.5 | released, see below |
-| stone / steel furnace | 2×2 | 2 | vanilla stand-in today |
-| electric furnace | 3×3 | 2 | milestone 3 |
-| solar panel | 3×3 | 0.5 | milestone 3 |
-| accumulator | 2×2 | 2 | milestone 3 |
-| lab | 3×3 | 2 | milestone 3 |
-| radar, beacon | 3×3 | 2 | milestone 3 |
-| big electric pole, substation | 2×2 | 5, 3 | milestone 3 |
-| storage tank, pumpjack, chemical plant, centrifuge | 3×3 | 3, 2, 2, 2 | milestone 4 |
-| oil refinery | 5×5 | 3 | milestone 4 |
-| nuclear reactor | 5×5 | 3 | milestone 4 |
-| heat exchanger | 3×2 | 2 | milestone 4 |
-| steam turbine | 5×3 | 2 | milestone 4 |
-| pump | 1×2 ? | 1 | milestone 4 |
-| offshore pump | 1×2 ? | 1 | milestone 4 |
-| roboport | 4×4 | 3 | milestone 5 |
-| gun / laser turret | 2×2 | 2 | milestone 5 |
-| flamethrower turret | 2×3 ? | 2 | milestone 5 |
-| artillery turret | 3×3 | 3 | milestone 5 |
-| train stop | 2×2 ? | 3 | milestone 5 |
-| rocket silo | 9×9 | 8 | milestone 6 |
-| splitter | 2×1 | 0.25 | milestone 2 |
-| **belt, inserter, pipe, small pole, chest, underground belt** | **1×1** | — | **already correct** |
-
-The last row is the important one. Most of Factorio is one tile, and the pack already has all of it
-right. This job touches machines, and machines are the minority.
+Footprints live in `data/mapping.json` as a `size` field and `tools/check_models.py` holds every
+machine's cells to them. Heights live in the shape class next to the models and are tuned by
+looking at them.
 
 ### One tile is one block
 
 The scale is 1:1 and it is not really a choice: the belt, the inserter and the pipe are one tile in
 Factorio and one block here, and everything else has to agree with them or nothing lines up. What
-1:1 buys is worth naming, because it is the whole reason the footprints matter —
+1:1 buys —
 
 - **layouts transfer.** A player who knows that a boiler feeds two engines, or that assemblers sit
   three apart with a belt down the middle, builds the same thing here and it fits;
@@ -100,294 +168,52 @@ The metrics that decide this, all vanilla:
 | step height | 0.6 blocks — **anything colliding at 0.5 or below is walked straight over** |
 | jump height | ~1.25 blocks — a 1-block machine can be jumped onto, a 2-block one cannot |
 
-That gives three collision heights and a house rule for picking between them:
+**A machine you can walk across beats a machine you walk around**, and it decides the silhouette.
+A Factorio player tiles machines with no gaps, because in Factorio you can always walk round the far
+end of the field. Nine 3×3 machines two solid blocks tall is a wall with no way over it, and the
+player is sealed out of their own base.
 
-- **0.5 — walked over.** The electric drill, solar panels, splitters, belts. Yannic asked for the
-  drill at "like 0.5" and that is right: a drill field you have to climb over is miserable, and
-  Factorio's drill is visually low anyway.
-- **2.0 — walked around.** Boiler, engine, furnaces.
-- **nothing collides above 2.0.** A machine may *look* taller — see the chimney and the flywheel in
-  the table — but the part above 2 blocks is scenery you can walk through.
-
-### And a fourth rule, which turned out to be the important one
-
-> Assemblers placed together should still be walkable.
-
-**A machine you can walk across beats a machine you walk around, and it decides the silhouette.**
-Take it seriously: a Factorio player tiles assemblers with no gaps, because in Factorio you can
-always walk round the far end of the field. Nine 3x3 machines two solid blocks tall is a wall with
-no way over it — you cannot jump two blocks — and the player is sealed out of their own base. It
-is the kind of thing nobody finds until they have built enough to be stuck in it.
-
-The assembler's answer, which the rest should copy where the entity allows:
+The answer every machine in the pack now uses:
 
 | | |
 |---|---|
 | **1.0** | the wall around the outside. One jump, and the only climb in a field of any size |
 | **0.75** | the floor inside the wall. A quarter-block dip, under the 0.6 step, so crossing is walking |
-| **1.0 / 2.0** | the plinth in the middle and the gearbox on it — the one thing to walk around |
+| **2.0** | whatever the machine puts in the middle — the one thing you walk around |
+| **0.5** | for anything meant to be crossed without even a jump: the electric drill, solar panels, and **belts** |
 
-Two consequences worth stating. **The upper storey is mostly air**, so a 3x3 machine two blocks
-tall is ten blocks and not eighteen — which is why `MachineShape` takes a set of cells rather
-than a box. And **the tall part goes in the middle**, so tiled machines stand their obstacles three
-apart and leave lanes two blocks wide in both directions. `assemblers_tile_walkably` places two
-machines against each other and walks the seam, asserting every step of it.
+Two consequences. **The upper storey is mostly air**, so a 3×3 machine two blocks tall is ten blocks
+and not eighteen — which is why `MachineShape` takes a set of cells rather than a box. And **the
+tall part goes in the middle**, so tiled machines stand their obstacles apart and leave lanes.
+`assemblers_tile_walkably` and `power_machines_tile_walkably` walk those lanes and assert every step.
 
-**Collision and silhouette are allowed to disagree, and the pole already does this.** `PolePart`
-gives the crossarm a full outline and no collision, because a shape three blocks over your head that
-you cannot see should not catch you as you walk past. The same split is what lets the electric drill
-be impressive and 0.5 blocks tall at once: a body at 0.5, and a head and output chute up to 1.5 that
-you walk through. Copy the pattern, do not invent a second one.
+**Collision and silhouette are allowed to disagree** — `PolePart` gives the crossarm a full outline
+and no collision, because a shape three blocks over your head that you cannot see should not catch
+you. But for something you are meant to walk across, the two agreeing is the point.
 
-The mechanism
--------------
-
-**Built, in `nauvis_machines/src/main/java/com/jaguarm/nauvismachines/multiblock/`.** Four files:
-`MachineCell` (one block of a machine), `MachineShape` (which blocks, and the arithmetic),
-`Boxes` (the one rotation) and `Multiblock` (the block-side rules). `AssemblerShape` is what a
-machine looks like written in it, and is the thing to copy when adding the next one. What follows
-described it before it existed and still describes it; read the code for the detail.
-
-The pole is the precedent and it scales: one block id, one item, one property saying which piece
-this is, placed and broken as a unit, block entity on one piece only. What changes is that the
-pieces are a grid rather than a column, so the property carries an index instead of an enum.
-
-### `MachineShape`, and one description of the geometry
-
-**One class per machine describes it once**, the way `PolePart` does, and everything else reads that
-description rather than restating it:
-
-- the **cells** — the local offsets the machine occupies, in its north-facing frame. A *set*, not a
-  box, so a boiler can be 3×2 at two blocks tall with a chimney cell on one tile at y=2. The set
-  must be orthogonally connected; the checker asserts it, because the teardown rule below depends
-  on it;
-- the **anchor cell**, which carries the block entity, the loot table and the menu;
-- the **placement cell**, which is the cell that lands where the player clicked — the middle for odd
-  footprints, so a 3×3 centres on the cursor like Factorio does, and a defined near corner for even
-  ones;
-- the **boxes**, in machine pixels, each naming the cell that draws it. Read by the `VoxelShape` and
-  by the model provider, exactly as `PolePart.boxes()` is today;
-- the **collision boxes**, separately, per the split above;
-- the **ports** — which cell and which face offers which capability.
-
-That last one is a real gain and not just tidiness. A boiler takes water at two specific tiles and
-gives steam at one; an assembler is fed anywhere on its twelve perimeter faces. The pack already has
-"sided capabilities carry meaning" as a pattern — the steam engine offers steam on two faces and
-that is what makes its facing matter — and a footprint is what makes that pattern expressive
-instead of cramped.
-
-### One property, and no lookups to find the anchor
-
-`IntegerProperty PART`, `0` to `cells - 1`, indexing into the shape's cell list in the *local* frame;
-plus `FACING` on every part, not only the anchor. The anchor position is then
-`pos.subtract(rotate(shape.cell(part), facing))` — arithmetic, no block reads, no block entity on
-the parts. A 3×3×2 machine is 18 cells × 4 facings = 72 states, which is nothing; the rocket silo
-would be 324 and that is still nothing.
-
-Do not be tempted to put a block entity on each part to hold a `BlockPos` back to the anchor. Nine
-to eighty-one block entities per machine, in a base of thousands of machines, to store a number that
-is already in the blockstate.
-
-### Teardown is still one rule
-
-The pole's rule generalises without changing shape: **a part whose in-machine orthogonal neighbours
-are not the parts they should be turns to air.** Break any cell and its neighbours notice, turn to
-air, and the cascade crosses the whole footprint — which is why the cell set has to be connected.
-Turning to air rather than calling `removeBlock` is what routes it through `Block.updateOrDestroy`
-with drops enabled, so the anchor's loot table hands the machine back whichever cell was hit. The
-creative special case is `SmallElectricPoleBlock#playerWillDestroy`, unchanged but pointed at the
-anchor instead of the foot.
-
-Placement is the pole's too: return null from `getStateForPlacement` unless every cell is
-replaceable, and place the rest from `setPlacedBy`. Two additions a column did not need — check
-`level.isUnobstructed` so a player cannot seal themselves inside a 3×3, and refuse placement that
-would cross a world height limit.
-
-### What every part has to forward
-
-This is the list to work through per machine, and the place bugs will hide:
-
-| | |
-|---|---|
-| capabilities | `event.registerBlock(...)` on the part block, resolving the anchor and delegating. `registerBlockEntity` cannot serve a block with no block entity. **Call `level.invalidateCapabilities` for every cell** when the machine appears or goes, or a neighbour caches a stale miss |
-| `onNeighborChange` | the wake. A 3×3 has twelve perimeter faces and an inserter may be on any of them; a part that swallows the wake puts the machine to sleep for good (non-negotiable #5) |
-| `neighborChanged` | the same, for a block rather than a block entity |
-| `useWithoutItem` | opens the anchor's menu from any cell |
-| Jade | `BoilerReadout` and friends resolve part → anchor before reading |
-| `getCloneItemStack` | middle-click on any cell gives the machine |
-| loot | one table, condition on `part=0`, like the pole's |
-| spawning | a flat 3×3 roof is a mob platform. `.isValidSpawn((state, level, pos, type) -> false)` |
-
-Block models are the bulk of this
+The multiblock mechanism, briefly
 ---------------------------------
 
-**This is where the time goes, and it is the half worth getting right** — the pack's problem is that
-it looks unfinished, and a 3×3 assembler that is nine untextured cubes is no better than one.
+`multiblock/` — `MachineCell`, `MachineShape`, `MachineParts`, `Boxes`, `Multiblock` — is copied
+into `nauvis_machines`, `nauvis_power`, `nauvis_research` and `NeoProgressiveAutomation`, and
+`tools/check_duplicated.py` holds the copies byte-identical (`--sync` pushes the original out; the
+copies are never edited). It is `SmallElectricPoleBlock` with two more axes, and every class in it
+says why it is the way it is. Read `MachineShape` and `Multiblock` and you have all of it.
 
-### Verified: a model may reach one block in every direction
+The parts worth knowing before touching a machine:
 
-`net.minecraft.client.resources.model.cuboid.CuboidModelElement` in 26.2 holds
-`MIN_EXTENT = -16.0F` and `MAX_EXTENT = 32.0F`. So one model can occupy a 3×3×3 volume centred on
-its own block, and no more. That number decides the whole approach: it is enough for an overhanging
-chimney and nowhere near enough for a five-tile engine.
-
-So: **every cell draws its own model, and geometry may overhang into its neighbours.** Not one giant
-model on the anchor with the rest invisible, and not a block entity renderer. Per-cell models get
-correct per-block lighting and ambient occlusion, go through ordinary chunk rendering, need no
-`getRenderBoundingBox`, cost nothing at runtime, and have no size limit — the rocket silo works the
-same way the boiler does. The overhang allowance is the escape hatch for the shapes that genuinely
-straddle a block plane.
-
-Two rules the checker has to enforce, because both fail silently:
-
-- **a box, translated into its owner cell's frame, must land inside `-16..32`.** Outside that the
-  model fails to parse and the block is a checkerboard;
-- **a box that leaves `0..16` must declare explicit `uv` on every face.** Absent `uv` is derived
-  from the box position, so an overhanging box gets UVs outside the texture and wraps or smears.
-  Nothing warns.
-
-An overhanging box also takes its light from the cell that owns it, and must not declare `cullface`
-— a face culled against a neighbour that is another part of the same machine disappears.
-
-### One frame, four facings, no extra models
-
-Author the machine north-facing only. A 90° rotation of the whole machine is the same thing as
-rotating the *lattice* of cells and rotating each cell's model about its own centre, which is
-exactly what a blockstate `y` rotation does. So the blockstate dispatches over `PART × FACING` and
-picks a model plus a `Y_ROT_*` mutator — `NauvisFluidsModels` already does this for the pipe's six
-arms from one downward model. Models scale with cells, not with cells × 4.
-
-### The item model comes free
-
-A 3×3×2 machine in your hand cannot be its anchor cell — that is a corner of a machine, and it reads
-as rubble. It also cannot be the whole machine at full size.
-
-But the geometry is described once, in machine pixels, so **the inventory model is the same
-description scaled by `16 / (16 × max(width, height, depth))`** — a miniature of the entire machine,
-generated, always in step with the block. `PipeBlock` already has a hand-written `pipe_inventory` for
-the same reason; this is that idea, automated. Remember `registerSimpleItemModel(block, modelId)`
-explicitly — a model written under a name the item model does not default to is the exact silent
-failure listed below.
-
-### Textures still come last
-
-Every model points at **vanilla** textures on purpose: a model naming a texture the mod does not
-ship is the magenta checkerboard, which reads as broken rather than unfinished. Land art and models
-together or not at all. When that day comes, start at
-`../NeoProgressiveAutomation/texture-workshop/` — ours, already a process, and the best writing in
-these repos on why vanilla textures look the way they do. `reference/ImmersiveEngineering-src` is
-the best model work on the shelf and the source of the pole's shape: read and reimplement, credit in
-the commit, never copy an asset.
-
-First, a net: the model checker
--------------------------------
-
-**`tools/check_models.py` exists and passes.** It walks the generated assets the way the model
-manager would — blockstate → model → parent → texture → a real PNG — resolving into the vanilla
-client jar NeoForm already downloaded, so `minecraft:block/bricks` is a file that either is there or
-is not. Without that jar it checks everything first-party and says which half it did, because a
-fresh clone has no copy.
-
-What it catches today, each one verified by breaking it and watching the run go red:
-
-- a blockstate or item definition naming a model that does not exist — **the steam engine bug**,
-  reported once per thing pointing at the missing model, because the blockstate and the item
-  definition are two separate fixes;
-- a texture slot naming a PNG that is not there, or a `#slot` nothing defines;
-- a registered block with no blockstate or no item file;
-- a registered fluid with no `FluidModel`;
-- **the two overhang rules, carried early for the multiblock work**: every box inside `-16..32`, and
-  explicit `uv` on any box that leaves `0..16`.
-
-`./gradlew build` runs it, and now runs `check_gui_layout.py` too — that one had been sitting
-unwired, and a check that does not run in the build is a check nobody runs. Both are in the root
-`build.gradle` beside `checkRecipes`.
-
-Python rather than a gametest, decided. A gametest could ask the real model manager what resolved,
-which is stronger — but only a client has a model manager, and the whole value of this is that it
-costs a second on any tree.
-
-**And the copies are checked.** `tools/check_duplicated.py` diffs every deliberately-duplicated
-package — `multiblock/` in two mods so far — allowing the `package` line to differ and nothing
-else. `--sync` rewrites the copies from the original; there is no merge and there is not meant to
-be. It is wired into `check` with the rest.
-
-**Footprints are checked too, since the pilot.** A machine's cells are read back out of its
-`*Shape.java` and compared with the `size` recorded for that Factorio entity in
-`data/mapping.json` — identity checked rather than remembered, the same argument that makes
-recipes generated. A shape opts in by naming its entry in a `FACTORIO_ID` constant.
-
-**The other two rules went into Java instead, and that was the better answer.** "Cells orthogonally
-connected" and "every box belongs to a cell" are facts about the shape, not about the JSON, so
-`MachineShape`'s constructor throws on them. That fails at class-load — in the game, in every
-gametest, in datagen — rather than only when somebody runs a script, and it can say which cells are
-cut off. Do not move them back to Python.
-
-The order to do it in
----------------------
-
-Each step ends with a client boot, because that is the only thing that has ever caught this class of
-bug.
-
-1. ~~**The checker first**, against the models that exist today.~~ **Done** — `check_models.py`,
-   wired into `check`, passing on a clean tree. Three of its rules wait on step 3.
-2. ~~**Sizes into `data/mapping.json`**~~ **Done** — 37 footprints, and `check_models.py` holds
-   each machine to its own.
-3. ~~**The assembler, 3×3×2, as the pilot.**~~ **Done**, and it is ten blocks rather than
-   eighteen — see the walkability rule above. `nauvis_machines/.../multiblock/` is the mechanism,
-   and the four gametests are `assembler_is_ten_blocks`, `assembler_breaks_as_one`,
-   `assembler_fed_from_any_cell` and `assemblers_tile_walkably`.
-4. ~~**The boiler (3×2) and the steam engine (5×3).**~~ **Done.** Seven blocks and seventeen,
-   both with a facing, so the rotation is now exercised rather than merely written —
-   `boiler_turns_as_one` measures all four facings. `multiblock/` is duplicated into
-   `nauvis_power` and `tools/check_duplicated.py` holds the copies identical.
-5. ~~**The drills — 2×2 and 3×3, on an NPA major version.**~~ **Done**, as
-   `neoprogressiveautomation` 2.0.0, with the pack's pin moved to match. A third copy of
-   `multiblock/` lives there, synced rather than edited. The electric drill is the one machine
-   meant to be walked straight over — a half-block deck, under the 0.6 step — with only its output
-   head standing full height. It also gained that mod's first three gametests.
-6. **← Start here: rewrite this file.** The job it describes is finished, so it should now describe
-   the next one. Move the belts note up — milestone 2 — and keep the walkability rules, the
-   silent-failures list and the mechanism notes, which outlive this job.
-
-Gametests to write with the pilot, not after it: a machine places whole or not at all; breaking any
-cell drops exactly one machine and leaves no orphan blocks; a hopper on a far corner still reaches
-the inventory; the machine still sleeps, asserted with
-`level.getBlockTicks().hasScheduledTick(...)`; and a machine placed against a world edge or an
-occupied block places nothing rather than something broken.
-
-Two decisions, settled
-----------------------
-
-Both answered by Yannic on 2026-08-27. Recorded here rather than in a commit message, because the
-next session will want the reasoning and not only the answer.
-
-**The multiblock code is duplicated per mod, not shared.** `nauvis_machines`, `nauvis_power`,
-`nauvis_fluids` and later `nauvis_logistics` all need it, and non-negotiable #3 gives exactly two
-answers: it goes in Facrafting, or it gets copied. Copied — the same call the GUI palettes already
-got, "because a shared base in Facrafting would make these mods require it and kill the
-`*_standalone` recipes that exist for its absence". A `multiblock/` package goes into each mod
-verbatim, and `tools/check_duplicated.py` diffs the copies in the spirit of `gen_recipes.py
---check`, so what is meant to be identical cannot quietly stop being identical. **Write that
-checker with the second copy, not the fourth.**
-
-**The drills change, on an NPA major version.** `neoprogressiveautomation:burner_drill` becomes 2×2
-and `electric_drill` 3×3, even though NPA is released and CLAUDE.md says its behaviour should not
-change under an existing save. The reasoning: they are Factorio entities in a Factorio pack, the
-pack is the point, and the alternative — a footprint behind a config — is a permanent tax on every
-drill code path for one release's worth of compatibility. Bump the major version, say it in the
-changelog, and see *What this breaks* below: existing drills pop out as items rather than
-vanishing.
-
-What this breaks
-----------------
-
-**Existing worlds lose their machines, and get the items back.** A machine saved as one block loads
-as a lone anchor with no neighbouring parts, the teardown rule fires on the next block update, and
-the anchor's loot table drops the machine into the world. That is the good outcome and it comes free
-from the rule above — no data fixer, no migration code, nothing to maintain. Say it in the changelog
-and do not build anything to avoid it: the pack is pre-1.0 and the alternative is a data fixer that
-has to synthesise eight blocks that may have no room to exist.
+- one block id, one item, an `IntegerProperty part` on every block, and the anchor found by
+  arithmetic rather than a lookup — no block entity on the other cells;
+- one `updateShape` rule is the whole teardown, which is why a shape's cells must be orthogonally
+  connected, which the constructor enforces;
+- capabilities are registered against the **block**, not the block entity, so any cell answers —
+  that is what lets a pole supply a machine whose middle is out of range, and it is why
+  `PowerNetwork` reduces endpoints to distinct handlers;
+- **ports** name a cell and a face, so a boiler's steam leaves one block and an engine takes it at
+  the open ends of its spine;
+- geometry is stated once per machine and read by the model provider, the `VoxelShape` and the
+  item model. `MachineParts` is the shared shell so the machines read as one family — **Yannic has
+  said that still wants refinement**, and it is one file.
 
 Where the pack stands
 ---------------------
@@ -403,6 +229,8 @@ Where the pack stands
 | `nauvis_power:boiler` | 3×2 and seven blocks; burns fuel, steam out of the block under the chimney |
 | `nauvis_power:steam_engine` | 5×3 and seventeen blocks; steam in at the open ends of its spine, 120 FE a tick out |
 | `nauvis_power:small_electric_pole` | four blocks tall, climbable, wires itself to whatever it can reach |
+| `nauvis_research:lab` | 3×3 and ten blocks; eats science packs on 8 FE a tick and counts research cycles |
+| `nauvis_research:science_pack_1` | red science. Craftable now — copper plate and an iron gear wheel |
 | `neoprogressiveautomation:burner_drill` | 2×2 and five blocks; a full block with a chimney over the firebox |
 | `neoprogressiveautomation:electric_drill` | 3×3 and nine blocks; a half-block deck you walk over, output head at the front |
 
@@ -410,10 +238,14 @@ Power numbers keep Factorio's ratios rather than its units: one engine runs twel
 boiler runs twenty-four. None of that is identity; the ids, ingredients and craft times are, and
 those are generated.
 
-**After the visual work, the next real feature is belts** — milestone 2, and the last of the three
-decisions that are expensive to reverse. PLAN.md's belt note and the shape in
-`nauvis_power/.../grid/` are where to start; `reference/create-src/.../kinetics/belt/transport/` is
-the architecture to read and reimplement.
+**The lab has no technology tree**, and that line is deliberate: Factorio's lab does not know what
+it is researching either, so the machine could be built without one. It counts cycles and consumes
+one of every kind of pack it holds, which is already the rule a technology will impose. Milestone 3.
+
+**The lab's own recipe costs four transport belts and is on disk, dormant.** It carries a
+`neoforge:registered` condition, so it starts working the day belts are registered and needs no
+edit — see the `pending` flag in `data/mapping.json` and `gen_recipes.py`. Green science is the
+same: `science-pack-2` costs an inserter and a belt, so milestone 2 unblocks it too.
 
 How to run everything
 ---------------------
@@ -432,13 +264,15 @@ How to run everything
 | `python tools/check_gui_layout.py` | every machine screen's boxes, for overlaps |
 
 The last five are `checkRecipes`, `checkModels`, `checkDuplicated`, `checkGameTests` and
-`checkGuiLayout` in the root `build.gradle`, and all of them hang off `:nauvis:check`. They read files and start nothing,
-so they cost a second between them.
+`checkGuiLayout` in the root `build.gradle`, and all of them hang off `:nauvis:check`. They read
+files and start nothing, so they cost a second between them.
 
 Adding a subsystem mod is routine: a subproject in `settings.gradle`, a `build.gradle` copied with
 the ids changed, a `src/main/templates/META-INF/neoforge.mods.toml`, and two lines in
 `nauvis/build.gradle` — the `runtimeOnly project(':...')` that puts it in the pack, and its
-namespace added to `pack_gametest_namespaces`. `nauvis_power/` is the fullest template.
+namespace added to `pack_gametest_namespaces`. `nauvis_power/` is the fullest template and
+`nauvis_research/` is the newest — it was made by following exactly that list, so its diff is what
+adding a mod costs.
 
 Recipes: generate into a staging directory with
 `python tools/gen_recipes.py --only <modid> --out <tmp>`, then copy across only the files for items
