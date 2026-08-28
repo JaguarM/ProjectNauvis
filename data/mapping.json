@@ -565,14 +565,8 @@
       }
     },
     "express-underground-belt": {
-      "name": "Express underground belt",
-      "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:express_underground_belt",
-      "speed": 5.625,
-      "craft": {
-        "time": 2,
-        "yield": 2
-      }
+      "skip": true,
+      "why": "See underground-belt"
     },
     "fast-inserter": {
       "name": "Fast inserter",
@@ -605,14 +599,8 @@
       }
     },
     "fast-underground-belt": {
-      "name": "Fast underground belt",
-      "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:fast_underground_belt",
-      "speed": 3.75,
-      "craft": {
-        "time": 2,
-        "yield": 2
-      }
+      "skip": true,
+      "why": "See underground-belt"
     },
     "filter-inserter": {
       "name": "Filter inserter",
@@ -1158,13 +1146,8 @@
       }
     },
     "pipe-to-ground": {
-      "name": "Pipe to ground",
-      "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:pipe_to_ground",
-      "craft": {
-        "time": 0.5,
-        "yield": 2
-      }
+      "skip": true,
+      "why": "Not in this pack: Minecraft has a Y axis, so a pipe crosses another by changing level rather than diving under it"
     },
     "pistol": {
       "name": "Pistol",
@@ -1797,14 +1780,8 @@
       }
     },
     "underground-belt": {
-      "name": "Underground belt",
-      "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:underground_belt",
-      "speed": 1.875,
-      "craft": {
-        "time": 1,
-        "yield": 2
-      }
+      "skip": true,
+      "why": "Not in this pack: Minecraft has a Y axis, so a belt crosses another by changing level rather than diving under it"
     },
     "uranium-235": {
       "name": "Uranium-235",

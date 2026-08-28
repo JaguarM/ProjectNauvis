@@ -48,7 +48,15 @@ make the occupancy incremental, not to drop the signal.
 The job: the rest of milestone 2
 --------------------------------
 
-Three blocks and a gesture, in the order they get harder. Nothing here needs new architecture.
+Two blocks and a gesture, in the order they get harder. Nothing here needs new architecture.
+
+**There is no underground belt on this list, and there will not be a `pipe-to-ground` either.**
+Factorio needs both because it is flat — two belts that must cross have nowhere to go but under.
+This pack is the same game with a Y axis, so a belt crosses another by changing level, which a
+Minecraft player already knows how to build and needs no item for. All four ids
+(`underground-belt` and its two upper tiers, and `pipe-to-ground`) are marked `skip` in
+`data/mapping.json` with the reason; nothing else in the recipe graph uses any of them, so the
+graph stays closed and `gen_recipes.py --check` counts them as skipped rather than missing.
 
 ### 1. `long-handed-inserter`
 
@@ -63,24 +71,13 @@ inside `buildCaches` and `onNeighborChange`. Three things it must get right:
 - reach is behaviour, not identity, so it may live in the block entity. The id and the recipe are
   identity and are already generated.
 
-### 2. The underground belt
-
-Two blocks that find each other and a gap the run treats as continuous. The natural fit is a third
-rule in `BeltLines.successor` — an underground entrance's successor is its matching exit rather
-than the block in front — after which the run needs to know nothing else, including
-`announceArrivals`, which walks blocks and not space.
-
-Factorio's maximum distance between the two ends is **5** for the yellow tier, 7 fast, 9 express.
-That is identity and belongs in `data/mapping.json` beside `speed`, with a check in
-`tools/check_models.py` like the one `speed` now has.
-
-### 3. The splitter
+### 2. The splitter
 
 2×1 and directional — the first multi-block that is not square. `multiblock/` is the framework and
 is copied into four mods already. The belt side of it is a run that ends at the splitter and two
 that start after it, with the splitter alternating between them.
 
-### 4. Fast-replace by tier
+### 3. Fast-replace by tier
 
 A belt in hand already points the belt you click on the way you are facing, which is half of
 Factorio's belt-laying gesture. The other half is that a *faster* belt replaces a slower one, and

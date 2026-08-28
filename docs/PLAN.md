@@ -218,10 +218,18 @@ an assembling machine eight blocks away runs, across four mods that do not compi
 other — `power_reaches_a_machine`, in the pack mod, is that claim in one test. Milestone 1 is
 closed: chest → inserter → assembler → inserter → chest, on a grid.
 
-### 2 — Belts · 4 new
+### 2 — Belts · 3 new
 
-`transport-belt`, `underground-belt`, `splitter`, `long-handed-inserter`. Small item count,
-by far the largest engineering lift. See the belt note below.
+`transport-belt`, `splitter`, `long-handed-inserter`. Small item count, by far the largest
+engineering lift. See the belt note below.
+
+**No `underground-belt`, and no `pipe-to-ground` in milestone 4.** Factorio needs them because it
+is flat: two belts that must cross have nowhere to go but under. This pack is the same game with a
+Y axis, so a belt crosses another by changing level, which is a thing a Minecraft player already
+knows how to build and does not need an item for. Both are marked `skip` in `data/mapping.json`
+with the reason, so `gen_recipes.py` leaves them alone rather than reporting them missing forever.
+The three tiers of underground belt go with them — nothing else in the recipe graph uses any of the
+four, so dropping them leaves it closed.
 
 ### 3 — Research · 15 new
 
