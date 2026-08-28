@@ -32,5 +32,6 @@ public class NauvisLogistics {
         ModMenus.MENUS.register(modEventBus);
         modEventBus.addListener(ModPacks::addPackFinders);
         NauvisLogisticsGameTests.register(modEventBus);
+        NauvisLogisticsBeltGameTests.register(modEventBus);
     }
 }

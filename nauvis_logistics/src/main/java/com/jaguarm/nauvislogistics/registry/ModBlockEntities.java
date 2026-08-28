@@ -1,6 +1,7 @@
 package com.jaguarm.nauvislogistics.registry;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
+import com.jaguarm.nauvislogistics.belt.BeltBlockEntity;
 import com.jaguarm.nauvislogistics.storage.IronChestBlockEntity;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlockEntity;
 import com.jaguarm.nauvislogistics.transport.ElectricInserterBlockEntity;
@@ -44,6 +45,19 @@ public final class ModBlockEntities {
                     () -> new BlockEntityType<>(
                             IronChestBlockEntity::new,
                             ModBlocks.IRON_CHEST.get()));
+
+    /**
+     * One type for every belt tier there will ever be.
+     *
+     * <p>A belt block entity holds no behaviour at all - the run does the work and a belt is a
+     * fact about where the run goes - so what differs between tiers is the block, not this.
+     */
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BeltBlockEntity>>
+            TRANSPORT_BELT = BLOCK_ENTITIES.register(
+                    "transport_belt",
+                    () -> new BlockEntityType<>(
+                            BeltBlockEntity::new,
+                            ModBlocks.TRANSPORT_BELT.get()));
 
     private ModBlockEntities() {}
 }

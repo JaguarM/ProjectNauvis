@@ -1,6 +1,7 @@
 package com.jaguarm.nauvislogistics.registry;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
+import com.jaguarm.nauvislogistics.belt.BeltBlockEntity;
 
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -43,5 +44,13 @@ public final class ModCapabilities {
                 Capabilities.Item.BLOCK,
                 ModBlockEntities.IRON_CHEST.get(),
                 (chest, side) -> VanillaContainerWrapper.of(chest));
+
+        // A belt, from whichever side is asking. The side is not decoration: it decides which of
+        // the two lanes the asker meets, because a Factorio inserter reaches across to the far
+        // lane. See BeltAccess.
+        event.registerBlockEntity(
+                Capabilities.Item.BLOCK,
+                ModBlockEntities.TRANSPORT_BELT.get(),
+                BeltBlockEntity::access);
     }
 }

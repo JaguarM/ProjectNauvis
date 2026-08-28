@@ -15,7 +15,10 @@ a vanilla texture on purpose (see docs/NEXT.md). Without the jar it still checks
 first-party and says so; with it, `minecraft:block/bricks` is a file that either exists or does
 not.
 
-It also checks the two ways an overhanging box goes wrong, and it checks footprints. A machine
+It also checks belt speeds, the same way and for the same reason: a belt's tiles per second
+is identity, it lives in `data/mapping.json`, and the constant in the block is held to it.
+
+And it checks the two ways an overhanging box goes wrong, and it checks footprints. A machine
 cell may draw geometry that hangs into its neighbours, and both failures are silent:
 
   - **`-16..32`.** `CuboidModelElement` in 26.2 holds MIN_EXTENT = -16 and MAX_EXTENT = 32. A box
@@ -55,6 +58,11 @@ SIBLINGS = ['../NeoProgressiveAutomation']
 ASSET_ROOTS = ['src/generated/client/assets', 'src/main/resources/assets']
 
 MIN_EXTENT, MAX_EXTENT = -16.0, 32.0
+
+# For belt speeds: the game's tick rate, and the units a belt measures distance in.
+# Both are stated in nauvis_logistics/.../belt/Belts.java.
+TICKS_PER_SECOND = 20
+BELT_UNITS_PER_BLOCK = 64
 
 failures = []
 notes = []
@@ -420,11 +428,59 @@ def check_fluid_models(assets):
                      'is a registered fluid with no FluidModel - see RegisterFluidModelsEvent')
 
 
+def check_belt_speeds():
+    """Every belt block's speed constant, against the tiles per second Factorio publishes.
+
+    A belt's speed is identity in the sense non-negotiable #1 means: it is what a player's mental
+    picture of a factory is built on - how many machines one belt feeds, how far apart to space a
+    bus - and getting it wrong makes every ratio in the game subtly wrong while everything still
+    works. So it is written down once in `data/mapping.json`, beside the id, and checked here
+    rather than remembered, exactly as footprints are.
+
+    The code holds it as whole units a tick - see Belts.java for why sixty-four - and this does the
+    conversion, so the number in the source and the number on the wiki can be compared without
+    either of them being the other's translation.
+    """
+    mapping = json.loads((ROOT / 'data' / 'mapping.json').read_text(encoding='utf-8'))['items']
+
+    for mod in MODS + SIBLINGS:
+        source = ROOT / mod / 'src' / 'main' / 'java'
+        if not source.is_dir():
+            continue
+        for path in sorted(source.rglob('*BeltBlock.java')):
+            text = path.read_text(encoding='utf-8')
+            speed = re.search(r'int SPEED\s*=\s*(\d+)\s*;', text)
+            factorio_id = re.search(r'FACTORIO_ID\s*=\s*"([a-z0-9-]+)"', text)
+            if not speed:
+                # The abstract base, which has no speed of its own.
+                continue
+            if not factorio_id:
+                fail(path.name, 'has a SPEED but no FACTORIO_ID, so there is nothing to check it '
+                                'against - see data/mapping.json')
+                continue
+
+            entry = mapping.get(factorio_id.group(1))
+            if entry is None:
+                fail(path.name, f'names {factorio_id.group(1)}, which is not in data/mapping.json')
+                continue
+            wanted = entry.get('speed')
+            if wanted is None:
+                fail(path.name, f'{factorio_id.group(1)} has no "speed" in data/mapping.json - the '
+                                f'number is identity and belongs there, not only in the source')
+                continue
+
+            tiles = int(speed.group(1)) * TICKS_PER_SECOND / BELT_UNITS_PER_BLOCK
+            if abs(tiles - wanted) > 1e-9:
+                fail(path.name, f'moves {tiles} tiles a second, and Factorio gives '
+                                f'{factorio_id.group(1)} {wanted} - see data/mapping.json')
+
+
 assets = Assets()
 check_references(assets)
 check_registrations(assets)
 check_fluid_models(assets)
 check_footprints()
+check_belt_speeds()
 
 print(f'{len(assets.files)} first-party asset files across {len(MODS)} mods')
 for note in notes:

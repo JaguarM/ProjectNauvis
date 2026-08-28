@@ -4,123 +4,107 @@ Next session
 Written 2026-08-28 for whoever picks this up cold. Read `../CLAUDE.md` first, then this.
 Delete or rewrite it when the job below is done — it describes one job, not the project.
 
-**Sixty-three gametests pass and the pack builds clean.** Every machine is the size Factorio made
-it, the lab exists, and five checks run in `./gradlew build` that between them catch the classes of
-bug this pack keeps shipping. What is missing is the thing the whole game is about: **you still
-have to carry everything by hand.**
+**Seventy-seven gametests pass and the pack builds clean.** Every machine is the size Factorio made
+it, the lab exists, five checks run in `./gradlew build`, and — as of this session — **the transport
+belt works, with items you can watch move along it.** You no longer have to carry everything by
+hand.
 
-The job: belts
---------------
+The job: the rest of milestone 2
+--------------------------------
 
-Milestone 2, and four items: `transport-belt`, `underground-belt`, `splitter`,
-`long-handed-inserter`. The smallest item count in the plan and by a distance the largest
-engineering lift, which is why belts get their own decision below before any code.
+Milestone 2 is four items — `transport-belt`, `underground-belt`, `splitter`,
+`long-handed-inserter`. **The transport belt is done.** The other three are left, and none of them
+is the engineering lift the belt was: the architecture they need now exists.
 
-A belt is the first thing in this pack that is not a machine. Everything so far has been a block
-that owns some items and thinks once in a while; a belt is a *line* that things are on, and the
-line is longer than any of its blocks.
+### What was decided, and what it means for the rest
 
-### Decide this first: a block entity per belt, or a run that owns its items
+`PLAN.md` allowed a shortcut — a block entity per belt passing items to the next one — and this
+session **took the other road and wrote the run**, because the request was for belts that are
+visibly full of moving items and that stay cheap, and the shortcut cannot be either. Read
+`nauvis_logistics/.../belt/` in this order and the whole thing falls out:
 
-**PLAN.md settled this, and the ground has shifted under it.** Its shortcut table says
-*"BlockEntity per block passing items along"*, with the real model — Create's, where a run is one
-object and items are positions along it — as the rewrite. That was written when the pack had no
-example of the second thing.
+| | |
+|---|---|
+| `Belts.java` | the numbers, and why distances are integer sixty-fourths of a block |
+| `BeltLane.java` | **the idea.** Items are stored as the gaps between them, not as positions, so a flowing belt writes one number a tick and a jammed one writes none |
+| `BeltRun.java` | one line: its blocks, its two lanes, its tick, and how it hands to the next line |
+| `BeltLines.java` | every run in a level, and how lines are cut and joined when a belt is placed |
+| `client/BeltRenderer.java` | the items you can see |
 
-It now has two. `PowerNetwork` and `FluidNetwork` are both "one object per connected thing", both
-with a manager, join-and-leave, sleeping and chunk-load handling, and `docs/NEXT.md` has been
-saying *"and belts next"* since the pipes landed. A belt run is the third instance of a pattern
-this codebase already knows how to write, and the pipe's own header explains why it was the
-easier of the two.
+Three things about it are load-bearing for whatever comes next:
 
-So: **the recommendation is to skip the shortcut and write the run**, because the shortcut is
-precisely the thing PLAN.md calls expensive to reverse, and the reversal is no longer the leap it
-was. But PLAN.md is a settled decision and this is Yannic's call — **ask before starting**, and if
-the answer is "take the shortcut", take it without arguing. It is a real answer: it ships milestone
-2 sooner and belts have their own mod so the rewrite stays contained.
+- **Items are pinned to a block and an offset into it**, never to a distance along a run. That is
+  what makes cutting, joining and lengthening a line safe, and it is asserted by
+  `belt_survives_being_cut`. An underground belt or a splitter that rebuilds runs gets this free.
+- **The client runs the same simulation.** It builds the same runs out of the same block states and
+  moves the items itself, so a belt full of items costs no network traffic at all. Only two things
+  are ever sent — an item put on the belt from outside, and an item taken off it — because those
+  are the only two a client cannot work out. See `net/ModNetwork.java`. **Anything added to belts
+  must keep that property**, or the reason belts are affordable goes away.
+- **A run is awake while it has items, not while it is moving.** Unlike the pipe and power
+  networks there is no dormant sweep and no wake-up plumbing, because `BeltLane` makes a jammed
+  belt cost the same as an empty one.
 
-The rest of this section assumes the run.
+### What is left, in order
 
-### What a belt is, concretely
-
-- **A run is one object.** `nauvis_logistics` gets a `BeltNetwork` beside the pipe's
-  `FluidNetwork`: segments join and leave, the run ticks once however long it is, and a run with
-  nothing on it drops out of the active set. Read `nauvis_fluids/.../pipe/` first — it is the
-  smaller of the two existing ones and its header says exactly why.
-- **Items are positions, not entities.** Never `ItemEntity`. A run holds items each with a
-  distance along it, which is how Factorio moves millions and the only model that makes the
-  rendering tractable.
-- **Two lanes.** A Factorio belt has a left and a right lane and they do not mix. That is identity,
-  not detail: it is why a splitter behaves as it does, why an inserter takes from the far lane, and
-  why half a belt of iron and half of copper is a thing players build. Getting this wrong is a
-  rewrite, so do it now.
-- **1×1, and you walk over it.** Collision at 0.25 or below — see the walkability rules below. A
-  belt you have to jump is not a belt.
-- **A splitter is 2×1 and directional**, which makes it the first multi-block that is not square.
-  The framework is in `multiblock/` and is copied into four mods already; `check_duplicated.py`
-  keeps the copies honest. This should be the easy half.
-- **Insertion and extraction are capabilities.** A belt publishes `Capabilities.Item.BLOCK` so an
-  inserter, a hopper or another mod's machine can put things on it without knowing what a belt is —
-  the same rule everything else in the pack meets at.
-
-### The numbers are identity and are not in the dump
-
-`reference/factorio/recipes.json` has recipes and nothing else. A belt's **speed**, its
-**throughput per lane**, and an underground belt's **maximum gap** are all identity in the sense
-non-negotiable #1 means — they live in the player's head and decide what a factory looks like —
-and none of them is in the file.
-
-This is the same hole footprints were in, and it has the same fix: record them in
-`data/mapping.json` beside the ids, check them, and never type them again. Every entry already
-carries a `wiki_link`, which is the citation. Add fields the way `size` was added, and teach
-`tools/check_models.py` to hold the code to them.
-
-Numbers worth having in front of you before starting, **all of which want one pass against the
-wiki because they are from memory**: a transport belt moves 15 items a second over two lanes;
-fast and express belts are 30 and 45; an underground belt spans a gap of about five tiles. The
-belt item is 1×1, the splitter 2×1, and both are already in `mapping.json` with those sizes.
-
-### The order to do it in
-
-1. **`long-handed-inserter` first.** It is the existing inserter with a reach of two, it needs no
-   new architecture, and it proves the milestone is moving on the first day. `InserterBlock` and
-   its two block entities are already the shape for it.
-2. **The transport belt.** All of the risk. Get one run moving one item before anything else
-   exists — no splitters, no undergrounds, no two lanes if it helps — then add lanes, then make it
-   sleep, then make it render.
-3. **The underground belt**, which is two blocks that find each other and a gap the run has to
-   treat as continuous.
-4. **The splitter**, last, because it needs the run's internals to be settled.
+1. **`long-handed-inserter`.** The existing inserter with a reach of two. No new architecture; the
+   `InserterBlock` and its two block entities are already the shape for it. Note it must reach
+   *over* the block between, which the current inserter never had to think about.
+2. **The underground belt.** Two blocks that find each other and a gap the run treats as
+   continuous. The natural fit is a third rule in `BeltLines.successor` — an underground entrance's
+   successor is its matching exit rather than the block in front — after which the run does not
+   need to know anything else. Factorio's maximum distance between the two ends is **5** for the
+   yellow tier, 7 fast, 9 express; that is identity and belongs in `data/mapping.json` beside
+   `speed`, with a check in `tools/check_models.py` like the one `speed` now has.
+3. **The splitter**, 2×1 and directional — the first multi-block that is not square. `multiblock/`
+   is the framework and is copied into four mods already. The belt side of it is a run that ends at
+   the splitter and two runs that start after it, with the splitter alternating between them.
+4. **Curved belt models.** Items already go round corners — a run turns and `BeltRun.pointAt`
+   carries them through the middle of the block — but the *model* is straight, so a corner reads as
+   two belts at right angles rather than as a bend. A `SHAPE` blockstate property computed the way
+   `PipeBlock`'s connections are, and three models.
 5. **Rewrite this file** for milestone 3.
 
 Each step ends with `./gradlew build`, `:nauvis:runGameTestServer`, and a client boot. The client
-boot is not optional: three of the last four bugs found in this pack were found by a person
-looking at the game, and one of them — see the rotation entry in the silent-failures list — passed
+boot is not optional: three of the last four bugs found in this pack were found by a person looking
+at the game, and one of them — see the rotation entry in the silent-failures list — passed
 sixty-three tests while being visibly wrong from three sides.
+
+### The numbers are identity and are not in the dump
+
+`reference/factorio/recipes.json` has recipes and nothing else. A belt's **speed** and an
+underground belt's **maximum gap** are identity in the sense non-negotiable #1 means — they live in
+the player's head and decide what a factory looks like — and neither is in the file.
+
+Speed is now done the way footprints were: `data/mapping.json` carries a `speed` in tiles per
+second for all nine belt-ish entries, and `tools/check_models.py` fails the build if a belt block's
+`SPEED` constant stops agreeing with it. **Throughput is not a second number** — four items to a
+tile a lane, two lanes, so 1.875 tiles a second *is* the wiki's 15 items a second.
+
+The gap is the one still to record. Do it the same way.
 
 ### What to read, and what each one is for
 
 **The two that matter are already on the shelf**, and they are the two opposite answers to the one
-question a belt asks — *are the items on it real things, or numbers?*
+question a belt asks — *are the items on it real things, or numbers?* This session answered
+"numbers", the way Create and Factorio both do. Both are still worth reading before touching the
+underground belt or the splitter.
 
 | | |
 |---|---|
-| `reference/create-src/.../kinetics/belt/transport/` | **The architecture to reimplement.** `TransportedItemStack` is an item with a position along the belt; `BeltInventory` owns the whole run and segment blocks delegate to one controller. That is Factorio's model and the one recommended above. Read `BeltInventory` first, then `TransportedItemStack`, then `ItemHandlerBeltSegment` for how the run meets a capability. Code is MIT with attribution; **assets are All Rights Reserved** |
-| `reference/ImmersiveEngineering-src/.../conveyor/` | **The other answer, worth reading to reject.** IE's conveyors move real `ItemEntity`s along blocks. It is far simpler, it works, and it is why IE conveyors are not Factorio belts: entities cost, they cannot compress, and they cannot be two lanes. Fifteen minutes here will settle the argument for good |
+| `reference/create-src/.../kinetics/belt/transport/` | **The architecture that was reimplemented.** `TransportedItemStack` is an item with a position along the belt; `BeltInventory` owns the whole run and segment blocks delegate to one controller. Ours differs in two ways worth knowing: it stores gaps rather than positions, so a full belt is cheap to tick, and it has two lanes. Code is MIT with attribution; **assets are All Rights Reserved** |
+| `reference/ImmersiveEngineering-src/.../conveyor/` | **The other answer, worth reading to reject.** IE's conveyors move real `ItemEntity`s along blocks. It is far simpler, it works, and it is why IE conveyors are not Factorio belts: entities cost, they cannot compress, and they cannot be two lanes |
 
-**Worth adding, and the one real gap:** **Mekanism**'s logistical transporters — clone the 1.21.1
-branch into `reference/Mekanism-src/`. `TransporterStack` and `LogisticalTransporterBase` are a
-third opinion on the same problem, and the half Create is weakest on is exactly the half that will
-hurt: *many moving items, drawn cheaply, synced to clients without a packet per item per tick.*
-Mekanism has shipped that at scale for a decade, and its transporter-plus-network split is the same
-shape as `PowerNetwork` and `FluidNetwork` already are here.
+**Still the one real gap:** **Mekanism**'s logistical transporters — clone the 1.21.1 branch into
+`reference/Mekanism-src/`. `TransporterStack` and `LogisticalTransporterBase` are a third opinion,
+and the half Create is weakest on is the half that took the longest here: *many moving items, drawn
+cheaply, synced to clients without a packet per item per tick.* This pack's answer is to have the
+client simulate and send only what crosses the boundary; Mekanism's is worth comparing against
+before the splitter, which is the first thing that will strain it.
 
 That is the whole list. Everything else in the tech ecosystem — Industrial Foregoing, Thermal,
 EnderIO — solves this with conveyors or conduits that are variations on IE's answer or Mekanism's,
-and none of them is a third idea. **Applied Energistics 2** is the only large mod anywhere near our
-Minecraft version, on 26.1.2, so it is the best place to see current rendering and networking APIs
-in anger — but it has nothing to say about belts, so fetch it only if 26.x API archaeology is what
-is blocking you.
+and none of them is a third idea.
 
 **None of these can be shipped.** The whole tech ecosystem stopped at 1.21.1 (PLAN.md's survey);
 they are read and reimplemented, with attribution in the commit, and their assets are never copied.
@@ -221,6 +205,7 @@ Where the pack stands
 | | |
 |---|---|
 | `nauvis_machines:assembling_machine_1` | 3×3 and ten blocks; recipe selector, six slots, timed craft, screen, 10 FE a tick |
+| `nauvis_logistics:transport_belt` | half a block high and walked over; a run is one object however long, two lanes, items you can watch |
 | `nauvis_logistics:burner_inserter` | takes from behind, gives in front, 30-tick swing, screen with a fuel slot |
 | `nauvis_logistics:inserter` | the same on 2 FE a tick and a 24-tick swing. No slot, so no screen |
 | `nauvis_logistics:iron_chest` | 36 slots on vanilla's four-row screen |
@@ -242,10 +227,11 @@ those are generated.
 it is researching either, so the machine could be built without one. It counts cycles and consumes
 one of every kind of pack it holds, which is already the rule a technology will impose. Milestone 3.
 
-**The lab's own recipe costs four transport belts and is on disk, dormant.** It carries a
-`neoforge:registered` condition, so it starts working the day belts are registered and needs no
-edit — see the `pending` flag in `data/mapping.json` and `gen_recipes.py`. Green science is the
-same: `science-pack-2` costs an inserter and a belt, so milestone 2 unblocks it too.
+**The lab's recipe woke up.** It cost four transport belts and shipped with a
+`neoforge:registered` condition so it would start working the day belts existed; that day was this
+session, the `pending` flag came off `transport-belt` in `data/mapping.json`, and the condition
+regenerated away. `science-pack-2` costs an inserter and a belt and is unblocked the same way when
+it is written.
 
 How to run everything
 ---------------------
@@ -258,7 +244,7 @@ How to run everything
 | `./gradlew :<mod>:runClientData` / `runServerData` | models and language / loot and tags |
 | `./gradlew build` | everything, including `checkRecipes` |
 | `python tools/gen_recipes.py --check` | the same recipe diff, on its own |
-| `python tools/check_models.py` | every model, texture and blockstate reference, resolved |
+| `python tools/check_models.py` | every model, texture and blockstate reference, resolved — and footprints and belt speeds, against `data/mapping.json` |
 | `python tools/check_duplicated.py` | the copied packages, against each other. `--sync` to fix |
 | `python tools/check_gametests.py` | every gametest, for a type registered as well as an instance |
 | `python tools/check_gui_layout.py` | every machine screen's boxes, for overlaps |
@@ -303,7 +289,7 @@ asleep. **Assert it for anything new**, then delete the sleep logic and watch th
 trusting it.
 
 **One object per connected thing, three times over.** `PowerNetwork` for the grid, `FluidNetwork`
-for pipe runs, and belts next. Members join and leave; the network ticks once however many members
+for pipe runs, and `BeltRun` for belt lines. Members join and leave; the network ticks once however many members
 it has; one that moved nothing drops out of the active set. Read `nauvis_fluids/.../pipe/` first —
 it is the smaller of the two, and its header says exactly why it is smaller: a pipe connects to the
 six blocks it touches, which is what `neighborChanged` already reports, while a pole reaches 7.5
@@ -436,6 +422,21 @@ than losing it. It looks like a queue that stopped for no reason, and has been m
 
 **Factorio's recipe picker is a modal** anchored to the machine; ours is a persistent column beside
 the screen. The modal is the more faithful one. A Facrafting change, and it wants Yannic's eye.
+
+**A belt does not load a chest.** Deliberate and Factorio-faithful: a belt running into a container
+backs up, and taking things off a belt is what inserters are for. It is one method — `BeltRun`'s
+hand-off — if it is ever wanted the other way. `belt_does_not_load_a_chest` pins it.
+
+**A belt corner is drawn as two straight belts.** The items go round it properly; the model does
+not bend. See the fourth item in the job list.
+
+**Two belt tiers meeting is two runs, not one.** Correct — Factorio's transport lines split at a
+tier change too — but there is only one tier so far, so it has never been looked at.
+
+**Client and server belt runs can differ at a chunk edge**, because a client only has the belts in
+its loaded chunks and a run is built from whatever belts are there. What that costs is a belt at the
+very edge of the loaded world appearing to back up when it is not. Nothing is out of step where a
+player can see it, and a chunk arriving re-seeds that block's items from the block entity.
 
 **Smaller.** Nothing tests that inventories survive a save and reload, and nothing tests that a
 network rebuilds after a chunk cycle — both paths exist and are only reasoned about. The assembler's

@@ -38,6 +38,9 @@ Confirmed renames and signature changes
 | `Player.displayClientMessage(Component, boolean)` | **gone.** `sendOverlayMessage(Component)` for the action bar, `sendSystemMessage(Component)` for chat |
 | `net.minecraft.world.ticks.ScheduledTickAccess` | **`net.minecraft.world.level.ScheduledTickAccess`** — the interface moved, the package `world.ticks` kept the rest |
 | `DirectionProperty` | **gone.** `BlockStateProperties.HORIZONTAL_FACING` is an `EnumProperty<Direction>` |
+| `Level.isClientSide` (field) | private — `level.isClientSide()` |
+| `Blocks.YELLOW_TERRACOTTA` and every other dyed block | **gone.** They are `ColorCollection`s: `Blocks.DYED_TERRACOTTA.pick(DyeColor.YELLOW)`. Same for wool, concrete, glass and the rest |
+| `new ChunkPos(BlockPos)` | **gone.** `ChunkPos` is a record of two ints: `new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4)` |
 
 Other confirmed details:
 
@@ -195,6 +198,20 @@ everything in `freshBlockEntities`, not from `LevelChunk.addAndRegisterBlockEnti
 entity placed on tick N registers itself during tick N+1, before that tick's `Post`. Gametests that
 place a block and then inspect derived state have to wait at least one tick.
 
+Rendering an item stack from a block entity renderer
+----------------------------------------------------
+
+`BlockEntityRendererProvider.Context#itemModelResolver()` in the constructor, then in
+`extractRenderState`: `resolver.updateForTopItem(state, stack, ItemDisplayContext.GROUND, level,
+null, seed)` fills an `ItemStackRenderState`, and in `submit` that state's
+`submit(poseStack, collector, light, overlay, outline)` draws it. `CampfireRenderer` is the vanilla
+example.
+
+`updateForTopItem` calls `clear()` on the state first, so the states can be **pooled** rather than
+allocated per item per frame — which vanilla does not bother with for a campfire's four items and
+which matters for a belt's eight per block across a whole base. See
+`nauvis_logistics/.../client/BeltRenderState.java`.
+
 Block entity renderers: extract, submit, and the box that decides visibility
 ---------------------------------------------------------------------------
 
@@ -247,6 +264,10 @@ using it for `minecraft:always_pass`. Its bodies live in
 `TestFunctionLoader.runLoaders` once, long before any mod constructor runs, and NeoForge adds
 no hook. Registering a loader from a mod produces `Trying to access missing test function`
 at run time, having compiled perfectly.
+
+Note also that a helper named `run` on a `GameTestInstance` subclass's enclosing class will not
+resolve from inside the test — `GameTestInstance.run(GameTestHelper)` shadows it, and the error
+names the wrong thing.
 
 **Subclass `GameTestInstance` instead.** Three abstract members: `run(GameTestHelper)`,
 `codec()`, and `typeDescription()`. The codec must be registered into

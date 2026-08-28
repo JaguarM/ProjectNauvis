@@ -60,6 +60,7 @@ public final class NauvisLogisticsData {
             addBlock(ModBlocks.BURNER_INSERTER, "Burner inserter");
             addBlock(ModBlocks.INSERTER, "Inserter");
             addBlock(ModBlocks.IRON_CHEST, "Iron chest");
+            addBlock(ModBlocks.TRANSPORT_BELT, "Transport belt");
             add("pack.nauvis_logistics.crafting_table", "Nauvis Logistics: Crafting Table Recipes");
 
             // The whole interface, until there is a screen. See InserterBlock.
@@ -71,6 +72,16 @@ public final class NauvisLogisticsData {
             // The electric inserter has no slot and so no screen: these wait for the hover display.
             add("nauvis_logistics.inserter.running", "Taking from behind, giving to the %s");
             add("nauvis_logistics.inserter.no_power", "No power. Put a pole within two blocks.");
+
+            // Jade. The plugin key is not optional decoration: Jade's settings screen asserts on a
+            // provider with no name, and it does it from ScreenEvent.Init - so a missing key is a
+            // crash the moment any screen opens, not a blank line in a menu.
+            add("config.jade.plugin_nauvis_logistics", "Project Nauvis: Logistics");
+            add("config.jade.plugin_nauvis_logistics.belt", "Transport belt");
+            add("jade.nauvis_logistics.belt.length", "Belt line: %s belts");
+            add("jade.nauvis_logistics.belt.lanes", "Lanes: %s left, %s right, of %s each");
+            add("jade.nauvis_logistics.belt.carrying", "Carrying");
+            add("jade.nauvis_logistics.belt.empty", "Empty");
         }
     }
 
@@ -86,6 +97,7 @@ public final class NauvisLogisticsData {
             dropSelf(ModBlocks.BURNER_INSERTER.get());
             dropSelf(ModBlocks.INSERTER.get());
             dropSelf(ModBlocks.IRON_CHEST.get());
+            dropSelf(ModBlocks.TRANSPORT_BELT.get());
         }
 
         @Override

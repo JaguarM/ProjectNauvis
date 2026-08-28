@@ -1,0 +1,22 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "neoprogressivematerials:iron_gear_wheel",
+    "minecraft:iron_ingot"
+  ],
+  "result": {
+    "id": "nauvis_logistics:transport_belt",
+    "count": 2
+  }
+}

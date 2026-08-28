@@ -1,6 +1,7 @@
 package com.jaguarm.nauvislogistics.registry;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
+import com.jaguarm.nauvislogistics.belt.TransportBeltBlock;
 import com.jaguarm.nauvislogistics.storage.IronChestBlock;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlock;
 import com.jaguarm.nauvislogistics.transport.ElectricInserterBlock;
@@ -52,6 +53,20 @@ public final class ModBlocks {
                     .strength(2.5F, 6.0F)
                     .sound(SoundType.METAL)
                     .requiresCorrectToolForDrops());
+
+    /**
+     * The belt. Half a block high so a player walks across it rather than over it, and soft
+     * enough to break with a hand - a belt line is something a player re-routes constantly, and a
+     * pickaxe requirement would make laying one out a chore.
+     */
+    public static final DeferredBlock<TransportBeltBlock> TRANSPORT_BELT = BLOCKS.registerBlock(
+            "transport_belt",
+            TransportBeltBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.COLOR_YELLOW)
+                    .strength(0.5F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
 
     private ModBlocks() {}
 }

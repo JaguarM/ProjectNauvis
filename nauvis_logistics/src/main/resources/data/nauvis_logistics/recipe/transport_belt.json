@@ -6,32 +6,24 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "nauvis_logistics"
-    },
-    {
-      "type": "neoforge:mod_loaded",
       "modid": "neoprogressivematerials"
     }
   ],
   "type": "facrafting:facraft",
-  "craft_ticks": 40,
+  "craft_ticks": 10,
   "group": "machine",
   "ingredients": [
     {
-      "ingredient": "neoprogressivematerials:electronic_circuit",
-      "count": 10
-    },
-    {
       "ingredient": "neoprogressivematerials:iron_gear_wheel",
-      "count": 10
+      "count": 1
     },
     {
-      "ingredient": "nauvis_logistics:transport_belt",
-      "count": 4
+      "ingredient": "minecraft:iron_ingot",
+      "count": 1
     }
   ],
   "result": {
-    "id": "nauvis_research:lab",
-    "count": 1
+    "id": "nauvis_logistics:transport_belt",
+    "count": 2
   }
 }

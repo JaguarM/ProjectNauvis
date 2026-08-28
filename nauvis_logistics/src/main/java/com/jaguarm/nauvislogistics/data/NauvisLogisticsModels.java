@@ -12,6 +12,8 @@ import net.minecraft.client.data.models.model.TextureMapping;
 import net.minecraft.client.data.models.model.TextureSlot;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
 /**
@@ -28,6 +30,9 @@ import net.minecraft.world.level.block.Blocks;
  * {@code ../NeoProgressiveAutomation/texture-workshop/}.
  */
 public class NauvisLogisticsModels extends ModelProvider {
+
+    /** The dyed blocks are a {@code ColorCollection} in 26.2; there is no {@code YELLOW_TERRACOTTA} field. */
+    private static final Block YELLOW_TERRACOTTA = Blocks.DYED_TERRACOTTA.pick(DyeColor.YELLOW);
 
     public NauvisLogisticsModels(PackOutput output) {
         super(output, NauvisLogistics.MODID);
@@ -61,6 +66,26 @@ public class NauvisLogisticsModels extends ModelProvider {
         blockModels.blockStateOutput.accept(
                 MultiVariantGenerator.dispatch(ModBlocks.INSERTER.get(), BlockModelGenerators.plainVariant(electric))
                         .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
+
+        // The belt: a bottom slab, because it is half a block high and you walk over it. The top
+        // texture is the one thing this model has to get right - a belt facing the wrong way looks
+        // exactly like a belt that is working - so it is a piston side, whose diagonals show which
+        // way the blockstate has turned it. Yellow flanks, because Factorio's first belt is yellow.
+        Identifier belt = ModelTemplates.SLAB_BOTTOM.create(
+                ModBlocks.TRANSPORT_BELT.get(),
+                new TextureMapping()
+                        .put(TextureSlot.TOP, TextureMapping.getBlockTexture(Blocks.PISTON, "_side"))
+                        .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(YELLOW_TERRACOTTA))
+                        .put(TextureSlot.BOTTOM, TextureMapping.getBlockTexture(YELLOW_TERRACOTTA)),
+                blockModels.modelOutput);
+
+        blockModels.blockStateOutput.accept(
+                MultiVariantGenerator.dispatch(ModBlocks.TRANSPORT_BELT.get(), BlockModelGenerators.plainVariant(belt))
+                        .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
+
+        // Said out loud rather than left to the default, because the default is "block/<name>" and
+        // a template that adds a suffix silently breaks it. See the silent-failures list.
+        blockModels.registerSimpleItemModel(ModBlocks.TRANSPORT_BELT.get(), belt);
 
         // Iron sides with a barrel's lid: reads as a metal container at a glance, and does not
         // read as a block of iron, which is what a plain iron cube would have looked like.

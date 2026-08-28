@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "nauvis_logistics:block/transport_belt",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "nauvis_logistics:block/transport_belt"
+    },
+    "facing=south": {
+      "model": "nauvis_logistics:block/transport_belt",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "nauvis_logistics:block/transport_belt",
+      "y": 270
+    }
+  }
+}
