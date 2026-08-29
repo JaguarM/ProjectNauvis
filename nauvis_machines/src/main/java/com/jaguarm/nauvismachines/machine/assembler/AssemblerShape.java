@@ -11,7 +11,7 @@ import com.jaguarm.nauvismachines.multiblock.MachineShape;
  * What an assembling machine looks like and how much room it takes: three tiles by three, the
  * size Factorio made it.
  *
- * <p>Footprint is identity - see {@code docs/NEXT.md}. Three by three is why an assembler column
+ * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md}. Three by three is why an assembler column
  * spaces the way it does and why a player's layout transfers from one game to the other, so it is
  * stated here once and read by the block, the models and the loot table.
  *
@@ -26,7 +26,7 @@ import com.jaguarm.nauvismachines.multiblock.MachineShape;
  * corridors, because in Factorio you can always walk round the far end. Here the answer is up:
  * you climb onto a machine and walk over it.
  *
- * <p>The heights, in the terms {@code docs/NEXT.md} sets out:
+ * <p>The heights, in the terms {@code docs/ARCHITECTURE.md} sets out:
  *
  * <ul>
  *   <li><b>1.0</b> - the wall around the outside. A jump gets you onto it, since the jump is about

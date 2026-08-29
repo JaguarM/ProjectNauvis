@@ -11,9 +11,8 @@ resolving each reference to a file that has to exist:
     blockstate -> model -> parent -> ... -> texture -> a real PNG
 
 and it resolves into the vanilla client jar too, because almost every model in the pack points at
-a vanilla texture on purpose (see docs/NEXT.md). Without the jar it still checks everything
-first-party and says so; with it, `minecraft:block/bricks` is a file that either exists or does
-not.
+a vanilla texture on purpose. Without the jar it still checks everything first-party and says so;
+with it, `minecraft:block/bricks` is a file that either exists or does not.
 
 It also checks belt speeds, the same way and for the same reason: a belt's tiles per second
 is identity, it lives in `data/mapping.json`, and the constant in the block is held to it.
@@ -272,10 +271,10 @@ def check_registrations(assets):
 def check_footprints():
     """Every machine's cells, against the footprint Factorio gave that entity.
 
-    A footprint is identity - see docs/NEXT.md - so it is checked rather than remembered, the way
-    recipes are. `data/mapping.json` holds the number beside the item id; a `*Shape.java` holds
-    the cells; this reads the cells back out of the source and compares. Constants read out of
-    source is `check_gui_layout.py`'s trick, and it needs no game.
+    A footprint is identity - see docs/ARCHITECTURE.md - so it is checked rather than
+    remembered, the way recipes are. `data/mapping.json` holds the number beside the item id;
+    a `*Shape.java` holds the cells; this reads the cells back out of the source and compares.
+    Constants read out of source is `check_gui_layout.py`'s trick, and it needs no game.
 
     A file with no cells is the framework rather than a machine, and is passed over. A file that
     does build cells but names no FACTORIO_ID is reported as unchecked rather than failed - a

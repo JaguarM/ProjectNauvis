@@ -11,7 +11,7 @@ import com.jaguarm.nauvisresearch.multiblock.MachineShape;
  * What a lab looks like and how much room it takes: three tiles by three, the size Factorio made
  * it.
  *
- * <p>Footprint is identity - see {@code docs/NEXT.md} - and {@code tools/check_models.py} holds
+ * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py} holds
  * this to the {@code size} recorded for {@code lab} in {@code data/mapping.json}.
  *
  * <h2>Ten blocks, and a dome you walk around</h2>

@@ -18,7 +18,7 @@ import net.minecraft.core.Direction;
  * <p>Five is the number that matters. It is why a boiler feeds a <em>row</em> of engines rather
  * than a cluster of them, and it is past what any single block model can draw - an element is
  * capped at one block in each direction, so a machine this long could only ever have been made of
- * blocks that each draw themselves. See {@code docs/NEXT.md}.
+ * blocks that each draw themselves. See {@code docs/ARCHITECTURE.md}.
  *
  * <h2>Seventeen blocks: a channel with two flywheels in it</h2>
  *

@@ -11,7 +11,7 @@ import net.neoforged.neoforge.event.AddPackFindersEvent;
  * Ships the crafting-table recipes as a datapack that is present but switched off.
  *
  * <p>The directory needs a {@code pack.mcmeta} or this throws a bare NPE naming neither the mod
- * nor the directory - see {@code docs/NEXT.md}.
+ * nor the directory - see {@code docs/PITFALLS.md}.
  */
 public final class ModPacks {
 

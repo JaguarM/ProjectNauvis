@@ -19,7 +19,7 @@ package com.jaguarm.nauvisresearch.multiblock;
  *
  * <p>Wall at 1.0, floor at 0.75. A player jumps about 1.25 and steps 0.6 for free, so the wall is
  * one climb and everything after it is walking. That is what lets machines be packed edge to edge
- * without walling the player out of their own base - see {@code docs/NEXT.md}. Anything a machine
+ * without walling the player out of their own base - see {@code docs/ARCHITECTURE.md}. Anything a machine
  * puts in the middle is the part you walk around, so put it where tiled machines leave a lane.
  */
 public final class MachineParts {

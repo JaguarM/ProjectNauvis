@@ -46,7 +46,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * That is not taste: {@code createBlockStateDefinition} runs inside {@code Block}'s constructor,
  * before any field of a subclass exists, and the drills already shipped one bug from reading a
  * field there. A constant on a subclass exists long before any block does. See
- * {@code docs/NEXT.md}.
+ * {@code docs/PITFALLS.md}.
  *
  * <p>It also settles what happens where two tiers meet: a run only continues through belts of the
  * same block, so a fast belt after a normal one is a second run that the first hands off into,

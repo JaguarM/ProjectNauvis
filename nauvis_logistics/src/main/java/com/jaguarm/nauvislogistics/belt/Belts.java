@@ -48,7 +48,7 @@ public final class Belts {
      *
      * <p>Half a block, which is under vanilla's 0.6 step height, so a player walks across a belt
      * rather than jumping onto it. A belt you have to jump is not a belt - see the walkability
-     * table in {@code docs/NEXT.md}.
+     * table in {@code docs/ARCHITECTURE.md}.
      */
     public static final double HEIGHT = 0.5;
 

@@ -9,7 +9,7 @@ import com.jaguarm.nauvislogistics.multiblock.MachineShape;
 /**
  * What a splitter looks like and how much room it takes: two tiles wide by one tile deep.
  *
- * <p>Footprint is identity - see {@code docs/NEXT.md} - and {@code tools/check_models.py} holds
+ * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py} holds
  * this to the {@code size} recorded for {@code splitter} in {@code data/mapping.json}.
  *
  * <p>Two cells at ground level with a low hood across the middle spanning the two tracks.

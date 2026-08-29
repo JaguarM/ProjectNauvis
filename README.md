@@ -24,7 +24,10 @@ Where things are
 | `docs/NEXT.md` | what the next session should pick up, and how to run everything |
 | `docs/PLAN.md` | mod map, milestones, shortcuts, what testing means |
 | `docs/MAPPING.md` | how the 214 Factorio items resolve to Minecraft ones |
-| `docs/API-26.2.md` | confirmed 26.2 renames and the silent failures |
+| `docs/API-26.2.md` | confirmed 26.2 renames, checked against decompiled sources |
+| `docs/ARCHITECTURE.md` | the rules a machine is built to, and the patterns worth copying |
+| `docs/PITFALLS.md` | things that compile, pass tests, and are still wrong |
+| `docs/GAPS.md` | what is deliberately missing |
 | `data/mapping.json` | the mapping itself. Hand-maintained |
 | `tools/gen_mapping.py` | seeded it once; refuses to overwrite |
 | `tools/gen_recipes.py` | turns the mapping plus Factorio's dump into recipe JSON |

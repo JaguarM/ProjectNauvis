@@ -60,7 +60,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  *
  * <p>Nothing here depends on that, and a real world is unaffected. But <b>do not write a test
  * that assumes a recipe is a {@code facrafting:facraft} one</b> without checking, and do not read
- * a green suite as evidence that the timed-crafting path works. See {@code docs/NEXT.md}.
+ * a green suite as evidence that the timed-crafting path works. See {@code docs/PITFALLS.md}.
  *
  * <p>The 26.2 shape is registry-driven and unlike every tutorial. See {@code docs/API-26.2.md}
  * — in particular, {@code FunctionGameTestInstance} is unavailable to mods, because the

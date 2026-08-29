@@ -53,7 +53,7 @@ import net.minecraft.world.level.redstone.Orientation;
  * preference: the filter below has to know how far this inserter reaches <em>before</em> it looks
  * a block entity up, and looking one up to find out would be the lookup the filter exists to
  * avoid. A method on a subclass returning a constant is also safe from the trap
- * {@code createBlockStateDefinition} sets - see the silent-failures list in docs/NEXT.md - in a
+ * {@code createBlockStateDefinition} sets - see docs/PITFALLS.md - in a
  * way a field would not be.
  */
 public abstract class InserterBlock extends BaseEntityBlock {

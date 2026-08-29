@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
  *
  * <p>One of these per machine, built once in a static initialiser and read by everything else -
  * the block for placement and collision, the model provider for geometry, the loot table for
- * which cell drops the item. A footprint is Factorio identity (see {@code docs/NEXT.md}), so it
+ * which cell drops the item. A footprint is Factorio identity (see {@code docs/ARCHITECTURE.md}), so it
  * is stated once and never restated.
  *
  * <h2>Cells are a set, not a box</h2>

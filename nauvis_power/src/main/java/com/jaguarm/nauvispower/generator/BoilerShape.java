@@ -15,7 +15,7 @@ import net.minecraft.core.Direction;
  * What a boiler looks like and how much room it takes: three tiles by two, the size Factorio made
  * it, with a chimney.
  *
- * <p>Footprint is identity - see {@code docs/NEXT.md} - and {@code tools/check_models.py} holds
+ * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py} holds
  * this to the {@code size} recorded for {@code boiler} in {@code data/mapping.json}. Everything
  * else here is ours: Factorio is two-dimensional and has no opinion about chimneys.
  *

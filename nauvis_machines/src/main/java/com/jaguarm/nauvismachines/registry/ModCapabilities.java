@@ -60,7 +60,7 @@ public final class ModCapabilities {
         event.registerBlock(capability, (level, pos, state, blockEntity, context) -> {
             BlockPos anchor = Multiblock.anchorPos(block, state, pos);
             // Never getBlockEntity on an unloaded chunk - asking loads it, and a machine at the
-            // edge of the loaded world would drag its neighbour in. See docs/NEXT.md.
+            // edge of the loaded world would drag its neighbour in. See docs/PITFALLS.md.
             if (!level.isLoaded(anchor)) {
                 return null;
             }

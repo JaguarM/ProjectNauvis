@@ -86,7 +86,7 @@ public final class NauvisLogisticsGameTests {
      *
      * <p>Zero was survivable while every test here was three blocks long. The long arm's line is
      * five, and a test whose blocks land in the next test along fails whichever of the two ran
-     * second - see the silent-failures list in docs/NEXT.md.
+     * second - see docs/PITFALLS.md.
      */
     private static final int PADDING = 8;
 

@@ -112,7 +112,7 @@ public final class ModCapabilities {
      * The block entity this cell belongs to, or null.
      *
      * <p>Never asks for a block entity in an unloaded chunk - asking loads it, and a machine at
-     * the edge of the loaded world would drag its neighbour in. See {@code docs/NEXT.md}.
+     * the edge of the loaded world would drag its neighbour in. See {@code docs/PITFALLS.md}.
      */
     private static <E extends BlockEntity> @Nullable E anchor(Level level, BlockPos pos,
             BlockState state, Multiblock.MachineBlock block, Class<E> type) {
