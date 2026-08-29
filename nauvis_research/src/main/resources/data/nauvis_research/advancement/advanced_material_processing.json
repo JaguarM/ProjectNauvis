@@ -1,0 +1,29 @@
+{
+  "parent": "nauvis_research:root",
+  "display": {
+    "icon": {
+      "id": "nauvis_research:lab"
+    },
+    "title": {
+      "translate": "technology.nauvis_research.advanced_material_processing",
+      "fallback": "Advanced material processing"
+    },
+    "description": {
+      "translate": "advancements.nauvis_research.researched"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "researched": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "researched"
+    ]
+  ]
+}

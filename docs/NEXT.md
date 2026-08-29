@@ -224,6 +224,17 @@ four phases and the first two are in.
 
   It currently comes out 6 columns by 11 rows - two triggered roots, red science as the single
   gate, then a fan of eleven.
+- **Done: the toast and the corner readout.** Finishing a technology awards a per-player vanilla
+  advancement, generated beside each technology by the same tool, so the toast, the sound and a tab
+  that fills in as a log all come from Minecraft rather than from us. They are a *record* of a
+  world fact, never the fact - the criterion is `minecraft:impossible` and only the server awards
+  them. And `ResearchHud` is Factorio's top-right widget: what is being researched and how far in,
+  or the triggered technology closest to firing, or *"Press G to start a new research."* with the
+  real bound key in it.
+
+  **The middle state is the one that earns its keep.** A new world spends its whole opening on
+  triggered technologies, so without it the corner would show the prompt for half an hour while
+  research was in fact advancing every time a plate came out of a furnace.
 - **Left: the canvas.** Replace the list's body with pan and zoom, edges behind nodes, a frame per
   technology in one of four states, hover for the tooltip that already exists, click to research.
   Roughly 400 lines, and it is where the layout stops being checkable: the grid is asserted, how
@@ -371,9 +382,12 @@ watch, and the last one is the one no test can reach:
   the screen being closed and reopened. `RecipeLock.revision` is the mechanism and a gametest
   asserts the number moves; **whether the panel redraws is only visible to a person.**
 
-**Press G.** The technology screen has a key now, and nothing in this repo can tell whether it
-opens, whether the category reads sensibly in the controls screen, or whether `G` is a good
-default at all. It is one line in the controls menu to rebind if it is not.
+**The corner, and the toast.** Both are new and both are pure presentation, which is to say
+neither is testable here. Worth watching: whether the readout sits somewhere sensible against the
+rest of the interface, whether it grows the way it should for a long technology name, and whether
+the flask reads as research rather than as an item you are holding. The toast should fire once
+per technology and never on relog - if it fires on every login, the advancement is being awarded
+but not saved.
 
 **And the first ten minutes have changed, which is the biggest risk in this session's work.**
 There is no hopper recipe, and the furnace and the chest can no longer be made at a bench - they

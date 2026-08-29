@@ -73,7 +73,9 @@ public final class ResearchNetwork {
         ServerPlayer player = event.getPlayer();
         if (player == null) {
             sendToAll(event.getPlayerList().getServer());
+            ResearchAdvancements.syncAll(event.getPlayerList().getServer());
         } else {
+            ResearchAdvancements.sync(player);
             PacketDistributor.sendToPlayer(player,
                     ResearchSyncPayload.of(Research.state(player.level().getServer())));
         }

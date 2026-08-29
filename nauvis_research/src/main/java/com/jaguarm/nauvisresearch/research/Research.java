@@ -219,6 +219,9 @@ public final class Research {
         revision++;
         lockedCache = null;
         ResearchNetwork.sendToAll(server);
+        // Awarding one that is already awarded is a no-op, so this needs no notion of what is
+        // new - which is what makes it correct for a player who was offline when it finished.
+        ResearchAdvancements.syncAll(server);
     }
 
     /**

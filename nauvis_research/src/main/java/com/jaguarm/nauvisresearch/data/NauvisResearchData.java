@@ -116,6 +116,16 @@ public final class NauvisResearchData {
 
             // The key, and the category it lives under in the controls screen.
             add("key.nauvis_research.open_research", "Open technology screen");
+
+            // The corner readout. The prompt names whatever key is actually bound, so it stays
+            // true for a player who rebound it.
+            add("hud.nauvis_research.no_research", "Press %s to start a new research.");
+
+            // Vanilla's advancement toast does the work; these are the words on it.
+            add("advancements.nauvis_research.root.title", "Project Nauvis");
+            add("advancements.nauvis_research.root.description",
+                    "Everything this world has researched");
+            add("advancements.nauvis_research.researched", "Research complete");
             add("key.categories.nauvis_research.nauvis", "Project Nauvis");
         }
     }

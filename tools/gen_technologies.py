@@ -8,12 +8,29 @@ Non-negotiable #2, for the other generated half of the pack: a research cost is 
 fact as an ingredient list. It lives in world saves and in the player's head, so it comes from
 Factorio's own data and never from anybody's memory of the game.
 
-One file comes out per technology, in the datapack registry `nauvis_research:technology`:
+Two files come out per technology. The first is the technology itself, in the datapack registry
+`nauvis_research:technology`:
 
   nauvis_research/src/main/resources/data/nauvis_research/nauvis_research/technology/<name>.json
 
 The doubled namespace is NeoForge's layout for a modded datapack registry, not a mistake: the
 first is the datapack supplying the entry and the second is the registry's own namespace.
+
+The second is a **vanilla advancement**, purely so that finishing a technology pops the toast and
+plays the sound Minecraft already has for exactly this feeling:
+
+  nauvis_research/src/main/resources/data/nauvis_research/advancement/<name>.json
+
+It is never earned by anything the player does - its criterion is `minecraft:impossible` and the
+server awards it when the *world* completes the technology. Research is per world and advancements
+are per player, so these are a per-player *record* of a world fact rather than the fact itself.
+They are generated here rather than written because there is one per technology and the tree
+grows; a hand-kept list would be one commit behind for ever.
+
+**The icon is the one thing that has to be careful.** An advancement's icon is registry-validated
+at load, so naming an item no mod has registered yet fails the file - and most of what this tree
+unlocks does not exist yet. So the icon is the first unlocked item that is *vanilla*, where there
+is one, and the lab otherwise: both are certain to exist.
 
 Two ways a technology is paid for
 ---------------------------------
@@ -79,6 +96,19 @@ OWNER = "nauvis_research"
 # Where a datapack registry's entries live: `data/<supplier>/<registry namespace>/<registry
 # path>/`. Both halves are this mod, which reads oddly and is right.
 REGISTRY_PATH = Path("data") / OWNER / OWNER / "technology"
+
+# Vanilla advancements, in the ordinary place for them.
+ADVANCEMENT_PATH = Path("data") / OWNER / "advancement"
+
+# The advancement every technology's hangs off, so the pack gets one tab rather than twenty-five.
+ROOT = f"{OWNER}:root"
+
+# Awarded by the server; nothing a player does can earn it. One name for every advancement here,
+# including the root, so the granting code needs no table.
+CRITERION = "researched"
+
+# Always registered by the mod that ships these files, so it is the safe icon.
+FALLBACK_ICON = f"{OWNER}:lab"
 
 # `order` is zero-padded so a plain string sort is a numeric one, and it is simply the tree's own
 # order - the research screen then lists technologies the way Factorio lists them.
@@ -313,6 +343,10 @@ def plan(tree: list, items: dict, aliases: dict) -> tuple[list, dict]:
         entry.update(cost_of(technology, items))
         entry["unlocks"] = recipes
         files.append((REGISTRY_PATH / f"{slug(technology['id'])}.json", entry))
+        files.append((ADVANCEMENT_PATH / f"{slug(technology['id'])}.json",
+                      advancement(technology["id"], entry, items, tree)))
+
+    files.append((ADVANCEMENT_PATH / "root.json", root_advancement()))
 
     unreached = sorted(set(kept) - reachable(list(kept.values()), items, aliases))
     if unreached:
@@ -322,6 +356,60 @@ def plan(tree: list, items: dict, aliases: dict) -> tuple[list, dict]:
         )
 
     return files, report
+
+
+def advancement(name: str, entry: dict, items: dict, tree: list) -> dict:
+    """One technology's advancement: a toast, a line in a log, and nothing else."""
+    return {
+        "parent": ROOT,
+        "display": {
+            "icon": {"id": icon_for(entry, items)},
+            "title": {"translate": f"technology.{OWNER}.{slug(name)}", "fallback": entry["name"]},
+            "description": {"translate": f"advancements.{OWNER}.researched"},
+            "frame": "task",
+            "show_toast": True,
+            "announce_to_chat": False,
+            # Hidden until earned, so the tab fills in as a record of what has been researched
+            # rather than showing the whole tree twice - badly, since an advancement has one
+            # parent and a third of these technologies have more than one prerequisite.
+            "hidden": True,
+        },
+        "criteria": {CRITERION: {"trigger": "minecraft:impossible"}},
+        "requirements": [[CRITERION]],
+    }
+
+
+def icon_for(entry: dict, items: dict) -> str:
+    """
+    The first vanilla item this technology unlocks, or the lab.
+
+    Deliberately not simply the first unlock. An advancement's icon is looked up in the item
+    registry while the file loads, so naming something no mod has registered yet - which is most
+    of what this tree unlocks - would fail the advancement rather than fall back to anything.
+    A `minecraft:` id is the one kind that is certain.
+    """
+    for key in entry["unlocks"]:
+        for factorio_id, mapped in items.items():
+            item = mapped.get("item", "")
+            if item.startswith("minecraft:") and key == recipe_key(factorio_id, items):
+                return item
+    return FALLBACK_ICON
+
+
+def root_advancement() -> dict:
+    return {
+        "display": {
+            "icon": {"id": FALLBACK_ICON},
+            "title": {"translate": f"advancements.{OWNER}.root.title"},
+            "description": {"translate": f"advancements.{OWNER}.root.description"},
+            "background": "minecraft:gui/advancements/backgrounds/stone",
+            "frame": "task",
+            "show_toast": False,
+            "announce_to_chat": False,
+        },
+        "criteria": {CRITERION: {"trigger": "minecraft:impossible"}},
+        "requirements": [[CRITERION]],
+    }
 
 
 def render(obj: dict) -> str:
@@ -334,15 +422,15 @@ def resource_root() -> Path:
 
 def do_write(files: list, root: Path | None) -> int:
     base = root if root else resource_root()
-    directory = base / REGISTRY_PATH
-    directory.mkdir(parents=True, exist_ok=True)
-    expected = {rel.name for rel, _ in files}
-    for stale in directory.glob("*.json"):
-        if stale.name not in expected:
-            stale.unlink()
+    for directory in (REGISTRY_PATH, ADVANCEMENT_PATH):
+        (base / directory).mkdir(parents=True, exist_ok=True)
+        expected = {rel.name for rel, _ in files if rel.parent == directory}
+        for stale in (base / directory).glob("*.json"):
+            if stale.name not in expected:
+                stale.unlink()
     for rel, obj in files:
         (base / rel).write_text(render(obj), encoding="utf-8", newline="\n")
-    print(f"  {OWNER}: {len(files)} files -> {directory}")
+    print(f"  {OWNER}: {len(files)} files -> {base / REGISTRY_PATH.parent}")
     return len(files)
 
 
@@ -366,9 +454,10 @@ def do_check(files: list) -> int:
         else:
             wrong.append((path, json.loads(path.read_text(encoding="utf-8")), obj))
 
-    directory = base / REGISTRY_PATH
-    stale = sorted(p for p in directory.glob("*.json") if p.name not in expected) \
-        if directory.exists() else []
+    stale = []
+    for directory in (base / REGISTRY_PATH, base / ADVANCEMENT_PATH):
+        if directory.exists():
+            stale += sorted(p for p in directory.glob("*.json") if p.name not in expected)
 
     print(f"  matched  {matching}")
     print(f"  missing  {len(missing)}")
@@ -404,11 +493,14 @@ def main() -> int:
         print(f"error: {e}", file=sys.stderr)
         return 2
 
-    triggered = sum(1 for _, obj in files if "trigger" in obj)
-    total_unlocks = sum(len(obj["unlocks"]) for _, obj in files)
-    print(f"{len(files)} technologies -> {total_unlocks} recipe unlocks")
+    technologies = [obj for rel, obj in files if rel.parent == REGISTRY_PATH]
+    triggered = sum(1 for obj in technologies if "trigger" in obj)
+    total_unlocks = sum(len(obj["unlocks"]) for obj in technologies)
+    print(f"{len(technologies)} technologies -> {total_unlocks} recipe unlocks, "
+          f"{len(files) - len(technologies)} advancements")
     print(f"  finished by a trigger rather than by science : {triggered}")
     print(f"  unlocking nothing yet                        : {len(report['no_unlocks'])}")
+    report["no_unlocks"] = [x for x in report["no_unlocks"]]
     if report["dropped"]:
         print(f"  dropped, prerequisites not in the tree       : {report['dropped']}")
     if report["modifiers"]:
