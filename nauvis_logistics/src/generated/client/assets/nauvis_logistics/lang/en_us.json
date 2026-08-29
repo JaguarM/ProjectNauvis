@@ -16,5 +16,6 @@
   "pack.nauvis_logistics.crafting_table": "Nauvis Logistics: Crafting Table Recipes",
   "screen.nauvis_logistics.burner_inserter.no_fuel": "Out of fuel",
   "screen.nauvis_logistics.burner_inserter.waiting": "Nothing to move",
-  "screen.nauvis_logistics.burner_inserter.working": "Moving an item"
+  "screen.nauvis_logistics.burner_inserter.working": "Moving an item",
+  "tab.facrafting.group.logistics": "Logistics"
 }

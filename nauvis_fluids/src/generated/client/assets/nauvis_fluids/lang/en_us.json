@@ -8,5 +8,6 @@
   "jade.nauvis_fluids.pipe.empty": "Empty",
   "jade.nauvis_fluids.pipe.extent": "Pipeline extent: %s pipes",
   "jade.nauvis_fluids.pipe.flowing": "Working",
-  "pack.nauvis_fluids.crafting_table": "Nauvis Fluids: Crafting Table Recipes"
+  "pack.nauvis_fluids.crafting_table": "Nauvis Fluids: Crafting Table Recipes",
+  "tab.facrafting.group.logistics": "Logistics"
 }

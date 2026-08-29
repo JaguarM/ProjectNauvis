@@ -24,5 +24,7 @@
   "pack.nauvis_power.crafting_table": "Nauvis Power: Crafting Table Recipes",
   "screen.nauvis_power.boiler.burning": "Burning",
   "screen.nauvis_power.boiler.full": "Full of steam - nothing is drawing it off",
-  "screen.nauvis_power.boiler.idle": "Out of fuel"
+  "screen.nauvis_power.boiler.idle": "Out of fuel",
+  "tab.facrafting.group.logistics": "Logistics",
+  "tab.facrafting.group.production": "Production"
 }

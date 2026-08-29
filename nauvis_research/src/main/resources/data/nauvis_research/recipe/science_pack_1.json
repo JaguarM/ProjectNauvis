@@ -11,7 +11,8 @@
   ],
   "type": "facrafting:facraft",
   "craft_ticks": 100,
-  "group": "science",
+  "group": "intermediate",
+  "order": "0164",
   "ingredients": [
     {
       "ingredient": "minecraft:copper_ingot",

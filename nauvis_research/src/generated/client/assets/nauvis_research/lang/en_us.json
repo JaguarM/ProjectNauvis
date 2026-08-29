@@ -5,5 +5,7 @@
   "pack.nauvis_research.crafting_table": "Nauvis Research: bench recipes",
   "screen.nauvis_research.lab.idle": "Idle - give it science packs",
   "screen.nauvis_research.lab.no_power": "No power - run a wire to it",
-  "screen.nauvis_research.lab.researching": "Researching - %s done"
+  "screen.nauvis_research.lab.researching": "Researching - %s done",
+  "tab.facrafting.group.intermediate": "Intermediate products",
+  "tab.facrafting.group.production": "Production"
 }

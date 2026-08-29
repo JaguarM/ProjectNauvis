@@ -15,7 +15,8 @@
   ],
   "type": "facrafting:facraft",
   "craft_ticks": 40,
-  "group": "machine",
+  "group": "production",
+  "order": "0096",
   "ingredients": [
     {
       "ingredient": "neoprogressivematerials:electronic_circuit",

@@ -85,6 +85,12 @@ public final class NauvisPowerData {
         @Override
         protected void addTranslations() {
             add("itemGroup.nauvis_power", "Project Nauvis: Power");
+            // Facrafting's crafting-panel tabs. These are Factorio's four crafting-menu
+            // categories, generated into every recipe's `group` by tools/gen_recipes.py, and
+            // each mod ships the keys for the groups it actually uses - so the strip reads the
+            // same whichever subset of the pack is installed.
+            add("tab.facrafting.group.logistics", "Logistics");
+            add("tab.facrafting.group.production", "Production");
             addBlock(ModBlocks.BOILER, "Boiler");
             addBlock(ModBlocks.STEAM_ENGINE, "Steam engine");
             addBlock(ModBlocks.SMALL_ELECTRIC_POLE, "Small electric pole");

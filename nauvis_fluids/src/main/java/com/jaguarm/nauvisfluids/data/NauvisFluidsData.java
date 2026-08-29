@@ -51,6 +51,11 @@ public final class NauvisFluidsData {
         @Override
         protected void addTranslations() {
             add("itemGroup.nauvis_fluids", "Project Nauvis: Fluids");
+            // Facrafting's crafting-panel tabs. These are Factorio's four crafting-menu
+            // categories, generated into every recipe's `group` by tools/gen_recipes.py, and
+            // each mod ships the keys for the groups it actually uses - so the strip reads the
+            // same whichever subset of the pack is installed.
+            add("tab.facrafting.group.logistics", "Logistics");
             addBlock(ModBlocks.PIPE, "Pipe");
 
             // Steam is never in the world, but Jade and any tank screen will name it.

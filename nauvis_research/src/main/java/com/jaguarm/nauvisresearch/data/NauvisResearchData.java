@@ -68,6 +68,12 @@ public final class NauvisResearchData {
         @Override
         protected void addTranslations() {
             add("itemGroup.nauvis_research", "Project Nauvis: Research");
+            // Facrafting's crafting-panel tabs. These are Factorio's four crafting-menu
+            // categories, generated into every recipe's `group` by tools/gen_recipes.py, and
+            // each mod ships the keys for the groups it actually uses - so the strip reads the
+            // same whichever subset of the pack is installed.
+            add("tab.facrafting.group.intermediate", "Intermediate products");
+            add("tab.facrafting.group.production", "Production");
             addBlock(ModBlocks.LAB, "Lab");
 
             // The id is the dump's pre-1.0 name and is permanent; the display name is Factorio's

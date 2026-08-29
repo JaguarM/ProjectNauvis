@@ -72,6 +72,11 @@ public final class NauvisMachinesData {
         @Override
         protected void addTranslations() {
             add("itemGroup.nauvis_machines", "Project Nauvis: Machines");
+            // Facrafting's crafting-panel tabs. These are Factorio's four crafting-menu
+            // categories, generated into every recipe's `group` by tools/gen_recipes.py, and
+            // each mod ships the keys for the groups it actually uses - so the strip reads the
+            // same whichever subset of the pack is installed.
+            add("tab.facrafting.group.production", "Production");
             addBlock(ModBlocks.ASSEMBLING_MACHINE_1, "Assembling machine 1");
 
             // The screen. Its recipe list is Facrafting's panel, so there is very little here.

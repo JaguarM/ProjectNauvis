@@ -7,24 +7,45 @@ project.
 
 **Eighty-nine gametests pass and the pack builds clean.** Every machine is the size Factorio made
 it, the lab exists, five checks run in `./gradlew build`, the transport belt works, the burner
-inserter fuels itself off the belt it is unloading, and **the long-handed inserter reaches two
-blocks** — over a belt, over a walkway, over a row of machines.
+inserter fuels itself off the belt it is unloading, the long-handed inserter reaches two blocks —
+over a belt, over a walkway, over a row of machines — and **the crafting panel opens on Factorio's
+four tabs.**
 
-What the long arm cost, in one paragraph
-----------------------------------------
+What the tabs cost, in one paragraph
+------------------------------------
 
-The reach itself was an afternoon: `InserterBlock.reach()`, `buildCaches`, and a neighbour filter
-that *moves* rather than widens. What was not an afternoon is that **the whole sleeping design has
-a radius of one block.** `setChanged()` ends in `Level.updateNeighbourForOutputSignal`, which walks
-the six positions touching the block that changed and stops — so a long arm's source and
-destination are both outside it and *neither of its own ends can ever wake it*. There is no
-`BlockEntityChangedEvent`, and the one path in that method that travels two blocks needs a full
-redstone conductor in between: over a wall, never over a belt or a gap. So that one inserter looks
-again every second instead of sleeping, bounded so that an unpowered one, a working one and a
-reach of one all still cost nothing. The full argument is in `InserterBlockEntity`'s class comment;
-the trap is in the silent-failures list below, where the next thing that reaches past its own
-neighbours will find it. `long_handed_inserter_looks_again` is the test that stops it being
-deleted, and all three new tests were watched failing before they were trusted.
+Almost nothing in the panel and almost everything in the data. `tools/gen_recipes.py` was reading
+the dump's `type` field — eleven values, Factorio's *item taxonomy* — where it wanted `category`,
+whose four values are the crafting menu's actual tabs. Swapping the table is six lines, and it now
+throws on an unknown category rather than quietly emitting an empty group, because "" lands in the
+panel's "Ungrouped" tab where it reads as a layout choice instead of a stale table. Every timed
+recipe regenerated; `--check` went from seventeen wrong to zero.
+
+**The half that was actually the complaint was the sort.** Within a tab the grid was ordered by
+recipe id, ids are namespaced, so every tab was *still* clustered by mod — the tab strip had been
+fixed and nothing would have looked different. Factorio sorts within a tab on a per-item `order`
+string, so `FacraftRecipe` now has one: optional, defaulting to "", generated from the dump's own
+file order, which is alphabetical by Factorio's display name. Recipes carrying an `order` come
+first in that order and anything without follows by id, so a pack that sets none is unchanged and a
+pack that sets some is not half-sorted. **If a dump carrying Factorio's real `order` strings ever
+arrives, one line in `load_inputs` is what changes.**
+
+**Facrafting's default grouping is adaptive, and that was the only real decision.** Flipping the
+constant from `CATEGORY` to `GROUP` is one line and wrong for every pack that is not this one: with
+no groups set, `GROUP` opens on a single "Ungrouped" tab with the badge button as the only way out.
+So `RecipeTabs.suggestedMode` counts — half the recipes carrying a `group` means the pack author
+laid the strip out and their layout wins. It is a *suggestion*: `FacraftPanel.modeChosen` records
+that the player pressed the badge, and a suggestion never overrides that until logout. That flag is
+also why the panel compares `builtFor` against `mode` when it renders — a datapack reload sends the
+recipes again with a panel open, and a strip built for one grouping and labelled with another looks
+exactly like a rendering bug.
+
+**One thing was deliberately not done: the tab strip's own order.** `RecipeTabs.buildByKey` sorts
+tabs alphabetically by title, so the strip reads Intermediate products, Logistics, Production where
+Factorio reads Logistics, Production, Intermediate products, Combat. Fixing it needs somewhere for a
+*group's* order to come from, and the recipe dump has no such field — the obvious cheap answer, the
+lowest `order` in each group, is meaningless here because ours is global and alphabetical. It wants
+either a group-order field in the pack's data or Yannic saying the four names by hand.
 
 **A tier is a block, not a block entity.** Reach, swing time and draw are three numbers on
 `ElectricInserterBlock`; `LongHandedInserterBlock` overrides them and a codec; one block entity
@@ -33,75 +54,11 @@ type is registered against both blocks. The fast and filter arms arrive the same
 The jobs, in the order Yannic asked for them
 --------------------------------------------
 
-The first two came out of playing the pack. The last two are what was left of milestone 2 and are
-untouched by either, so they can be done in any order after.
+The tabs were the first of these and are done. The science tree is milestone 3 and the biggest
+thing here; the last two are what is left of milestone 2 and are untouched by it, so they can be
+done in any order after.
 
-### 1. The crafting panel's tabs are Factorio's four, not one per mod
-
-**The complaint, and it is right:** the recipe panel groups by mod. Factorio groups by category.
-
-**Why it happens.** `Facrafting/client/RecipeTabs` already has three ways to slice the list —
-`CATEGORY` (the *creative tab* the result item lives in), `MOD`, and `GROUP` (the recipe's own
-`group` field, which exists precisely so a pack author can lay the strip out by hand). The default
-is `CATEGORY`, and **every subsystem mod here registers its own creative tab** — deliberately, so
-each is usable standalone — so grouping by creative tab *is* grouping by mod. Pressing the mode
-button changes nothing worth having, because the groups on disk are wrong too.
-
-**The groups on disk are Factorio's item types, not its crafting-menu tabs.**
-`tools/gen_recipes.py` derives `group` from each dump entry's `type` field — `Machinery`, `Item`,
-`Intermediate product`, `Logic`, `Science pack`, and seven more. Factorio's crafting menu has
-**four** tabs, and the dump already carries them in a different field, `category`:
-
-| `category` | entries | becomes |
-|---|---|---|
-| `Logistics` | 62 | `logistics` |
-| `Intermediate product` | 61 | `intermediate` |
-| `Combat` | 55 | `combat` |
-| `Production` | 35 | `production` |
-
-The 214th is `category_TODO`, on `deconstruction-planner`, which `data/mapping.json` already marks
-`skip` — so it never reaches the generator, and the generator should **throw on an unknown
-category** rather than quietly emitting an empty group.
-
-**The work, in order:**
-
-1. `tools/gen_recipes.py`: replace `GROUP_BY_TYPE` (keyed on `type`) with a table keyed on
-   `category`, four entries, and a `GenError` for anything else.
-2. Regenerate every mod's recipes and copy across only the files for items that exist, the usual
-   way. What actually moves: everything in `nauvis_logistics` from `machine` to `logistics`; the
-   assembler, boiler, steam engine and lab to `production`; the pipe and the poles to `logistics`;
-   `science_pack_1` from `science` to `intermediate`. **Neo Progressive Materials does not change
-   at all** — all eighteen of its items are `Intermediate product` and its group key is already
-   `intermediate`. **Neo Progressive Automation changes**: both drills go `machine` → `production`.
-   That is a released repo, and a `group` is a display hint rather than anything in a save, so it
-   is safe — but it wants its own commit over there and it is not ours to push.
-3. Lang, following the convention NPM and NPA already set — each mod ships
-   `tab.facrafting.group.<key>` for the groups it uses. Factorio's own names: "Logistics",
-   "Production", "Intermediate products", "Combat". NPM's existing value should change from
-   "Intermediates" to "Intermediate products" to match.
-4. **Facrafting's default mode.** Flipping the constant from `CATEGORY` to `GROUP` is one line and
-   is wrong for every other pack: a pack that sets no groups would open on a single "Ungrouped"
-   tab with a mode button as the only way out. The honest rule is *adaptive* — when the recipes
-   arrive, if a useful fraction of them carry a `group`, the pack author has laid the strip out and
-   `GROUP` is the default; otherwise `CATEGORY`. Decide it once per login in
-   `ClientRecipes.onRecipesReceived`, and not at all once the player has touched the mode button
-   (a flag beside `mode`, cleared on logout with the rest).
-
-**There is a second half to this and it is worth doing at the same time.** Within a tab, the grid
-is ordered by `ClientRecipes`'s sort: the recipe id as a string. Ids are namespaced, so **inside
-every tab the items are still clustered by mod** — which is very likely half of what the complaint
-is actually about. Factorio orders within a tab by subgroup and then by a per-item `order` string,
-and `reference/factorio/recipes.json` carries neither: its own file order is alphabetical by
-display name, which is a signal but not Factorio's. Two ways out, and this one wants Yannic's eye
-rather than a decision made here:
-
-- **cheap and better than today** — sort within a tab by the result item's display name, which is
-  what the dump's own order amounts to;
-- **right** — add an optional `order` string to `FacraftRecipe` (Factorio has exactly this field),
-  generate it, and sort on it. That is a Facrafting recipe-format change, so it wants doing once
-  and doing properly.
-
-### 2. A science tree that unlocks recipes
+### 1. A science tree that unlocks recipes
 
 This is milestone 3 and the biggest thing in the pack that is not a machine. **Do not start
 writing until the two decisions at the bottom of this section are made** — one of them decides
@@ -185,13 +142,13 @@ recipe appears — the work arriving from a distance, again.
 because once research gates progression there is somewhere for stripped vanilla recipes to go. It
 is a separate job and probably a KubeJS one once KubeJS ports; see the note at the bottom.
 
-### 3. The splitter
+### 2. The splitter
 
 2×1 and directional — the first multi-block that is not square. `multiblock/` is the framework and
 is copied into four mods already. The belt side of it is a run that ends at the splitter and two
 that start after it, with the splitter alternating between them.
 
-### 4. Fast-replace by tier
+### 3. Fast-replace by tier
 
 A belt in hand already points the belt you click on the way you are facing, which is half of
 Factorio's belt-laying gesture. The other half is that a *faster* belt replaces a slower one, and
@@ -217,14 +174,22 @@ The playtest, which is happening before any of the above
 Each job ends with `./gradlew build`, `:nauvis:runGameTestServer`, and a client boot. The client
 boot is not optional: three of the last four bugs found in this pack were found by a person looking
 at the game, and one of them — see the rotation entry in the silent-failures list — passed sixty-
-three tests while being visibly wrong from three sides. **The tab complaint that is now job 1 came
-out of exactly this**, which is the argument making itself.
+three tests while being visibly wrong from three sides. **The tab complaint that became the tab job
+came out of exactly this**, which is the argument making itself.
 
-**Two sessions of work have not had one, and Yannic is running that playtest next.** The
-long-handed inserter did add a model — a smoker-coloured cube, so it is the third furnace body on
-a belt line and wants a proper look — but neither session added a fluid or a plugin, and
-`check_gametests.py` and `check_models.py` cover the registrations and the references between
-files. What is actually owed is not a boot, it is *watching four things no test can look at*:
+**The tab work has had a boot and nothing else has.** That boot proves the panel does not crash and
+that the widened stream codec round-trips — the log says `Sending 17 recipes` and the client
+decoded them — and it proves nothing about what the strip *looks* like, because no test and no log
+line can see a tab. **Two things want an eye on them there**: that the four tabs read as Factorio's
+four, and that the items inside one are no longer in mod order. Both are visible the moment the
+panel opens, and both are the kind of thing a person confirms in five seconds and a suite never
+does.
+
+The rest of what is owed is older. The long-handed inserter added a model — a smoker-coloured cube,
+so it is the third furnace body on a belt line and wants a proper look — but no session since has
+added a fluid or a plugin, and `check_gametests.py` and `check_models.py` cover the registrations
+and the references between files. What is actually owed is *watching four things no test can look
+at*:
 
 - lay a coal belt, put a burner inserter beside it with an empty slot, and see it pick its own fuel
   off the line and keep running;
@@ -259,6 +224,13 @@ entity can actually do, or give `stepOn` a way to keep an item entity moving so 
 Leaving it as is means a red test roughly one run in six, which is the worst of the three. It has
 survived two sessions of tests being added around it since, so it has not got worse — but nothing
 about it has got better either, and the entity-id arithmetic that decides it is still there.
+
+**It went red again during the tab work**, on a session that did not touch a belt, reporting
+0.5625 blocks — the same six steps, to the digit — and passed on the immediate re-run. So the
+diagnosis above is confirmed rather than merely plausible, and the cost is now measured: it failed
+a `runGameTestServer` for a change in a Python generator and a client-side sort. **That is the
+argument for picking one of the two options rather than leaving it**, because the next person to
+see this red will not know it is not theirs.
 
 ### The belt, if you have to touch it
 
@@ -635,6 +607,22 @@ Silent failures — these compile, pass tests, and are still wrong
 
 - **Asking for a capability in an unloaded chunk loads it.** Check `level.isLoaded` first — not as
   an optimisation, but so a network at the edge of the loaded world does not drag chunks in.
+
+- **Grouping a list correctly and sorting it wrongly looks exactly like not grouping it.** The
+  crafting panel's tabs were one per mod, and the fix everyone could see was the tab strip: derive
+  `group` from Factorio's four crafting-menu categories instead of its eleven item types. Doing
+  only that would have changed the tab labels and *nothing a player would notice*, because inside
+  each tab `ClientRecipes` sorted on the recipe id — and ids are namespaced, so every tab would
+  still have arrived in mod order. A grouping is two decisions, the buckets and the order within
+  one, and only the first of them is visible in the code that does the bucketing. **When a list
+  reads as grouped by the wrong thing, check the sort before believing the grouping is the bug.**
+
+- **An empty string is a valid group, so a stale lookup table is a layout choice.** `GROUP_BY_TYPE`
+  fell back to `""` for anything it did not recognise, and `""` is exactly what a recipe with no
+  opinion sets — so a category the table had never heard of landed silently in the panel's
+  "Ungrouped" tab, indistinguishable from a pack author choosing not to group it. The generator now
+  raises rather than defaulting. The shape generalises: **wherever "no opinion" and "I could not
+  work it out" have the same representation, the second one has to throw.**
 
 What is deliberately missing
 ----------------------------

@@ -58,22 +58,24 @@ TICKS_PER_SECOND = 20
 # cannot be expressed as a shapeless recipe at any count, so it gets no standalone fallback.
 GRID_SLOTS = 9
 
-# Facrafting's `group` is a free-form field the recipe panel uses to lay out its tab strip.
-# These values reproduce the convention already in use: `intermediate` in Neo Progressive
-# Materials, `machine` in Neo Progressive Automation.
-GROUP_BY_TYPE = {
+# Facrafting's `group` is a free-form field the recipe panel uses to lay out its tab strip,
+# so it should carry Factorio's *crafting menu* tabs and nothing else. The menu has four,
+# and the dump names them in `category`. Deriving the group from `type` instead - which this
+# once did - produces eleven groups that are Factorio's item taxonomy rather than anything a
+# player has ever clicked on.
+#
+# Every entry in the dump carries one of these four. The 214th, `deconstruction-planner`, is
+# `category_TODO` in the dump and marked `skip` in the mapping, so it never reaches here.
+GROUP_BY_CATEGORY = {
+    "Logistics": "logistics",
+    "Production": "production",
     "Intermediate product": "intermediate",
-    "Machinery": "machine",
     "Combat": "combat",
-    "Item": "item",
-    "Resource": "resource",
-    "Liquid": "liquid",
-    "Logic": "logic",
-    "Science pack": "science",
-    "Tool": "tool",
-    "Process": "process",
-    "null": "",
 }
+
+# `order` is zero-padded so a plain string sort is a numeric one, and four digits leaves room
+# for a dump several times this size.
+ORDER_DIGITS = 4
 
 # The four released mods live in their own repos beside this one; everything else is a
 # subproject here. Both are resolved to a `src/main/resources` root.
@@ -108,7 +110,16 @@ def load_inputs() -> tuple[dict, dict]:
     if not MAPPING.exists():
         raise GenError(f"{MAPPING} is missing.")
 
-    dump = {e["id"]: e for e in json.loads(RECIPES.read_text(encoding="utf-8"))}
+    entries = json.loads(RECIPES.read_text(encoding="utf-8"))
+
+    # The dump has no sort key of its own - Factorio's real `order` strings are not in it -
+    # but its file order is alphabetical by display name, which is the signal we do have.
+    # Stamping it on here is the only place that knows where the order comes from; if a dump
+    # carrying Factorio's own order strings ever arrives, this is the line that changes.
+    for index, entry in enumerate(entries):
+        entry["order"] = str(index).zfill(ORDER_DIGITS)
+
+    dump = {e["id"]: e for e in entries}
     mapping = json.loads(MAPPING.read_text(encoding="utf-8"))["items"]
     return dump, mapping
 
@@ -140,6 +151,21 @@ def craft_ticks(seconds: float, factorio_id: str) -> int:
             f"'{factorio_id}' wants {ticks} craft_ticks; Facrafting's codec accepts 1..12000."
         )
     return ticks
+
+
+def group_of(entry: dict) -> str:
+    """The crafting-menu tab this recipe belongs on."""
+    category = entry.get("category")
+    group = GROUP_BY_CATEGORY.get(category)
+    if group is None:
+        # Quietly emitting "" here would put the item in the panel's "Ungrouped" tab, which
+        # looks like a layout choice rather than a stale table. A new Factorio category is a
+        # fifth tab and a lang key, and both are decisions.
+        raise GenError(
+            f"'{entry['id']}' has category {category!r}, which is not one of Factorio's four "
+            f"crafting-menu tabs: {', '.join(sorted(GROUP_BY_CATEGORY))}."
+        )
+    return group
 
 
 def required_mods(entry: dict, mapping: dict) -> list[str]:
@@ -202,7 +228,8 @@ def facraft_recipe(entry: dict, mapping: dict) -> dict:
         + pending_ingredients(entry, mapping),
         "type": "facrafting:facraft",
         "craft_ticks": craft_ticks(recipe["time"], entry["id"]),
-        "group": GROUP_BY_TYPE.get(entry.get("type"), ""),
+        "group": group_of(entry),
+        "order": entry["order"],
         "ingredients": [
             {"ingredient": resolve_item(i["id"], mapping), "count": i["amount"]}
             for i in recipe["ingredients"]

@@ -5,5 +5,6 @@
   "screen.nauvis_machines.assembler.making": "Making %s",
   "screen.nauvis_machines.assembler.no_power": "No power - run a wire to it",
   "screen.nauvis_machines.assembler.unknown": "Making something this client has not been told about",
-  "screen.nauvis_machines.assembler.wants": "Wants %s x %s"
+  "screen.nauvis_machines.assembler.wants": "Wants %s x %s",
+  "tab.facrafting.group.production": "Production"
 }

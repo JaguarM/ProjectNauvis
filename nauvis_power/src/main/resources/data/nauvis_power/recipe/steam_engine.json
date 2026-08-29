@@ -15,7 +15,8 @@
   ],
   "type": "facrafting:facraft",
   "craft_ticks": 10,
-  "group": "machine",
+  "group": "production",
+  "order": "0181",
   "ingredients": [
     {
       "ingredient": "neoprogressivematerials:iron_gear_wheel",
