@@ -12,7 +12,6 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -83,10 +82,12 @@ public final class ResearchTriggers {
      * says.
      */
     public static void made(Player player, ItemStack stack) {
-        if (stack.isEmpty() || !(player instanceof ServerPlayer server)) {
+        // The level rather than the player's type: what this needs is the server's saved data,
+        // and anything crafting on the server can reach it. A crafter that is not a networked
+        // player has still made the thing.
+        if (stack.isEmpty() || !(player.level() instanceof ServerLevel level)) {
             return;
         }
-        ServerLevel level = server.level();
         Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         if (!watched(level).contains(id)) {
             return;

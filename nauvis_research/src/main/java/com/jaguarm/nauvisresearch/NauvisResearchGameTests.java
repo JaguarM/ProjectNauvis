@@ -13,6 +13,7 @@ import com.jaguarm.nauvisresearch.research.Research;
 import com.jaguarm.nauvisresearch.research.ResearchState;
 import com.jaguarm.nauvisresearch.research.Technology;
 import com.jaguarm.nauvisresearch.research.TechnologyLayout;
+import com.jaguarm.facrafting.queue.CraftTicker;
 import com.jaguarm.facrafting.recipe.RecipeLocks;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -20,6 +21,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInstance;
@@ -30,8 +32,10 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.GameType;
@@ -94,6 +98,7 @@ public final class NauvisResearchGameTests {
         TEST_TYPES.register("the_crafting_gate_is_installed", () -> CraftingGateIsInstalledTest.CODEC);
         TEST_TYPES.register("research_gates_the_early_machines", () -> ResearchGatesTheEarlyMachinesTest.CODEC);
         TEST_TYPES.register("a_trigger_finishes_research", () -> TriggerFinishesResearchTest.CODEC);
+        TEST_TYPES.register("a_panel_craft_counts", () -> PanelCraftCountsTest.CODEC);
         TEST_TYPES.register("technology_layout_is_sound", () -> TechnologyLayoutTest.CODEC);
     }
 
@@ -121,6 +126,7 @@ public final class NauvisResearchGameTests {
         register(event, environment, "research_gates_the_early_machines",
                 ResearchGatesTheEarlyMachinesTest::new, 20);
         register(event, environment, "a_trigger_finishes_research", TriggerFinishesResearchTest::new, 20);
+        register(event, environment, "a_panel_craft_counts", PanelCraftCountsTest::new, 20);
         register(event, environment, "technology_layout_is_sound", TechnologyLayoutTest::new, 20);
     }
 
@@ -961,6 +967,96 @@ public final class NauvisResearchGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a trigger finishes research");
+        }
+    }
+
+    /**
+     * A craft finished in Facrafting's panel reaches the trigger with the item still in it.
+     *
+     * <h2>The bug this exists for looked exactly like nothing</h2>
+     *
+     * <p>{@code CraftTicker} used to hand the listeners the same {@code ItemStack} it had just
+     * passed to {@code placeItemBackInInventory} - which empties it, slot by slot, as it puts it
+     * away. So every listener was told an empty stack, {@code ResearchTriggers} dropped it on its
+     * first line, and <b>"craft one lab" sat at zero done for ever</b> while the lab itself
+     * appeared in the inventory. Nothing logged, nothing failed, and the panel is where this pack
+     * does nearly all of its crafting.
+     *
+     * <p>{@link CraftingGateIsInstalledTest} could not catch it: the listener really was
+     * installed. What was wrong was what it got handed. So this drives the delivery itself and
+     * asserts the world's counter moved - the smallest thing that is true only if the whole seam
+     * works.
+     *
+     * <p><b>Iron plates rather than a lab</b>, deliberately, and it is the same hazard every test
+     * here works around. Research is per-world and shared with every other test in the run: one
+     * lab would finish Science pack 1 and clear whatever another test had set as its current
+     * research. Steam power's trigger is fifty plates deep, so two of them move a counter and
+     * finish nothing - and the count is put back afterwards either way.
+     *
+     * <p>It is also the only trigger item this mod can reach on its own. The other three belong to
+     * sibling mods, and {@code :nauvis_research:runGameTestServer} runs this mod alone.
+     */
+    public static class PanelCraftCountsTest extends GameTestInstance {
+
+        public static final MapCodec<PanelCraftCountsTest> CODEC =
+                RecordCodecBuilder.<PanelCraftCountsTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PanelCraftCountsTest::info))
+                                .apply(i, PanelCraftCountsTest::new));
+
+        public PanelCraftCountsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            MinecraftServer server = helper.getLevel().getServer();
+            Technology.Trigger trigger = technology(helper, "steam_power").trigger().orElseThrow();
+            Item plate = BuiltInRegistries.ITEM.getValue(trigger.item());
+            helper.assertTrue(plate != Items.AIR,
+                    "no item is registered as " + trigger.item() + ", so the trigger watches for "
+                            + "something nobody can make");
+
+            ResearchState state = Research.state(server);
+            int before = state.made(trigger.item());
+
+            // Not a mock *server* player, which is the one a test would reach for first: putting
+            // a stack away sends a slot packet, and a mock server player has no connection to
+            // send it down. A plain mock in a server level skips the packet and is still on the
+            // server, which is all a trigger asks about.
+            Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+            try {
+                CraftTicker.deliver(player, new ItemStack(plate, 2));
+
+                int held = 0;
+                for (ItemStack stack : player.getInventory().getNonEquipmentItems()) {
+                    if (stack.is(plate)) {
+                        held += stack.getCount();
+                    }
+                }
+                helper.assertTrue(held == 2,
+                        "a finished craft put " + held + " items in the player's inventory, not 2");
+                helper.assertTrue(Research.state(server).made(trigger.item()) == before + 2,
+                        "a craft finished in the panel counted "
+                                + (state.made(trigger.item()) - before) + " towards its trigger "
+                                + "instead of 2 - a triggered technology can never finish, and "
+                                + "nothing says so");
+            } finally {
+                // Put it back: research is per-world and this world is shared with every other
+                // test in the run.
+                state.recordMade(trigger.item(), before - state.made(trigger.item()));
+                Research.changedForTest(server);
+            }
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a panel craft counts towards a trigger");
         }
     }
 
