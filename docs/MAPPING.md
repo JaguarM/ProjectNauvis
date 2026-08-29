@@ -122,6 +122,45 @@ Note what is deliberately *not* protected: **a mining drill**. Ore and stone are
 Minecraft, so a drill is a convenience rather than a prerequisite, and that is the whole reason
 the electric drill can be the second research rather than a starting recipe.
 
+`data/technologies.json` — a second tree, from a different Factorio
+-------------------------------------------------------------------
+
+**Nothing reads this yet.** It is 27 technologies converted out of a Factorio **2.0** prototype
+file, and it is here because it answers a question the 0.16 tree answers differently: in 2.0 the
+early game *is* gated. `steam-power` gives you the boiler and the steam engine, `electronics`
+gives you circuits, the lab, the inserter and poles, and **the electric mining drill is a
+technology of its own** costing 25 red science — where 0.16 hands you all of it at the start.
+
+It is not in `reference/` because that directory is gitignored in full, and it is a curated
+selection rather than a dump. It is Wube-derived either way, the same way this file's `craft`
+times are.
+
+**Every name in it now resolves against this table.** 2.0 renamed the science packs, so
+`automation-science-pack` and `logistic-science-pack` were renamed to `science-pack-1` and
+`science-pack-2` — technology ids, prerequisites, unlock lists, cost ingredients and research
+triggers alike — which is this file's own naming policy applied to a newer source. The two
+`localised_*` fields still say `logistic-science-pack` and are meant to: those are references to
+Factorio's locale keys, not to our ids, and rewriting them would invent keys that do not exist.
+Everything else — `steel-furnace`, `solar-panel`, `medium-electric-pole`, `iron-stick`, `radar`,
+`concrete` — already mapped. `underground-belt` and `pipe-to-ground` resolve and are `skip` here,
+which the generator already reports.
+
+Two things still stand between it and being usable:
+
+- **four of the 27 have no cost at all.** 2.0 replaced the cheapest technologies with
+  `research_trigger` — *craft 50 iron plates* rather than *pay 50 science* — which is a mechanic
+  `nauvis_research` does not have. A `Technology` priced that way needs a trigger, not a unit
+  count. They are `steam-power`, `electronics`, `science-pack-1` and `steel-axe`, and they are
+  the whole of the pre-red-science opening, so the trigger mechanic is not optional if this tree
+  is adopted.
+- **one prerequisite points outside the set.** `inserter-capacity-bonus-1` needs `bulk-inserter`,
+  which is not one of the 27 — so it would be a technology nobody could ever start. Either it
+  joins the file or that row goes.
+
+Adopting it would mean deciding that the pack's tree is 2.0's while its recipes stay 0.16's,
+which is a real decision and not a merge: see the version note in
+`tools/fetch_technologies.py` for why the two dumps are pinned together today.
+
 Naming policy
 -------------
 
