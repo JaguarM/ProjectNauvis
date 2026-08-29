@@ -876,12 +876,21 @@ Silent failures — these compile, pass tests, and are still wrong
   the test asks a running recipe manager**, not the files: a test that read the datapack would
   have been green.
 
-- **A datapack tag merges into vanilla's unless it says `"replace": true`.** The pack empties the
-  seven `incorrect_for_<material>_tool` tags so every pickaxe mines everything, and an empty
-  `values` list without the `replace` flag is a **no-op that reports nothing** - it loads, it
-  merges, and vanilla's contents are all still there. Nothing in a log, in datagen, or in any
-  check would say so; the only place it shows up is a player swinging at obsidian. Asserted by
-  `nauvis:every_pickaxe_mines_everything`, which was confirmed to go red when the flag is dropped.
+- **Two block tags decide two different things about a tool, and picking the wrong one changes
+  something real while fixing nothing.** `incorrect_for_<material>_tool` is the **tier**: whether
+  the block drops at all. `mineable/<tool>` is the **kind**, and it is the one that also carries
+  **speed**. Asked for a pickaxe that does everything, this pack first emptied the seven tier tags
+  - which let a wooden pickaxe mine obsidian, a progression nobody asked to lose, and left a
+  pickaxe still digging dirt at bare-hand speed, which was the actual complaint. The fix is three
+  tag references added to `mineable/pickaxe`. **When a tool change does not feel like anything,
+  the tag is probably the tier one.**
+
+  Note the flag flips with the intent, too: emptying a tag needs `"replace": true`, because tags
+  merge by default and an empty `values` list without it is a no-op that reports nothing anywhere.
+  Adding to one needs `"replace": false`, and writing `true` there would swap the pickaxe's own
+  list for three references and quietly stop pickaxes mining stone.
+  `nauvis:one_tool_does_everything` asserts speed rather than correctness alone - correctness was
+  the half that was never broken - and was confirmed to go red with the tag removed.
 
 - **The condition is `neoforge:never`, and there is no `neoforge:false`.** The registered names
   are `never` and `always`. A wrong name does not fail the build or the load - it throws while
@@ -1024,11 +1033,10 @@ drill.** In Minecraft you mine ore with a pickaxe and smelt it in a furnace, so 
 convenience rather than a prerequisite - which is the whole reason the electric drill could become
 the second research instead of a starting recipe.
 
-**The tool ladder is gone but nothing else about tools is.** Four planks is a stone pickaxe, the
-wooden one has no recipe, and every pickaxe mines everything - the
-`incorrect_for_<material>_tool` tags are emptied. What is *not* touched is the `mineable/*` tags,
-so a shovel still cannot mine stone. Axes, shovels, swords and hoes keep their whole vanilla
-ladder, because nobody has asked for those and each one is a decision.
+**One tool, and the ladder kept.** Four planks is a stone pickaxe, the wooden one has no recipe,
+and `mineable/pickaxe` absorbs the axe, shovel and hoe tags so a pickaxe does every job at pickaxe
+speed. Material tiers are untouched - a wooden pickaxe still cannot mine obsidian - and the other
+tools still exist for anyone who wants them; they are simply never necessary.
 
 **Vanilla's own progression is barely touched.** Four recipes are removed. Everything else
 Minecraft can build - redstone logic, pistons, minecart automation, brewing, the whole of it - is

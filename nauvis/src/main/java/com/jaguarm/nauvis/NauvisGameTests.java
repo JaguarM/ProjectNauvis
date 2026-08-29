@@ -92,7 +92,7 @@ public final class NauvisGameTests {
         TEST_TYPES.register("power_reaches_a_machine", () -> PowerReachesAMachineTest.CODEC);
         TEST_TYPES.register("steam_travels_down_a_pipe", () -> SteamTravelsDownAPipeTest.CODEC);
         TEST_TYPES.register("vanilla_recipes_are_replaced", () -> VanillaRecipesAreReplacedTest.CODEC);
-        TEST_TYPES.register("every_pickaxe_mines_everything", () -> EveryPickaxeMinesEverythingTest.CODEC);
+        TEST_TYPES.register("one_tool_does_everything", () -> OneToolDoesEverythingTest.CODEC);
     }
 
     /** Called from the mod constructor so the test type registers with everything else. */
@@ -143,8 +143,8 @@ public final class NauvisGameTests {
                         new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE)));
 
         event.registerTest(
-                Identifier.fromNamespaceAndPath(Nauvis.MODID, "every_pickaxe_mines_everything"),
-                new EveryPickaxeMinesEverythingTest(
+                Identifier.fromNamespaceAndPath(Nauvis.MODID, "one_tool_does_everything"),
+                new OneToolDoesEverythingTest(
                         new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE)));
     }
 
@@ -487,58 +487,64 @@ public final class NauvisGameTests {
     }
 
     /**
-     * A pickaxe of any material mines anything a pickaxe can mine.
+     * A pickaxe is the axe, the shovel and the hoe as well.
      *
-     * <h2>Two gates, and only one of them is opened</h2>
+     * <h2>Two tags, and only one of them is the one people reach for</h2>
      *
-     * <p>Minecraft asks two separate questions before a block drops: is this the right <em>kind</em>
-     * of tool - {@code #minecraft:mineable/pickaxe} - and is the material hard enough, which is the
-     * {@code incorrect_for_<material>_tool} tags. The pack empties the second set and leaves the
-     * first alone, so a stone pickaxe mines obsidian and a shovel still does not mine stone. The
-     * tool ladder goes; the tool <em>types</em> stay, because those are what makes a pickaxe a
-     * pickaxe.
+     * <p>{@code incorrect_for_<material>_tool} decides whether a block <b>drops</b> - the tier
+     * ladder, wood to netherite. {@code mineable/<tool>} decides whether the tool is the right
+     * <em>kind</em>, and that is the tag that also carries <b>speed</b>. An earlier version of this
+     * emptied the tier tags, which is a real change and completely the wrong one: it let a wooden
+     * pickaxe mine obsidian and did nothing whatsoever about a pickaxe taking six seconds to dig
+     * dirt. The tiers are back; what merges is which tool does which job.
      *
-     * <p><b>The way this fails is silent and specific.</b> Tags merge by default, so a datapack
-     * that added an empty list to vanilla's would change nothing at all and report nothing:
-     * {@code "replace": true} is what makes it an emptying rather than a no-op. Nothing about that
-     * shows up in a log, in datagen, or anywhere but a player swinging at obsidian - which is why
-     * it is asserted here against blocks the pack never mentions.
+     * <p>So {@code mineable/pickaxe} gains the axe, shovel and hoe tags and a pickaxe is the only
+     * tool anyone needs. It is <b>{@code "replace": false}</b>, and that is the opposite of what a
+     * tag meant to empty something needs - here the merge is the whole point, and writing
+     * {@code true} would swap the pickaxe's own list for three references and quietly stop
+     * pickaxes mining stone.
+     *
+     * <p>Speed is asserted rather than correctness alone, because correctness is the half that was
+     * never broken and speed is the half that was reported.
      */
-    public static class EveryPickaxeMinesEverythingTest extends GameTestInstance {
+    public static class OneToolDoesEverythingTest extends GameTestInstance {
 
-        public static final MapCodec<EveryPickaxeMinesEverythingTest> CODEC =
-                RecordCodecBuilder.<EveryPickaxeMinesEverythingTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(EveryPickaxeMinesEverythingTest::info))
-                                .apply(i, EveryPickaxeMinesEverythingTest::new));
+        public static final MapCodec<OneToolDoesEverythingTest> CODEC =
+                RecordCodecBuilder.<OneToolDoesEverythingTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OneToolDoesEverythingTest::info))
+                                .apply(i, OneToolDoesEverythingTest::new));
 
-        public EveryPickaxeMinesEverythingTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+        public OneToolDoesEverythingTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
             super(info);
         }
 
         @Override
         public void run(GameTestHelper helper) {
-            // The hardest things vanilla gates, against the softest pickaxe there is.
-            for (Block block : List.of(Blocks.OBSIDIAN, Blocks.ANCIENT_DEBRIS, Blocks.DIAMOND_ORE,
-                    Blocks.GOLD_ORE, Blocks.NETHERITE_BLOCK)) {
-                for (Item pickaxe : List.of(Items.WOODEN_PICKAXE, Items.STONE_PICKAXE,
-                        Items.IRON_PICKAXE, Items.DIAMOND_PICKAXE)) {
-                    helper.assertTrue(
-                            new ItemStack(pickaxe).isCorrectToolForDrops(block.defaultBlockState()),
-                            BuiltInRegistries.ITEM.getKey(pickaxe) + " cannot mine "
-                                    + BuiltInRegistries.BLOCK.getKey(block)
-                                    + " - the incorrect_for_*_tool tags are not emptied. Check that "
-                                    + "the tag files say \"replace\": true; without it they merge "
-                                    + "into vanilla's and do nothing at all.");
-                }
+            ItemStack pickaxe = new ItemStack(Items.STONE_PICKAXE);
+
+            // One block from each of the three tags the pickaxe absorbed, plus stone to prove the
+            // merge did not replace what was already there.
+            for (Block block : List.of(Blocks.OAK_LOG, Blocks.DIRT, Blocks.HAY_BLOCK, Blocks.STONE)) {
+                var state = block.defaultBlockState();
+                helper.assertTrue(pickaxe.isCorrectToolForDrops(state),
+                        "a pickaxe is not the right tool for "
+                                + BuiltInRegistries.BLOCK.getKey(block));
+                helper.assertTrue(pickaxe.getDestroySpeed(state) > 1.0f,
+                        "a pickaxe digs " + BuiltInRegistries.BLOCK.getKey(block)
+                                + " at bare-hand speed - it is in mineable/pickaxe for drops but "
+                                + "not for speed, which means the tag merge did not take");
             }
 
-            // The other gate is untouched, and saying so is the point: this removes a ladder, not
-            // the idea that a tool has a job.
+            // And the ladder is untouched. Merging which tool does which job is not the same as
+            // saying any tool is good enough, and an earlier version of this conflated the two.
             helper.assertFalse(
-                    new ItemStack(Items.DIAMOND_SHOVEL).isCorrectToolForDrops(
+                    new ItemStack(Items.WOODEN_PICKAXE).isCorrectToolForDrops(
                             Blocks.OBSIDIAN.defaultBlockState()),
-                    "a shovel mines obsidian; the mineable/* tags were emptied too, and tool types "
-                            + "are not what this pack is taking away");
+                    "a wooden pickaxe mines obsidian; the tier tags are being emptied again");
+            helper.assertTrue(
+                    new ItemStack(Items.DIAMOND_PICKAXE).isCorrectToolForDrops(
+                            Blocks.OBSIDIAN.defaultBlockState()),
+                    "a diamond pickaxe cannot mine obsidian");
             helper.succeed();
         }
 
@@ -549,7 +555,7 @@ public final class NauvisGameTests {
 
         @Override
         protected MutableComponent typeDescription() {
-            return Component.literal("every pickaxe mines everything");
+            return Component.literal("one tool does everything");
         }
     }
 }

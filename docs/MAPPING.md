@@ -115,15 +115,16 @@ it one: **four planks is a stone pickaxe**, and the wooden one is gone.
 It is deliberately not a stone recipe. A stone pickaxe made of stone cannot be the first pickaxe,
 because the first pickaxe is how you get stone.
 
-**And every pickaxe mines everything.** Minecraft asks two questions before a block drops - is
-this the right *kind* of tool, and is the material hard enough - and the pack empties the
-`incorrect_for_<material>_tool` tags, which is the second one. The first is untouched: a shovel
-still does not mine stone. The tool ladder goes; the idea that a tool has a job stays.
+**And a pickaxe is the axe, the shovel and the hoe as well.** `mineable/pickaxe` gains the other
+three tags, so one tool does every job - at pickaxe speed, not at bare-hand speed. Four tools in
+the hotbar is a Minecraft habit that has nothing to do with this pack, and a factory built one
+block at a time does not want three of the four slots spent on which verb you are doing.
 
-Those tag files say `"replace": true`, and that is not decoration. **Tags merge by default**, so
-an empty list without it is a no-op that reports nothing anywhere -
-`nauvis:every_pickaxe_mines_everything` exists because the only other place that failure shows up
-is a player swinging at obsidian.
+**The tiers are untouched**, and that is a correction rather than a decision left alone: an
+earlier version emptied the `incorrect_for_<material>_tool` tags instead, which let a wooden
+pickaxe mine obsidian and did nothing at all about the thing that was actually wrong. Which tool
+does which job and how good that tool has to be are two different questions, and only the first
+one is being merged.
 
 `data/technologies.json` — the tree
 -----------------------------------
