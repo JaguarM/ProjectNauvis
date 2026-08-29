@@ -1,6 +1,7 @@
 package com.jaguarm.nauvislogistics.registry;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
+import com.jaguarm.nauvislogistics.belt.SplitterBlock;
 import com.jaguarm.nauvislogistics.belt.TransportBeltBlock;
 import com.jaguarm.nauvislogistics.storage.IronChestBlock;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlock;
@@ -82,6 +83,18 @@ public final class ModBlocks {
             properties -> properties
                     .mapColor(MapColor.COLOR_YELLOW)
                     .strength(0.5F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
+
+    /**
+     * The splitter: 2x1 multiblock balancing items across two belt tracks.
+     */
+    public static final DeferredBlock<SplitterBlock> SPLITTER = BLOCKS.registerBlock(
+            "splitter",
+            SplitterBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.COLOR_YELLOW)
+                    .strength(1.0F)
                     .sound(SoundType.METAL)
                     .noOcclusion());
 

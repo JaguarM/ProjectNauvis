@@ -5,16 +5,24 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
+import com.jaguarm.nauvislogistics.belt.SplitterShape;
+import com.jaguarm.nauvislogistics.multiblock.MachineShape;
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
 import com.jaguarm.nauvislogistics.registry.ModItems;
 
+import net.minecraft.advancements.predicates.StatePropertiesPredicate;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.data.LanguageProvider;
@@ -67,7 +75,8 @@ public final class NauvisLogisticsData {
             addBlock(ModBlocks.LONG_HANDED_INSERTER, "Long handed inserter");
             addBlock(ModBlocks.IRON_CHEST, "Iron chest");
             addBlock(ModBlocks.TRANSPORT_BELT, "Transport belt");
-                        // "skips research" is not a caveat, it is the point of the pack and has to be on the
+            addBlock(ModBlocks.SPLITTER, "Splitter");
+            // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the
             // only place a timed craft happens; a vanilla bench recipe goes nowhere near it and
             // there is no hook that would let it. A player who turns this on has turned the tech
@@ -111,6 +120,17 @@ public final class NauvisLogisticsData {
             dropSelf(ModBlocks.LONG_HANDED_INSERTER.get());
             dropSelf(ModBlocks.IRON_CHEST.get());
             dropSelf(ModBlocks.TRANSPORT_BELT.get());
+            add(ModBlocks.SPLITTER.get(), anchorOnly(ModBlocks.SPLITTER.get(), SplitterShape.SHAPE));
+        }
+
+        private LootTable.Builder anchorOnly(Block block, MachineShape shape) {
+            return LootTable.lootTable().withPool(applyExplosionCondition(block,
+                    LootPool.lootPool()
+                            .setRolls(ConstantValue.exactly(1.0F))
+                            .add(LootItem.lootTableItem(block).when(
+                                    LootItemBlockStatePropertyCondition.hasBlockStateProperties(block)
+                                            .setProperties(StatePropertiesPredicate.Builder.properties()
+                                                    .hasProperty(shape.part(), shape.anchor()))))));
         }
 
         @Override

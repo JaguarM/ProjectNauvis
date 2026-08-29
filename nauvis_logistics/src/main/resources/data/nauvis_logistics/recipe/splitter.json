@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 20,
+  "group": "logistics",
+  "order": "0049",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:electronic_circuit",
+      "count": 5
+    },
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 5
+    },
+    {
+      "ingredient": "nauvis_logistics:transport_belt",
+      "count": 4
+    }
+  ],
+  "result": {
+    "id": "nauvis_logistics:splitter",
+    "count": 1
+  }
+}

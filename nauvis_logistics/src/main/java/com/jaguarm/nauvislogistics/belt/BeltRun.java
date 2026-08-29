@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.jspecify.annotations.Nullable;
 
+import com.jaguarm.nauvislogistics.multiblock.Multiblock;
 import com.jaguarm.nauvislogistics.net.BeltItemAddedPayload;
 import com.jaguarm.nauvislogistics.net.BeltItemRemovedPayload;
 
@@ -17,6 +18,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.transfer.item.ItemResource;
@@ -355,36 +357,50 @@ public final class BeltRun extends SnapshotJournal<Integer> {
         BlockPos target = blocks.get(head).relative(out);
 
         BeltRun other = lines.runAt(target);
-        if (other == null || other.dissolved) {
-            return;
-        }
-        int index = other.indexOf(target);
-        if (index < 0) {
+        if (other != null && !other.dissolved) {
+            int index = other.indexOf(target);
+            if (index < 0) {
+                return;
+            }
+
+            Direction from = out.getOpposite();
+            Direction travel = other.facings[index];
+            // Straight in at the back of the tile; onto the middle of it from a side.
+            boolean behind = from == travel.getOpposite();
+            int position = other.frontEdge(index)
+                    + (behind ? Belts.UNITS_PER_BLOCK : Belts.UNITS_PER_BLOCK / 2);
+            int targetLane = behind ? lane : Belts.laneFor(travel, from);
+            if (targetLane < 0) {
+                // Head to head. The two belts face each other and neither can give way.
+                return;
+            }
+
+            if (!other.lanes[targetLane].hasRoomAt(position)) {
+                return;
+            }
+            other.lanes[targetLane].insertAt(position, lanes[lane].removeAt(0));
+            lines.markActive(other);
+
+            // An item has left one chunk and joined another, and either may be saved without the
+            // other. Both ends say so; a run moving items along itself does not.
+            markChanged(blocks.get(head));
+            other.markChanged(target);
             return;
         }
 
-        Direction from = out.getOpposite();
-        Direction travel = other.facings[index];
-        // Straight in at the back of the tile; onto the middle of it from a side.
-        boolean behind = from == travel.getOpposite();
-        int position = other.frontEdge(index)
-                + (behind ? Belts.UNITS_PER_BLOCK : Belts.UNITS_PER_BLOCK / 2);
-        int targetLane = behind ? lane : Belts.laneFor(travel, from);
-        if (targetLane < 0) {
-            // Head to head. The two belts face each other and neither can give way.
-            return;
+        BlockState targetState = level.getBlockState(target);
+        if (targetState.getBlock() instanceof SplitterBlock splitterBlock) {
+            if (splitterBlock.facing(targetState) == out) {
+                BlockPos anchor = Multiblock.anchorPos(splitterBlock, targetState, target);
+                if (level.getBlockEntity(anchor) instanceof SplitterBlockEntity splitter) {
+                    int track = Multiblock.part(splitterBlock, targetState);
+                    if (splitter.hasRoomAt(track, lane, Belts.UNITS_PER_BLOCK)) {
+                        splitter.insertAt(track, lane, Belts.UNITS_PER_BLOCK, lanes[lane].removeAt(0));
+                        markChanged(blocks.get(head));
+                    }
+                }
+            }
         }
-
-        if (!other.lanes[targetLane].hasRoomAt(position)) {
-            return;
-        }
-        other.lanes[targetLane].insertAt(position, lanes[lane].removeAt(0));
-        lines.markActive(other);
-
-        // An item has left one chunk and joined another, and either may be saved without the
-        // other. Both ends say so; a run moving items along itself does not.
-        markChanged(blocks.get(head));
-        other.markChanged(target);
     }
 
     /**

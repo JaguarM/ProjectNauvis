@@ -59,6 +59,22 @@ public final class BeltLines {
     /** Reused every tick: a run may put an item on another run, which touches {@link #active}. */
     private final List<BeltRun> ticking = new ArrayList<>();
 
+    /**
+     * Splitters with something on them, kept and ticked here for the same reason runs are.
+     *
+     * <p><b>A splitter is part of the belt simulation, not a machine beside it.</b> It was a
+     * scheduled block tick to begin with, which is server-only, so the client's copy of every
+     * splitter took items in and never moved them on: items vanished at the splitter, the belt
+     * behind it appeared to jam, and the belt in front of it stayed empty - while the server was
+     * routing them correctly the whole time. Every gametest passed, because a gametest is a
+     * server. Ticking a splitter from here is what puts it on the same footing as the runs either
+     * side of it, on both sides of the wire.
+     */
+    private final Set<SplitterBlockEntity> activeSplitters = new LinkedHashSet<>();
+
+    /** Reused every tick, for the same reason {@link #ticking} is. */
+    private final List<SplitterBlockEntity> tickingSplitters = new ArrayList<>();
+
     private BeltLines(Level level) {
         this.level = level;
     }
@@ -84,6 +100,22 @@ public final class BeltLines {
         if (!run.isDissolved() && !run.isEmpty()) {
             active.add(run);
         }
+    }
+
+    /** Whether this splitter is being ticked - what a gametest asks instead of the tick queue. */
+    public boolean isActive(SplitterBlockEntity splitter) {
+        return activeSplitters.contains(splitter);
+    }
+
+    void markActive(SplitterBlockEntity splitter) {
+        if (!splitter.isRemoved() && !splitter.isEmpty()) {
+            activeSplitters.add(splitter);
+        }
+    }
+
+    /** A splitter is going away. Deregistering twice is harmless; missing it leaks a tick. */
+    void forgetSplitter(SplitterBlockEntity splitter) {
+        activeSplitters.remove(splitter);
     }
 
     // --- what the world tells us ----------------------------------------------------------------
@@ -128,18 +160,31 @@ public final class BeltLines {
     // --- the tick -------------------------------------------------------------------------------
 
     void tick() {
-        if (active.isEmpty()) {
-            return;
-        }
-        // Copied, because a run handing an item to the next run marks that one active.
-        ticking.clear();
-        ticking.addAll(active);
-        for (BeltRun run : ticking) {
-            if (!run.isDissolved()) {
-                run.tick();
+        if (!active.isEmpty()) {
+            // Copied, because a run handing an item to the next run marks that one active.
+            ticking.clear();
+            ticking.addAll(active);
+            for (BeltRun run : ticking) {
+                if (!run.isDissolved()) {
+                    run.tick();
+                }
             }
+            active.removeIf(run -> run.isDissolved() || run.isEmpty());
         }
-        active.removeIf(run -> run.isDissolved() || run.isEmpty());
+
+        // After the runs, and the set is copied after they have run, so a splitter a run has just
+        // handed an item to is ticked on that same tick. A corner costs no tick on a belt line and
+        // a splitter costs none either.
+        if (!activeSplitters.isEmpty()) {
+            tickingSplitters.clear();
+            tickingSplitters.addAll(activeSplitters);
+            for (SplitterBlockEntity splitter : tickingSplitters) {
+                if (!splitter.isRemoved()) {
+                    splitter.tick(level);
+                }
+            }
+            activeSplitters.removeIf(splitter -> splitter.isRemoved() || splitter.isEmpty());
+        }
     }
 
     // --- the graph ------------------------------------------------------------------------------

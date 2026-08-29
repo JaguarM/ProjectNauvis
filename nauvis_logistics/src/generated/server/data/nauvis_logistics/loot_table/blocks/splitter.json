@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "conditions": [
+            {
+              "block": "nauvis_logistics:splitter",
+              "condition": "minecraft:block_state_property",
+              "properties": {
+                "part": "0"
+              }
+            }
+          ],
+          "name": "nauvis_logistics:splitter"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "nauvis_logistics:blocks/splitter"
+}

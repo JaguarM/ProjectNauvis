@@ -8,11 +8,17 @@ import com.jaguarm.nauvislogistics.belt.BeltLines;
 import com.jaguarm.nauvislogistics.belt.BeltRun;
 import com.jaguarm.nauvislogistics.belt.BeltShape;
 import com.jaguarm.nauvislogistics.belt.Belts;
+import com.jaguarm.nauvislogistics.belt.BeltLines;
+import com.jaguarm.nauvislogistics.belt.SplitterBlock;
+import com.jaguarm.nauvislogistics.belt.SplitterBlockEntity;
+import com.jaguarm.nauvislogistics.belt.SplitterShape;
 import com.jaguarm.nauvislogistics.belt.TransportBeltBlock;
+import com.jaguarm.nauvislogistics.multiblock.Multiblock;
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
 import com.jaguarm.nauvislogistics.registry.ModItems;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlockEntity;
 import com.jaguarm.nauvislogistics.transport.InserterBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -117,6 +123,18 @@ public final class NauvisLogisticsBeltGameTests {
                 () -> FuelsItselfFromABeltTest.CODEC);
         TEST_TYPES.register("belt_wakes_an_inserter_when_an_item_arrives",
                 () -> BeltWakesAnInserterTest.CODEC);
+        TEST_TYPES.register("splitter_splits_single_belt_evenly",
+                () -> SplitterSplitsSingleBeltEvenlyTest.CODEC);
+        TEST_TYPES.register("splitter_merges_two_belts",
+                () -> SplitterMergesTwoBeltsTest.CODEC);
+        TEST_TYPES.register("splitter_overflows_when_one_output_is_blocked",
+                () -> SplitterOverflowsWhenBlockedTest.CODEC);
+        TEST_TYPES.register("splitter_preserves_lanes",
+                () -> SplitterPreservesLanesTest.CODEC);
+        TEST_TYPES.register("splitter_sleeps_when_empty",
+                () -> SplitterSleepsWhenEmptyTest.CODEC);
+        TEST_TYPES.register("splitter_is_two_by_one_and_breaks_together",
+                () -> SplitterBreaksTogetherTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -154,6 +172,18 @@ public final class NauvisLogisticsBeltGameTests {
                 FuelsItselfFromABeltTest::new, 200);
         register(event, environment, "belt_wakes_an_inserter_when_an_item_arrives",
                 BeltWakesAnInserterTest::new, 200);
+        register(event, environment, "splitter_splits_single_belt_evenly",
+                SplitterSplitsSingleBeltEvenlyTest::new, 200);
+        register(event, environment, "splitter_merges_two_belts",
+                SplitterMergesTwoBeltsTest::new, 200);
+        register(event, environment, "splitter_overflows_when_one_output_is_blocked",
+                SplitterOverflowsWhenBlockedTest::new, 200);
+        register(event, environment, "splitter_preserves_lanes",
+                SplitterPreservesLanesTest::new, 200);
+        register(event, environment, "splitter_sleeps_when_empty",
+                SplitterSleepsWhenEmptyTest::new, 200);
+        register(event, environment, "splitter_is_two_by_one_and_breaks_together",
+                SplitterBreaksTogetherTest::new, 60);
     }
 
     private interface TestFactory {
@@ -1359,6 +1389,319 @@ public final class NauvisLogisticsBeltGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a belt wakes an inserter when an item arrives");
+        }
+    }
+
+    private static void placeSplitter(GameTestHelper helper, BlockPos pos, Direction facing) {
+        BlockPos absolute = helper.absolutePos(pos);
+        BlockState state = ModBlocks.SPLITTER.get().defaultBlockState()
+                .setValue(SplitterBlock.FACING, facing)
+                .setValue(SplitterShape.SHAPE.part(), SplitterShape.SHAPE.anchor());
+        helper.setBlock(pos, state);
+        Multiblock.setPlacedBy(ModBlocks.SPLITTER.get(), helper.getLevel(), absolute, state);
+    }
+
+    /** The block entity of the splitter anchored at {@code pos}, in test coordinates. */
+    private static SplitterBlockEntity splitter(GameTestHelper helper, BlockPos pos) {
+        return (SplitterBlockEntity) helper.getLevel().getBlockEntity(helper.absolutePos(pos));
+    }
+
+    /**
+     * Whether a splitter is being ticked.
+     *
+     * <p>Membership of {@link BeltLines}' active set, not the block tick queue: a splitter is part
+     * of the belt simulation and is ticked with the runs either side of it, on both sides of the
+     * wire. See {@code SplitterBlockEntity}.
+     */
+    private static boolean awake(GameTestHelper helper, BlockPos pos) {
+        return BeltLines.of(helper.getLevel()).isActive(splitter(helper, pos));
+    }
+
+    /** One belt into a splitter divides items evenly across two output belts. */
+    public static class SplitterSplitsSingleBeltEvenlyTest extends GameTestInstance {
+
+        public static final MapCodec<SplitterSplitsSingleBeltEvenlyTest> CODEC =
+                RecordCodecBuilder.<SplitterSplitsSingleBeltEvenlyTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SplitterSplitsSingleBeltEvenlyTest::info))
+                                .apply(i, SplitterSplitsSingleBeltEvenlyTest::new));
+
+        public SplitterSplitsSingleBeltEvenlyTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos input = new BlockPos(1, 1, 1);
+            BlockPos splitter = new BlockPos(2, 1, 1);
+            BlockPos outLeft = new BlockPos(3, 1, 1);
+            BlockPos outRight = new BlockPos(3, 1, 2);
+
+            place(helper, input, Direction.EAST);
+            placeSplitter(helper, splitter, Direction.EAST);
+            place(helper, outLeft, Direction.EAST);
+            place(helper, outRight, Direction.EAST);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                put(belt(helper, input, null), Items.IRON_INGOT, 8);
+
+                helper.runAfterDelay(80, () -> {
+                    helper.assertValueEqual(countIn(belt(helper, outLeft, null), Items.IRON_INGOT), 4,
+                            "items routed to the left output");
+                    helper.assertValueEqual(countIn(belt(helper, outRight, null), Items.IRON_INGOT), 4,
+                            "items routed to the right output");
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a splitter divides a single belt evenly");
+        }
+    }
+
+    /** Two input belts into a splitter merge into one output belt. */
+    public static class SplitterMergesTwoBeltsTest extends GameTestInstance {
+
+        public static final MapCodec<SplitterMergesTwoBeltsTest> CODEC =
+                RecordCodecBuilder.<SplitterMergesTwoBeltsTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SplitterMergesTwoBeltsTest::info))
+                                .apply(i, SplitterMergesTwoBeltsTest::new));
+
+        public SplitterMergesTwoBeltsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos inLeft = new BlockPos(1, 1, 1);
+            BlockPos inRight = new BlockPos(1, 1, 2);
+            BlockPos splitter = new BlockPos(2, 1, 1);
+            BlockPos outLeft = new BlockPos(3, 1, 1);
+
+            place(helper, inLeft, Direction.EAST);
+            place(helper, inRight, Direction.EAST);
+            placeSplitter(helper, splitter, Direction.EAST);
+            place(helper, outLeft, Direction.EAST);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                put(belt(helper, inLeft, null), Items.COPPER_INGOT, 2);
+                put(belt(helper, inRight, null), Items.IRON_INGOT, 2);
+
+                helper.runAfterDelay(80, () -> {
+                    helper.assertValueEqual(countIn(belt(helper, outLeft, null), Items.COPPER_INGOT), 2,
+                            "copper items merged to output");
+                    helper.assertValueEqual(countIn(belt(helper, outLeft, null), Items.IRON_INGOT), 2,
+                            "iron items merged to output");
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a splitter merges two belts into one output");
+        }
+    }
+
+    /** When one output is blocked or missing, all items overflow to the open output. */
+    public static class SplitterOverflowsWhenBlockedTest extends GameTestInstance {
+
+        public static final MapCodec<SplitterOverflowsWhenBlockedTest> CODEC =
+                RecordCodecBuilder.<SplitterOverflowsWhenBlockedTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SplitterOverflowsWhenBlockedTest::info))
+                                .apply(i, SplitterOverflowsWhenBlockedTest::new));
+
+        public SplitterOverflowsWhenBlockedTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos input = new BlockPos(1, 1, 1);
+            BlockPos splitter = new BlockPos(2, 1, 1);
+            BlockPos outRight = new BlockPos(3, 1, 2);
+
+            place(helper, input, Direction.EAST);
+            placeSplitter(helper, splitter, Direction.EAST);
+            place(helper, outRight, Direction.EAST);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                put(belt(helper, input, null), Items.IRON_INGOT, 4);
+
+                helper.runAfterDelay(80, () -> {
+                    helper.assertValueEqual(countIn(belt(helper, outRight, null), Items.IRON_INGOT), 4,
+                            "all items overflowed to the open right output");
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a splitter overflows when one output is blocked");
+        }
+    }
+
+    /** A splitter preserves the left and right lane identities of items. */
+    public static class SplitterPreservesLanesTest extends GameTestInstance {
+
+        public static final MapCodec<SplitterPreservesLanesTest> CODEC =
+                RecordCodecBuilder.<SplitterPreservesLanesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SplitterPreservesLanesTest::info))
+                                .apply(i, SplitterPreservesLanesTest::new));
+
+        public SplitterPreservesLanesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos input = new BlockPos(1, 1, 1);
+            BlockPos splitter = new BlockPos(2, 1, 1);
+            BlockPos outLeft = new BlockPos(3, 1, 1);
+            BlockPos outRight = new BlockPos(3, 1, 2);
+
+            place(helper, input, Direction.EAST);
+            placeSplitter(helper, splitter, Direction.EAST);
+            place(helper, outLeft, Direction.EAST);
+            place(helper, outRight, Direction.EAST);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                put(belt(helper, input, Direction.SOUTH), Items.COPPER_INGOT, 1);
+                put(belt(helper, input, Direction.NORTH), Items.IRON_INGOT, 1);
+
+                helper.runAfterDelay(80, () -> {
+                    BeltRun leftRun = runAt(helper, outLeft);
+                    BeltRun rightRun = runAt(helper, outRight);
+
+                    int copperLeft = leftRun.lane(Belts.LEFT).size() + rightRun.lane(Belts.LEFT).size();
+                    int ironRight = leftRun.lane(Belts.RIGHT).size() + rightRun.lane(Belts.RIGHT).size();
+
+                    helper.assertValueEqual(copperLeft, 1, "copper remained on the left lane");
+                    helper.assertValueEqual(ironRight, 1, "iron remained on the right lane");
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a splitter preserves lane sides");
+        }
+    }
+
+    /** An empty splitter has no scheduled ticks; inserting an item wakes it. */
+    public static class SplitterSleepsWhenEmptyTest extends GameTestInstance {
+
+        public static final MapCodec<SplitterSleepsWhenEmptyTest> CODEC =
+                RecordCodecBuilder.<SplitterSleepsWhenEmptyTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SplitterSleepsWhenEmptyTest::info))
+                                .apply(i, SplitterSleepsWhenEmptyTest::new));
+
+        public SplitterSleepsWhenEmptyTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos input = new BlockPos(1, 1, 1);
+            BlockPos splitter = new BlockPos(2, 1, 1);
+            BlockPos outLeft = new BlockPos(3, 1, 1);
+
+            place(helper, input, Direction.EAST);
+            placeSplitter(helper, splitter, Direction.EAST);
+            place(helper, outLeft, Direction.EAST);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                helper.assertFalse(awake(helper, splitter),
+                        "an empty splitter should sleep without being ticked");
+
+                put(belt(helper, input, null), Items.IRON_INGOT, 1);
+
+                helper.runAfterDelay(15, () -> {
+                    helper.assertTrue(awake(helper, splitter),
+                            "a splitter should be awake while moving an item");
+
+                    helper.runAfterDelay(70, () -> {
+                        helper.assertFalse(awake(helper, splitter),
+                                "a splitter should sleep again once the item has exited");
+                        helper.succeed();
+                    });
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an empty splitter sleeps");
+        }
+    }
+
+    /** Breaking either cell of a 2x1 splitter removes both cells and drops one item. */
+    public static class SplitterBreaksTogetherTest extends GameTestInstance {
+
+        public static final MapCodec<SplitterBreaksTogetherTest> CODEC =
+                RecordCodecBuilder.<SplitterBreaksTogetherTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SplitterBreaksTogetherTest::info))
+                                .apply(i, SplitterBreaksTogetherTest::new));
+
+        public SplitterBreaksTogetherTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos splitterLeft = new BlockPos(2, 1, 1);
+            BlockPos splitterRight = new BlockPos(2, 1, 2);
+
+            placeSplitter(helper, splitterLeft, Direction.EAST);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                helper.destroyBlock(splitterRight);
+
+                helper.runAfterDelay(2, () -> {
+                    helper.assertBlockNotPresent(ModBlocks.SPLITTER.get(), splitterLeft);
+                    helper.assertBlockNotPresent(ModBlocks.SPLITTER.get(), splitterRight);
+                    helper.assertItemEntityPresent(ModItems.SPLITTER.get(), splitterLeft, 3.0);
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a 2x1 splitter breaks together");
         }
     }
 }

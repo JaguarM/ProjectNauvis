@@ -328,15 +328,16 @@ to `nauvis_military`, which does not exist.
 The jobs, in the order Yannic asked for them
 --------------------------------------------
 
-The tabs were the first of these and the science tree was the second; both are done. The two
-below are what is left of milestone 2 and are untouched by either, so they can be done in any
-order.
+The tabs were the first of these, the science tree was the second, and the splitter was the third;
+all three are done. What remains of milestone 2 is fast-replace by tier.
 
-### 1. The splitter
+### 1. The splitter (Done)
 
-2×1 and directional — the first multi-block that is not square. `multiblock/` is the framework and
-is copied into four mods already. The belt side of it is a run that ends at the splitter and two
-that start after it, with the splitter alternating between them.
+2×1 and directional — the first multi-block that is not square. `multiblock/` is duplicated across
+mods and checked by `tools/check_duplicated.py`. Belt runs ending facing the splitter feed into its
+left/right tracks; items move across the 1-block deck and hand off alternating 50/50 per lane across
+open downstream belt runs, overflowing to the open side when one output is blocked, and sleeping
+when empty.
 
 ### 2. Fast-replace by tier
 
@@ -843,6 +844,23 @@ Silent failures — these compile, pass tests, and are still wrong
   `nauvis:pack_loads` registered under type `nauvis:registry_presence` is fine - so
   `tools/check_gametests.py` matches every `GameTestInstance` that is registered to run against
   the codecs handed to `TEST_TYPES`.
+- **A scheduled block tick is the server only, so anything inside the belt simulation must not use
+  one.** The splitter arrived as a `BaseEntityBlock` with `scheduleTick` and a `serverTick`, which
+  is the right shape for every other machine in the pack and exactly wrong here. Belts are the one
+  subsystem the *client* simulates - that is what buys visibly moving items for no packets, and
+  `BeltEvents` says in as many words that it does not filter for a server level. So the client's
+  `BeltRun` handed items into the client's splitter, which then never advanced them: **items
+  vanished at the splitter, the belt behind it appeared to jam, and the belt in front of it stayed
+  empty** - while the server was routing them perfectly the whole time, so breaking the output belt
+  spilled the items that were supposedly gone. All six of its gametests passed, because a gametest
+  is a server. A splitter is now ticked by `BeltLines` alongside the runs either side of it, and
+  `wake()` joins that active set rather than the tick queue; the sleep rule of non-negotiable #5 is
+  unchanged, and `SplitterSleepsWhenEmptyTest` asserts membership of the set rather than
+  `hasScheduledTick`, so moving it back to a scheduled tick fails a test.
+
+  The rule generalises: **`BeltLines` owns the tick of anything that carries items along a belt
+  line.** A machine beside a belt schedules ticks like any other machine; a thing a belt hands
+  items *through* does not.
 - **A block put down by anything but a player never runs `getStateForPlacement`.** A command, a
   structure, another mod or `GameTestHelper.setBlock` all write the state you hand them, so a block
   that works out how it looks from its neighbours is drawn wrong and stays wrong: nothing changes

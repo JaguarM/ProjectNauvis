@@ -1,6 +1,7 @@
 package com.jaguarm.nauvislogistics;
 
 import com.jaguarm.nauvislogistics.client.BeltRenderer;
+import com.jaguarm.nauvislogistics.client.SplitterRenderer;
 import com.jaguarm.nauvislogistics.registry.ModBlockEntities;
 import com.jaguarm.nauvislogistics.registry.ModMenus;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterScreen;
@@ -38,5 +39,6 @@ public class NauvisLogisticsClient {
     @SubscribeEvent
     static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlockEntities.TRANSPORT_BELT.get(), BeltRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.SPLITTER.get(), SplitterRenderer::new);
     }
 }

@@ -2,6 +2,7 @@ package com.jaguarm.nauvislogistics.registry;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
 import com.jaguarm.nauvislogistics.belt.BeltBlockEntity;
+import com.jaguarm.nauvislogistics.belt.SplitterBlockEntity;
 import com.jaguarm.nauvislogistics.storage.IronChestBlockEntity;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlockEntity;
 import com.jaguarm.nauvislogistics.transport.ElectricInserterBlockEntity;
@@ -60,6 +61,13 @@ public final class ModBlockEntities {
                     () -> new BlockEntityType<>(
                             BeltBlockEntity::new,
                             ModBlocks.TRANSPORT_BELT.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SplitterBlockEntity>>
+            SPLITTER = BLOCK_ENTITIES.register(
+                    "splitter",
+                    () -> new BlockEntityType<>(
+                            SplitterBlockEntity::new,
+                            ModBlocks.SPLITTER.get()));
 
     private ModBlockEntities() {}
 }

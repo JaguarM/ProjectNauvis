@@ -31,6 +31,7 @@ DUPLICATED = [
      ('nauvis_machines', 'nauvismachines'),
      [('nauvis_power', 'nauvispower'),
       ('nauvis_research', 'nauvisresearch'),
+      ('nauvis_logistics', 'nauvislogistics'),
       ('../NeoProgressiveAutomation', 'neoprogressiveautomation')]),
 ]
 
