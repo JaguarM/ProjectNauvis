@@ -119,8 +119,11 @@ scheduled tick is server-only. A machine *beside* a belt schedules ticks like an
 The patterns worth copying
 --------------------------
 
-**Sleeping.** No `BlockEntityTicker` anywhere: a registered ticker runs whether or not there is
-work. Every machine schedules its own block tick while it has something to do and stops when it
+**Sleeping.** No `BlockEntityTicker` on the server anywhere: a registered ticker runs whether or
+not there is work. (The two chests have one, inherited from `ChestBlock`, and it is client-only -
+`getTicker` returns null on a server - and all it does is advance the lid.)
+
+Every machine schedules its own block tick while it has something to do and stops when it
 does not. Four ways a machine learns it has work again, and one usually needs more than one:
 
 - its own inventory changed (`onContentsChanged`);

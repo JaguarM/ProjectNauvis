@@ -3,38 +3,38 @@ package com.jaguarm.nauvislogistics.storage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 
 /**
- * A box, in whichever size the block it belongs to asks for: the first containers in the pack that
- * are ours rather than vanilla's.
+ * A box, in whichever size the block it belongs to asks for.
  *
- * <p>A plain {@link net.minecraft.world.Container}, unlike every other block in this pack, and
- * that is a deliberate choice rather than an oversight. A chest has no logic to speak of - it
- * holds things - and being a Container buys two whole features for nothing: vanilla's own chest
- * screens, and (through the capability registered in {@code ModCapabilities}) an item handler that
- * inserters and hoppers already know how to use. A {@code ResourceHandler} would have meant
- * writing a menu and a screen to gain nothing.
+ * <p>Vanilla's {@link ChestBlockEntity} with three things changed: the size, the screen that size
+ * needs, and the name. Everything else a chest does - the lid animation and the openers counter
+ * that drives it, the loot table dance, the sounds, saving and loading - is inherited, which is
+ * the whole reason this extends it rather than {@code RandomizableContainerBlockEntity} directly.
+ * Being a plain {@link net.minecraft.world.Container} also buys an item handler that inserters
+ * already know how to use, through the capability registered in {@code ModCapabilities}.
  *
- * <p>The size comes from the block rather than from this class, so a tier is a
+ * <p><b>The item list has to be replaced in the constructor.</b> {@code ChestBlockEntity}'s field
+ * initialiser makes 27 slots, and only {@code loadAdditional} resizes it to whatever
+ * {@code getContainerSize} says - so a chest that was placed rather than loaded would report
+ * thirty-six slots while holding twenty-seven, and the screen would read past the end of the list
+ * the moment a player opened it.
+ *
+ * <p>The size comes from the block rather than from a field on this class, so a tier is a
  * {@link MetalChestBlock} subclass and nothing here changes. Both tiers land on a row count
  * vanilla already has a screen for - four and six - which is the whole reason the slot counts are
  * 36 and 54 rather than Factorio's 32 and 48.
  */
-public class MetalChestBlockEntity extends RandomizableContainerBlockEntity {
+public class MetalChestBlockEntity extends ChestBlockEntity {
 
     private final int rows;
-
-    private NonNullList<ItemStack> items;
 
     /**
      * Both the type and the size come from the block, which is what lets one constructor serve
@@ -42,24 +42,14 @@ public class MetalChestBlockEntity extends RandomizableContainerBlockEntity {
      * block that knows which of the two it is.
      */
     public MetalChestBlockEntity(BlockPos pos, BlockState state) {
-        super(((MetalChestBlock) state.getBlock()).type(), pos, state);
+        super(((MetalChestBlock) state.getBlock()).blockEntityType(), pos, state);
         this.rows = ((MetalChestBlock) state.getBlock()).rows();
-        this.items = NonNullList.withSize(getContainerSize(), ItemStack.EMPTY);
+        setItems(NonNullList.withSize(getContainerSize(), ItemStack.EMPTY));
     }
 
     @Override
     public int getContainerSize() {
         return rows * 9;
-    }
-
-    @Override
-    protected NonNullList<ItemStack> getItems() {
-        return items;
-    }
-
-    @Override
-    protected void setItems(NonNullList<ItemStack> items) {
-        this.items = items;
     }
 
     /** The block's own name, so a tier does not have to remember to add a translation key. */
@@ -74,26 +64,5 @@ public class MetalChestBlockEntity extends RandomizableContainerBlockEntity {
                 ? MenuType.GENERIC_9x6
                 : MenuType.GENERIC_9x4;
         return new ChestMenu(type, containerId, inventory, this, rows);
-    }
-
-    /**
-     * The loot-table dance is vanilla's, kept so a structure could one day place a pre-filled
-     * chest without this class needing to change.
-     */
-    @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
-        if (!trySaveLootTable(output)) {
-            ContainerHelper.saveAllItems(output, items);
-        }
-    }
-
-    @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
-        items = NonNullList.withSize(getContainerSize(), ItemStack.EMPTY);
-        if (!tryLoadLootTable(input)) {
-            ContainerHelper.loadAllItems(input, items);
-        }
     }
 }

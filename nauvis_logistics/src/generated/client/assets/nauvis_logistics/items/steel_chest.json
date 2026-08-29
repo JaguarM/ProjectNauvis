@@ -1,6 +1,10 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "nauvis_logistics:block/steel_chest"
+    "type": "minecraft:special",
+    "base": "nauvis_logistics:item/steel_chest",
+    "model": {
+      "type": "minecraft:chest",
+      "texture": "nauvis_logistics:steel"
+    }
   }
 }

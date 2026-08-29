@@ -3,8 +3,7 @@ package com.jaguarm.nauvislogistics.storage;
 import com.jaguarm.nauvislogistics.registry.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
 
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.ChestBlock;
 
 /**
  * Thirty-six slots against Factorio's thirty-two. Slot count is behaviour, not identity - the id,
@@ -19,21 +18,16 @@ public class IronChestBlock extends MetalChestBlock {
     public static final int ROWS = 4;
 
     public IronChestBlock(Properties properties) {
-        super(properties);
+        super(ModBlockEntities.IRON_CHEST::get, properties);
     }
 
     @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
+    public MapCodec<? extends ChestBlock> codec() {
         return CODEC;
     }
 
     @Override
     public int rows() {
         return ROWS;
-    }
-
-    @Override
-    protected BlockEntityType<MetalChestBlockEntity> type() {
-        return ModBlockEntities.IRON_CHEST.get();
     }
 }

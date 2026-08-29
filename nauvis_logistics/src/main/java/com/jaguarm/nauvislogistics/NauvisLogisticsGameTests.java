@@ -33,7 +33,9 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.state.properties.ChestType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -591,6 +593,17 @@ public final class NauvisLogisticsGameTests {
             helper.assertValueEqual(countIn(iron, Items.IRON_INGOT), 100, "ingots held");
             helper.assertValueEqual(insert(steel, Items.IRON_INGOT, 100), 100, "ingots accepted by steel");
             helper.assertValueEqual(countIn(steel, Items.IRON_INGOT), 100, "ingots held by steel");
+
+            // Two side by side stay two. Being a ChestBlock brings vanilla's pairing with it, and
+            // a pair combines the two containers - so a double steel chest would ask for a
+            // hundred-and-eight-slot screen that does not exist, and the crash would be on the
+            // first player to put two down in a row. MetalChestBlock#chestCanConnectTo is the one
+            // line stopping it.
+            helper.setBlock(INSERTER, ModBlocks.IRON_CHEST.get());
+            for (BlockPos side : List.of(SOURCE, INSERTER)) {
+                helper.assertValueEqual(helper.getBlockState(side).getValue(ChestBlock.TYPE),
+                        ChestType.SINGLE, "chest type with another chest beside it");
+            }
             helper.succeed();
         }
 

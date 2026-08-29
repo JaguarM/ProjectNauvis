@@ -145,17 +145,47 @@ def model_refs(node):
     Deliberately structural rather than schema-aware: variants, weighted lists, multipart applies
     and 26.2's item definitions (composite, condition, select, range_dispatch) all end at a
     {"model": "..."} somewhere, and walking for that key survives a format the next version adds.
+
+    `base` is the second key that names one. A `minecraft:special` item model puts its *renderer*
+    under "model" - as an object, not a string - and the model that carries the display transforms
+    under "base", so an item drawn by a special renderer names no model at all by the first rule.
+    A chest is one of those, and so is a banner, a bed, a shield and a decorated pot.
     """
     found = []
     if isinstance(node, dict):
         for key, value in node.items():
-            if key == 'model' and isinstance(value, str):
+            if key in ('model', 'base') and isinstance(value, str):
                 found.append(value)
             else:
                 found.extend(model_refs(value))
     elif isinstance(node, list):
         for item in node:
             found.extend(model_refs(item))
+    return found
+
+
+# A special model renderer names its texture directly rather than through a model, and the
+# renderer decides which atlas and which directory that name means. Only the ones this pack
+# actually uses are listed: an unknown type is skipped rather than guessed at, because guessing
+# a directory wrong would report a missing PNG that is not missing.
+SPECIAL_TEXTURE_DIRS = {
+    'minecraft:chest': 'entity/chest',
+}
+
+
+def special_texture_refs(node):
+    """Every (type, texture) a special model renderer names, wherever it appears."""
+    found = []
+    if isinstance(node, dict):
+        kind = node.get('type')
+        texture = node.get('texture')
+        if isinstance(kind, str) and isinstance(texture, str):
+            found.append((kind, texture))
+        for value in node.values():
+            found.extend(special_texture_refs(value))
+    elif isinstance(node, list):
+        for item in node:
+            found.extend(special_texture_refs(item))
     return found
 
 
@@ -244,6 +274,18 @@ def check_references(assets):
             fail(origin, 'names no model at all')
         for ref in refs:
             check_model(assets, ref, seen, missing, origin)
+
+        # A special renderer's texture is not a model's texture slot, so nothing above sees it.
+        # It is exactly the same failure though - a name with no PNG behind it - and for a chest
+        # it is invisible rather than magenta, because the atlas simply has no such sprite.
+        for kind, texture in special_texture_refs(content):
+            directory = SPECIAL_TEXTURE_DIRS.get(kind)
+            if directory is None:
+                continue
+            texture_ns, texture_name = split(texture)
+            if assets.exists(texture_ns, f'textures/{directory}/{texture_name}.png') is False:
+                fail(origin, f'{kind} names texture {texture}, and there is no '
+                             f'{texture_ns}:textures/{directory}/{texture_name}.png')
 
 
 def check_registrations(assets):

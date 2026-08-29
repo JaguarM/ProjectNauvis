@@ -16,8 +16,10 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-Ninety-two gametests pass, `./gradlew build` is clean, and the client boots into a world. Milestone
-2 is done bar fast-replace; milestone 3 has its research half in and its items still to come.
+A hundred and four gametests pass, `./gradlew build` is clean, and the client boots into a world.
+Milestone 2 is done bar fast-replace; milestone 3 has its research half in, and four of its nine
+items — the steel line and green science, which between them give `steel-processing` and
+`science-pack-2` teeth and unblock everything else on the list.
 
 | | |
 |---|---|
@@ -27,13 +29,16 @@ Ninety-two gametests pass, `./gradlew build` is clean, and the client boots into
 | `nauvis_logistics:burner_inserter` | takes behind, gives in front, 30-tick swing, fuel slot. Fuels itself off the belt it unloads |
 | `nauvis_logistics:inserter` | the same on 2 FE/t and a 24-tick swing. No slot, so no screen |
 | `nauvis_logistics:long_handed_inserter` | the same arm reaching two blocks. 3 FE/t, 17-tick swing, the only block that does not sleep perfectly |
-| `nauvis_logistics:iron_chest` | 36 slots on vanilla's four-row screen |
+| `nauvis_logistics:iron_chest` | 36 slots on vanilla's four-row screen. A `ChestBlock`, so it has vanilla's lid and opens like one |
+| `nauvis_logistics:steel_chest` | the same again at 54 slots and six rows, in lighter metal. Neither pairs |
 | `nauvis_fluids:pipe` / `steam` | a run is one object however long; steam is a real fluid, so pipes and machines meet at the capability |
 | `nauvis_power:boiler` | 3×2, seven blocks; burns fuel, steam out under the chimney |
 | `nauvis_power:steam_engine` | 5×3, seventeen blocks; steam in at the open ends of its spine, 120 FE/t out |
 | `nauvis_power:small_electric_pole` | four blocks, climbable, wires itself to whatever it reaches |
 | `nauvis_research:lab` | 3×3, ten blocks, 8 FE/t; eats one of each pack the world's research asks for |
 | `nauvis_research:science_pack_1` | red science — a copper plate and an iron gear wheel |
+| `nauvis_research:science_pack_2` | green science — an inserter and a belt. The gate in front of the rest of milestone 3 |
+| `neoprogressivematerials:steel_plate` | five iron plates and thirty-five seconds |
 | `nauvis_research:technology` | 216 technologies, a synced datapack registry, generated. 25 are in the tree |
 | `neoprogressiveautomation:burner_drill` | 2×2, five blocks |
 | `neoprogressiveautomation:electric_drill` | 3×3, nine blocks; a half-block deck you walk over |
@@ -67,17 +72,36 @@ because it is flat; this pack is the same game with a Y axis, so a belt crosses 
 level. All four ids are marked `skip` in `data/mapping.json` with the reason, nothing else in the
 recipe graph uses them, and `gen_recipes.py --check` counts them as skipped rather than missing.
 
-### 2. The milestone 3 items
+### 2. The rest of the milestone 3 items
 
-`science-pack-2`, `assembling-machine-2`, `steel-furnace`, `solar-panel`, `accumulator`,
-`medium-electric-pole`, `steel-plate`, `battery`, `sulfur`. None exist yet and the tree is already
-waiting for every one: `steel-processing` unlocks the steel plate and the steel chest, `logistics`
-the splitter, `solar-energy` the panel. **Adding an item gives its technology teeth with no change
-to the research code.** `science-pack-2` costs an inserter and a belt, so it is unblocked the same
-way the lab's recipe was — drop the `pending` flag in `data/mapping.json` and the
-`neoforge:registered` condition regenerates away.
+`steel-plate`, `steel-chest` and `science-pack-2` are in, so `steel-processing` and
+`science-pack-2` now unlock something and everything below is reachable. **Adding an item gives its
+technology teeth with no change to the research code** — that held exactly as written, and none of
+`nauvis_research` was touched.
 
-The accumulator needs `PowerNetwork` to grow a third case first; see `GAPS.md`.
+What is left, in the order the tree wants them:
+
+- **`medium-electric-pole`** (`electric-energy-distribution-1`). Two copper plates and two steel
+  plates, and the only one that needs the grid to change: `PowerNetworkManager.WIRE_REACH` is a
+  single constant and a medium pole reaches 9 rather than 7.5. Two poles are wired when the
+  distance is within the *longer* of the two reaches, which is Factorio's rule. **`CELL_BITS` has
+  to grow with it** — the pole index buckets into 8-block cubes and the 27-cell neighbourhood is
+  only complete while every reach is under 8, so a reach of 9 silently misses a pole standing at a
+  cell edge. Sixteen-block cells keep the neighbourhood and the invariant.
+- **`assembling-machine-2`** (`automation-2`). An assembler that crafts faster; a tier is numbers
+  on the block the way the long-handed inserter is.
+- **`solar-panel`** (`solar-energy`). 3×3 and half a block high, so it is walked over. A generator
+  like the steam engine as far as `PowerNetwork` is concerned — the new part is daylight.
+- **`steel-furnace`** (`advanced-material-processing`). The biggest of the four, because the pack
+  has no furnace machine at all: `stone-furnace` stands in as `minecraft:furnace`. A steel furnace
+  that is only a faster vanilla furnace is a different job from one that is a machine of ours, and
+  that decision comes before the block.
+
+**`sulfur`, `battery` and the `accumulator` cannot be built yet, and it is not the code.** Sulfur
+is thirty petroleum gas and thirty water, a battery is a plate each plus twenty sulfuric acid, and
+an accumulator is five batteries — so the whole branch is behind oil processing, which is
+milestone 5. The accumulator also wants `PowerNetwork`'s third case; see `GAPS.md`. Nothing is
+gained by shipping recipes for them before the fluids exist.
 
 ### 3. More removals follow the items
 
@@ -125,6 +149,17 @@ are Facrafting recipes now at Factorio's prices.
 - and time it. The lab alone is ten circuits, ten gears and four belts by hand. If it drags, the
   lever is a trigger's count in `data/technologies.json`, not the machinery under it.
 
+**The two chests**, which nobody has seen since they became real chests.
+
+- put an iron chest down and open it. The lid should swing, the sound should be the copper chest's,
+  and the box should read as metal rather than as a grey cube;
+- put a steel chest beside it and check they are two chests and not one long one. `chests_hold_items`
+  asserts the block state; **whether the two models sit side by side without looking like a mistake
+  is only visible to a person**;
+- and tell the two apart across a room. Iron is dark neutral grey and steel is light blue-grey,
+  which is a decision made in `make_chest_textures.py` at 8x on a dark background and not in a
+  world at midday.
+
 **The research screen and the tree**, neither of which anyone has looked at.
 
 - open a lab, press **Tech**, and see whether the row — a name, a cost, the items it hands over —
@@ -170,6 +205,8 @@ How to run everything
 | `python tools/check_gametests.py` | every gametest, for a type registered as well as an instance |
 | `python tools/check_gui_layout.py` | every machine screen's boxes, for overlaps |
 | `python texture-workshop/make_belt_textures.py` | the belt's art, from ASCII maps. `--preview` for a sheet |
+| `python texture-workshop/make_chest_textures.py` | the two chests' art. Not a map — see that file on why |
+| `python texture-workshop/make_material_textures.py` | Neo Progressive Materials' item art |
 | `./gradlew :nauvis:packConfig` | the pack's config over `run/config`. Every run task depends on it |
 
 The seven checks — `checkRecipes`, `checkTechnologies`, `checkRemovals`, `checkModels`,

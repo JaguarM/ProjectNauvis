@@ -15,6 +15,33 @@ drift apart.
     python texture-workshop/make_belt_textures.py            # write the PNGs
     python texture-workshop/make_belt_textures.py --preview  # also write belt-preview.png
     python texture-workshop/make_belt_textures.py --all      # the unregistered tiers too
+    python texture-workshop/make_chest_textures.py --preview # the two chests
+    python texture-workshop/make_material_textures.py        # Neo Progressive Materials' items
+
+`make_material_textures.py` writes into `../NeoProgressiveMaterials`, which is a sibling repo
+rather than a subproject. That is deliberate - the workshop is one place, not five - and it
+only writes the items it has a map for, so the three that were drawn by hand before it existed
+are left alone.
+
+The chests
+----------
+
+The one thing in here that is not an ASCII map, and the reason is worth knowing: a chest
+texture is not a picture of anything. It is six rectangles per box, unwrapped, and *where
+each rectangle lands is decided by `ModelPart.Cube`* rather than by us - so the map is
+replaced by the same arithmetic vanilla does, and the drawing is a few panel rules applied to
+whichever rectangle a face turns out to be. `make_chest_textures.py` writes that arithmetic
+out in full at the top; read it before moving a pixel.
+
+Two things bite. **The front of a chest is south** - the lock cube sits at the +Z face and the
+renderer turns the whole model to the block's facing afterwards, so a latch drawn on the north
+faces comes out on the back. And **the lock shares the lid's `texOffs`**, fitting in the corner
+of the lid's block that the lid's own six faces do not use; that is vanilla's trick and not a
+coincidence.
+
+The preview is not a render. It pastes the faces you can actually see on a closed chest into
+the arrangement you would see them in, which is enough to catch a face drawn into the wrong
+rectangle - the one mistake that file can plausibly make.
 
 The belt
 --------

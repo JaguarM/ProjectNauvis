@@ -153,30 +153,25 @@ public class NauvisLogisticsModels extends ModelProvider {
                 TextureMapping.getBlockTexture(Blocks.IRON_BLOCK).sprite(),
                 TextureMapping.getBlockTexture(Blocks.GOLD_BLOCK).sprite());
 
-        // Iron sides with a barrel's lid: reads as a metal container at a glance, and does not
-        // read as a block of iron, which is what a plain iron cube would have looked like.
-        Identifier chest = ModelTemplates.CUBE_TOP.create(
-                ModBlocks.IRON_CHEST.get(),
-                new TextureMapping()
-                        .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(Blocks.IRON_BLOCK))
-                        .put(TextureSlot.TOP, TextureMapping.getBlockTexture(Blocks.BARREL, "_top")),
-                blockModels.modelOutput);
-
-        blockModels.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(
-                ModBlocks.IRON_CHEST.get(), BlockModelGenerators.plainVariant(chest)));
-
-        // The same lid on a darker metal, so the two chests read as one family and as two tiers.
-        // The anvil is vanilla's only worked-steel texture; nothing else in the game is that
-        // grey without also being stone.
-        Identifier steelChest = ModelTemplates.CUBE_TOP.create(
-                ModBlocks.STEEL_CHEST.get(),
-                new TextureMapping()
-                        .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(Blocks.ANVIL))
-                        .put(TextureSlot.TOP, TextureMapping.getBlockTexture(Blocks.BARREL, "_top")),
-                blockModels.modelOutput);
-
-        blockModels.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(
-                ModBlocks.STEEL_CHEST.get(), BlockModelGenerators.plainVariant(steelChest)));
+        // The chests are drawn by a block entity renderer, not by a block model, so what
+        // `createChest` writes is a blockstate pointing at a model that holds nothing but a
+        // particle texture - the block you see is the lid, the box and the latch in
+        // MetalChestRenderer - plus an item model that is vanilla's chest special-renderer
+        // pointed at our sprite. One call does all three files, which is worth using rather than
+        // reproducing: the item model alone is a `minecraft:special` wrapper most mods get wrong.
+        //
+        // The particle block is what a broken chest scatters and what dust falls off it, so it is
+        // the metal rather than the texture: iron for one tier and, for the other, the anvil,
+        // which is vanilla's only worked-steel surface that is not also stone.
+        //
+        // The texture id has no path prefix and no extension. `ChestSpecialRenderer` and
+        // `Sheets.CHEST_MAPPER` both put `entity/chest/` in front of it, so this names
+        // assets/nauvis_logistics/textures/entity/chest/iron.png, which the chest atlas picks up
+        // because its one source is a directory over every namespace. See MetalChestRenderer.
+        blockModels.createChest(ModBlocks.IRON_CHEST.get(), Blocks.IRON_BLOCK,
+                Identifier.fromNamespaceAndPath(NauvisLogistics.MODID, "iron"), false);
+        blockModels.createChest(ModBlocks.STEEL_CHEST.get(), Blocks.ANVIL,
+                Identifier.fromNamespaceAndPath(NauvisLogistics.MODID, "steel"), false);
     }
 
     private void machine(BlockModelGenerators blockModels, Block block, MachineShape shape,

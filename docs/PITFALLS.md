@@ -47,6 +47,21 @@ Blocks and multi-blocks
   `Block#affectNeighborsAfterRemoval`. The wrong one compiles, reads correctly, and drops nothing.
 - **A modded `Container` must register its own item capability.** NeoForge wraps vanilla's, but
   only for a hard-coded list of vanilla block entity types.
+- **Overriding `getContainerSize` does not resize the list it counts.** `ChestBlockEntity` builds
+  its `NonNullList` at 27 in a field initialiser, and only `loadAdditional` rebuilds it at
+  `getContainerSize()`. So a subclass with more slots is correct for every chest that was *loaded*
+  and wrong for every chest that was *placed*: it reports thirty-six slots while holding
+  twenty-seven, and the screen reads past the end of the list the first time somebody opens it. A
+  save and a reload hides it, which is why it would have survived a play session. Call `setItems`
+  in the constructor. Generally: **a size that a subclass may change has to be read where it is
+  used, not baked into a field initialiser that runs first.**
+- **Extending a vanilla block brings its whole behaviour, wanted or not.** `ChestBlock` is
+  designed for extension in 26.2 - the copper chests are subclasses - so a metal chest gets the
+  lid, the sounds and the openers counter for free. It also gets *pairing*, and a pair combines
+  the two containers into one menu: two 54-slot chests placed side by side would ask for a
+  108-slot screen that does not exist. `chestCanConnectTo` answering false is the whole fix, and
+  nothing about the class hints that it is needed. **After inheriting from vanilla, list what came
+  with it and decide about each one.**
 - **A block put down by anything but a player never runs `getStateForPlacement`.** A command, a
   structure, another mod or `GameTestHelper.setBlock` write the state you hand them, so a block
   that works out its look from its neighbours is drawn wrong and stays wrong — nothing changes
@@ -155,6 +170,15 @@ Screens and config
   `config.jade.plugin_<modid>.<uid>` key crashes the moment any screen opens.
 - **A Jade provider must not be both halves.** Jade throws at registration if one object implements
   both `IServerDataProvider` and `IComponentProvider`. Outer data class, nested `Client`, shared uid.
+- **A special item model names no model, and the checker said so for a year.**
+  A `minecraft:special` item definition - a chest, a bed, a banner, a shield - puts its *renderer*
+  under `"model"` as an object and the model carrying the display transforms under `"base"`, so
+  `check_models.py`'s "every `model` key that is a string" rule found nothing in one and reported
+  `names no model at all`. That is the checker being wrong rather than the asset, and the danger is
+  the shape of it: a checker that reports a false failure on a correct file gets its rule relaxed,
+  and the relaxation is what hides the real one. `base` is now a model reference, and the
+  renderer's `texture` is checked against the directory that renderer reads - which is not a
+  model's texture slot and so was invisible to everything.
 - **A clickable box drawn through a label reads the click anyway.** The research button was first at
   (116, 16), inside the lab screen's full-width status band. Nothing looked wrong, because the
   status text is usually shorter than that. `check_gui_layout.py` catches this exactly — **but only
