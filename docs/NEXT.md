@@ -876,6 +876,13 @@ Silent failures — these compile, pass tests, and are still wrong
   the test asks a running recipe manager**, not the files: a test that read the datapack would
   have been green.
 
+- **A datapack tag merges into vanilla's unless it says `"replace": true`.** The pack empties the
+  seven `incorrect_for_<material>_tool` tags so every pickaxe mines everything, and an empty
+  `values` list without the `replace` flag is a **no-op that reports nothing** - it loads, it
+  merges, and vanilla's contents are all still there. Nothing in a log, in datagen, or in any
+  check would say so; the only place it shows up is a player swinging at obsidian. Asserted by
+  `nauvis:every_pickaxe_mines_everything`, which was confirmed to go red when the flag is dropped.
+
 - **The condition is `neoforge:never`, and there is no `neoforge:false`.** The registered names
   are `never` and `always`. A wrong name does not fail the build or the load - it throws while
   parsing that one recipe, which is a line in a log and a recipe that is still craftable.
@@ -1016,6 +1023,12 @@ drift and only one of them is the one a player meets.
 drill.** In Minecraft you mine ore with a pickaxe and smelt it in a furnace, so a drill is a
 convenience rather than a prerequisite - which is the whole reason the electric drill could become
 the second research instead of a starting recipe.
+
+**The tool ladder is gone but nothing else about tools is.** Four planks is a stone pickaxe, the
+wooden one has no recipe, and every pickaxe mines everything - the
+`incorrect_for_<material>_tool` tags are emptied. What is *not* touched is the `mineable/*` tags,
+so a shovel still cannot mine stone. Axes, shovels, swords and hoes keep their whole vanilla
+ladder, because nobody has asked for those and each one is a decision.
 
 **Vanilla's own progression is barely touched.** Four recipes are removed. Everything else
 Minecraft can build - redstone logic, pistons, minecart automation, brewing, the whole of it - is

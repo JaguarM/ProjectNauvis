@@ -2,6 +2,10 @@
   "_": "Pack policy: the vanilla recipes Project Nauvis takes away. tools/gen_removals.py turns this into condition-false recipe files in the nauvis pack mod. See docs/MAPPING.md.",
   "_rule": "A vanilla recipe is removed only when the pack can already do that job. `replaced_by` names the pack recipe that does it, and the build fails if that recipe is not shipped - so nothing can be taken away and left with nothing in its place. That is also why this list is short: most of Factorio is not built yet.",
   "_why": "Two kinds of entry. A *conflict* is a vanilla recipe making an item the mapping maps a Factorio item onto, so two recipes with different ingredient lists produce the same thing and one of them is wrong - non-negotiable #1. A *bypass* is vanilla doing a job Factorio has a machine for, where keeping it would make that machine pointless.",
+  "_mirrors": "Vanilla recipes a pack recipe deliberately reproduces rather than replaces - same ingredients, same count, reachable both ways. The conflict check stands down for these, because the two are not in disagreement about anything; without the entry it would demand vanilla's removal and take the 2x2 inventory route away for no reason.",
+  "mirrors": {
+    "minecraft:oak_planks": "nauvis:oak_planks makes four planks from one oak log, which is what vanilla's does. It exists so the whole opening - logs, planks, pickaxe - is in the crafting panel, not so the bench version has to go."
+  },
   "recipes": {
     "minecraft:chest": {
       "kind": "conflict",
@@ -17,6 +21,16 @@
       "kind": "bypass",
       "replaced_by": "nauvis_logistics:burner_inserter",
       "note": "The hopper is an inserter that needs no power, no facing decision and no thought, and it is the one vanilla block that makes Factorio's signature machine pointless. The burner inserter replaces it and is cheaper - one iron gear wheel and one iron plate - so what is lost is the free ride, not the ability."
+    },
+    "minecraft:stone_pickaxe": {
+      "kind": "conflict",
+      "replaced_by": "nauvis:stone_pickaxe",
+      "note": "Four planks, not three stone and two sticks. A stone pickaxe made of stone cannot be the first pickaxe, because the first pickaxe is how you get stone - and this pack needs the tool ladder to be one step rather than five."
+    },
+    "minecraft:wooden_pickaxe": {
+      "kind": "bypass",
+      "replaced_by": "nauvis:stone_pickaxe",
+      "note": "The rung the stone pickaxe now stands on. Keeping it would mean crafting a worse pickaxe to reach a better one that costs the same wood."
     },
     "minecraft:hopper_minecart": {
       "kind": "bypass",

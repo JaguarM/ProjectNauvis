@@ -98,6 +98,33 @@ Entries are one of two kinds:
 - a **bypass** - vanilla doing a job Factorio has a machine for. A judgement, and only ever a
   list.
 
+And a third thing that is not a removal at all. **`mirrors`** names vanilla recipes a pack recipe
+*reproduces* rather than replaces - same ingredients, same count, reachable both ways - and the
+conflict check stands down for those. Planks are the one: the pack makes them in the crafting
+panel at vanilla's own rate so the whole opening can be done there, and vanilla's recipe stays so
+a log still becomes planks in the 2x2 inventory grid. Listing it as a removal would take that
+away for nothing; leaving it out would fail the build, which is the check doing its job.
+
+The opening, and the tool ladder
+---------------------------------
+
+Minecraft's first five minutes are wood, planks, sticks, a wooden pickaxe, cobblestone, a stone
+pickaxe - five steps to reach the point where this pack's own progression starts. The pack makes
+it one: **four planks is a stone pickaxe**, and the wooden one is gone.
+
+It is deliberately not a stone recipe. A stone pickaxe made of stone cannot be the first pickaxe,
+because the first pickaxe is how you get stone.
+
+**And every pickaxe mines everything.** Minecraft asks two questions before a block drops - is
+this the right *kind* of tool, and is the material hard enough - and the pack empties the
+`incorrect_for_<material>_tool` tags, which is the second one. The first is untouched: a shovel
+still does not mine stone. The tool ladder goes; the idea that a tool has a job stays.
+
+Those tag files say `"replace": true`, and that is not decoration. **Tags merge by default**, so
+an empty list without it is a no-op that reports nothing anywhere -
+`nauvis:every_pickaxe_mines_everything` exists because the only other place that failure shows up
+is a player swinging at obsidian.
+
 `data/technologies.json` — the tree
 -----------------------------------
 

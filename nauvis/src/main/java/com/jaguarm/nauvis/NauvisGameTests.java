@@ -92,6 +92,7 @@ public final class NauvisGameTests {
         TEST_TYPES.register("power_reaches_a_machine", () -> PowerReachesAMachineTest.CODEC);
         TEST_TYPES.register("steam_travels_down_a_pipe", () -> SteamTravelsDownAPipeTest.CODEC);
         TEST_TYPES.register("vanilla_recipes_are_replaced", () -> VanillaRecipesAreReplacedTest.CODEC);
+        TEST_TYPES.register("every_pickaxe_mines_everything", () -> EveryPickaxeMinesEverythingTest.CODEC);
     }
 
     /** Called from the mod constructor so the test type registers with everything else. */
@@ -139,6 +140,11 @@ public final class NauvisGameTests {
         event.registerTest(
                 Identifier.fromNamespaceAndPath(Nauvis.MODID, "vanilla_recipes_are_replaced"),
                 new VanillaRecipesAreReplacedTest(
+                        new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE)));
+
+        event.registerTest(
+                Identifier.fromNamespaceAndPath(Nauvis.MODID, "every_pickaxe_mines_everything"),
+                new EveryPickaxeMinesEverythingTest(
                         new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE)));
     }
 
@@ -426,17 +432,18 @@ public final class NauvisGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            // Gone: two because the pack prices them Factorio's way instead, and two because
-            // a hopper is an inserter that costs nothing to run. See data/removals.json.
+            // Gone: some because the pack prices them differently, some because vanilla was
+            // doing a job the pack has its own answer for. See data/removals.json.
             for (String id : List.of("minecraft:chest", "minecraft:furnace",
-                    "minecraft:hopper", "minecraft:hopper_minecart")) {
+                    "minecraft:hopper", "minecraft:hopper_minecart",
+                    "minecraft:stone_pickaxe", "minecraft:wooden_pickaxe")) {
                 helper.assertFalse(hasRecipe(helper, id),
                         id + " is still craftable; the removal in the nauvis datapack did nothing");
             }
 
-            // And replaced: the pack's own recipe for each of the two it reprices.
+            // And replaced: the pack's own recipe for each thing it took away.
             for (String id : List.of("nauvis_logistics:chest", "nauvis_machines:furnace",
-                    "nauvis_logistics:burner_inserter")) {
+                    "nauvis_logistics:burner_inserter", "nauvis:stone_pickaxe")) {
                 helper.assertTrue(hasRecipe(helper, id),
                         id + " is missing, so the pack has taken something away and left nothing");
             }
@@ -444,6 +451,15 @@ public final class NauvisGameTests {
             helper.assertTrue(hasRecipe(helper, "minecraft:crafting_table"),
                     "an ordinary vanilla recipe went missing too - the datapack is removing more "
                             + "than data/removals.json names");
+
+            // Planks are the one entry that is *mirrored* rather than replaced: the pack makes
+            // them in the crafting panel at vanilla's own rate, and vanilla's recipe stays, so a
+            // log still becomes planks in the 2x2 inventory grid. Both, deliberately.
+            helper.assertTrue(hasRecipe(helper, "nauvis:oak_planks"),
+                    "the pack has no plank recipe, so the opening cannot be done in the panel");
+            helper.assertTrue(hasRecipe(helper, "minecraft:oak_planks"),
+                    "vanilla's plank recipe was removed; it is a mirror, not a replacement, and "
+                            + "without it a log in the 2x2 grid gives nothing");
 
             // The dropper is the nearest thing to a hopper that was deliberately kept: it needs a
             // clock to move anything, which is a build rather than a free ride. Asserted so that
@@ -467,6 +483,73 @@ public final class NauvisGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("vanilla recipes are replaced");
+        }
+    }
+
+    /**
+     * A pickaxe of any material mines anything a pickaxe can mine.
+     *
+     * <h2>Two gates, and only one of them is opened</h2>
+     *
+     * <p>Minecraft asks two separate questions before a block drops: is this the right <em>kind</em>
+     * of tool - {@code #minecraft:mineable/pickaxe} - and is the material hard enough, which is the
+     * {@code incorrect_for_<material>_tool} tags. The pack empties the second set and leaves the
+     * first alone, so a stone pickaxe mines obsidian and a shovel still does not mine stone. The
+     * tool ladder goes; the tool <em>types</em> stay, because those are what makes a pickaxe a
+     * pickaxe.
+     *
+     * <p><b>The way this fails is silent and specific.</b> Tags merge by default, so a datapack
+     * that added an empty list to vanilla's would change nothing at all and report nothing:
+     * {@code "replace": true} is what makes it an emptying rather than a no-op. Nothing about that
+     * shows up in a log, in datagen, or anywhere but a player swinging at obsidian - which is why
+     * it is asserted here against blocks the pack never mentions.
+     */
+    public static class EveryPickaxeMinesEverythingTest extends GameTestInstance {
+
+        public static final MapCodec<EveryPickaxeMinesEverythingTest> CODEC =
+                RecordCodecBuilder.<EveryPickaxeMinesEverythingTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(EveryPickaxeMinesEverythingTest::info))
+                                .apply(i, EveryPickaxeMinesEverythingTest::new));
+
+        public EveryPickaxeMinesEverythingTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            // The hardest things vanilla gates, against the softest pickaxe there is.
+            for (Block block : List.of(Blocks.OBSIDIAN, Blocks.ANCIENT_DEBRIS, Blocks.DIAMOND_ORE,
+                    Blocks.GOLD_ORE, Blocks.NETHERITE_BLOCK)) {
+                for (Item pickaxe : List.of(Items.WOODEN_PICKAXE, Items.STONE_PICKAXE,
+                        Items.IRON_PICKAXE, Items.DIAMOND_PICKAXE)) {
+                    helper.assertTrue(
+                            new ItemStack(pickaxe).isCorrectToolForDrops(block.defaultBlockState()),
+                            BuiltInRegistries.ITEM.getKey(pickaxe) + " cannot mine "
+                                    + BuiltInRegistries.BLOCK.getKey(block)
+                                    + " - the incorrect_for_*_tool tags are not emptied. Check that "
+                                    + "the tag files say \"replace\": true; without it they merge "
+                                    + "into vanilla's and do nothing at all.");
+                }
+            }
+
+            // The other gate is untouched, and saying so is the point: this removes a ladder, not
+            // the idea that a tool has a job.
+            helper.assertFalse(
+                    new ItemStack(Items.DIAMOND_SHOVEL).isCorrectToolForDrops(
+                            Blocks.OBSIDIAN.defaultBlockState()),
+                    "a shovel mines obsidian; the mineable/* tags were emptied too, and tool types "
+                            + "are not what this pack is taking away");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("every pickaxe mines everything");
         }
     }
 }
