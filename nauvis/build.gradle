@@ -86,6 +86,15 @@ dependencies {
     runtimeOnly "maven.modrinth:jade:${jade_version}"
 }
 
+// The pack's own settings for the mods it ships - see pack/config/README.md, which says what is
+// in there and why. Pack policy, in the pack, exactly as non-negotiable #3 asks.
+//
+// The README is excluded because `run/config` is a config directory, not a place to put prose.
+var packConfig = tasks.register('packConfig', Copy) {
+    from('pack/config') { exclude 'README.md' }
+    into 'run/config'
+}
+
 neoForge {
     version = project.neo_version
 
@@ -158,6 +167,11 @@ var generateModMetadata = tasks.register('generateModMetadata', ProcessResources
 }
 sourceSets.main.resources.srcDir generateModMetadata
 neoForge.ideSyncTask generateModMetadata
+
+// Every run starts from the pack's config rather than from whatever the last run left behind.
+tasks.matching { it.name.startsWith('run') }.configureEach {
+    dependsOn packConfig
+}
 
 publishing {
     publications {

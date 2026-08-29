@@ -40,12 +40,23 @@ also why the panel compares `builtFor` against `mode` when it renders — a data
 recipes again with a panel open, and a strip built for one grouping and labelled with another looks
 exactly like a rendering bug.
 
-**One thing was deliberately not done: the tab strip's own order.** `RecipeTabs.buildByKey` sorts
-tabs alphabetically by title, so the strip reads Intermediate products, Logistics, Production where
-Factorio reads Logistics, Production, Intermediate products, Combat. Fixing it needs somewhere for a
-*group's* order to come from, and the recipe dump has no such field — the obvious cheap answer, the
-lowest `order` in each group, is meaningless here because ours is global and alphabetical. It wants
-either a group-order field in the pack's data or Yannic saying the four names by hand.
+**The tab strip is ordered by the same field, and that is why there is only one field.** Factorio's
+strip reads Logistics, Production, Intermediate products, Combat — not alphabetically — and the
+first attempt here sorted tabs by title, which put Intermediate products first and would have been
+wrong on screen while every recipe underneath was right. The fix is not a second field for group
+order. Factorio's own `order` strings are *one* global sequence that runs group by group, so a
+group's place is simply where its first item falls; `stamp_order` numbers the dump that way — tab
+rank first, display name second — and `RecipeTabs.buildByKey` sorts each tab by its earliest
+recipe. The strip and the grid are then one ordering read at two depths and cannot disagree, and
+Facrafting still knows nothing about Factorio: the strip order lives in `GROUP_BY_CATEGORY`, whose
+*key order* is the fact being asserted.
+
+**What is still a stand-in is the order within a tab.** Factorio sorts inside a tab by subgroup and
+then by a per-item order string, and `reference/factorio/recipes.json` carries neither — so ours
+falls back to the display name, which is alphabetical and is not what Factorio does. Nobody has
+looked at whether that reads wrong yet, because the tabs are only just right. If it does, the fix
+is a dump with Factorio's item order in it, and then `stamp_order` is the only function that
+changes; nothing downstream of it knows where the number came from.
 
 **A tier is a block, not a block entity.** Reach, swing time and draw are three numbers on
 `ElectricInserterBlock`; `LongHandedInserterBlock` overrides them and a codec; one block entity
@@ -180,10 +191,12 @@ came out of exactly this**, which is the argument making itself.
 **The tab work has had a boot and nothing else has.** That boot proves the panel does not crash and
 that the widened stream codec round-trips — the log says `Sending 17 recipes` and the client
 decoded them — and it proves nothing about what the strip *looks* like, because no test and no log
-line can see a tab. **Two things want an eye on them there**: that the four tabs read as Factorio's
-four, and that the items inside one are no longer in mod order. Both are visible the moment the
-panel opens, and both are the kind of thing a person confirms in five seconds and a suite never
-does.
+line can see a tab. **Three things want an eye on them there**: that the strip reads Logistics,
+Production, Intermediate products (Combat is empty until there is a weapon), that the items inside
+one are no longer in mod order, and — the open question above — whether alphabetical *within* a tab
+reads wrong to someone who knows where Factorio puts things. All three are visible the moment the
+panel opens, and all three are the kind of thing a person confirms in five seconds and a suite
+never does.
 
 The rest of what is owed is older. The long-handed inserter added a model — a smoker-coloured cube,
 so it is the third furnace body on a belt line and wants a proper look — but no session since has

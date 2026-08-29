@@ -12,7 +12,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "logistics",
-  "order": "0170",
+  "order": "0048",
   "ingredients": [
     {
       "ingredient": "neoprogressivematerials:copper_cable",

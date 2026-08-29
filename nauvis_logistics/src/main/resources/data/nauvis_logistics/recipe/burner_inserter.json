@@ -12,7 +12,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "logistics",
-  "order": "0021",
+  "order": "0006",
   "ingredients": [
     {
       "ingredient": "neoprogressivematerials:iron_gear_wheel",

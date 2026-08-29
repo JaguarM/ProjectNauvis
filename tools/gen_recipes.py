@@ -66,6 +66,11 @@ GRID_SLOTS = 9
 #
 # Every entry in the dump carries one of these four. The 214th, `deconstruction-planner`, is
 # `category_TODO` in the dump and marked `skip` in the mapping, so it never reaches here.
+#
+# **The order of this table is Factorio's tab strip, and it is load-bearing.** Factorio's menu
+# reads Logistics, Production, Intermediate products, Combat - not alphabetically, and not in
+# the order the dump happens to list categories. It is written down here rather than in
+# Facrafting because it is a fact about Factorio, and Facrafting knows nothing about Factorio.
 GROUP_BY_CATEGORY = {
     "Logistics": "logistics",
     "Production": "production",
@@ -111,17 +116,39 @@ def load_inputs() -> tuple[dict, dict]:
         raise GenError(f"{MAPPING} is missing.")
 
     entries = json.loads(RECIPES.read_text(encoding="utf-8"))
-
-    # The dump has no sort key of its own - Factorio's real `order` strings are not in it -
-    # but its file order is alphabetical by display name, which is the signal we do have.
-    # Stamping it on here is the only place that knows where the order comes from; if a dump
-    # carrying Factorio's own order strings ever arrives, this is the line that changes.
-    for index, entry in enumerate(entries):
-        entry["order"] = str(index).zfill(ORDER_DIGITS)
+    stamp_order(entries)
 
     dump = {e["id"]: e for e in entries}
     mapping = json.loads(MAPPING.read_text(encoding="utf-8"))["items"]
     return dump, mapping
+
+
+def stamp_order(entries: list[dict]) -> None:
+    """
+    Give every entry the sort key the crafting panel lays itself out with.
+
+    One number decides two things, which is the point. Factorio's own `order` strings are a
+    single global sequence that runs group by group, so the tab strip and the grid inside a tab
+    are the same ordering read at two depths - a group's place is simply where its first item
+    falls. Ours does the same: sort every entry by its tab, then within a tab, and number the
+    result. Facrafting then needs no notion of "which tab comes first"; it sorts tabs by the
+    earliest recipe in each and gets Factorio's strip for free.
+
+    Within a tab the tiebreak is the display name, because that is genuinely all the dump has.
+    Factorio orders within a tab by subgroup and then by a per-item order string, and the dump
+    carries neither - so this half is a stand-in and is the thing a `technologies.json`-style
+    dump of item order would replace. **If such a dump arrives, this function is what changes,
+    and nothing downstream of it does.**
+    """
+    tabs = list(GROUP_BY_CATEGORY)
+    # An unknown category sorts last rather than raising here: `plan` has not yet had the
+    # chance to skip it, and `group_of` is where a category that actually reaches a recipe is
+    # refused. Today that is `deconstruction-planner`, which the mapping marks skip.
+    for index, entry in enumerate(sorted(
+            entries,
+            key=lambda e: (tabs.index(e["category"]) if e.get("category") in tabs else len(tabs),
+                           e["name"]))):
+        entry["order"] = str(index).zfill(ORDER_DIGITS)
 
 
 def resolve_item(factorio_id: str, mapping: dict) -> str:

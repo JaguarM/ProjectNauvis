@@ -12,7 +12,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "logistics",
-  "order": "0088",
+  "order": "0025",
   "ingredients": [
     {
       "ingredient": "neoprogressivematerials:electronic_circuit",

@@ -1,0 +1,10 @@
+[panel]
+	#Draw the button beside the search box that cycles how recipes are grouped
+	#into tabs - by the recipe's own group, by creative category, or by mod.
+	#
+	#Turn it off in a pack whose recipes are already grouped the way the pack
+	#wants them read: the other two groupings are then a way to make the panel
+	#look wrong, and the tab strip is the pack's own layout rather than one of
+	#three. The grouping is still chosen the same way, it simply cannot be
+	#cycled, and the search box takes the space the button leaves.
+	showGroupingButton = false
