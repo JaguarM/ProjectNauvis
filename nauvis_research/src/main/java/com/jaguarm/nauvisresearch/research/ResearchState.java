@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import java.util.Map;
+
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -43,12 +45,14 @@ public class ResearchState extends SavedData {
     private static final Codec<ResourceKey<Technology>> KEY_CODEC = ResourceKey.codec(ModTechnologies.REGISTRY);
 
     private record Snapshot(List<ResourceKey<Technology>> completed,
-            Optional<ResourceKey<Technology>> current, int units) {}
+            Optional<ResourceKey<Technology>> current, int units, Map<Identifier, Integer> made) {}
 
     private static final Codec<Snapshot> SNAPSHOT_CODEC = RecordCodecBuilder.create(i -> i.group(
             KEY_CODEC.listOf().optionalFieldOf("completed", List.of()).forGetter(Snapshot::completed),
             KEY_CODEC.optionalFieldOf("current").forGetter(Snapshot::current),
-            Codec.INT.optionalFieldOf("units", 0).forGetter(Snapshot::units))
+            Codec.INT.optionalFieldOf("units", 0).forGetter(Snapshot::units),
+            Codec.unboundedMap(Identifier.CODEC, Codec.INT).optionalFieldOf("made", Map.of())
+                    .forGetter(Snapshot::made))
             .apply(i, Snapshot::new));
 
     private static final Codec<ResearchState> CODEC = SNAPSHOT_CODEC.xmap(
@@ -57,9 +61,11 @@ public class ResearchState extends SavedData {
                 state.completed.addAll(snapshot.completed());
                 state.current = snapshot.current().orElse(null);
                 state.units = snapshot.units();
+                state.made.putAll(snapshot.made());
                 return state;
             },
-            state -> new Snapshot(List.copyOf(state.completed), Optional.ofNullable(state.current), state.units));
+            state -> new Snapshot(List.copyOf(state.completed), Optional.ofNullable(state.current),
+                    state.units, Map.copyOf(state.made)));
 
     public static final SavedDataType<ResearchState> TYPE = new SavedDataType<>(
             Identifier.fromNamespaceAndPath("nauvis_research", "research"),
@@ -71,6 +77,16 @@ public class ResearchState extends SavedData {
 
     private @Nullable ResourceKey<Technology> current;
     private int units;
+
+    /**
+     * How many of each item the world has ever made, for the technologies that finish on a
+     * trigger rather than on science.
+     *
+     * <p>Only items some technology is actually watching for are counted - see
+     * {@code ResearchTriggers} - so this map has four entries rather than one per item in the
+     * game, and stays that size for the life of a world.
+     */
+    private final Map<Identifier, Integer> made = new java.util.HashMap<>();
 
     public Set<ResourceKey<Technology>> completed() {
         return java.util.Collections.unmodifiableSet(completed);
@@ -87,6 +103,19 @@ public class ResearchState extends SavedData {
     /** Units of the current technology finished so far. Meaningless when nothing is current. */
     public int units() {
         return units;
+    }
+
+    /** How many of this item the world has made, for a trigger to compare against. */
+    public int made(Identifier item) {
+        return made.getOrDefault(item, 0);
+    }
+
+    /** @return the new total. */
+    public int recordMade(Identifier item, int count) {
+        int total = made(item) + count;
+        made.put(item, total);
+        setDirty();
+        return total;
     }
 
     /**

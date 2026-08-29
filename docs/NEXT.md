@@ -25,11 +25,11 @@ far: the chest and the furnace, because the pack now prices them Factorio's way 
 for one item means one of them is wrong; and the **hopper** and its minecart, because a hopper is
 an inserter that costs nothing to run and makes the pack's three inserters pointless.
 
-**And research now gates seven of the pack's nineteen recipes rather than two.** Both drills, all
-three inserters, the iron chest and the assembling machine are behind Automation, Electronics and
-Logistics - Factorio's own technologies, at Factorio's own costs, with the pack's early machines
-hung on them by `data/extra_unlocks.json`. A new world hand-mines, hand-crafts a lab and a boiler,
-and researches its way to automation, which is the shape of Factorio's first hour.
+**And research gates most of the pack now.** The boiler, the steam engine, the pipe, the circuits,
+the lab itself, the inserter, the poles, red science, both drills and the assembling machine are
+all behind technologies. A new world mines by hand, smelts fifty iron plates and gets a boiler;
+smelts ten copper and gets circuits, a lab and poles; builds the lab and gets red science. Only
+then does research become a thing you build for - which is the shape of Factorio's first hour.
 
 **Nobody has looked at the research screen in game, and nobody has played the first ten minutes
 with no hopper, no bench recipe for a furnace and no drill until Automation.** All three are in
@@ -116,50 +116,35 @@ own data, a `SavedData` per world, a lab that works on what the world is researc
 and a list to pick from. **The two decisions written up here last session were both right and both
 survived contact**, so this section is what changed under them rather than a re-argument.
 
-### The dump existed after all, and it was not the calculator
+### Two ways a technology is paid for, and the triggers are the interesting one
 
-Last session's blocker was "the costs come from a `technologies.json` that does not exist yet",
-with `KirkMcDonald/factorio-tools` as the lead. That lead was a dead end in the useful way: the
-tools are a **Go loader that runs the game's own Lua data stage**, so they need an installed copy
-of Factorio and produce nothing on their own. The calculator's shipped data
-(`kirkmcdonald.github.io/data/vanilla-1.1.110.json`) has items, recipes, belts, machines — and no
-technologies at all.
+**A cost** is the ordinary kind: N units, one of each science pack per unit, so many seconds a
+unit, and a lab works through it.
 
-**`wube/factorio-data` is the answer, and it is Wube's own repository**, published for mod authors,
-tagged for every version back to 0.5. `base/prototypes/technology/technology.lua` plus
-`inserter.lua` is the entire tree, in Lua table literals.
+**A trigger** has no cost at all — *craft fifty iron plates*, *craft a lab* — and finishes the
+moment that happens. Four technologies are triggered and they are the whole pre-science opening,
+which is what stops the tree being a circle: a lab is built out of circuits, and circuits are
+behind a technology, so without triggers a new world would need a lab to research the things a lab
+is made of.
 
-**Which version is not a preference, and this is the part worth remembering.** `recipes.json`
-names `science-pack-1`, `science-pack-2`, `science-pack-3`, `high-tech-science-pack`, `iron-axe`
-and `logistic-chest-active-provider` — every one renamed or removed in 0.17. It is a **0.16 dump**,
-which `MAPPING.md` already said in passing and nobody had had a reason to act on. So the tree is
-0.16.51, `VERSION` in `fetch_technologies.py` says why, and the two files move together or not at
-all. A 0.17 tree against a 0.16 recipe dump would have asked for science packs that do not exist
-and unlocked recipes under names nothing in the pack uses — and it would have *loaded*, because a
-`ResourceKey` validates nothing.
+`ResearchTriggers` is the listener, and the thing worth knowing about it is that **Factorio has one
+verb for crafting and Minecraft has four.** Iron plates are *smelted* here, so a listener that
+only heard the crafting grid would leave "craft fifty iron plates" unreachable for ever. It hears a
+bench (`ItemCraftedEvent`), a furnace (`ItemSmeltedEvent`) and Facrafting's panel — the last
+through `CraftListeners`, a hook Facrafting owns and this mod fills in, the same shape as the
+recipe lock. It deliberately does not hear picking an item up: finding fifty ingots in a village
+chest is not what the trigger is asking about.
 
-`tools/fetch_technologies.py` fetches and transcribes it. It contains a small Lua reader, and the
-thing to know about that reader is how it is built to fail: anything outside table literals raises
-rather than being skipped. It lost that bet exactly once, for
-`create_follower_upgrade(1, 1, 1, 0, ...)` — a real Lua function that builds six technologies in a
-loop — and the six are **printed by name** rather than silently missing. Reading them properly
-would mean running Lua, which is what factorio-tools is for.
+### What the generator drops, each a decision rather than an omission
 
-### Four dropped things, each a decision rather than an omission
-
-`gen_technologies.py` prints all four every time it runs, which is the point:
+`gen_technologies.py` prints all of it every time it runs, which is the point:
 
 | | |
 |---|---|
-| **18 technologies priced by a formula** | `count_formula = "2^(L-6)*1000"` — the fourteen infinite ones and the four levelled mining-productivity steps. "How many units" has no answer until a technology can have a level. **Not one of them unlocks a recipe.** |
-| **169 effects with no mechanic here** | ammo damage, gun speed, robot speed, braking force, laboratory speed. The technology is written *without* them rather than not written, so the day a mechanic lands its technologies are already there |
-| **8 recipes the pack does not model** | the oil-processing recipes, whose products `recipes.json` carries as raw inputs with no recipe of their own |
-| **4 items the mapping skips** | the steel axe and the three underground belts. `PLAN.md`'s belt note is why |
-
-The rest — all 216 — are written, **including the 128 that unlock nothing today**. That is the
-same rule as recipes and it is deliberate: a technology's cost, prerequisites and unlocks are
-identity, they go into world saves, and a technology that appeared later would move under a player
-who had already researched past it.
+| **effects with no mechanic here** | ammo damage, laboratory speed, mining speed. The technology is written *without* them rather than not written, so the day a mechanic lands its technologies are already there |
+| **technologies whose prerequisites are missing** | a dangling edge is a technology nobody can ever start, and it sits in the list looking perfectly normal. Dropped transitively and named |
+| **recipes the pack does not model** | resolved through `mapping.json`'s `unlocks` table; a name in neither table is a `GenError` rather than a silently dropped unlock |
+| **items the mapping skips** | the underground belt and the pipe to ground. `PLAN.md`'s belt note is why |
 
 ### The mismatch nobody predicted: a technology unlocks a *recipe*, not an item
 
@@ -373,8 +358,8 @@ screen. That is the intended experience and it is also exactly how a new player 
   mine, hand-craft a lab and a boiler, research Automation, and only then automate anything;
 - and watch how long that takes. The lab alone is ten circuits, ten gears and four belts by hand,
   which is Factorio's own opening and may still be too long for a Minecraft player who does not
-  know it is coming. If it is, the lever is `data/extra_unlocks.json` - moving the burner pair off
-  Automation is one line - and not the tree.
+  know it is coming. If it is, the lever is `data/technologies.json` - a trigger's count is one
+  number - and not the machinery under it.
 
 The rest of what is owed is older, and no boot has covered it. The long-handed inserter added a
 model — a smoker-coloured cube, so it is the third furnace body on a belt line and wants a proper
@@ -607,7 +592,6 @@ How to run everything
 | `python tools/gen_recipes.py --check` | the same recipe diff, on its own |
 | `python tools/gen_technologies.py --check` | the same for the technology tree. `--write` to regenerate it |
 | `python tools/gen_removals.py --check` | the vanilla recipes the pack takes away. `--write` to regenerate them |
-| `python tools/fetch_technologies.py` | writes `reference/factorio/technologies.json` from Wube's data. Run once |
 | `python tools/check_models.py` | every model, texture and blockstate reference, resolved — and footprints and belt speeds, against `data/mapping.json` |
 | `python tools/check_duplicated.py` | the copied packages, against each other. `--sync` to fix |
 | `python tools/check_gametests.py` | every gametest, for a type registered as well as an instance |
@@ -1022,10 +1006,11 @@ caveat but the point, and is the one line a player reads before turning one on.
 The lab costs ten electronic circuits, ten iron gear wheels and four transport belts; red science
 costs a copper plate and a gear; running a lab needs a boiler, a steam engine and a pole; and a
 boiler needs a stone furnace and pipes. Gate any of those and a new world can never reach its own
-first research. `data/extra_unlocks.json` names those five seeds and the generator computes the
-rest out of Factorio's recipe graph and refuses to gate anything in it - and
-`research_gates_the_early_machines` asserts the same set again at run time, because the
-generator's answer and the server's could drift and only one of them is the one a player meets.
+first research. The tree solves it the other way round: the first technologies are *triggered*, so
+a new world reaches its first unlock by smelting rather than by having a lab. The generator walks
+that graph and fails on a tree it cannot bootstrap, and `research_gates_the_early_machines`
+asserts the free set again at run time, because the generator's answer and the server's could
+drift and only one of them is the one a player meets.
 
 **Note what is *not* in that set, because an earlier version of this file got it wrong: a mining
 drill.** In Minecraft you mine ore with a pickaxe and smelt it in a furnace, so a drill is a
@@ -1053,15 +1038,15 @@ of finished keys, one optional key and an int, on a message that fires at best o
 seconds of one lab's work. It buys the property that a client is either exactly up to date or
 exactly one message behind. It would want revisiting long before it hurt.
 
-**Six technologies are missing and they are the follower-robot counts.** `technology.lua` builds
-them with a Lua function, and reading that means running Lua, which needs the game installed.
-`fetch_technologies.py` prints them by name. All six are `maximum-following-robots-count` and
-unlock nothing.
+**The tree is 25 technologies, not Factorio's whole one.** It is the early game plus the branches
+the pack can reach; everything past `automation-2` and `solar-energy` is simply not in
+`data/technologies.json` yet. Adding one is a JSON entry and the build will tell you if its
+prerequisites are missing.
 
-**Eighteen more are missing because they are priced by a formula.** The fourteen infinite
-technologies and the four levelled mining-productivity steps set `count_formula` instead of a
-count, so "how many units" has no answer until a technology can have a level. None of them unlocks
-a recipe either.
+**A technology's modifiers do nothing.** Damage bonuses, laboratory speed and mining speed are
+transcribed and then dropped, because the pack has no mechanic for any of them — the generator
+counts them by type so it is visible how much is waiting. Research speed is the one that would be
+felt first: `research-speed-1` and `-2` are researchable and change nothing.
 
 **Research cannot be un-researched in game**, and there is no command for any of it.
 `ResearchState.forget` exists and is used only by the gametests. A `/research` command is an

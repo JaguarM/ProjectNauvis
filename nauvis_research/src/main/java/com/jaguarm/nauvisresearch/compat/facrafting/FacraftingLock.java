@@ -1,9 +1,11 @@
 package com.jaguarm.nauvisresearch.compat.facrafting;
 
+import com.jaguarm.facrafting.queue.CraftListeners;
 import com.jaguarm.facrafting.recipe.RecipeLock;
 import com.jaguarm.facrafting.recipe.RecipeLocks;
 import com.jaguarm.nauvisresearch.research.ClientResearch;
 import com.jaguarm.nauvisresearch.research.Research;
+import com.jaguarm.nauvisresearch.research.ResearchTriggers;
 
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -39,6 +41,13 @@ public final class FacraftingLock implements RecipeLock {
 
     public static void install() {
         RecipeLocks.install(new FacraftingLock());
+
+        // The other half of the seam, and it points the same way: Facrafting says a craft
+        // finished, and this mod decides whether that finished a technology. A trigger reads
+        // "craft fifty iron plates", and the panel is where this pack does nearly all crafting -
+        // without this the two triggered technologies that ask for a crafted item, rather than a
+        // smelted one, could never fire.
+        CraftListeners.add(ResearchTriggers::made);
     }
 
     @Override

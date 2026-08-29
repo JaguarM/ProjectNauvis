@@ -1,0 +1,12 @@
+{
+  "name": "Steel axe",
+  "order": "0013",
+  "prerequisites": [
+    "nauvis_research:steel_processing"
+  ],
+  "trigger": {
+    "item": "neoprogressivematerials:steel_plate",
+    "count": 50
+  },
+  "unlocks": []
+}

@@ -194,6 +194,17 @@ public class ResearchScreen extends Screen {
      * as expensive rather than as impossible.
      */
     private Component cost(Technology technology) {
+        // A triggered technology has no cost to draw. What it wants is an instruction, and it is
+        // the whole of what the row has to say: there is nothing to click and no lab involved.
+        if (technology.isTriggered()) {
+            Technology.Trigger trigger = technology.trigger().orElseThrow();
+            return Component.translatable("screen.nauvis_research.research.trigger",
+                    trigger.count(),
+                    BuiltInRegistries.ITEM.getOptional(trigger.item())
+                            .map(item -> new ItemStack(item).getHoverName())
+                            .orElse(Component.literal(trigger.item().toString())))
+                    .withStyle(ChatFormatting.AQUA);
+        }
         if (!technology.isResearchable()) {
             return Component.translatable("screen.nauvis_research.research.unavailable_packs")
                     .withStyle(ChatFormatting.DARK_RED);
@@ -249,7 +260,10 @@ public class ResearchScreen extends Screen {
                 continue;
             }
             Holder.Reference<Technology> holder = rows.get(scroll + i);
-            if (showingCompleted || !holder.value().isResearchable()) {
+            // A triggered one cannot be started or stopped: it happens when the player makes the
+            // thing it is watching for. Clicking is swallowed rather than sent, so the row does
+            // not look broken.
+            if (showingCompleted || holder.value().isTriggered() || !holder.value().isResearchable()) {
                 return true;
             }
             // Clicking the current research again stops it, which is the only way to stop.

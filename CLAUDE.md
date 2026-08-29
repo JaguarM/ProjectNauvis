@@ -20,16 +20,10 @@ seconds. `data/mapping.json` says what stands in for what. `tools/gen_recipes.py
 two into recipe JSON. If you are about to type a recipe by hand, you are doing it wrong.
 
 **A research cost is the same kind of fact as an ingredient list** — units, packs, seconds,
-prerequisites — so the technology tree is generated too, from
-`reference/factorio/technologies.json` by `tools/gen_technologies.py`. That dump is Wube's own
-prototype data and `tools/fetch_technologies.py` writes it; it is pinned to factorio-data 0.16.51
-because `recipes.json` is a 0.16 dump, and the two move together or not at all.
-
-**One file deliberately disagrees with Factorio and says so**: `data/extra_unlocks.json` hangs the
-pack's early machines on Factorio's own early technologies, because the pack's nineteen recipes all
-sit inside the ~60 items Factorio leaves free at the start, so a faithful tree gates two of them.
-Only effect lists grow — no technology is invented or moved — and the generator refuses any row
-that would gate something needed to build or power the first lab.
+prerequisites — so the technology tree is generated too, from `data/technologies.json` by
+`tools/gen_technologies.py`. A technology is paid for in science, or finished by a trigger —
+*craft fifty iron plates* — and the first ones are triggered, which is what lets a new world
+research its way to a boiler and a lab before it has any science at all.
 
 Run `python tools/gen_recipes.py --check` and `python tools/gen_technologies.py --check` before
 trusting anything on disk. They diff the generated output against the committed files, and the

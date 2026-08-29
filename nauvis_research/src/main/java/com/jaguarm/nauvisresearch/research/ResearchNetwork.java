@@ -68,6 +68,7 @@ public final class ResearchNetwork {
     @SubscribeEvent
     public static void onDatapackSync(OnDatapackSyncEvent event) {
         Research.invalidate();
+        ResearchTriggers.invalidate();
         ServerPlayer player = event.getPlayer();
         if (player == null) {
             sendToAll(event.getPlayerList().getServer());

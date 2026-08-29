@@ -1,0 +1,15 @@
+{
+  "name": "Steam power",
+  "order": "0000",
+  "prerequisites": [],
+  "trigger": {
+    "item": "minecraft:iron_ingot",
+    "count": 50
+  },
+  "unlocks": [
+    "nauvis_fluids:pipe",
+    "nauvis_fluids:offshore_pump",
+    "nauvis_power:boiler",
+    "nauvis_power:steam_engine"
+  ]
+}

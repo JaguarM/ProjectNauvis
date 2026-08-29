@@ -1,15 +1,15 @@
 {
-  "name": "Logistics",
-  "order": "0017",
+  "name": "Electric mining drill",
+  "order": "0003",
   "prerequisites": [
     "nauvis_research:science_pack_1"
   ],
-  "units": 20,
-  "ticks_per_unit": 300,
+  "units": 25,
+  "ticks_per_unit": 200,
   "packs": [
     "nauvis_research:science_pack_1"
   ],
   "unlocks": [
-    "nauvis_logistics:splitter"
+    "neoprogressiveautomation:electric_drill"
   ]
 }

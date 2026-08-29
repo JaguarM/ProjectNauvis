@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -67,6 +68,11 @@ public final class Research {
         if (technology != null && !isAvailable(server, technology)) {
             return false;
         }
+        if (technology != null && technologyAt(server, technology).isTriggered()) {
+            // A lab cannot work on one of these. It finishes when somebody makes the thing it is
+            // watching for, and pointing the world's labs at it would stop them doing anything.
+            return false;
+        }
         if (state.setCurrent(technology)) {
             changed(server);
         }
@@ -121,6 +127,58 @@ public final class Research {
             announce(server, technology.value().title(finished));
         }
         return complete;
+    }
+
+    /** The technology behind a key, or null. */
+    private static Technology technologyAt(MinecraftServer server, ResourceKey<Technology> key) {
+        return ModTechnologies.registry(server.registryAccess()).get(key)
+                .map(Holder.Reference::value).orElse(null);
+    }
+
+    /**
+     * Records that somebody made something, and finishes any technology that was waiting for it.
+     *
+     * <p>Called for every craft, smelt and machine output of an item some technology watches for -
+     * see {@code ResearchTriggers}. In Factorio all of those are "crafting", and a player who has
+     * smelted fifty iron plates has plainly done what "craft fifty iron plates" is asking about.
+     */
+    public static void recordMade(ServerLevel level, Identifier item, int count) {
+        MinecraftServer server = level.getServer();
+        ResearchState state = state(server);
+        state.recordMade(item, count);
+        checkTriggers(server);
+    }
+
+    /**
+     * Completes every triggered technology whose moment has come.
+     *
+     * <p>A loop rather than one pass, because completing one can meet another's prerequisites -
+     * crafting a lab finishes the science pack technology, which is the prerequisite of several
+     * more. Bounded by the size of the tree, and it only runs when something was made.
+     */
+    static void checkTriggers(MinecraftServer server) {
+        ResearchState state = state(server);
+        boolean again = true;
+        while (again) {
+            again = false;
+            for (Holder.Reference<Technology> holder : ModTechnologies.all(server.registryAccess())) {
+                Technology technology = holder.value();
+                if (!technology.isTriggered() || state.isCompleted(holder.key())) {
+                    continue;
+                }
+                if (technology.prerequisites().stream().anyMatch(p -> !state.isCompleted(p))) {
+                    continue;
+                }
+                Technology.Trigger trigger = technology.trigger().orElseThrow();
+                if (state.made(trigger.item()) < trigger.count()) {
+                    continue;
+                }
+                state.complete(holder.key());
+                announce(server, technology.title(holder.key()));
+                again = true;
+            }
+        }
+        changed(server);
     }
 
     /** Whether this recipe may be crafted. Recipes no technology names are always craftable. */

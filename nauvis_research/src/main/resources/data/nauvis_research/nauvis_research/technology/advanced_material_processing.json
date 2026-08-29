@@ -1,8 +1,9 @@
 {
   "name": "Advanced material processing",
-  "order": "c-c-a",
+  "order": "0024",
   "prerequisites": [
-    "nauvis_research:steel_processing"
+    "nauvis_research:steel_processing",
+    "nauvis_research:science_pack_2"
   ],
   "units": 75,
   "ticks_per_unit": 600,

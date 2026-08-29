@@ -1,8 +1,9 @@
 {
   "name": "Concrete",
-  "order": "c-c-c",
+  "order": "0025",
   "prerequisites": [
-    "nauvis_research:advanced_material_processing"
+    "nauvis_research:advanced_material_processing",
+    "nauvis_research:automation_2"
   ],
   "units": 250,
   "ticks_per_unit": 600,
@@ -14,6 +15,7 @@
     "nauvis:gray_concrete",
     "nauvis:yellow_concrete",
     "nauvis:refined_concrete",
-    "nauvis:refined_hazard_concrete"
+    "nauvis:refined_hazard_concrete",
+    "neoprogressivematerials:iron_stick"
   ]
 }

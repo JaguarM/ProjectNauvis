@@ -1,7 +1,9 @@
 {
   "name": "Automation",
-  "order": "a-b-a",
-  "prerequisites": [],
+  "order": "0009",
+  "prerequisites": [
+    "nauvis_research:science_pack_1"
+  ],
   "units": 10,
   "ticks_per_unit": 200,
   "packs": [
@@ -9,8 +11,6 @@
   ],
   "unlocks": [
     "nauvis_machines:assembling_machine_1",
-    "nauvis_logistics:long_handed_inserter",
-    "nauvis_logistics:burner_inserter",
-    "neoprogressiveautomation:burner_drill"
+    "nauvis_logistics:long_handed_inserter"
   ]
 }

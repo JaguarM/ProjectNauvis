@@ -92,6 +92,7 @@ public final class NauvisResearchGameTests {
         TEST_TYPES.register("lab_ignores_the_wrong_packs", () -> LabIgnoresTheWrongPacksTest.CODEC);
         TEST_TYPES.register("the_crafting_gate_is_installed", () -> CraftingGateIsInstalledTest.CODEC);
         TEST_TYPES.register("research_gates_the_early_machines", () -> ResearchGatesTheEarlyMachinesTest.CODEC);
+        TEST_TYPES.register("a_trigger_finishes_research", () -> TriggerFinishesResearchTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -117,6 +118,7 @@ public final class NauvisResearchGameTests {
         register(event, environment, "the_crafting_gate_is_installed", CraftingGateIsInstalledTest::new, 20);
         register(event, environment, "research_gates_the_early_machines",
                 ResearchGatesTheEarlyMachinesTest::new, 20);
+        register(event, environment, "a_trigger_finishes_research", TriggerFinishesResearchTest::new, 20);
     }
 
     private interface TestFactory {
@@ -175,8 +177,31 @@ public final class NauvisResearchGameTests {
     private static void research(GameTestHelper helper, String path) {
         MinecraftServer server = helper.getLevel().getServer();
         ResearchState state = Research.state(server);
-        state.forget(ModTechnologies.key(path));
+        finish(server, state, ModTechnologies.key(path), true);
         Research.setCurrent(server, ModTechnologies.key(path));
+    }
+
+    /**
+     * Completes everything a technology needs first, so a test can point a lab at it.
+     *
+     * <p>The tree has prerequisites now - nothing early is free - so a test that just set its
+     * research would be refused by {@link Research#setCurrent} and would then fail somewhere else
+     * entirely, reporting a lab that did no work.
+     */
+    private static void finish(MinecraftServer server, ResearchState state,
+            ResourceKey<Technology> key, boolean skipSelf) {
+        Technology technology = ModTechnologies.registry(server.registryAccess()).getValue(key);
+        if (technology == null) {
+            return;
+        }
+        for (ResourceKey<Technology> prerequisite : technology.prerequisites()) {
+            finish(server, state, prerequisite, false);
+        }
+        if (skipSelf) {
+            state.forget(key);
+        } else {
+            state.complete(key);
+        }
     }
 
     private static Technology technology(GameTestHelper helper, String path) {
@@ -532,22 +557,43 @@ public final class NauvisResearchGameTests {
         @Override
         public void run(GameTestHelper helper) {
             var registry = ModTechnologies.registry(helper.getLevel().registryAccess());
-            helper.assertTrue(registry.size() > 100,
-                    "only " + registry.size() + " technologies loaded; the tree is 216 files");
+            helper.assertTrue(registry.size() >= 20,
+                    "only " + registry.size() + " technologies loaded");
 
+            // The first one, and the only kind that can start an empty world: no prerequisites,
+            // no cost, and a trigger naming something a player can make with a pickaxe.
+            Technology steam = technology(helper, "steam_power");
+            helper.assertTrue(steam != null, "no nauvis_research:steam_power in the tree");
+            helper.assertTrue(steam.isTriggered(), "steam power is not triggered");
+            helper.assertTrue(steam.prerequisites().isEmpty(),
+                    "steam power has prerequisites; nothing could ever start it");
+            helper.assertValueEqual(steam.trigger().orElseThrow().item(),
+                    Identifier.withDefaultNamespace("iron_ingot"), "what steam power watches for");
+            helper.assertValueEqual(steam.trigger().orElseThrow().count(), 50,
+                    "how many steam power watches for");
+            helper.assertTrue(steam.unlocks().contains(recipe("nauvis_power", "boiler")),
+                    "steam power does not unlock the boiler");
+
+            // And one paid for the ordinary way, which is what a lab is for.
             Technology automation = technology(helper, "automation");
             helper.assertTrue(automation != null, "no nauvis_research:automation in the tree");
+            helper.assertFalse(automation.isTriggered(), "automation is triggered; it has a cost");
             helper.assertValueEqual(automation.units(), 10, "units of automation");
             helper.assertValueEqual(automation.ticksPerUnit(), 200, "ticks a unit of automation");
             helper.assertValueEqual(automation.packs().size(), 1, "kinds of pack automation wants");
             helper.assertValueEqual(automation.packs().get(0),
                     Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "science_pack_1"),
                     "the pack automation wants");
-            helper.assertTrue(automation.prerequisites().isEmpty(),
-                    "automation has prerequisites; it is the first technology");
             helper.assertTrue(
                     automation.unlocks().contains(recipe("nauvis_machines", "assembling_machine_1")),
                     "automation does not unlock the assembling machine");
+
+            // Every technology is one or the other. Neither means it can never be finished.
+            for (Holder.Reference<Technology> holder : registry.listElements().toList()) {
+                helper.assertTrue(
+                        holder.value().isTriggered() != (holder.value().units() > 0),
+                        holder.key().identifier() + " has both a cost and a trigger, or neither");
+            }
 
             // The tree is a graph and every edge has to land somewhere. A dangling prerequisite
             // is a technology nobody can ever start, and it shows in the list looking normal.
@@ -700,11 +746,11 @@ public final class NauvisResearchGameTests {
      * Facrafting is runtimeOnly and compileOnly for this mod - see build.gradle - so this test
      * compiles and runs wherever the mod itself does.
      *
-     * <p><b>Optics rather than automation, and that is not arbitrary.</b> Research is per-world
+     * <p><b>Logistics rather than automation, and that is not arbitrary.</b> Research is per-world
      * and the world is shared with every other test in the run, so completing a technology that
      * another test has set as its current research clears that research out from under it -
      * {@code ResearchState#complete} does exactly that, and the test that broke reported a lab
-     * having done no work rather than anything about research. Optics is nobody's current
+     * having done no work rather than anything about research. Logistics is nobody's current
      * research here. See {@link #research}.
      */
     public static class CraftingGateIsInstalledTest extends GameTestInstance {
@@ -721,29 +767,29 @@ public final class NauvisResearchGameTests {
         @Override
         public void run(GameTestHelper helper) {
             MinecraftServer server = helper.getLevel().getServer();
-            ResourceKey<Technology> optics = ModTechnologies.key("optics");
-            ResourceKey<Recipe<?>> lamp = recipe("nauvis_circuits", "redstone_lamp");
+            ResourceKey<Technology> logistics = ModTechnologies.key("logistics");
+            ResourceKey<Recipe<?>> splitter = recipe("nauvis_logistics", "splitter");
             ResourceKey<Recipe<?>> belt = recipe("nauvis_logistics", "transport_belt");
 
-            Research.state(server).forget(optics);
+            Research.state(server).forget(logistics);
             Research.changedForTest(server);
 
             Player player = helper.makeMockServerPlayer(GameType.SURVIVAL);
 
             helper.assertFalse(RecipeLocks.isOpen(),
                     "no recipe lock is installed - see NauvisResearch's ModList check");
-            helper.assertFalse(RecipeLocks.isUnlocked(player, lamp),
-                    "the lamp is craftable before Optics is researched");
+            helper.assertFalse(RecipeLocks.isUnlocked(player, splitter),
+                    "the splitter is craftable before Logistics is researched");
             helper.assertTrue(RecipeLocks.isUnlocked(player, belt),
                     "a belt, which no technology unlocks, is locked");
 
-            Research.state(server).complete(optics);
+            Research.state(server).complete(logistics);
             Research.changedForTest(server);
-            helper.assertTrue(RecipeLocks.isUnlocked(player, lamp),
-                    "the lamp is still locked after researching Optics");
+            helper.assertTrue(RecipeLocks.isUnlocked(player, splitter),
+                    "the splitter is still locked after researching Logistics");
 
             // Put it back: research is per-world and this world is shared with every other test.
-            Research.state(server).forget(optics);
+            Research.state(server).forget(logistics);
             Research.changedForTest(server);
             helper.succeed();
         }
@@ -764,23 +810,15 @@ public final class NauvisResearchGameTests {
      *
      * <h2>Both halves are the point</h2>
      *
-     * <p>Factorio gates 150 of its 214 items and leaves about sixty free at the start. Every one of
-     * this pack's nineteen recipes is inside that free tier, so a perfectly faithful tree gates the
-     * assembling machine and the long-handed inserter and nothing else - which reads, correctly, as
-     * research having nothing to do with crafting. {@code data/extra_unlocks.json} hangs the pack's
-     * early machines on Factorio's own early technologies to fix that, and <b>the electric mining
-     * drill is the one that was reported</b>: craftable on a fresh world, behind Electronics now.
+ * <p><b>The electric mining drill is the one that was reported</b> - craftable on a fresh world,
+     * and it should not have been. It has a technology of its own now.
      *
-     * <p>The other half is the guard. Gating is one edit away from a world that cannot research
-     * anything, because a lab is built out of circuits, gears and belts and runs on a boiler, an
-     * engine and a pole. The generator computes that set out of Factorio's recipe graph and refuses
-     * to gate anything in it; <b>this asserts the same thing at run time</b>, against the recipes
+     * <p>The other half is the guard, and it is the half worth keeping. Gating is one edit away
+     * from a world that can never research anything: what is left free has to be enough to mine by
+     * hand, smelt, and reach the first trigger. The generator walks that graph and refuses a tree
+     * it cannot bootstrap; <b>this asserts the same thing at run time</b>, against the recipes
      * actually loaded, because the generator's answer and the server's could drift and only one of
      * them is the one a player meets.
-     *
-     * <p>Electronics rather than Automation, deliberately - research is per-world and shared with
-     * every other test in the run, and Automation is what {@code lab_researches} is working on. See
-     * {@link #research}.
      */
     public static class ResearchGatesTheEarlyMachinesTest extends GameTestInstance {
 
@@ -796,39 +834,34 @@ public final class NauvisResearchGameTests {
         @Override
         public void run(GameTestHelper helper) {
             MinecraftServer server = helper.getLevel().getServer();
-            ResourceKey<Technology> electronics = ModTechnologies.key("electronics");
+            ResourceKey<Technology> drillTech = ModTechnologies.key("electric_mining_drill");
             ResourceKey<Recipe<?>> drill = recipe("neoprogressiveautomation", "electric_drill");
 
-            Research.state(server).forget(electronics);
+            Research.state(server).forget(drillTech);
             Research.changedForTest(server);
 
             helper.assertFalse(Research.isUnlocked(server, drill),
                     "the electric drill is craftable with nothing researched");
 
-            // The soft-lock guard, asserted rather than trusted: everything a first lab is built
-            // and powered from has to be craftable before any research at all. If one of these is
-            // ever gated, a new world can never reach its own first technology - and every other
-            // test here would still pass, because they all start with a lab already placed.
-            for (String[] seed : new String[][] {
-                    {"nauvis_research", "lab"}, {"nauvis_research", "science_pack_1"},
-                    {"nauvis_power", "boiler"}, {"nauvis_power", "steam_engine"},
-                    {"nauvis_power", "small_electric_pole"}, {"nauvis_logistics", "transport_belt"},
-                    {"nauvis_fluids", "pipe"}, {"nauvis_machines", "furnace"},
-                    {"neoprogressivematerials", "iron_gear_wheel"},
-                    {"neoprogressivematerials", "copper_cable"},
-                    {"neoprogressivematerials", "electronic_circuit"}}) {
-                ResourceKey<Recipe<?>> key = recipe(seed[0], seed[1]);
-                helper.assertTrue(Research.isUnlocked(server, key),
-                        seed[0] + ":" + seed[1] + " is gated, so a new world can never build a lab "
-                                + "and can never research anything - see data/extra_unlocks.json");
+            // What a new world can still do, and it has to be enough to start: mine by hand, put
+            // ore in a furnace, and make the handful of things nothing gates. If one of these were
+            // ever gated the world could never reach its first trigger - and every other test here
+            // would still pass, because they all begin with a lab already placed.
+            for (String[] free : new String[][] {
+                    {"nauvis_logistics", "transport_belt"}, {"nauvis_logistics", "burner_inserter"},
+                    {"nauvis_logistics", "chest"}, {"nauvis_machines", "furnace"},
+                    {"neoprogressivematerials", "iron_gear_wheel"}}) {
+                helper.assertTrue(Research.isUnlocked(server, recipe(free[0], free[1])),
+                        free[0] + ":" + free[1] + " is gated, but nothing in the tree unlocks it, "
+                                + "so a new world could never craft it at all");
             }
 
-            Research.state(server).complete(electronics);
+            Research.state(server).complete(drillTech);
             Research.changedForTest(server);
             helper.assertTrue(Research.isUnlocked(server, drill),
-                    "the electric drill is still locked after researching Electronics");
+                    "the electric drill is still locked after researching it");
 
-            Research.state(server).forget(electronics);
+            Research.state(server).forget(drillTech);
             Research.changedForTest(server);
             helper.succeed();
         }
@@ -841,6 +874,82 @@ public final class NauvisResearchGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("research gates the early machines");
+        }
+    }
+
+    /**
+     * Making something finishes the technology that was waiting for it.
+     *
+     * <h2>This is what makes the opening possible at all</h2>
+     *
+     * <p>The first technologies have no cost and no science: <em>craft fifty iron plates</em> and
+     * the boiler and the steam engine are yours. Without that a new world would have to build a
+     * lab to research the things a lab is built out of, which is a circle - and the pack would be
+     * back to handing everything over at the start, which is the complaint this whole tree exists
+     * to answer.
+     *
+     * <p>It is also the one part of research that is <b>not</b> driven by a machine, so nothing
+     * else here would catch it breaking. A lab test cannot: a triggered technology never reaches
+     * a lab.
+     *
+     * <p>Steam power is used deliberately - it has no prerequisites, so this test needs no setup
+     * beyond forgetting it, and nothing else in the run sets it as current research.
+     */
+    public static class TriggerFinishesResearchTest extends GameTestInstance {
+
+        public static final MapCodec<TriggerFinishesResearchTest> CODEC =
+                RecordCodecBuilder.<TriggerFinishesResearchTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(TriggerFinishesResearchTest::info))
+                                .apply(i, TriggerFinishesResearchTest::new));
+
+        public TriggerFinishesResearchTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            MinecraftServer server = helper.getLevel().getServer();
+            ResourceKey<Technology> steam = ModTechnologies.key("steam_power");
+            ResourceKey<Recipe<?>> boiler = recipe("nauvis_power", "boiler");
+            Technology.Trigger trigger = technology(helper, "steam_power").trigger().orElseThrow();
+
+            ResearchState state = Research.state(server);
+            state.forget(steam);
+            state.recordMade(trigger.item(), -state.made(trigger.item()));
+            Research.changedForTest(server);
+
+            helper.assertFalse(Research.isUnlocked(server, boiler),
+                    "the boiler is craftable before steam power");
+
+            // One short. The count is the whole of the condition, so being able to stop one below
+            // it is what says the number is read rather than ignored.
+            Research.recordMade(helper.getLevel(), trigger.item(), trigger.count() - 1);
+            helper.assertFalse(Research.state(server).isCompleted(steam),
+                    "steam power finished one item short of its trigger");
+            helper.assertFalse(Research.isUnlocked(server, boiler),
+                    "the boiler unlocked one item short of steam power's trigger");
+
+            Research.recordMade(helper.getLevel(), trigger.item(), 1);
+            helper.assertTrue(Research.state(server).isCompleted(steam),
+                    "steam power did not finish when its trigger was met - a new world would have "
+                            + "nothing it could ever research");
+            helper.assertTrue(Research.isUnlocked(server, boiler),
+                    "the boiler is still locked after steam power finished");
+
+            // A lab cannot be pointed at one of these: it finishes by being made, not by science.
+            helper.assertFalse(Research.setCurrent(server, steam),
+                    "a triggered technology was accepted as a lab's current research");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a trigger finishes research");
         }
     }
 }

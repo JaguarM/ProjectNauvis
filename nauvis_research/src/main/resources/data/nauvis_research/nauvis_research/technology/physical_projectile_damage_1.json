@@ -1,0 +1,13 @@
+{
+  "name": "Physical projectile damage 1",
+  "order": "0006",
+  "prerequisites": [
+    "nauvis_research:military"
+  ],
+  "units": 100,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1"
+  ],
+  "unlocks": []
+}

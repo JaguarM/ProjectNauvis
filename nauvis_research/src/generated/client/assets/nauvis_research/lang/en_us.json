@@ -16,6 +16,7 @@
   "screen.nauvis_research.research.nothing_selected": "Technology - nothing being researched",
   "screen.nauvis_research.research.show_available": "< Available",
   "screen.nauvis_research.research.show_completed": "Completed >",
+  "screen.nauvis_research.research.trigger": "Craft %s x %s",
   "screen.nauvis_research.research.unavailable_packs": "Needs a science pack this pack does not have yet",
   "tab.facrafting.group.intermediate": "Intermediate products",
   "tab.facrafting.group.production": "Production"

@@ -98,68 +98,34 @@ Entries are one of two kinds:
 - a **bypass** - vanilla doing a job Factorio has a machine for. A judgement, and only ever a
   list.
 
-`data/extra_unlocks.json`, and the one guard on it
---------------------------------------------------
+`data/technologies.json` — the tree
+-----------------------------------
 
-The third data file, and the only one that deliberately disagrees with Factorio. Factorio gates
-150 of its 214 items and leaves about sixty free at the start; **every one of this pack's nineteen
-recipes is inside that free tier**, so a perfectly faithful tree gates two things and research
-reads as having nothing to do with crafting. This file hangs the pack's early machines on
-Factorio's own early technologies instead.
+Factorio's technology tree, and the second thing this pack generates rather than writes.
+`tools/gen_technologies.py` turns it plus the table above into one JSON per technology in
+`nauvis_research`.
 
-**Only the effect list grows.** No technology is invented and none is moved, so ids, costs,
-prerequisites and order are still Factorio's. Each row is *deleted* rather than rewritten the day
-the item Factorio actually gates arrives to take its place.
+A technology is paid for in one of two ways, and exactly one:
 
-**The guard is computed, not reviewed.** `seeds` names what has to stay craftable with no research
-at all - the first lab, the science it eats, and the power to run it - and
-`tools/gen_technologies.py` walks Factorio's own recipe graph from those and refuses to gate
-anything it reaches. So a row that would lock a new world out of its own first research fails the
-build rather than shipping. Six ways of getting it wrong are covered, including the transitive
-one: gating copper cable is refused because a small electric pole needs it.
+- **a cost** — N units, one of each science pack per unit, so many seconds a unit. A lab works
+  through it.
+- **a trigger** — *craft fifty iron plates*, *craft a lab* — and it finishes the moment that
+  happens, with no lab and no science at all.
 
-Note what is deliberately *not* protected: **a mining drill**. Ore and stone are hand-mined in
-Minecraft, so a drill is a convenience rather than a prerequisite, and that is the whole reason
-the electric drill can be the second research rather than a starting recipe.
+The triggers are what make the opening work. A new world mines by hand, smelts fifty iron plates
+and has a boiler; smelts ten copper and has circuits, a lab, an inserter and poles; builds the lab
+and has red science. Only then does research become a thing you build for, and the electric mining
+drill is the first thing you pay for.
 
-`data/technologies.json` — a second tree, from a different Factorio
--------------------------------------------------------------------
+**The one guard is that the tree can be bootstrapped.** A trigger whose item nothing gates is
+where a run begins, and everything else is reached from there; the generator walks that graph and
+fails on any technology nothing could ever get to. That is the difference between an awkward
+corner and a save that can never research anything.
 
-**Nothing reads this yet.** It is 27 technologies converted out of a Factorio **2.0** prototype
-file, and it is here because it answers a question the 0.16 tree answers differently: in 2.0 the
-early game *is* gated. `steam-power` gives you the boiler and the steam engine, `electronics`
-gives you circuits, the lab, the inserter and poles, and **the electric mining drill is a
-technology of its own** costing 25 red science — where 0.16 hands you all of it at the start.
-
-It is not in `reference/` because that directory is gitignored in full, and it is a curated
-selection rather than a dump. It is Wube-derived either way, the same way this file's `craft`
-times are.
-
-**Every name in it now resolves against this table.** 2.0 renamed the science packs, so
-`automation-science-pack` and `logistic-science-pack` were renamed to `science-pack-1` and
-`science-pack-2` — technology ids, prerequisites, unlock lists, cost ingredients and research
-triggers alike — which is this file's own naming policy applied to a newer source. The two
-`localised_*` fields still say `logistic-science-pack` and are meant to: those are references to
-Factorio's locale keys, not to our ids, and rewriting them would invent keys that do not exist.
-Everything else — `steel-furnace`, `solar-panel`, `medium-electric-pole`, `iron-stick`, `radar`,
-`concrete` — already mapped. `underground-belt` and `pipe-to-ground` resolve and are `skip` here,
-which the generator already reports.
-
-Two things still stand between it and being usable:
-
-- **four of the 27 have no cost at all.** 2.0 replaced the cheapest technologies with
-  `research_trigger` — *craft 50 iron plates* rather than *pay 50 science* — which is a mechanic
-  `nauvis_research` does not have. A `Technology` priced that way needs a trigger, not a unit
-  count. They are `steam-power`, `electronics`, `science-pack-1` and `steel-axe`, and they are
-  the whole of the pre-red-science opening, so the trigger mechanic is not optional if this tree
-  is adopted.
-- **one prerequisite points outside the set.** `inserter-capacity-bonus-1` needs `bulk-inserter`,
-  which is not one of the 27 — so it would be a technology nobody could ever start. Either it
-  joins the file or that row goes.
-
-Adopting it would mean deciding that the pack's tree is 2.0's while its recipes stay 0.16's,
-which is a real decision and not a merge: see the version note in
-`tools/fetch_technologies.py` for why the two dumps are pinned together today.
+Two smaller rules it enforces: a technology whose prerequisites are not in the tree is dropped
+transitively, because a dangling edge is a technology nobody can start; and an
+`unlock_recipes` name that is in neither table above is a `GenError` rather than a silently
+dropped unlock.
 
 Naming policy
 -------------
@@ -167,10 +133,11 @@ Naming policy
 Ids derive mechanically from the Factorio id, so no one has to decide them one at a time.
 Display names come from the dump's `name` field.
 
-Note the dump uses **pre-1.0 Factorio names** — `science-pack-1` rather than
-`automation-science-pack`, `logistic-chest-storage` rather than `storage-chest`. Keeping them
-costs nothing and keeps ids consistent with the spec. If modern names are wanted later, that
-is a change to display strings only, not to ids, and stays cheap forever.
+Where two Factorio releases spell the same thing differently, the recipe dump's spelling wins and
+everything else is renamed to match — `science-pack-1` rather than `automation-science-pack`,
+`logistic-chest-storage` rather than `storage-chest`. One vocabulary throughout costs nothing and
+keeps ids consistent with the spec; display strings are free to say whatever a player will be
+looking for.
 
 Stand-ins, for review
 ---------------------

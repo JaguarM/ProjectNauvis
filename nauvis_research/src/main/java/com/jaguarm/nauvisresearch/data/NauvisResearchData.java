@@ -76,8 +76,8 @@ public final class NauvisResearchData {
             add("tab.facrafting.group.production", "Production");
             addBlock(ModBlocks.LAB, "Lab");
 
-            // The id is the dump's pre-1.0 name and is permanent; the display name is Factorio's
-            // modern one, which is what a player will be looking for.
+            // The id comes from the recipe dump and is permanent; the display name is the one a
+            // player will be looking for.
             addItem(ModItems.SCIENCE_PACK_1, "Automation science pack");
 
                         // "skips research" is not a caveat, it is the point of the pack and has to be on the
@@ -105,6 +105,7 @@ public final class NauvisResearchData {
                     "Technology - nothing being researched");
             add("screen.nauvis_research.research.none", "Nothing available. Research something first.");
             add("screen.nauvis_research.research.cost", "%s x %ss - %s");
+            add("screen.nauvis_research.research.trigger", "Craft %s x %s");
             add("screen.nauvis_research.research.unavailable_packs",
                     "Needs a science pack this pack does not have yet");
             add("screen.nauvis_research.research.show_completed", "Completed >");

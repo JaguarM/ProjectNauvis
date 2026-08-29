@@ -50,39 +50,32 @@ tasks.register('checkRecipes') {
 /**
  * Non-negotiable #2 again, for the other generated half of the pack.
  *
- * The technology tree is generated from Wube's own prototype data by tools/gen_technologies.py,
- * so a research cost is as exact as an ingredient list and as impossible to type by hand. This
- * diffs every technology on disk against what the generator produces, and unlike checkRecipes it
- * also fails on a file the generator no longer produces - a stale technology would still load,
- * still show in the research list, and answer to nothing.
+ * The technology tree is generated from Factorio's own tree by tools/gen_technologies.py, so a
+ * research cost is as exact as an ingredient list and as impossible to type by hand. This diffs
+ * every technology on disk against what the generator produces, and unlike checkRecipes it also
+ * fails on a file the generator no longer produces - a stale technology would still load, still
+ * show in the research list, and answer to nothing.
  *
- * It also enforces data/extra_unlocks.json's one guard: nothing needed to build or power the first
- * lab may be gated, computed from Factorio's own recipe graph rather than reviewed. A row that
- * would lock a new world out of its own first research fails the build.
+ * It also enforces the tree's one guard: it has to be bootstrappable from an empty world. A
+ * technology nothing can ever reach fails the build rather than sitting in the research list
+ * looking perfectly normal.
  *
- * Skips itself when reference/factorio/technologies.json is absent, the same way checkRecipes
- * does. Write it with: python tools/fetch_technologies.py
+ * Both inputs are committed, so unlike checkRecipes this always runs.
  */
 tasks.register('checkTechnologies') {
     group = 'verification'
     description = "Diffs the generated technology tree against the one committed to nauvis_research."
 
-    def dump = file('reference/factorio/technologies.json')
+    def tree = file('data/technologies.json')
     def mapping = file('data/mapping.json')
-    def extras = file('data/extra_unlocks.json')
     def script = file('tools/gen_technologies.py')
 
+    inputs.file(tree).withPropertyName('tree')
     inputs.file(mapping).withPropertyName('mapping')
-    inputs.file(extras).withPropertyName('extraUnlocks')
     inputs.file(script).withPropertyName('generator')
     outputs.upToDateWhen { false }
 
     doLast {
-        if (!dump.exists()) {
-            logger.lifecycle("checkTechnologies: skipped, ${dump} is absent (it is gitignored - see reference/README.md)")
-            return
-        }
-
         def process = new ProcessBuilder('python', script.absolutePath, '--check')
                 .directory(projectDir)
                 .redirectErrorStream(true)

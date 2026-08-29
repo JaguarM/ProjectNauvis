@@ -1,7 +1,9 @@
 {
   "name": "Steel processing",
-  "order": "c-a",
-  "prerequisites": [],
+  "order": "0012",
+  "prerequisites": [
+    "nauvis_research:science_pack_1"
+  ],
   "units": 50,
   "ticks_per_unit": 100,
   "packs": [

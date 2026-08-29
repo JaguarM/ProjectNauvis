@@ -1,0 +1,15 @@
+{
+  "name": "Science pack 1",
+  "order": "0002",
+  "prerequisites": [
+    "nauvis_research:steam_power",
+    "nauvis_research:electronics"
+  ],
+  "trigger": {
+    "item": "nauvis_research:lab",
+    "count": 1
+  },
+  "unlocks": [
+    "nauvis_research:science_pack_1"
+  ]
+}

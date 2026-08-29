@@ -1,13 +1,16 @@
 {
   "name": "Automation 2",
-  "order": "a-b-b",
+  "order": "0010",
   "prerequisites": [
-    "nauvis_research:electronics"
+    "nauvis_research:automation",
+    "nauvis_research:steel_processing",
+    "nauvis_research:science_pack_2"
   ],
-  "units": 80,
-  "ticks_per_unit": 100,
+  "units": 40,
+  "ticks_per_unit": 300,
   "packs": [
-    "nauvis_research:science_pack_1"
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
   ],
   "unlocks": [
     "nauvis_machines:assembling_machine_2"

@@ -1,10 +1,9 @@
 {
   "name": "Solar energy",
-  "order": "a-h-c",
+  "order": "0018",
   "prerequisites": [
-    "nauvis_research:optics",
-    "nauvis_research:electronics",
-    "nauvis_research:steel_processing"
+    "nauvis_research:steel_processing",
+    "nauvis_research:science_pack_2"
   ],
   "units": 250,
   "ticks_per_unit": 600,
