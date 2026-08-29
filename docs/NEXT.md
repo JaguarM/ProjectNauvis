@@ -844,6 +844,28 @@ Silent failures — these compile, pass tests, and are still wrong
   never the thing they saw. **When a list reads wrong, name all four before changing one**, and
   expect to have fixed nothing visible until the last of them is right.
 
+- **`GameTestServer` force-enables every datapack, including the ones shipped switched off.**
+  Vanilla's own line is `new ArrayList<>(packRepository.getAvailableIds())` - it selects
+  everything available, so `alwaysActive = false` in `AddPackFindersEvent` means nothing there.
+  Every mod's `crafting_table` pack is therefore **on** during `runGameTestServer`, and those
+  packs ship a shapeless copy of each recipe **under the same recipe id**, so they replace it.
+  The result: of the pack's nineteen timed recipes, **sixteen are not timed recipes while the
+  tests run** - only the assembler, the steam engine and the lab survive, because they are the
+  three too big for a crafting grid to have a bench copy at all. `recipeMap().byType(FACRAFT_TYPE)`
+  returns three on the gametest server and seventeen in a real world.
+
+  Nothing fails, and every test still passes, because most tests ask about a machine rather than
+  about a recipe's type. What it costs is fidelity: a test that believes it is exercising the
+  timed-crafting path, or the research gate over it, is mostly exercising a vanilla shapeless
+  recipe. **A real world is unaffected** - the packs are off there, which the client boot
+  confirmed - so this is a hole in the suite rather than a bug in the pack.
+
+  It has been true since the first `crafting_table` pack and was found while chasing something
+  else. Fixing it means either a system property the run config sets and `ModPacks` reads, or
+  giving the bench copies recipe ids of their own - and the second changes a released mod, Neo
+  Progressive Automation, whose ids are permanent. Neither is a five-minute job, so it is written
+  down rather than done.
+
 - **NeoForge ships its own copy of 394 of Minecraft's recipes, and its resources beat yours.**
   Removing a vanilla recipe is a file at `data/minecraft/recipe/<name>.json` holding nothing but
   `neoforge:never`, and in a mod's plain resources that works for most recipes and **silently does
@@ -983,6 +1005,18 @@ copy of every recipe, off by default, so a pack author can trade the timed craft
 vanilla crafting recipe never goes near Facrafting, which is where the gate lives. There is no
 hook that would let it. So the datapacks' labels now read **"(skips research)"**, which is not a
 caveat but the point, and is the one line a player reads before turning one on.
+
+**Almost nothing the pack ships *can* be gated, and that is arithmetic rather than policy.** Of
+the nineteen timed recipes, **thirteen are the transitive ingredients of a working lab**: the lab
+costs ten electronic circuits, ten iron gear wheels and four transport belts; red science costs a
+copper plate and a gear; running a lab needs a boiler, a steam engine and a pole; and getting the
+ore needs a drill. Gate any of those and the first research becomes impossible. That leaves six,
+of which two - the assembling machine and the long-handed inserter - are already gated, and one
+more, the burner inserter, is the only way to automate anything now that hoppers are gone. **The
+real headroom is three recipes**: the chest, the iron chest and the electric inserter. Research
+will only feel like it gates the game when there are more items, and no amount of policy changes
+that. `tools/` has no script for this; it is a ten-line walk over the shipped recipes' ingredients
+and is worth rewriting when somebody asks the question again.
 
 **Vanilla's own progression is barely touched.** Four recipes are removed. Everything else
 Minecraft can build - redstone logic, pistons, minecart automation, brewing, the whole of it - is

@@ -49,6 +49,19 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * the pack on one classpath, runs every test in every one of them, and exits non-zero if any
  * failed.
  *
+ * <h2>The world these run in is not the world the pack ships</h2>
+ *
+ * <p>{@code GameTestServer} selects <b>every available datapack</b> - vanilla's own line is
+ * {@code new ArrayList<>(packRepository.getAvailableIds())} - so the {@code crafting_table} packs
+ * each mod ships <em>switched off</em> are on here. They carry a shapeless copy of every recipe
+ * under the same recipe id, so sixteen of the pack's nineteen timed recipes are ordinary crafting
+ * recipes while these tests run; only the assembler, the steam engine and the lab survive as
+ * timed ones, being the three too big for a grid to have a bench copy at all.
+ *
+ * <p>Nothing here depends on that, and a real world is unaffected. But <b>do not write a test
+ * that assumes a recipe is a {@code facrafting:facraft} one</b> without checking, and do not read
+ * a green suite as evidence that the timed-crafting path works. See {@code docs/NEXT.md}.
+ *
  * <p>The 26.2 shape is registry-driven and unlike every tutorial. See {@code docs/API-26.2.md}
  * — in particular, {@code FunctionGameTestInstance} is unavailable to mods, because the
  * registry its bodies live in is bootstrapped during {@code BuiltInRegistries} static
