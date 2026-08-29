@@ -12,6 +12,7 @@ import com.jaguarm.nauvisresearch.research.ModTechnologies;
 import com.jaguarm.nauvisresearch.research.Research;
 import com.jaguarm.nauvisresearch.research.ResearchState;
 import com.jaguarm.nauvisresearch.research.Technology;
+import com.jaguarm.nauvisresearch.research.TechnologyLayout;
 import com.jaguarm.facrafting.recipe.RecipeLocks;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -93,6 +94,7 @@ public final class NauvisResearchGameTests {
         TEST_TYPES.register("the_crafting_gate_is_installed", () -> CraftingGateIsInstalledTest.CODEC);
         TEST_TYPES.register("research_gates_the_early_machines", () -> ResearchGatesTheEarlyMachinesTest.CODEC);
         TEST_TYPES.register("a_trigger_finishes_research", () -> TriggerFinishesResearchTest.CODEC);
+        TEST_TYPES.register("technology_layout_is_sound", () -> TechnologyLayoutTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -119,6 +121,7 @@ public final class NauvisResearchGameTests {
         register(event, environment, "research_gates_the_early_machines",
                 ResearchGatesTheEarlyMachinesTest::new, 20);
         register(event, environment, "a_trigger_finishes_research", TriggerFinishesResearchTest::new, 20);
+        register(event, environment, "technology_layout_is_sound", TechnologyLayoutTest::new, 20);
     }
 
     private interface TestFactory {
@@ -958,6 +961,102 @@ public final class NauvisResearchGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a trigger finishes research");
+        }
+    }
+
+    /**
+     * The tech tree's geometry, checked without anything drawing it.
+     *
+     * <h2>This is the half of a tech tree that can be tested</h2>
+     *
+     * <p>Nothing in this repository can look at a screen, and pretending otherwise has cost this
+     * pack three bugs. So {@code TechnologyLayout} computes positions and edges as ordinary
+     * server-reachable code and the screen only paints them - which means the parts that are
+     * <em>true or false</em> rather than <em>nice or ugly</em> are asserted here, and a playtest
+     * is left to judge the things only a person can.
+     *
+     * <p>Four properties, and each one is a way the picture would be wrong rather than plain:
+     *
+     * <ul>
+     *   <li><b>every node is right of every prerequisite.</b> This is the whole claim a tech tree
+     *       makes. An edge pointing backwards is a diagram that lies about what comes first;</li>
+     *   <li><b>no two nodes share a cell</b>, or one is drawn on top of another and simply cannot
+     *       be clicked;</li>
+     *   <li><b>every technology is placed exactly once</b> - a tree that quietly omits a node is
+     *       the failure a player would never report, because they cannot miss what they cannot
+     *       see;</li>
+     *   <li><b>the same tree lays out the same way twice.</b> A layout that shuffled between
+     *       openings would be unusable however good it looked, and nothing about a single frame
+     *       would reveal it.</li>
+     * </ul>
+     */
+    public static class TechnologyLayoutTest extends GameTestInstance {
+
+        public static final MapCodec<TechnologyLayoutTest> CODEC =
+                RecordCodecBuilder.<TechnologyLayoutTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(TechnologyLayoutTest::info))
+                                .apply(i, TechnologyLayoutTest::new));
+
+        public TechnologyLayoutTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            var access = helper.getLevel().registryAccess();
+            TechnologyLayout.Layout layout = TechnologyLayout.of(access);
+            int expected = ModTechnologies.registry(access).size();
+
+            helper.assertValueEqual(layout.nodes().size(), expected,
+                    "technologies placed; a tree that omits one is a gap nobody can report");
+
+            java.util.Set<Long> cells = new java.util.HashSet<>();
+            for (TechnologyLayout.Placed placed : layout.nodes()) {
+                helper.assertTrue(cells.add((long) placed.column() << 32 | placed.row()),
+                        placed.key().identifier() + " shares a cell with something else, so one of "
+                                + "the two is drawn underneath and cannot be clicked");
+                helper.assertTrue(placed.column() >= 0 && placed.row() >= 0,
+                        placed.key().identifier() + " is placed off the grid");
+            }
+
+            // The claim the whole picture rests on.
+            for (TechnologyLayout.Edge edge : layout.edges()) {
+                TechnologyLayout.Placed from = layout.at(edge.from());
+                TechnologyLayout.Placed to = layout.at(edge.to());
+                helper.assertTrue(from != null && to != null,
+                        "an edge points at a technology that was never placed");
+                helper.assertTrue(from.column() < to.column(),
+                        edge.to().identifier() + " is not right of its prerequisite "
+                                + edge.from().identifier() + " - the arrow points backwards and "
+                                + "the diagram is lying about what comes first");
+            }
+
+            // Every prerequisite that exists is drawn. An edge silently dropped is a technology
+            // whose real cost is invisible, which is the one thing a player opens this to learn.
+            int wanted = 0;
+            for (TechnologyLayout.Placed placed : layout.nodes()) {
+                for (ResourceKey<Technology> prerequisite : placed.technology().prerequisites()) {
+                    if (layout.at(prerequisite) != null) {
+                        wanted++;
+                    }
+                }
+            }
+            helper.assertValueEqual(layout.edges().size(), wanted, "prerequisite arrows drawn");
+
+            TechnologyLayout.Layout again = TechnologyLayout.of(access);
+            helper.assertValueEqual(again.nodes(), layout.nodes(),
+                    "the layout is not deterministic - it would shuffle between openings");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("the technology layout is sound");
         }
     }
 }

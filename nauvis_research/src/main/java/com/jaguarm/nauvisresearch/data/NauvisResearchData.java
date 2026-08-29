@@ -113,6 +113,10 @@ public final class NauvisResearchData {
             add("screen.nauvis_research.research.show_available", "< Available");
 
             add("message.nauvis_research.research_complete", "Research complete: %s");
+
+            // The key, and the category it lives under in the controls screen.
+            add("key.nauvis_research.open_research", "Open technology screen");
+            add("key.categories.nauvis_research.nauvis", "Project Nauvis");
         }
     }
 

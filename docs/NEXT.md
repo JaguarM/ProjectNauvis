@@ -204,13 +204,40 @@ gives its technology teeth with no change to anything here.**
 research gates progression there is somewhere for stripped vanilla recipes to go. Separate job,
 probably a KubeJS one once KubeJS ports; see the note at the bottom.
 
-**The tree drawn as a tree.** The screen is a list on purpose — the registry, the `SavedData`, the
-hook and the four gates are the same underneath, so replacing it touches `ResearchScreen` and
-nothing else. Yannic wants the real thing eventually.
+**The tree drawn as a tree, and half of it is done.** Yannic asked for the real thing; the plan is
+four phases and the first two are in.
 
-**A key of its own.** Factorio opens the technology screen with T; here it is a button on the lab.
-One `KeyMapping` and one `ClientTickEvent`, and the default key is a decision — vanilla's T is
-chat.
+- **Done: the key.** `G` by default - Factorio uses T and Minecraft puts chat there - in its own
+  controls category, with the lab button kept because a key is what you use once you know the
+  screen exists and the button is how you find out.
+- **Done: `TechnologyLayout`.** Columns are the longest path from a root, so a technology sits
+  right of *every* prerequisite rather than its first one; rows are settled by barycentre with the
+  tree's own order as the tiebreak, so it is deterministic. Nothing is authored - there are no
+  coordinates in the data files and there must not be, because the tree is 25 technologies today
+  and Factorio's is two hundred.
+
+  **It is common code, not client code, and that is the whole point.** Nothing here can look at a
+  screen, so the half of "draw a tech tree" that is *true or false* rather than *nice or ugly* is
+  separated out and asserted by `technology_layout_is_sound`: every node right of every
+  prerequisite, no two in one cell, every technology placed exactly once, every arrow drawn, and
+  the same tree laid out the same way twice.
+
+  It currently comes out 6 columns by 11 rows - two triggered roots, red science as the single
+  gate, then a fan of eleven.
+- **Left: the canvas.** Replace the list's body with pan and zoom, edges behind nodes, a frame per
+  technology in one of four states, hover for the tooltip that already exists, click to research.
+  Roughly 400 lines, and it is where the layout stops being checkable: the grid is asserted, how
+  it *looks* is a playtest.
+- **Left: polish.** Open scrolled to the current research, highlight the path to a hovered node,
+  a search box. Centring each column vertically rather than top-aligning it is a drawing decision
+  and belongs here, not in the grid.
+
+**Why not vanilla advancements**, since they look right and were the obvious idea: an
+`Advancement` has exactly **one** parent, and eight of these 25 technologies have more than one -
+`automation_2` has three. The screen would draw a tree that silently omits a third of the edges,
+and prerequisites are the thing a player opens it to find out. Worth stealing separately: granting
+a per-player advancement when the *world* finishes a technology gives the toast and the sound for
+about thirty lines, with no display responsibility.
 
 What the vanilla-replacement datapack cost
 ------------------------------------------
@@ -343,6 +370,10 @@ watch, and the last one is the one no test can reach:
   unit finishes.** The assembling machine and the long-handed inserter should appear in it without
   the screen being closed and reopened. `RecipeLock.revision` is the mechanism and a gametest
   asserts the number moves; **whether the panel redraws is only visible to a person.**
+
+**Press G.** The technology screen has a key now, and nothing in this repo can tell whether it
+opens, whether the category reads sensibly in the controls screen, or whether `G` is a good
+default at all. It is one line in the controls menu to rebind if it is not.
 
 **And the first ten minutes have changed, which is the biggest risk in this session's work.**
 There is no hopper recipe, and the furnace and the chest can no longer be made at a bench - they

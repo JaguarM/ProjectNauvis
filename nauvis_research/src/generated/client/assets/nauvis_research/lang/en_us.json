@@ -2,6 +2,8 @@
   "block.nauvis_research.lab": "Lab",
   "item.nauvis_research.science_pack_1": "Automation science pack",
   "itemGroup.nauvis_research": "Project Nauvis: Research",
+  "key.categories.nauvis_research.nauvis": "Project Nauvis",
+  "key.nauvis_research.open_research": "Open technology screen",
   "message.nauvis_research.research_complete": "Research complete: %s",
   "pack.nauvis_research.crafting_table": "Nauvis Research: bench recipes (skips research)",
   "screen.nauvis_research.lab.idle": "Idle - give it science packs",
