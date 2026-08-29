@@ -10,6 +10,7 @@ import com.jaguarm.nauvisresearch.research.ClientResearch;
 import com.jaguarm.nauvisresearch.research.ModTechnologies;
 import com.jaguarm.nauvisresearch.research.StartResearchPayload;
 import com.jaguarm.nauvisresearch.research.Technology;
+import com.jaguarm.nauvisresearch.research.TechnologyLayout;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -23,65 +24,73 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /**
- * The technology list.
+ * The technology tree, drawn as a tree.
  *
- * <h2>A list, and not the tree - on purpose</h2>
+ * <h2>This file paints; it does not decide</h2>
  *
- * <p>Factorio draws a graph with pan, zoom and a layout, and that is worth having eventually.
- * What it is not is where to start, because none of it is the <em>model</em>: the registry, the
- * saved state, the lock hook and the four gates behind it are the same underneath whatever is
- * drawn on top. Replacing this screen with a real tree touches this file and nothing else, which
- * is the property that made drawing a list first the cheap decision rather than the lazy one.
+ * <p>Where everything goes is {@link TechnologyLayout}'s, and that split is the whole reason this
+ * was worth doing in two pieces. Nothing in this repository can look at a screen - a permanent
+ * hole rather than a gap in the suite - so the half that is <em>true or false</em> lives in common
+ * code with {@code technology_layout_is_sound} on it, and what is left here is the half that is
+ * <em>nice or ugly</em> and can only ever be judged by somebody looking.
  *
- * <p>So: rows, in Factorio's own order, with the current research and its progress on top.
- * Completed technologies are behind a toggle, because the list a player is looking at is the
- * list of what is still to do.
+ * <p>So this file has no idea what a prerequisite is. It is handed cells and arrows and turns them
+ * into pixels.
  *
- * <p><b>Everything unfinished is listed, including what cannot be started yet</b>, and that is
- * not clutter - it is the whole point. An earlier version showed only technologies whose
- * prerequisites were met, which meant a player who crafted a lab to finish Science pack 1, and
- * had not yet finished Steam power, saw <em>nothing happen and nothing explaining it</em>. A
- * row that says "Needs Steam power" is the difference between a tree and a guessing game. The
- * same reasoning puts a count on a trigger: "Craft 50 Iron Ingot, 34 done" is a job, where
- * "Craft 50 Iron Ingot" is a riddle about how many you have already made.
+ * <h2>What a node says without being clicked</h2>
  *
- * <p>Painted in the same flat colours as {@code LabScreen} and Facrafting's panel. The palette is
- * copied rather than shared for the reason {@code LabScreen} gives: a shared base could only live
- * in Facrafting, and that would make this mod require it.
+ * <p>Colour is state, and the states are the questions a player actually has: done, being
+ * researched now, startable, waiting on a craft, or not yet reachable. <b>A locked node is drawn
+ * rather than hidden</b>, dimmed and still hoverable, because a tree is mostly a thing you read
+ * ahead in - hiding what you cannot do yet turns a map into a torch beam. That was exactly the bug
+ * in the list this replaces, and it would be no better in a nicer font.
+ *
+ * <p>Pan by dragging; there is no zoom. At six columns by eleven rows the tree fits a window
+ * without one, and a zoom that scaled text and item icons is real work that buys nothing until the
+ * tree is several times this size.
  */
 public class ResearchScreen extends Screen {
 
-    private static final int WIDTH = 320;
-    private static final int ROW = 26;
-    private static final int PADDING = 6;
-    private static final int ICON = 16;
+    /** A node is vanilla's advancement frame size, because that is what the eye is trained on. */
+    private static final int NODE = 26;
+    private static final int COLUMN_STEP = 76;
+    private static final int ROW_STEP = 34;
 
-    /** How many rows fit; the rest scroll. */
-    private static final int ROWS = 9;
+    private static final int PADDING = 6;
+    private static final int MARGIN = 16;
 
     private static final int COLOR_FRAME = 0xFF000000;
     private static final int COLOR_BACKGROUND = 0xF0141414;
-    private static final int COLOR_ROW = 0xFF242424;
-    private static final int COLOR_ROW_HOVER = 0xFF3B3B3B;
-    private static final int COLOR_CURRENT = 0xFF2A3F46;
+    private static final int COLOR_CANVAS = 0xFF1A1A1A;
     private static final int COLOR_TEXT = 0xFFFFFFFF;
-    private static final int COLOR_MUTED = 0xFF909090;
-    private static final int COLOR_TRACK = 0xFF2A2A2A;
-    /** Research, the same blue the lab's own bar uses for the same thing. */
-    private static final int COLOR_PROGRESS = 0xFF6FC3DF;
-    private static final int COLOR_DONE = 0xFF6FDF8F;
+    private static final int COLOR_EDGE = 0xFF4A4A4A;
+    private static final int COLOR_EDGE_DONE = 0xFF6FDF8F;
 
-    /** Whether the list shows what is left to do or what has been done. Outlives the screen. */
-    private static boolean showingCompleted;
+    /** Node fills, one per state. These are the five answers the tree gives at a glance. */
+    private static final int COLOR_DONE = 0xFF2E5E3E;
+    private static final int COLOR_CURRENT = 0xFF2A5A6A;
+    private static final int COLOR_AVAILABLE = 0xFF4A4A4A;
+    private static final int COLOR_TRIGGER = 0xFF3E5E46;
+    private static final int COLOR_LOCKED = 0xFF262626;
+
+    private static final int COLOR_BORDER_CURRENT = 0xFF6FC3DF;
+    private static final int COLOR_BORDER_DONE = 0xFF6FDF8F;
 
     private int left;
     private int top;
-    private int scroll;
+    private int paneWidth;
+    private int paneHeight;
+    private int headerHeight;
 
-    private List<Holder.Reference<Technology>> rows = List.of();
+    private int scrollX;
+    private int scrollY;
+    private boolean dragging;
+
+    private TechnologyLayout.Layout layout = new TechnologyLayout.Layout(List.of(), List.of(), 0, 0);
 
     public ResearchScreen() {
         super(Component.translatable("screen.nauvis_research.research"));
@@ -90,60 +99,207 @@ public class ResearchScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        left = (width - WIDTH) / 2;
-        top = Math.max(PADDING, (height - listHeight()) / 2);
-        refresh();
+        headerHeight = font.lineHeight + PADDING * 2;
+        left = MARGIN;
+        top = MARGIN;
+        paneWidth = width - MARGIN * 2;
+        paneHeight = height - MARGIN * 2;
+
+        layout = TechnologyLayout.of(minecraft.level.registryAccess());
+
+        // Open looking at whatever is being researched. A tree that always opened at the origin
+        // would make the one thing you came to check something you have to go and find.
+        ResourceKey<Technology> current = ClientResearch.current();
+        TechnologyLayout.Placed focus = current == null ? null : layout.at(current);
+        if (focus != null) {
+            scrollX = nodeX(focus.column()) - (paneWidth - NODE) / 2;
+            scrollY = nodeY(focus.row()) - (viewHeight() - NODE) / 2;
+        }
+        clampScroll();
     }
 
-    private int listHeight() {
-        return PADDING * 3 + font.lineHeight + ROWS * ROW;
+    private int viewHeight() {
+        return paneHeight - headerHeight;
+    }
+
+    private int canvasWidth() {
+        return Math.max(0, (layout.columns() - 1) * COLUMN_STEP + NODE);
+    }
+
+    private int canvasHeight() {
+        return Math.max(0, (layout.rows() - 1) * ROW_STEP + NODE);
+    }
+
+    private static int nodeX(int column) {
+        return column * COLUMN_STEP;
+    }
+
+    private static int nodeY(int row) {
+        return row * ROW_STEP;
     }
 
     /**
-     * Rebuilt on every frame's worth of change rather than cached.
+     * Keeps the canvas on screen, and does nothing when it already fits.
      *
-     * <p>Two hundred technologies filtered and sorted is nothing next to drawing them, and the
-     * alternative is a cache that has to be invalidated when research completes - which happens
-     * while this screen is open, which is the case that would be got wrong.
+     * <p>The bounds are written as min/max of zero and the overflow so that a tree smaller than
+     * its pane cannot be scrolled at all - otherwise a six-column tree in a wide window would
+     * drift off the left edge and look broken.
      */
-    private void refresh() {
-        List<Holder.Reference<Technology>> found = new ArrayList<>();
-        var access = minecraft.level.registryAccess();
-        for (Holder.Reference<Technology> holder : ModTechnologies.all(access)) {
-            if (ClientResearch.isCompleted(holder.key()) == showingCompleted) {
-                found.add(holder);
-            }
-        }
-        rows = found;
-        scroll = Mth.clamp(scroll, 0, Math.max(0, rows.size() - ROWS));
+    private void clampScroll() {
+        int overflowX = canvasWidth() - paneWidth + PADDING * 2;
+        int overflowY = canvasHeight() - viewHeight() + PADDING * 2;
+        scrollX = Mth.clamp(scrollX, Math.min(0, overflowX), Math.max(0, overflowX));
+        scrollY = Mth.clamp(scrollY, Math.min(0, overflowY), Math.max(0, overflowY));
     }
+
+    // ------------------------------------------------------------------------------ rendering
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-        refresh();
 
-        int height = listHeight();
-        graphics.fill(left - 1, top - 1, left + WIDTH + 1, top + height + 1, COLOR_FRAME);
-        graphics.fill(left, top, left + WIDTH, top + height, COLOR_BACKGROUND);
-
+        graphics.fill(left - 1, top - 1, left + paneWidth + 1, top + paneHeight + 1, COLOR_FRAME);
+        graphics.fill(left, top, left + paneWidth, top + paneHeight, COLOR_BACKGROUND);
         graphics.text(font, heading(), left + PADDING, top + PADDING, COLOR_TEXT, false);
 
-        Component toggle = Component.translatable(showingCompleted
-                ? "screen.nauvis_research.research.show_available"
-                : "screen.nauvis_research.research.show_completed");
-        graphics.text(font, toggle, left + WIDTH - PADDING - font.width(toggle), top + PADDING,
-                COLOR_MUTED, false);
+        int canvasTop = top + headerHeight;
+        graphics.fill(left + 1, canvasTop, left + paneWidth - 1, top + paneHeight - 1, COLOR_CANVAS);
 
-        int y = top + PADDING * 2 + font.lineHeight;
-        for (int i = 0; i < ROWS && scroll + i < rows.size(); i++) {
-            renderRow(graphics, rows.get(scroll + i), y + i * ROW, mouseX, mouseY);
+        // Everything below is in canvas coordinates and clipped to the pane, so a node at the edge
+        // is cut off rather than drawn over the header.
+        graphics.enableScissor(left + 1, canvasTop, left + paneWidth - 1, top + paneHeight - 1);
+
+        int originX = left + PADDING - scrollX;
+        int originY = canvasTop + PADDING - scrollY;
+
+        // Edges first, so a node always sits on top of the wires rather than under them.
+        for (TechnologyLayout.Edge edge : layout.edges()) {
+            renderEdge(graphics, edge, originX, originY);
         }
 
-        if (rows.isEmpty()) {
-            Component empty = Component.translatable("screen.nauvis_research.research.none");
-            graphics.text(font, empty, left + PADDING, y + 4, COLOR_MUTED, false);
+        TechnologyLayout.Placed hovered = null;
+        for (TechnologyLayout.Placed placed : layout.nodes()) {
+            int x = originX + nodeX(placed.column());
+            int y = originY + nodeY(placed.row());
+            boolean over = mouseX >= x && mouseX < x + NODE && mouseY >= y && mouseY < y + NODE
+                    && mouseY >= canvasTop && mouseY < top + paneHeight;
+            renderNode(graphics, placed, x, y, over);
+            if (over) {
+                hovered = placed;
+            }
         }
+
+        graphics.disableScissor();
+
+        if (hovered != null) {
+            graphics.setComponentTooltipForNextFrame(font, tooltip(hovered), mouseX, mouseY);
+        }
+    }
+
+    /**
+     * One prerequisite arrow, drawn as an elbow rather than a diagonal.
+     *
+     * <p>Right out of the parent, across, then right into the child - which is how vanilla's
+     * advancement screen and Factorio's technology screen both do it, and not only for taste:
+     * several diagonals converging on one node are impossible to tell apart, where elbows share
+     * their horizontal runs and read as a bus. This tree has a node with three prerequisites and
+     * a column of eleven hanging off one parent, so it matters here.
+     */
+    private void renderEdge(GuiGraphicsExtractor graphics, TechnologyLayout.Edge edge,
+            int originX, int originY) {
+
+        TechnologyLayout.Placed from = layout.at(edge.from());
+        TechnologyLayout.Placed to = layout.at(edge.to());
+        if (from == null || to == null) {
+            return;
+        }
+
+        int colour = ClientResearch.isCompleted(edge.from()) ? COLOR_EDGE_DONE : COLOR_EDGE;
+        int x0 = originX + nodeX(from.column()) + NODE;
+        int y0 = originY + nodeY(from.row()) + NODE / 2;
+        int x1 = originX + nodeX(to.column());
+        int y1 = originY + nodeY(to.row()) + NODE / 2;
+        int mid = (x0 + x1) / 2;
+
+        graphics.fill(x0, y0, mid + 1, y0 + 1, colour);
+        graphics.fill(mid, Math.min(y0, y1), mid + 1, Math.max(y0, y1) + 1, colour);
+        graphics.fill(mid, y1, x1, y1 + 1, colour);
+    }
+
+    private void renderNode(GuiGraphicsExtractor graphics, TechnologyLayout.Placed placed,
+            int x, int y, boolean hovered) {
+
+        ResourceKey<Technology> key = placed.key();
+        Technology technology = placed.technology();
+
+        boolean done = ClientResearch.isCompleted(key);
+        boolean current = key.equals(ClientResearch.current());
+        boolean available = ClientResearch.isAvailable(minecraft.level.registryAccess(), key);
+
+        int fill = done ? COLOR_DONE
+                : current ? COLOR_CURRENT
+                : !available ? COLOR_LOCKED
+                : technology.isTriggered() ? COLOR_TRIGGER
+                : COLOR_AVAILABLE;
+
+        int border = done ? COLOR_BORDER_DONE
+                : current ? COLOR_BORDER_CURRENT
+                : hovered ? COLOR_TEXT
+                : COLOR_FRAME;
+
+        graphics.fill(x - 1, y - 1, x + NODE + 1, y + NODE + 1, border);
+        graphics.fill(x, y, x + NODE, y + NODE, fill);
+        graphics.item(new ItemStack(iconOf(technology)), x + (NODE - 16) / 2, y + (NODE - 16) / 2);
+
+        // A bar under whatever is actually moving, so progress is visible without hovering - which
+        // for the triggered technologies is the whole of the early game.
+        float progress = progressOf(key, technology);
+        if (progress > 0.0f) {
+            int filled = Math.round((NODE - 2) * Math.clamp(progress, 0.0f, 1.0f));
+            graphics.fill(x + 1, y + NODE - 3, x + NODE - 1, y + NODE - 1, COLOR_FRAME);
+            graphics.fill(x + 1, y + NODE - 3, x + 1 + filled, y + NODE - 1, COLOR_BORDER_CURRENT);
+        }
+    }
+
+    /** How far along this technology is, or 0 when it is not the one moving. */
+    private float progressOf(ResourceKey<Technology> key, Technology technology) {
+        if (ClientResearch.isCompleted(key)) {
+            return 0.0f;
+        }
+        if (key.equals(ClientResearch.current()) && technology.units() > 0) {
+            return ClientResearch.units() / (float) technology.units();
+        }
+        if (technology.isTriggered()) {
+            Technology.Trigger trigger = technology.trigger().orElseThrow();
+            return Math.min(ClientResearch.made(trigger.item()), trigger.count())
+                    / (float) trigger.count();
+        }
+        return 0.0f;
+    }
+
+    /**
+     * What to draw in the frame.
+     *
+     * <p>The first thing the technology unlocks that this game actually has, because that is how a
+     * player looks for one - "the node that gives me the drill". Falls back to a science pack and
+     * then to the lab. Unlike the advancement icons this is only ever drawn and never validated
+     * while a file loads, so it can try the real item first and quietly move on.
+     */
+    private Item iconOf(Technology technology) {
+        for (ResourceKey<Recipe<?>> recipe : technology.unlocks()) {
+            Item item = BuiltInRegistries.ITEM.getOptional(recipe.identifier()).orElse(null);
+            if (item != null) {
+                return item;
+            }
+        }
+        for (Identifier pack : technology.packs()) {
+            Item item = BuiltInRegistries.ITEM.getOptional(pack).orElse(null);
+            if (item != null) {
+                return item;
+            }
+        }
+        return BuiltInRegistries.ITEM.getValue(
+                Identifier.fromNamespaceAndPath("nauvis_research", "lab"));
     }
 
     private Component heading() {
@@ -159,59 +315,45 @@ public class ResearchScreen extends Screen {
                 technology.title(current), ClientResearch.units(), technology.units());
     }
 
-    private void renderRow(GuiGraphicsExtractor graphics, Holder.Reference<Technology> holder, int y,
-            int mouseX, int mouseY) {
+    // ------------------------------------------------------------------------------- tooltip
 
-        Technology technology = holder.value();
-        boolean current = holder.key().equals(ClientResearch.current());
-        boolean available = showingCompleted
-                || ClientResearch.isAvailable(minecraft.level.registryAccess(), holder.key());
-        boolean hovered = available
-                && within(mouseX, mouseY, left + PADDING, y, WIDTH - PADDING * 2, ROW - 2);
+    private List<Component> tooltip(TechnologyLayout.Placed placed) {
+        Technology technology = placed.technology();
+        List<Component> lines = new ArrayList<>();
+        lines.add(technology.title(placed.key()));
 
-        graphics.fill(left + PADDING, y, left + WIDTH - PADDING, y + ROW - 2,
-                current ? COLOR_CURRENT : hovered ? COLOR_ROW_HOVER : COLOR_ROW);
-
-        graphics.text(font, technology.title(holder.key()), left + PADDING + 4, y + 3,
-                available ? COLOR_TEXT : COLOR_MUTED, false);
-        graphics.text(font, available ? cost(technology) : waitingFor(holder),
-                left + PADDING + 4, y + 3 + font.lineHeight + 1, COLOR_MUTED, false);
-
-        // The packs, then what it hands over, right-aligned so the two columns line up down the
-        // list even though each row holds a different number of each.
-        int x = left + WIDTH - PADDING - 4 - ICON;
-        for (Item item : unlockIcons(technology)) {
-            graphics.item(new ItemStack(item), x, y + (ROW - 2 - ICON) / 2);
-            x -= ICON;
+        if (ClientResearch.isCompleted(placed.key())) {
+            lines.add(Component.translatable("screen.nauvis_research.research.done")
+                    .withStyle(ChatFormatting.GREEN));
+        } else if (ClientResearch.isAvailable(minecraft.level.registryAccess(), placed.key())) {
+            lines.add(cost(technology));
+        } else {
+            lines.add(waitingFor(placed));
         }
 
-        if (current) {
-            int width = WIDTH - PADDING * 2;
-            int filled = technology.units() <= 0 ? 0
-                    : Math.round(width * Mth.clamp(ClientResearch.units() / (float) technology.units(), 0f, 1f));
-            graphics.fill(left + PADDING, y + ROW - 4, left + WIDTH - PADDING, y + ROW - 2, COLOR_TRACK);
-            graphics.fill(left + PADDING, y + ROW - 4, left + PADDING + filled, y + ROW - 2,
-                    showingCompleted ? COLOR_DONE : COLOR_PROGRESS);
+        // What it hands over. This is the reason to research it, and the one thing a graph of
+        // names cannot tell you.
+        List<Component> unlocks = new ArrayList<>();
+        for (ResourceKey<Recipe<?>> recipe : technology.unlocks()) {
+            BuiltInRegistries.ITEM.getOptional(recipe.identifier())
+                    .ifPresent(item -> unlocks.add(new ItemStack(item).getHoverName()));
         }
+        if (!unlocks.isEmpty()) {
+            lines.add(Component.empty());
+            lines.add(Component.translatable("screen.nauvis_research.research.unlocks")
+                    .withStyle(ChatFormatting.GRAY));
+            for (Component unlock : unlocks) {
+                lines.add(Component.literal("  ").append(unlock).withStyle(ChatFormatting.GRAY));
+            }
+        }
+        return lines;
     }
 
-    /**
-     * "10 x 10s" plus the packs, which is the whole of what a technology costs.
-     *
-     * <p>A technology asking for a pack no mod registers yet says so instead of pricing itself,
-     * because most of the tree is in that state and "1000 x 60s" with an unobtainable pack reads
-     * as expensive rather than as impossible.
-     */
-    /**
-     * What a technology that cannot be started yet is waiting for.
-     *
-     * <p>Names the prerequisites rather than saying "locked", because "locked" is what the player
-     * can already see. Naming them turns the list into the tree it is drawn from.
-     */
-    private Component waitingFor(Holder.Reference<Technology> holder) {
+    /** What a technology that cannot be started yet is waiting for - its unmet prerequisites. */
+    private Component waitingFor(TechnologyLayout.Placed placed) {
         Component needs = Component.empty();
         boolean first = true;
-        for (ResourceKey<Technology> prerequisite : holder.value().prerequisites()) {
+        for (ResourceKey<Technology> prerequisite : placed.technology().prerequisites()) {
             if (ClientResearch.isCompleted(prerequisite)) {
                 continue;
             }
@@ -222,16 +364,13 @@ public class ResearchScreen extends Screen {
             needs = first ? name.copy() : needs.copy().append(", ").append(name);
             first = false;
         }
-        return Component.translatable("screen.nauvis_research.research.needs", needs);
+        return Component.translatable("screen.nauvis_research.research.needs", needs)
+                .withStyle(ChatFormatting.DARK_GRAY);
     }
 
     private Component cost(Technology technology) {
-        // A triggered technology has no cost to draw. What it wants is an instruction, and it is
-        // the whole of what the row has to say: there is nothing to click and no lab involved.
         if (technology.isTriggered()) {
             Technology.Trigger trigger = technology.trigger().orElseThrow();
-            // With the tally, because "craft fifty iron plates" with no idea how many you have
-            // already made is the thing that made a finished lab look like it did nothing.
             return Component.translatable("screen.nauvis_research.research.trigger",
                     trigger.count(),
                     BuiltInRegistries.ITEM.getOptional(trigger.item())
@@ -254,78 +393,91 @@ public class ResearchScreen extends Screen {
                 technology.units(), technology.ticksPerUnit() / 20.0f, packs);
     }
 
-    /** At most four, so a technology unlocking eight recipes does not run into its own name. */
-    private List<Item> unlockIcons(Technology technology) {
-        List<Item> items = new ArrayList<>(4);
-        for (ResourceKey<?> recipe : technology.unlocks()) {
-            // A recipe is named after the item it makes - see tools/gen_technologies.py - so the
-            // recipe's own path is the item's. An unlock for an item no mod registers yet draws
-            // nothing, which is most of the tree today and is honest.
-            BuiltInRegistries.ITEM.getOptional(recipe.identifier()).ifPresent(items::add);
-            if (items.size() == 4) {
-                break;
-            }
-        }
-        return items;
-    }
-
     private @Nullable Technology technologyOf(ResourceKey<Technology> key) {
         return ModTechnologies.registry(minecraft.level.registryAccess()).get(key)
                 .map(Holder.Reference::value).orElse(null);
     }
 
+    // --------------------------------------------------------------------------- interaction
+
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        double mouseX = event.x();
-        double mouseY = event.y();
-
-        Component toggle = Component.translatable(showingCompleted
-                ? "screen.nauvis_research.research.show_available"
-                : "screen.nauvis_research.research.show_completed");
-        if (within(mouseX, mouseY, left + WIDTH - PADDING - font.width(toggle), top + PADDING,
-                font.width(toggle), font.lineHeight)) {
-            showingCompleted = !showingCompleted;
-            scroll = 0;
+        TechnologyLayout.Placed hit = nodeAt(event.x(), event.y());
+        if (hit == null) {
+            // Empty canvas: this press begins a pan. Swallowed either way, so a stray click on the
+            // background never falls through to whatever is behind the screen.
+            dragging = true;
             return true;
         }
 
-        int y = top + PADDING * 2 + font.lineHeight;
-        for (int i = 0; i < ROWS && scroll + i < rows.size(); i++) {
-            if (!within(mouseX, mouseY, left + PADDING, y + i * ROW, WIDTH - PADDING * 2, ROW - 2)) {
-                continue;
-            }
-            Holder.Reference<Technology> holder = rows.get(scroll + i);
-            // A triggered one cannot be started or stopped: it happens when the player makes the
-            // thing it is watching for. Nor can one whose prerequisites are outstanding. Both are
-            // drawn, both are unclickable, and the row says which it is.
-            if (showingCompleted || holder.value().isTriggered()
-                    || !holder.value().isResearchable()
-                    || !ClientResearch.isAvailable(minecraft.level.registryAccess(), holder.key())) {
-                return true;
-            }
-            // Clicking the current research again stops it, which is the only way to stop.
-            Optional<ResourceKey<Technology>> pick = holder.key().equals(ClientResearch.current())
-                    ? Optional.empty()
-                    : Optional.of(holder.key());
-            ClientPacketDistributor.sendToServer(new StartResearchPayload(pick));
+        // A triggered technology is not something you start, and neither is one whose
+        // prerequisites are outstanding. Both are drawn and both are hoverable; neither answers a
+        // click, which is why the tooltip has to say which it is.
+        if (hit.technology().isTriggered()
+                || ClientResearch.isCompleted(hit.key())
+                || !hit.technology().isResearchable()
+                || !ClientResearch.isAvailable(minecraft.level.registryAccess(), hit.key())) {
             return true;
         }
-        return super.mouseClicked(event, doubleClick);
-    }
 
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        scroll = Mth.clamp(scroll - (int) Math.signum(scrollY), 0, Math.max(0, rows.size() - ROWS));
+        // Clicking the current research again stops it, which is the only way to stop.
+        Optional<ResourceKey<Technology>> pick = hit.key().equals(ClientResearch.current())
+                ? Optional.empty()
+                : Optional.of(hit.key());
+        ClientPacketDistributor.sendToServer(new StartResearchPayload(pick));
         return true;
     }
 
-    /** The research screen pauses nothing: a lab keeps working while it is open. */
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        dragging = false;
+        return super.mouseReleased(event);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        if (dragging) {
+            scrollX -= (int) dx;
+            scrollY -= (int) dy;
+            clampScroll();
+            return true;
+        }
+        return super.mouseDragged(event, dx, dy);
+    }
+
+    /** Vertical by default, horizontal with shift - the same reflex as any other list. */
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
+        if (minecraft.hasShiftDown()) {
+            scrollX -= (int) (scrollDeltaY * ROW_STEP);
+        } else {
+            scrollY -= (int) (scrollDeltaY * ROW_STEP);
+        }
+        scrollX -= (int) (scrollDeltaX * COLUMN_STEP);
+        clampScroll();
+        return true;
+    }
+
+    private @Nullable TechnologyLayout.Placed nodeAt(double mouseX, double mouseY) {
+        int canvasTop = top + headerHeight;
+        if (mouseY < canvasTop || mouseY >= top + paneHeight) {
+            return null;
+        }
+        int originX = left + PADDING - scrollX;
+        int originY = canvasTop + PADDING - scrollY;
+        for (TechnologyLayout.Placed placed : layout.nodes()) {
+            int x = originX + nodeX(placed.column());
+            int y = originY + nodeY(placed.row());
+            if (mouseX >= x && mouseX < x + NODE && mouseY >= y && mouseY < y + NODE) {
+                return placed;
+            }
+        }
+        return null;
+    }
+
+    /** The tree keeps working while it is open, which is half the reason to look at it. */
     @Override
     public boolean isPauseScreen() {
         return false;
-    }
-
-    private static boolean within(double mouseX, double mouseY, int x, int y, int width, int height) {
-        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
     }
 }

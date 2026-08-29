@@ -109,8 +109,8 @@ public final class NauvisResearchData {
             add("screen.nauvis_research.research.needs", "Needs %s");
             add("screen.nauvis_research.research.unavailable_packs",
                     "Needs a science pack this pack does not have yet");
-            add("screen.nauvis_research.research.show_completed", "Completed >");
-            add("screen.nauvis_research.research.show_available", "< Available");
+            add("screen.nauvis_research.research.done", "Researched");
+            add("screen.nauvis_research.research.unlocks", "Unlocks:");
 
             add("message.nauvis_research.research_complete", "Research complete: %s");
 

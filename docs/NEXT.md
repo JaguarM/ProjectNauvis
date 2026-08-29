@@ -235,13 +235,25 @@ four phases and the first two are in.
   **The middle state is the one that earns its keep.** A new world spends its whole opening on
   triggered technologies, so without it the corner would show the prompt for half an hour while
   research was in fact advancing every time a plate came out of a furnace.
-- **Left: the canvas.** Replace the list's body with pan and zoom, edges behind nodes, a frame per
-  technology in one of four states, hover for the tooltip that already exists, click to research.
-  Roughly 400 lines, and it is where the layout stops being checkable: the grid is asserted, how
-  it *looks* is a playtest.
-- **Left: polish.** Open scrolled to the current research, highlight the path to a hovered node,
-  a search box. Centring each column vertically rather than top-aligning it is a drawing decision
-  and belongs here, not in the grid.
+- **Done: the canvas.** `ResearchScreen` is the tree now. Edges are drawn first as elbows - out,
+  across, in - the way vanilla's advancement screen and Factorio's both do it, and not only for
+  taste: this tree has a node with three prerequisites and a column of eleven hanging off one
+  parent, and several diagonals converging on a node are impossible to tell apart where elbows
+  share their runs and read as a bus. Nodes are vanilla's 26-pixel frame, filled by state, with
+  the first item they unlock in the middle and a progress bar under whatever is moving. Drag to
+  pan; it opens looking at the current research.
+
+  **A locked node is drawn, dimmed, and still hoverable.** That is the one decision in the file
+  worth defending: a tree is mostly a thing you read *ahead* in, and hiding what you cannot do yet
+  turns a map into a torch beam. It was the bug in the list this replaces and it would be no
+  better in a nicer font.
+
+  **The file paints and does not decide.** It has no idea what a prerequisite is - it is handed
+  cells and arrows. Everything checkable is still in `TechnologyLayout`.
+- **Left: polish, and it is all optional.** No zoom - at six by eleven the tree fits a window and
+  scaling text and item icons buys nothing until it is several times this size. No search. No
+  highlight of the path to a hovered node. Centring each column vertically rather than
+  top-aligning it is a drawing decision and belongs here, not in the grid.
 
 **Why not vanilla advancements**, since they look right and were the obvious idea: an
 `Advancement` has exactly **one** parent, and eight of these 25 technologies have more than one -
@@ -382,8 +394,13 @@ watch, and the last one is the one no test can reach:
   the screen being closed and reopened. `RecipeLock.revision` is the mechanism and a gametest
   asserts the number moves; **whether the panel redraws is only visible to a person.**
 
-**The corner, and the toast.** Both are new and both are pure presentation, which is to say
-neither is testable here. Worth watching: whether the readout sits somewhere sensible against the
+**The tree.** Press G. Everything about how it *looks* is unasserted and unassertable: whether
+eleven nodes in a column read as a fan or as a wall, whether the elbows are followable where three
+converge on `automation_2`, whether the state colours are distinguishable, and whether dragging to
+pan is discoverable without being told. The grid underneath is proven; none of that is.
+
+**The corner, and the toast.** Both are pure presentation too, which is to say neither is testable
+here. Worth watching: whether the readout sits somewhere sensible against the
 rest of the interface, whether it grows the way it should for a long technology name, and whether
 the flask reads as research rather than as an item you are holding. The toast should fire once
 per technology and never on relog - if it fires on every login, the advancement is being awarded
