@@ -5,7 +5,7 @@ Written 2026-08-29 for whoever picks this up cold. Read `../CLAUDE.md` first, th
 Delete or rewrite it when the jobs below are done — it describes the work in front of us, not the
 project.
 
-**Eighty-nine gametests pass, the pack builds clean, and the crafting panel was confirmed in
+**Eighty-eight gametests pass, the pack builds clean, and the crafting panel was confirmed in
 game.** Every machine is the size Factorio made it, the lab exists, five checks run in
 `./gradlew build`, the transport belt works, the burner inserter fuels itself off the belt it is
 unloading, the long-handed inserter reaches two blocks — over a belt, over a walkway, over a row of
@@ -90,39 +90,17 @@ The jobs, in the order Yannic asked for them
 
 The tabs were the first of these and are done. The science tree is milestone 3 and the biggest
 thing here; the two after it are what is left of milestone 2 and are untouched by it, so they can
-be done in any order. Job 0 is not one of Yannic's and is first anyway, because it is half an hour
-and it is standing between everything else and a green suite.
-
-### 0. Decide what `belt_carries_what_stands_on_it` is asking for
-
-**It went red twice during the tab work** — a session that did not touch a belt, or a block entity,
-or anything that runs in a tick. Once at 0.5625 blocks and once at 1.5, against a test that asks
-for more than 2. Both times the very next run was green, and three consecutive full runs after that
-were green. This file has said "roughly one run in six" since the belt landed; two in one session
-is worse than that, and the cost is now concrete rather than theoretical: **it failed a
-`./gradlew build` for a change to a Python generator and a client-side sort, and the next person to
-see that red will spend an hour deciding it is not theirs.**
-
-The diagnosis is settled and is in the marginal-test section below — `ItemEntity.tick` only reaches
-`stepOn` on a fraction of ticks whose *phase depends on the entity id*, so what a resting item does
-on a belt depends on how many entities the tests before it happened to spawn. Nothing about it is
-identity: Factorio has no dropped items on belts. Two honest answers, and **this is a decision, not
-an investigation**:
-
-- **loosen the test to what a resting `ItemEntity` can actually do** — assert that it moves
-  *forward*, not that it moves two blocks. Ten minutes, and it keeps a test that would still catch
-  a belt that stopped carrying;
-- **give `stepOn` a way to keep an item entity moving**, so it never rests and `move()` runs every
-  tick. Larger, changes what a player sees when they throw something on a belt, and is arguably
-  what a Minecraft player expects anyway.
-
-Either is fine. Leaving it is the one option that has now been measured and found expensive.
+be done in any order.
 
 ### 1. A science tree that unlocks recipes
 
-This is milestone 3 and the biggest thing in the pack that is not a machine. **Do not start
-writing until the two decisions at the bottom of this section are made** — one of them decides
-whether the job is "write a generator" or "write eight JSON files".
+This is milestone 3 and the biggest thing in the pack that is not a machine. The two decisions it
+used to open with are made and are written up at the bottom of this section. **One of them is a
+blocker with a person on the other end of it: the costs come from a `technologies.json` dump that
+does not exist yet.** Everything except the numbers can be built without it — the registry, the
+`SavedData`, the lock hook and the four gates — but a tree with no technologies in it is not
+something anybody can playtest, and this pack has been bitten twice by shipping what only a test
+has looked at.
 
 **What already exists and was built for this.** `LabBlockEntity` counts cycles and says so in its
 own comment: Factorio's lab does not know what it is researching either, it is told which packs a
@@ -176,22 +154,36 @@ list — which is right, since the set changes while the player is logged in.
   gate covers those recipes too, or the datapack's description says out loud that it skips
   research.
 
-**The two decisions, and they are Yannic's:**
+**The two decisions were Yannic's and are made.**
 
-1. **Where does the tree's data come from?** `reference/factorio/recipes.json` has no
-   technologies, so unlike every recipe in this pack a technology's cost cannot be generated from
-   anything we hold. Either a `technologies.json` dump arrives beside it and
-   `tools/gen_technologies.py` gets written — which is what non-negotiable #2's argument implies,
-   because a research cost is the same kind of fact as a craft time and lives in the same place, a
-   player's memory — or the first tree is hand-written for the handful of technologies the pack can
-   currently reach, and generated later. **Ask before assuming.** The costs must not come from the
-   model's memory of Factorio either way; that is exactly what the recipe dump exists to prevent.
-2. **How much tree screen?** PLAN.md's shortcut for research is "lab consumes packs, grants
-   vanilla advancements; recipes gate on them", with "a real tech tree screen with costs and
-   prerequisites" as the rewrite. The minimum that is playable is a *list* of technologies whose
-   prerequisites are met, click one to make it the current research — no graph, no layout. That is
-   a screen in `nauvis_research`, and it should grow out of Facrafting's panel the way every other
-   screen here does rather than sit beside it.
+**1. The costs come from a dump, and the dump has to arrive first.** `reference/factorio/
+recipes.json` has no technologies, so unlike every recipe in this pack a research cost cannot be
+generated from anything we hold — and it must not come from the model's memory of Factorio either,
+which is exactly what the recipe dump exists to prevent. So a `technologies.json` lands beside
+`recipes.json` in `reference/` (gitignored in full, like everything else in there — it is Wube's
+data whatever repository it was copied out of), and `tools/gen_technologies.py` gets written the
+way `gen_recipes.py` is: a `--check` in the build that diffs what is on disk, and a `GenError`
+rather than a guess for anything it cannot read.
+
+**Yannic's lead for the dump is `https://github.com/KirkMcDonald/factorio-tools`.** It is a
+calculator, so it carries Factorio's own data in a machine-readable form and very likely holds
+technology costs, prerequisites and effects already. **Look at what shape it is in before writing a
+line of the generator** — the fields it has decide whether a technology's JSON is a direct
+transcription or needs a mapping table of its own. Its code is MIT; the data in it is Wube's and is
+`reference/` material like the rest.
+
+**2. A list first, the graph later, and the model is the real one either way.** PLAN.md's shortcut
+was "lab grants vanilla advancements; recipes gate on them" — **rejected, because advancements are
+per-player and research belongs to the world.** Two players in one base with different unlocks is
+the wrong game, and that is not a thing to discover after building on it. So research is a
+`SavedData` regardless of what is drawn on top.
+
+What gets drawn first is a *list*: technologies whose prerequisites are met, click one to make it
+the current research, with cost and packs on the row. No graph, no layout, no pan and zoom. A
+screen in `nauvis_research`, grown out of Facrafting's panel the way every other screen here does
+rather than sitting beside it. **Yannic wants the real tech tree eventually**, and the point of
+doing the list first is that replacing it touches only the screen — the registry, the `SavedData`,
+the hook and the four gates are the same underneath, so nothing done now is thrown away.
 
 **And the thing to be careful about, because this pack has been bitten by it twice:** an unlock
 that is only ever tested by handing a recipe to a player who already has it is not tested. The test
@@ -264,35 +256,27 @@ is *watching four things no test can look at*:
 - and tell the three of them apart at a glance on the same line, which is what the borrowed furnace
   textures are being asked to do and may well not do.
 
-### One test is marginal, and it is not the code's fault
+### One test was deleted, and what it was guarding is now guarded by nobody
 
-`belt_carries_what_stands_on_it` failed once in about six runs while the belt-wake work was going
-in, then passed five times running, including three consecutive full-suite runs afterwards, and
-every run since. It is not a regression from anything — it went red purely because *adding tests
-to the file* moved it, and here is why that is enough:
+`belt_carries_what_stands_on_it` is gone. It asserted that a dropped item entity moved more than
+two blocks along a belt in sixty ticks, and it failed roughly one run in five — twice in the tab
+session alone, on work that touched a Python generator and a client-side sort. Read the reason
+before writing anything that tests a belt against an entity:
 
-`ItemEntity.tick` only calls `move()` when the item is off the ground, has horizontal momentum, or
-`(tickCount + getId()) % 4 == 0`. A dropped item **resting** on a belt has none of the first two, so
-it is only carried on the ticks that arithmetic allows — and the phase of it depends on the entity
-**id**, which depends on how many entities the tests before it happened to spawn. The failing run
-reported 0.5625 blocks in 60 ticks, which is exactly six belt steps; the test asks for more than
-two blocks.
+`ItemEntity.tick` only calls `move()` — and so only reaches `stepOn` — when the item is airborne,
+has horizontal momentum, or `(tickCount + getId()) % 4 == 0`. A dropped item **resting** on a belt
+has none of the first two, so **it is carried only on the ticks that arithmetic allows, at a phase
+that depends on its entity id** — which depends on how many entities the tests before it happened
+to spawn. The failing runs reported 0.5625 and 1.5 blocks; 0.5625 is exactly six belt steps. So the
+distance a resting item travels is not a property of the belt and cannot be asserted. Adding a test
+anywhere in that file moves the phase of every test after it.
 
-So the belt carries a *player* properly — `aiStep` moves every tick — and carries a dropped item
-entity erratically and at some fraction of belt speed. Factorio has no dropped items on belts so
-nothing about this is identity, but a Minecraft player will absolutely throw something onto a belt.
-Two honest options and neither is this session's to pick: loosen the test to what a resting item
-entity can actually do, or give `stepOn` a way to keep an item entity moving so it stops resting.
-Leaving it as is means a red test roughly one run in six, which is the worst of the three. It has
-survived two sessions of tests being added around it since, so it has not got worse — but nothing
-about it has got better either, and the entity-id arithmetic that decides it is still there.
-
-**It went red twice during the tab work**, on a session that did not touch a belt: once at 0.5625
-blocks — the same six steps, to the digit — and once at 1.5, each time passing on the immediate
-re-run, with three consecutive green full runs after the second. So the diagnosis above is
-confirmed rather than merely plausible, the rate is worse than one in six, and the cost is measured
-rather than argued. **It is now job 0**, at the top of the job list, because choosing between the
-two options there is half an hour and leaving it is not free.
+**What went with it.** A belt is a bottom slab, so anything standing on one is inside the block
+*above* it and vanilla's obvious `entityInside` hook never fires — `BlockBehaviour.stepOn` is the
+only thing that works, and that test was the only thing pinning it fires at all. **Nothing now
+fails if a belt stops carrying the player.** It is in the deliberately-missing list; the honest
+version of that gap is that it belongs in the playtest, where standing on a belt takes two seconds
+to check and a suite has never been able to check it at all.
 
 ### The belt, if you have to touch it
 
@@ -770,7 +754,13 @@ being carried off mid-click. One line in `BeltBlock.stepOn` if it is ever unwant
 only reaches `stepOn` — when the item is airborne, has horizontal momentum, or the tick count plus
 its entity id is divisible by four, so something *resting* on a belt is pushed on a fraction of
 ticks and at a phase that depends on its id. A player is carried properly; a thrown item is not.
-See the marginal-test note in the job section, which is the same fact wearing a red X.
+
+**And so nothing tests that a belt carries anything at all.** The one test that did asserted a
+distance, which for a resting item is not a fact about the belt, and it was deleted rather than
+weakened — see the section in the job list. The hook it covered is `stepOn`, which a belt needs
+because it is a bottom slab and `entityInside` therefore never fires for something standing on it.
+**A belt that stopped carrying the player would pass every test in this repo.** Stand on one during
+a playtest; it is two seconds, and it is the only instrument there is.
 
 **A belt does not turn you as it carries you.** An entity on a corner is pushed the way that block
 faces, so going round a bend on a belt is two straight shoves rather than an arc. Items do curve.

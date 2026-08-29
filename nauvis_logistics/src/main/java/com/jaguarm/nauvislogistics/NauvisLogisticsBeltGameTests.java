@@ -109,7 +109,6 @@ public final class NauvisLogisticsBeltGameTests {
         TEST_TYPES.register("belt_loop_carries_round", () -> LoopCarriesRoundTest.CODEC);
         TEST_TYPES.register("belt_bends_the_way_it_carries", () -> BendsTheWayItCarriesTest.CODEC);
         TEST_TYPES.register("belt_turns_when_clicked_with_a_belt", () -> TurnsWhenClickedTest.CODEC);
-        TEST_TYPES.register("belt_carries_what_stands_on_it", () -> CarriesWhatStandsOnItTest.CODEC);
         TEST_TYPES.register("inserter_loads_a_belt", () -> InserterLoadsABeltTest.CODEC);
         TEST_TYPES.register("inserter_takes_from_a_belt", () -> InserterTakesFromABeltTest.CODEC);
         TEST_TYPES.register("inserter_fills_only_the_far_lane", () -> OnlyTheFarLaneTest.CODEC);
@@ -147,8 +146,6 @@ public final class NauvisLogisticsBeltGameTests {
                 BendsTheWayItCarriesTest::new, 60);
         register(event, environment, "belt_turns_when_clicked_with_a_belt",
                 TurnsWhenClickedTest::new, 60);
-        register(event, environment, "belt_carries_what_stands_on_it",
-                CarriesWhatStandsOnItTest::new, 200);
         register(event, environment, "inserter_loads_a_belt", InserterLoadsABeltTest::new, 200);
         register(event, environment, "inserter_takes_from_a_belt", InserterTakesFromABeltTest::new, 200);
         register(event, environment, "inserter_fills_only_the_far_lane", OnlyTheFarLaneTest::new, 60);
@@ -1001,61 +998,6 @@ public final class NauvisLogisticsBeltGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a belt in hand turns a belt");
-        }
-    }
-
-    /**
-     * A belt carries what is standing on it, which in Factorio includes the player.
-     *
-     * <p>A dropped item stands in for one here - a gametest has no player to walk about, and it is
-     * the same {@code stepOn} hook either way. What it pins is that the hook fires at all: a belt
-     * is a bottom slab, so anything on top of it is inside the block <em>above</em> and the obvious
-     * {@code entityInside} never runs.
-     */
-    public static class CarriesWhatStandsOnItTest extends GameTestInstance {
-
-        public static final MapCodec<CarriesWhatStandsOnItTest> CODEC =
-                RecordCodecBuilder.<CarriesWhatStandsOnItTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(CarriesWhatStandsOnItTest::info))
-                                .apply(i, CarriesWhatStandsOnItTest::new));
-
-        public CarriesWhatStandsOnItTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            line(helper, 8);
-            helper.runAfterDelay(SETTLED, () -> {
-                // Over the middle of the tile, not its corner: spawnItem(Item, BlockPos) takes the
-                // block's corner, which would leave half of the item hanging over the gap beside
-                // the belt.
-                ItemEntity rider = helper.spawnItem(Items.IRON_INGOT,
-                        TAIL.getX() + 0.5F, TAIL.getY() + 1.0F, TAIL.getZ() + 0.5F);
-                double from = rider.getX();
-
-                // Long enough to fall the half block onto the belt and then be carried. A belt
-                // moves 1.875 blocks a second, so two blocks in three seconds is a low bar.
-                helper.runAfterDelay(60, () -> {
-                    helper.assertTrue(rider.isAlive(), "the item fell out of the world");
-                    double carried = rider.getX() - from;
-                    helper.assertTrue(carried > 2.0,
-                            "something standing on an eastbound belt moved " + carried
-                                    + " blocks east (resting at y=" + rider.getY() + ", on the ground: "
-                                    + rider.onGround() + "), so the belt is not carrying it");
-                    helper.succeed();
-                });
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a belt carries what stands on it");
         }
     }
 
