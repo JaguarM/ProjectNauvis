@@ -4,6 +4,7 @@ import com.jaguarm.nauvislogistics.NauvisLogistics;
 import com.jaguarm.nauvislogistics.belt.SplitterBlock;
 import com.jaguarm.nauvislogistics.belt.TransportBeltBlock;
 import com.jaguarm.nauvislogistics.storage.IronChestBlock;
+import com.jaguarm.nauvislogistics.storage.SteelChestBlock;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlock;
 import com.jaguarm.nauvislogistics.transport.ElectricInserterBlock;
 import com.jaguarm.nauvislogistics.transport.LongHandedInserterBlock;
@@ -69,6 +70,19 @@ public final class ModBlocks {
             properties -> properties
                     .mapColor(MapColor.METAL)
                     .strength(2.5F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops());
+
+    /**
+     * The bigger box. Steel rather than iron, and half again as much room, which is the gap
+     * Factorio has between its two.
+     */
+    public static final DeferredBlock<SteelChestBlock> STEEL_CHEST = BLOCKS.registerBlock(
+            "steel_chest",
+            SteelChestBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0F, 6.0F)
                     .sound(SoundType.METAL)
                     .requiresCorrectToolForDrops());
 

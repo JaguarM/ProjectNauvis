@@ -16,10 +16,11 @@ import net.neoforged.neoforge.transfer.item.VanillaContainerWrapper;
  * insert-only, because a base built on burner inserters feeding burner inserters is a real
  * Factorio pattern but two of them passing the same lump of coal back and forth is not.
  *
- * <p>The iron chest publishes its whole inventory. NeoForge wraps vanilla's containers
+ * <p>Both chests publish their whole inventory. NeoForge wraps vanilla's containers
  * automatically but only for a hard-coded list of vanilla block entity types, so a modded
  * Container has to say so itself - one line, and without it an inserter aimed at an iron chest
- * would find nothing there at all.
+ * would find nothing there at all. Two registrations rather than one, because the two tiers
+ * are two block entity types - see {@code ModBlockEntities}.
  */
 @EventBusSubscriber(modid = NauvisLogistics.MODID)
 public final class ModCapabilities {
@@ -45,6 +46,11 @@ public final class ModCapabilities {
         event.registerBlockEntity(
                 Capabilities.Item.BLOCK,
                 ModBlockEntities.IRON_CHEST.get(),
+                (chest, side) -> VanillaContainerWrapper.of(chest));
+
+        event.registerBlockEntity(
+                Capabilities.Item.BLOCK,
+                ModBlockEntities.STEEL_CHEST.get(),
                 (chest, side) -> VanillaContainerWrapper.of(chest));
 
         // A belt, from whichever side is asking. The side is not decoration: it decides which of

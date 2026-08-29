@@ -79,6 +79,7 @@ public final class NauvisResearchData {
             // The id comes from the recipe dump and is permanent; the display name is the one a
             // player will be looking for.
             addItem(ModItems.SCIENCE_PACK_1, "Automation science pack");
+            addItem(ModItems.SCIENCE_PACK_2, "Logistic science pack");
 
                         // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the

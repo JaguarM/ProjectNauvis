@@ -33,6 +33,9 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> IRON_CHEST =
             ITEMS.registerSimpleBlockItem(ModBlocks.IRON_CHEST);
 
+    public static final DeferredItem<BlockItem> STEEL_CHEST =
+            ITEMS.registerSimpleBlockItem(ModBlocks.STEEL_CHEST);
+
     public static final DeferredItem<BlockItem> TRANSPORT_BELT =
             ITEMS.registerSimpleBlockItem(ModBlocks.TRANSPORT_BELT);
 
@@ -52,6 +55,7 @@ public final class ModItems {
                         output.accept(INSERTER.get());
                         output.accept(LONG_HANDED_INSERTER.get());
                         output.accept(IRON_CHEST.get());
+                        output.accept(STEEL_CHEST.get());
                     })
                     .build());
 

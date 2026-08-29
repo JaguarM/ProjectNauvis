@@ -34,6 +34,18 @@ public final class ModItems {
      */
     public static final DeferredItem<Item> SCIENCE_PACK_1 = ITEMS.registerSimpleItem("science_pack_1");
 
+    /**
+     * Green science, and the gate in front of the whole of milestone 3 - every technology that
+     * unlocks a steel furnace, a solar panel, a medium pole or the second assembler is paid for
+     * partly in this.
+     *
+     * <p>An inserter and a transport belt, which is Factorio's recipe and the reason this pack
+     * needs no research to unlock: both of its ingredients are already free, so it can be gated
+     * behind {@code science-pack-2} without a new world being unable to reach it. Same id rule as
+     * red science above - the dump's name, not the modern {@code logistic-science-pack}.
+     */
+    public static final DeferredItem<Item> SCIENCE_PACK_2 = ITEMS.registerSimpleItem("science_pack_2");
+
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
             "nauvis_research",
             () -> CreativeModeTab.builder()
@@ -42,6 +54,7 @@ public final class ModItems {
                     .displayItems((parameters, output) -> {
                         output.accept(LAB.get());
                         output.accept(SCIENCE_PACK_1.get());
+                        output.accept(SCIENCE_PACK_2.get());
                     })
                     .build());
 

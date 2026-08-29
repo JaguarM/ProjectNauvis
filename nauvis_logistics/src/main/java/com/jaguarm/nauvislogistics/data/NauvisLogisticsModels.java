@@ -164,6 +164,19 @@ public class NauvisLogisticsModels extends ModelProvider {
 
         blockModels.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(
                 ModBlocks.IRON_CHEST.get(), BlockModelGenerators.plainVariant(chest)));
+
+        // The same lid on a darker metal, so the two chests read as one family and as two tiers.
+        // The anvil is vanilla's only worked-steel texture; nothing else in the game is that
+        // grey without also being stone.
+        Identifier steelChest = ModelTemplates.CUBE_TOP.create(
+                ModBlocks.STEEL_CHEST.get(),
+                new TextureMapping()
+                        .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(Blocks.ANVIL))
+                        .put(TextureSlot.TOP, TextureMapping.getBlockTexture(Blocks.BARREL, "_top")),
+                blockModels.modelOutput);
+
+        blockModels.blockStateOutput.accept(BlockModelGenerators.createSimpleBlock(
+                ModBlocks.STEEL_CHEST.get(), BlockModelGenerators.plainVariant(steelChest)));
     }
 
     private void machine(BlockModelGenerators blockModels, Block block, MachineShape shape,

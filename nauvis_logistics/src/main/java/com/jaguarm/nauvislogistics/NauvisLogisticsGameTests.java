@@ -3,7 +3,9 @@ package com.jaguarm.nauvislogistics;
 import java.util.List;
 
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
-import com.jaguarm.nauvislogistics.storage.IronChestBlockEntity;
+import com.jaguarm.nauvislogistics.storage.IronChestBlock;
+import com.jaguarm.nauvislogistics.storage.MetalChestBlockEntity;
+import com.jaguarm.nauvislogistics.storage.SteelChestBlock;
 import com.jaguarm.nauvislogistics.transport.InserterBlock;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlockEntity;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterMenu;
@@ -100,7 +102,7 @@ public final class NauvisLogisticsGameTests {
         TEST_TYPES.register("inserter_needs_fuel", () -> InserterNeedsFuelTest.CODEC);
         TEST_TYPES.register("burner_inserter_fuels_itself", () -> BurnerFuelsItselfTest.CODEC);
         TEST_TYPES.register("inserter_ignores_bystanders", () -> InserterIgnoresBystandersTest.CODEC);
-        TEST_TYPES.register("iron_chest_holds_items", () -> IronChestHoldsItemsTest.CODEC);
+        TEST_TYPES.register("chests_hold_items", () -> ChestsHoldItemsTest.CODEC);
         TEST_TYPES.register("inserter_fills_iron_chest", () -> InserterFillsIronChestTest.CODEC);
         TEST_TYPES.register("electric_inserter_moves_items", () -> ElectricInserterMovesItemsTest.CODEC);
         TEST_TYPES.register("electric_inserter_needs_power", () -> ElectricInserterNeedsPowerTest.CODEC);
@@ -127,7 +129,7 @@ public final class NauvisLogisticsGameTests {
         register(event, environment, "inserter_needs_fuel", InserterNeedsFuelTest::new, 200);
         register(event, environment, "burner_inserter_fuels_itself", BurnerFuelsItselfTest::new, 200);
         register(event, environment, "inserter_ignores_bystanders", InserterIgnoresBystandersTest::new, 100);
-        register(event, environment, "iron_chest_holds_items", IronChestHoldsItemsTest::new, 60);
+        register(event, environment, "chests_hold_items", ChestsHoldItemsTest::new, 60);
         register(event, environment, "inserter_fills_iron_chest", InserterFillsIronChestTest::new, 200);
         register(event, environment, "electric_inserter_moves_items",
                 ElectricInserterMovesItemsTest::new, 200);
@@ -551,31 +553,44 @@ public final class NauvisLogisticsGameTests {
         }
     }
 
-    /** The chest is a container of the size it claims, and automation can reach it. */
-    public static class IronChestHoldsItemsTest extends GameTestInstance {
+    /**
+     * Each chest is a container of the size it claims, and automation can reach it.
+     *
+     * <p>Both tiers in one test, because what they share is a class and what differs is a number
+     * on the block - so the thing worth asserting is that the number arrives. A steel chest that
+     * reported thirty-six slots would look perfectly correct from the outside and lose eighteen
+     * rows' worth of items on the first save.
+     */
+    public static class ChestsHoldItemsTest extends GameTestInstance {
 
-        public static final MapCodec<IronChestHoldsItemsTest> CODEC =
-                RecordCodecBuilder.<IronChestHoldsItemsTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(IronChestHoldsItemsTest::info))
-                                .apply(i, IronChestHoldsItemsTest::new));
+        public static final MapCodec<ChestsHoldItemsTest> CODEC =
+                RecordCodecBuilder.<ChestsHoldItemsTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ChestsHoldItemsTest::info))
+                                .apply(i, ChestsHoldItemsTest::new));
 
-        public IronChestHoldsItemsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+        public ChestsHoldItemsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
             super(info);
         }
 
         @Override
         public void run(GameTestHelper helper) {
             helper.setBlock(SOURCE, ModBlocks.IRON_CHEST.get());
-            helper.getBlockEntity(SOURCE, IronChestBlockEntity.class);
+            helper.setBlock(DESTINATION, ModBlocks.STEEL_CHEST.get());
+            helper.getBlockEntity(SOURCE, MetalChestBlockEntity.class);
+            helper.getBlockEntity(DESTINATION, MetalChestBlockEntity.class);
 
             // Through the capability, not the Container interface: NeoForge only wraps a
             // hard-coded list of vanilla block entity types, so a modded Container that forgets
             // to register one is invisible to every inserter in the game while looking fine.
-            ResourceHandler<ItemResource> chest = container(helper, SOURCE);
-            helper.assertValueEqual(chest.size(), IronChestBlockEntity.SLOT_COUNT, "slots on an iron chest");
+            ResourceHandler<ItemResource> iron = container(helper, SOURCE);
+            ResourceHandler<ItemResource> steel = container(helper, DESTINATION);
+            helper.assertValueEqual(iron.size(), IronChestBlock.ROWS * 9, "slots on an iron chest");
+            helper.assertValueEqual(steel.size(), SteelChestBlock.ROWS * 9, "slots on a steel chest");
 
-            helper.assertValueEqual(insert(chest, Items.IRON_INGOT, 100), 100, "ingots accepted");
-            helper.assertValueEqual(countIn(chest, Items.IRON_INGOT), 100, "ingots held");
+            helper.assertValueEqual(insert(iron, Items.IRON_INGOT, 100), 100, "ingots accepted");
+            helper.assertValueEqual(countIn(iron, Items.IRON_INGOT), 100, "ingots held");
+            helper.assertValueEqual(insert(steel, Items.IRON_INGOT, 100), 100, "ingots accepted by steel");
+            helper.assertValueEqual(countIn(steel, Items.IRON_INGOT), 100, "ingots held by steel");
             helper.succeed();
         }
 
@@ -586,7 +601,7 @@ public final class NauvisLogisticsGameTests {
 
         @Override
         protected MutableComponent typeDescription() {
-            return Component.literal("iron chest holds items");
+            return Component.literal("chests hold items");
         }
     }
 

@@ -1,0 +1,30 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_logistics"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 120,
+  "group": "intermediate",
+  "order": "0139",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_logistics:inserter",
+      "count": 1
+    },
+    {
+      "ingredient": "nauvis_logistics:transport_belt",
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "nauvis_research:science_pack_2",
+    "count": 1
+  }
+}

@@ -63,6 +63,12 @@ public class NauvisResearchModels extends ModelProvider {
         // that was never drawn, which is exactly what it is for.
         itemModels.generateFlatItem(ModItems.SCIENCE_PACK_1.get(), Items.REDSTONE,
                 ModelTemplates.FLAT_ITEM);
+
+        // Green science, borrowed the same way. What matters until there is art is that the two
+        // packs are a colour apart at a glance, because a lab that is short of one of them is a
+        // thing a player reads off a slot rather than off a number.
+        itemModels.generateFlatItem(ModItems.SCIENCE_PACK_2.get(), Items.EMERALD,
+                ModelTemplates.FLAT_ITEM);
     }
 
     private void machine(BlockModelGenerators blockModels, Block block, MachineShape shape,

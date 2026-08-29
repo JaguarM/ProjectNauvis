@@ -3,7 +3,7 @@ package com.jaguarm.nauvislogistics.registry;
 import com.jaguarm.nauvislogistics.NauvisLogistics;
 import com.jaguarm.nauvislogistics.belt.BeltBlockEntity;
 import com.jaguarm.nauvislogistics.belt.SplitterBlockEntity;
-import com.jaguarm.nauvislogistics.storage.IronChestBlockEntity;
+import com.jaguarm.nauvislogistics.storage.MetalChestBlockEntity;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlockEntity;
 import com.jaguarm.nauvislogistics.transport.ElectricInserterBlockEntity;
 
@@ -42,12 +42,25 @@ public final class ModBlockEntities {
                             ModBlocks.INSERTER.get(),
                             ModBlocks.LONG_HANDED_INSERTER.get()));
 
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IronChestBlockEntity>> IRON_CHEST =
+    /**
+     * One type per chest tier, which is the opposite of the inserters above and for a reason: an
+     * inserter tier differs by numbers the block already knows, while a chest tier differs by how
+     * much it saves. A steel chest loaded against the iron type would read thirty-six of its
+     * fifty-four slots and quietly drop the rest.
+     */
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MetalChestBlockEntity>> IRON_CHEST =
             BLOCK_ENTITIES.register(
                     "iron_chest",
                     () -> new BlockEntityType<>(
-                            IronChestBlockEntity::new,
+                            MetalChestBlockEntity::new,
                             ModBlocks.IRON_CHEST.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MetalChestBlockEntity>> STEEL_CHEST =
+            BLOCK_ENTITIES.register(
+                    "steel_chest",
+                    () -> new BlockEntityType<>(
+                            MetalChestBlockEntity::new,
+                            ModBlocks.STEEL_CHEST.get()));
 
     /**
      * One type for every belt tier there will ever be.

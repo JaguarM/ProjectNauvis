@@ -1,0 +1,31 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:mod_loaded",
+        "modid": "facrafting"
+      }
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "neoprogressivematerials:steel_plate",
+    "neoprogressivematerials:steel_plate",
+    "neoprogressivematerials:steel_plate",
+    "neoprogressivematerials:steel_plate",
+    "neoprogressivematerials:steel_plate",
+    "neoprogressivematerials:steel_plate",
+    "neoprogressivematerials:steel_plate",
+    "neoprogressivematerials:steel_plate"
+  ],
+  "result": {
+    "id": "nauvis_logistics:steel_chest",
+    "count": 1
+  }
+}

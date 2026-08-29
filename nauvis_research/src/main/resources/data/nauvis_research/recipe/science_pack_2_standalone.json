@@ -1,0 +1,25 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:mod_loaded",
+        "modid": "facrafting"
+      }
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_logistics"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "nauvis_logistics:inserter",
+    "nauvis_logistics:transport_belt"
+  ],
+  "result": {
+    "id": "nauvis_research:science_pack_2",
+    "count": 1
+  }
+}
