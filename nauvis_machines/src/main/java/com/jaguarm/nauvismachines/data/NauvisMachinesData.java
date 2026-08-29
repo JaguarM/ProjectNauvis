@@ -80,6 +80,12 @@ public final class NauvisMachinesData {
             addBlock(ModBlocks.ASSEMBLING_MACHINE_1, "Assembling machine 1");
 
             // The screen. Its recipe list is Facrafting's panel, so there is very little here.
+            // "skips research" is not a caveat, it is the point of the pack and has to be on the
+            // label. The technology tree gates crafting through Facrafting's panel, which is the
+            // only place a timed craft happens; a vanilla bench recipe goes nowhere near it and
+            // there is no hook that would let it.
+            add("pack.nauvis_machines.crafting_table", "Nauvis Machines: bench recipes (skips research)");
+
             add("screen.nauvis_machines.assembler.idle", "Idle - pick a recipe on the right");
             add("screen.nauvis_machines.assembler.making", "Making %s");
             add("screen.nauvis_machines.assembler.unknown", "Making something this client has not been told about");

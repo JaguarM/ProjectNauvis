@@ -19,6 +19,7 @@ public class Nauvis {
 
     public Nauvis(IEventBus modEventBus, ModContainer modContainer) {
         ModContent.register(modEventBus);
+        modEventBus.addListener(ModPacks::addPackFinders);
         NauvisGameTests.register(modEventBus);
     }
 }

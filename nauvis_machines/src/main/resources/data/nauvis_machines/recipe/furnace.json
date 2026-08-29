@@ -1,0 +1,22 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "production",
+  "order": "0096",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:cobblestone",
+      "count": 5
+    }
+  ],
+  "result": {
+    "id": "minecraft:furnace",
+    "count": 1
+  }
+}

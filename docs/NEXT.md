@@ -19,8 +19,15 @@ or draws the grid. **It is playable end to end today**: red science is craftable
 costs ten units of it at ten seconds each, and it is what hands over the assembling machine and
 the long-handed inserter — which is exactly where Factorio starts.
 
-**Nobody has looked at the research screen in game.** That is the one thing owed on this work and
-it is in the playtest list below.
+**And the vanilla road round it is closing.** `data/removals.json` is the pack's policy list and
+`tools/gen_removals.py` turns it into a built-in datapack that is on by default. Four recipes so
+far: the chest and the furnace, because the pack now prices them Factorio's way and two recipes
+for one item means one of them is wrong; and the **hopper** and its minecart, because a hopper is
+an inserter that costs nothing to run and makes the pack's three inserters pointless.
+
+**Nobody has looked at the research screen in game, and nobody has played the first ten minutes
+with no hopper and no bench recipe for a furnace.** Both are in the playtest list below, and the
+second one is the bigger risk of the two.
 
 What the tabs cost
 ------------------
@@ -214,6 +221,69 @@ nothing else. Yannic wants the real thing eventually.
 One `KeyMapping` and one `ClientTickEvent`, and the default key is a decision — vanilla's T is
 chat.
 
+What the vanilla-replacement datapack cost
+------------------------------------------
+
+PLAN.md puts this at milestone 3 and gives the reason in one sentence: once research gates
+progression there is somewhere for stripped vanilla recipes to go. It arrived because of a
+playtest note - *"researching works but the facrafting are always visible and not linked to
+science"* - and the first job was to find out whether that was a bug.
+
+**It was not.** The gate was working: the save had `automation` and `steel_processing` already
+researched, and `automation` is the only technology that gates anything the pack can currently
+craft. A fresh world shows 15 of 17 recipes; that one showed 17. What the note was really
+reporting is that **of the twenty recipes the pack ships, Factorio gates exactly two** - and the
+other eighteen are craftable from the first minute in Factorio too. Research is linked to
+crafting; there is nearly nothing yet for it to hold back.
+
+The way to make progression mean something today is therefore not more gating. It is taking away
+the road that goes round the whole tree, which is what this datapack is for.
+
+### The rule, and why it is enforced
+
+**A vanilla recipe is removed only when the pack can already do that job.** Every entry in
+`data/removals.json` names a `replaced_by` recipe and the build fails if that recipe is not
+shipped, so the pack can never take something away and leave nothing in its place. That is why
+the list is four long and not forty: most of Factorio is not built yet, and the check says so
+rather than letting somebody strip vanilla down to a pack you cannot play.
+
+Two kinds of entry, and only one of them is a judgement:
+
+- a **conflict** is a vanilla recipe making an item the mapping maps a Factorio item onto - two
+  recipes, different ingredient lists, same item, and non-negotiable #1 says which is wrong.
+  **This half is not a list, it is a check**: given Minecraft's own recipes, any pack recipe
+  producing a vanilla item whose vanilla recipe is still there fails the build. Ship a recipe for
+  a vanilla stand-in and its removal is compulsory in the same commit.
+- a **bypass** is vanilla doing a job Factorio has a machine for. That is a judgement and is only
+  ever a list. Today it is the hopper.
+
+The line for bypasses is the same rule: **remove a vanilla system only once the pack ships its
+replacement.** Inserters exist, so the hopper goes. The circuit network does not, so redstone
+repeaters, comparators, observers and pistons all stay - taking those away now would delete a
+Minecraft system and give nothing back for six milestones. The dropper stays too, and there is a
+test asserting it, because it needs a clock to move anything: that is a build rather than a free
+ride.
+
+### The trap, which cost an hour and is now the best entry in the silent-failures list
+
+Three of four byte-identical removals took effect. **The hopper did not.** See the entry below;
+the short version is that NeoForge ships its own copy of about 380 of Minecraft's recipe files
+and a mod's plain resources do not outrank it. The removals are a built-in datapack at
+`Pack.Position.TOP` because of it.
+
+What found it was `nauvis:vanilla_recipes_are_replaced`, and *how* it found it is the point: the
+test asks a running recipe manager rather than reading the files off disk. A test that had
+checked the files would have been green and wrong.
+
+### What is left
+
+**More items, and then more removals.** The conflict half is already waiting: the moment a mod
+ships a recipe for `minecraft:redstone_lamp`, `minecraft:cobblestone_wall`, `minecraft:rail` or
+`minecraft:iron_door`, the build will fail until vanilla's is removed - and three of those four
+are gated behind a technology in Factorio, so each one is a real research unlock. None of them can
+be done yet: the lamp needs an iron stick, the rail and the gate need steel, and the wall belongs
+to `nauvis_military`, which does not exist.
+
 The jobs, in the order Yannic asked for them
 --------------------------------------------
 
@@ -282,6 +352,17 @@ watch, and the last one is the one no test can reach:
   unit finishes.** The assembling machine and the long-handed inserter should appear in it without
   the screen being closed and reopened. `RecipeLock.revision` is the mechanism and a gametest
   asserts the number moves; **whether the panel redraws is only visible to a person.**
+
+**And the first ten minutes have changed, which is the biggest risk in this session's work.**
+There is no hopper recipe, and the furnace and the chest can no longer be made at a bench - they
+are Facrafting recipes now, at Factorio's prices, and Facrafting's panel is on the inventory
+screen. That is the intended experience and it is also exactly how a new player gets stuck:
+
+- start a fresh world, gather five cobblestone, and see whether making a furnace is **obvious**.
+  If the panel is not the first place a Minecraft player looks, the pack has a first-five-minutes
+  problem and the answer is probably a message rather than putting the recipe back;
+- then build a burner inserter and check it does everything a hopper did - pulling from a chest
+  into a furnace is the case worth trying, because it is the one every Minecraft player builds.
 
 The rest of what is owed is older, and no boot has covered it. The long-handed inserter added a
 model — a smoker-coloured cube, so it is the third furnace body on a belt line and wants a proper
@@ -513,6 +594,7 @@ How to run everything
 | `./gradlew build` | everything, including `checkRecipes` |
 | `python tools/gen_recipes.py --check` | the same recipe diff, on its own |
 | `python tools/gen_technologies.py --check` | the same for the technology tree. `--write` to regenerate it |
+| `python tools/gen_removals.py --check` | the vanilla recipes the pack takes away. `--write` to regenerate them |
 | `python tools/fetch_technologies.py` | writes `reference/factorio/technologies.json` from Wube's data. Run once |
 | `python tools/check_models.py` | every model, texture and blockstate reference, resolved — and footprints and belt speeds, against `data/mapping.json` |
 | `python tools/check_duplicated.py` | the copied packages, against each other. `--sync` to fix |
@@ -521,8 +603,8 @@ How to run everything
 | `python texture-workshop/make_belt_textures.py` | the belt's art, from ASCII maps. `--preview` for a sheet |
 | `./gradlew :nauvis:packConfig` | the pack's own config over `run/config`. Every run task already depends on it |
 
-The six checks are `checkRecipes`, `checkTechnologies`, `checkModels`, `checkDuplicated`,
-`checkGameTests` and `checkGuiLayout` in the root `build.gradle`, and all of them hang off
+The seven checks are `checkRecipes`, `checkTechnologies`, `checkRemovals`, `checkModels`,
+`checkDuplicated`, `checkGameTests` and `checkGuiLayout` in the root `build.gradle`, and all of them hang off
 `:nauvis:check`. They read files and start nothing, so they cost a second between them.
 
 `checkTechnologies` is stricter than `checkRecipes` in one way worth knowing: it fails on a file
@@ -762,6 +844,24 @@ Silent failures — these compile, pass tests, and are still wrong
   never the thing they saw. **When a list reads wrong, name all four before changing one**, and
   expect to have fixed nothing visible until the last of them is right.
 
+- **NeoForge ships its own copy of 394 of Minecraft's recipes, and its resources beat yours.**
+  Removing a vanilla recipe is a file at `data/minecraft/recipe/<name>.json` holding nothing but
+  `neoforge:never`, and in a mod's plain resources that works for most recipes and **silently does
+  nothing for those 394** - NeoForge retags them so other mods' metals and woods work in vanilla
+  recipes, and its datapack is applied after any mod's. The pack removed four recipes with four
+  byte-identical files; `chest`, `furnace` and `hopper_minecart` went away and **`hopper` did
+  not**, which is the shape of this failure exactly: no error, no log line, and three quarters of
+  the change working. `rail`, `iron_door`, `dropper`, `dispenser`, `observer`, `piston`,
+  `minecart` and `torch` are all on NeoForge's list too, so this would have come back. The answer
+  is `AddPackFindersEvent` with `alwaysActive` true and `Pack.Position.TOP`, which sits above
+  every mod's resources - see `nauvis/.../ModPacks.java`. **And the reason it was caught is that
+  the test asks a running recipe manager**, not the files: a test that read the datapack would
+  have been green.
+
+- **The condition is `neoforge:never`, and there is no `neoforge:false`.** The registered names
+  are `never` and `always`. A wrong name does not fail the build or the load - it throws while
+  parsing that one recipe, which is a line in a log and a recipe that is still craftable.
+
 - **A registry codec throws on an id nothing registered, and it throws while loading the file.**
   Most of the technology tree names science packs and recipes no mod in this pack registers yet -
   green science, the splitter, the steel plate - because the whole tree ships from the first
@@ -883,6 +983,16 @@ copy of every recipe, off by default, so a pack author can trade the timed craft
 vanilla crafting recipe never goes near Facrafting, which is where the gate lives. There is no
 hook that would let it. So the datapacks' labels now read **"(skips research)"**, which is not a
 caveat but the point, and is the one line a player reads before turning one on.
+
+**Vanilla's own progression is barely touched.** Four recipes are removed. Everything else
+Minecraft can build - redstone logic, pistons, minecart automation, brewing, the whole of it - is
+untouched, because the rule is that nothing is taken away before the pack can do that job, and the
+pack does twenty jobs. The conflict half of `data/removals.json` is a check rather than a list and
+will force the rest as items land; the bypass half is a judgement and grows one line at a time.
+
+**The circuit network's vanilla equivalent is deliberately left alone.** Redstone repeaters,
+comparators, observers and pistons are Minecraft's answer to Factorio's combinators, and removing
+them now would take away a system and offer nothing until milestone 7.
 
 **A lab that has never had a technology picked rechecks once a second.** Choosing research happens
 on a screen and reaches no block, so it is outside the one-block radius `setChanged` covers - the

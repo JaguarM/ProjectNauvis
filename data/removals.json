@@ -1,0 +1,27 @@
+{
+  "_": "Pack policy: the vanilla recipes Project Nauvis takes away. tools/gen_removals.py turns this into condition-false recipe files in the nauvis pack mod. See docs/MAPPING.md.",
+  "_rule": "A vanilla recipe is removed only when the pack can already do that job. `replaced_by` names the pack recipe that does it, and the build fails if that recipe is not shipped - so nothing can be taken away and left with nothing in its place. That is also why this list is short: most of Factorio is not built yet.",
+  "_why": "Two kinds of entry. A *conflict* is a vanilla recipe making an item the mapping maps a Factorio item onto, so two recipes with different ingredient lists produce the same thing and one of them is wrong - non-negotiable #1. A *bypass* is vanilla doing a job Factorio has a machine for, where keeping it would make that machine pointless.",
+  "recipes": {
+    "minecraft:chest": {
+      "kind": "conflict",
+      "replaced_by": "nauvis_logistics:chest",
+      "note": "Factorio's wooden chest is four wood; vanilla's is eight planks. The mapping makes minecraft:chest the wooden chest, so vanilla's price is simply the wrong one."
+    },
+    "minecraft:furnace": {
+      "kind": "conflict",
+      "replaced_by": "nauvis_machines:furnace",
+      "note": "Factorio's stone furnace is five stone; vanilla's is eight cobblestone. Same argument as the chest."
+    },
+    "minecraft:hopper": {
+      "kind": "bypass",
+      "replaced_by": "nauvis_logistics:burner_inserter",
+      "note": "The hopper is an inserter that needs no power, no facing decision and no thought, and it is the one vanilla block that makes Factorio's signature machine pointless. The burner inserter replaces it and is cheaper - one iron gear wheel and one iron plate - so what is lost is the free ride, not the ability."
+    },
+    "minecraft:hopper_minecart": {
+      "kind": "bypass",
+      "replaced_by": "nauvis_logistics:burner_inserter",
+      "note": "A hopper on rails is still a hopper. The plain minecart and the chest minecart stay: PLAN.md's trains shortcut is vanilla minecarts, so those are the pack's own answer rather than a way round it."
+    }
+  }
+}

@@ -77,6 +77,27 @@ the recipe generator applies to an unmapped ingredient, and for the same reason:
 "I could not work it out" must not have the same representation, or a stale table looks like a
 design decision.
 
+`data/removals.json`, and the rule it enforces
+---------------------------------------------
+
+A second file beside this one, and the other direction: `mapping.json` says what Factorio's items
+*are* here, `removals.json` says which of Minecraft's recipes stop existing because of it.
+`tools/gen_removals.py` turns it into a built-in datapack in the `nauvis` mod - pack policy in the
+pack mod, non-negotiable #3.
+
+**A vanilla recipe is removed only when the pack can already do that job.** Every entry names a
+`replaced_by` recipe and the build fails if that recipe is not shipped, so nothing is ever taken
+away and left with nothing in its place.
+
+Entries are one of two kinds:
+
+- a **conflict** - a vanilla recipe making an item this table maps a Factorio item onto. Two
+  recipes with different ingredient lists making the same item means one is wrong, and
+  non-negotiable #1 says which. **This half is checked rather than listed**: ship a pack recipe
+  for a vanilla stand-in and the build fails until vanilla's is removed too.
+- a **bypass** - vanilla doing a job Factorio has a machine for. A judgement, and only ever a
+  list.
+
 Naming policy
 -------------
 

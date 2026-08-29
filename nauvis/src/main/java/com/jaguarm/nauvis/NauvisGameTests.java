@@ -20,6 +20,7 @@ import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -77,6 +78,7 @@ public final class NauvisGameTests {
         TEST_TYPES.register("registry_presence", () -> RegistryPresenceTest.CODEC);
         TEST_TYPES.register("power_reaches_a_machine", () -> PowerReachesAMachineTest.CODEC);
         TEST_TYPES.register("steam_travels_down_a_pipe", () -> SteamTravelsDownAPipeTest.CODEC);
+        TEST_TYPES.register("vanilla_recipes_are_replaced", () -> VanillaRecipesAreReplacedTest.CODEC);
     }
 
     /** Called from the mod constructor so the test type registers with everything else. */
@@ -120,6 +122,11 @@ public final class NauvisGameTests {
                 Identifier.fromNamespaceAndPath(Nauvis.MODID, "steam_travels_down_a_pipe"),
                 new SteamTravelsDownAPipeTest(new TestData<>(environment, EMPTY_STRUCTURE, 200, 0,
                         true, Rotation.NONE, false, 1, 1, false, 24)));
+
+        event.registerTest(
+                Identifier.fromNamespaceAndPath(Nauvis.MODID, "vanilla_recipes_are_replaced"),
+                new VanillaRecipesAreReplacedTest(
+                        new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE)));
     }
 
     /**
@@ -371,6 +378,82 @@ public final class NauvisGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("steam travels down a pipe");
+        }
+    }
+
+    /**
+     * The vanilla-replacement datapack does what it says: four of Minecraft's recipes are gone,
+     * and what replaces them is there.
+     *
+     * <h2>Why this is a test and not a reading of the files</h2>
+     *
+     * <p>A removal is a recipe file whose only content is {@code neoforge:never}, and every part
+     * of that is a thing that can be silently wrong. The condition name is one: there is no
+     * {@code neoforge:false}, and a wrong name throws while parsing <em>one</em> recipe, which is
+     * a line in a log and a hopper that is still craftable. The path is another - the file has to
+     * be at {@code data/minecraft/recipe/<name>.json}, and a datapack that puts it anywhere else
+     * loads perfectly and removes nothing. {@code tools/gen_removals.py} holds the ids to
+     * Minecraft's own recipe list, but nothing outside a running server can say the mechanism
+     * fires at all.
+     *
+     * <p>The control matters as much as the removals. {@code minecraft:crafting_table} is not on
+     * the list and must still be craftable: a bug that emptied the recipe manager, or a datapack
+     * applied too widely, would pass every assertion here that only checked for absence.
+     */
+    public static class VanillaRecipesAreReplacedTest extends GameTestInstance {
+
+        public static final MapCodec<VanillaRecipesAreReplacedTest> CODEC =
+                RecordCodecBuilder.<VanillaRecipesAreReplacedTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(VanillaRecipesAreReplacedTest::info))
+                                .apply(i, VanillaRecipesAreReplacedTest::new));
+
+        public VanillaRecipesAreReplacedTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            // Gone: two because the pack prices them Factorio's way instead, and two because
+            // a hopper is an inserter that costs nothing to run. See data/removals.json.
+            for (String id : List.of("minecraft:chest", "minecraft:furnace",
+                    "minecraft:hopper", "minecraft:hopper_minecart")) {
+                helper.assertFalse(hasRecipe(helper, id),
+                        id + " is still craftable; the removal in the nauvis datapack did nothing");
+            }
+
+            // And replaced: the pack's own recipe for each of the two it reprices.
+            for (String id : List.of("nauvis_logistics:chest", "nauvis_machines:furnace",
+                    "nauvis_logistics:burner_inserter")) {
+                helper.assertTrue(hasRecipe(helper, id),
+                        id + " is missing, so the pack has taken something away and left nothing");
+            }
+
+            helper.assertTrue(hasRecipe(helper, "minecraft:crafting_table"),
+                    "an ordinary vanilla recipe went missing too - the datapack is removing more "
+                            + "than data/removals.json names");
+
+            // The dropper is the nearest thing to a hopper that was deliberately kept: it needs a
+            // clock to move anything, which is a build rather than a free ride. Asserted so that
+            // removing it later is a decision somebody made rather than a list that crept.
+            helper.assertTrue(hasRecipe(helper, "minecraft:dropper"),
+                    "the dropper was removed; data/removals.json does not name it");
+            helper.succeed();
+        }
+
+        private static boolean hasRecipe(GameTestHelper helper, String id) {
+            return helper.getLevel().getServer().getRecipeManager()
+                    .byKey(ResourceKey.create(Registries.RECIPE, Identifier.parse(id)))
+                    .isPresent();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("vanilla recipes are replaced");
         }
     }
 }

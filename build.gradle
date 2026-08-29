@@ -95,6 +95,51 @@ tasks.register('checkTechnologies') {
 }
 
 /**
+ * The vanilla-replacement datapack, held to its own rule.
+ *
+ * PLAN.md's milestone 3: once research gates progression there is somewhere for stripped vanilla
+ * recipes to go. data/removals.json is the list and tools/gen_removals.py turns it into
+ * condition-false recipe files in the nauvis pack mod.
+ *
+ * It checks three things, and the first is the one that matters: every removal names the pack
+ * recipe that does the job instead, and the build fails if that recipe is not shipped - so the
+ * pack can never take something away and leave nothing in its place. It also holds every id to
+ * Minecraft's own recipe list, and fails if the pack ships a recipe for a vanilla item whose
+ * vanilla recipe is still there.
+ *
+ * Unlike checkRecipes this needs no gitignored dump, so it always runs; the two checks that read
+ * Minecraft's own recipes skip themselves if the client jar is not in the Gradle cache.
+ */
+tasks.register('checkRemovals') {
+    group = 'verification'
+    description = "Diffs the vanilla-recipe removals against data/removals.json."
+
+    def removals = file('data/removals.json')
+    def script = file('tools/gen_removals.py')
+
+    inputs.file(removals).withPropertyName('removals')
+    inputs.file(script).withPropertyName('generator')
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def process = new ProcessBuilder('python', script.absolutePath, '--check')
+                .directory(projectDir)
+                .redirectErrorStream(true)
+                .start()
+        def output = process.inputStream.text
+        def exitValue = process.waitFor()
+
+        logger.lifecycle(output)
+
+        if (exitValue != 0) {
+            throw new GradleException(
+                    "The vanilla-recipe removals on disk disagree with data/removals.json. " +
+                    "Regenerate them rather than editing by hand: python tools/gen_removals.py --write")
+        }
+    }
+}
+
+/**
  * The checks that need no game, wired in so they actually run.
  *
  * Every visual bug this pack has shipped compiled, passed its tests and passed datagen. What

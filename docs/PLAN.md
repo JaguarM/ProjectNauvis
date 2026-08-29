@@ -236,7 +236,11 @@ four, so dropping them leaves it closed.
 `lab`, `science-pack-1`, `science-pack-2`, `assembling-machine-2`, `steel-furnace`,
 `solar-panel`, `accumulator`, `medium-electric-pole`, and `steel-plate` / `battery` /
 `sulfur` in materials. **The vanilla-replacement datapack lands here** — once research gates
-progression there is somewhere for stripped vanilla recipes to go.
+progression there is somewhere for stripped vanilla recipes to go. It has: `data/removals.json`
+and `tools/gen_removals.py`, shipped as a built-in datapack that is on by default. It is four
+recipes long and the rule is why — *a vanilla recipe is removed only when the pack can already do
+that job*, enforced by the build rather than remembered — so it grows with the items rather than
+ahead of them.
 
 **The tree itself is done and is all 216 finite technologies**, not the fifteen items above.
 That is deliberate and is the same rule as recipes: a technology's cost, its prerequisites and

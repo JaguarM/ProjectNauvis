@@ -34,7 +34,10 @@ into `./gradlew build`.
 **3. One mod per subsystem, arrows pointing one way.**
 Each mod is a separate jar with its own permanent mod id, usable standalone, glued to the
 others by `neoforge:mod_loaded` recipe conditions. No cycles. Pack policy — vanilla recipe
-removal — lives in the `nauvis` mod or the pack datapack, never inside a subsystem mod.
+removal — lives in the `nauvis` mod or the pack datapack, never inside a subsystem mod. It is
+`data/removals.json` plus `tools/gen_removals.py`, and its rule is enforced by the build: **a
+vanilla recipe is removed only when the pack can already do that job**, so nothing is ever taken
+away and left with nothing in its place.
 
 **Facrafting is the exception, and the foundation.** It owns the timed crafting model and the
 crafting interface, and a subsystem mod may depend on it at compile time: a machine that runs a

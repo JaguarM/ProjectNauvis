@@ -198,6 +198,7 @@ tasks.withType(JavaCompile).configureEach {
 tasks.named('check') {
     dependsOn rootProject.tasks.named('checkRecipes')
     dependsOn rootProject.tasks.named('checkTechnologies')
+    dependsOn rootProject.tasks.named('checkRemovals')
     dependsOn rootProject.tasks.named('checkModels')
     dependsOn rootProject.tasks.named('checkGuiLayout')
     dependsOn rootProject.tasks.named('checkDuplicated')

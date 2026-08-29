@@ -32,6 +32,7 @@ public class NauvisMachines {
         ModItems.TABS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
+        modEventBus.addListener(ModPacks::addPackFinders);
         NauvisMachinesGameTests.register(modEventBus);
     }
 }
