@@ -94,7 +94,13 @@ public final class NauvisPowerData {
             addBlock(ModBlocks.BOILER, "Boiler");
             addBlock(ModBlocks.STEAM_ENGINE, "Steam engine");
             addBlock(ModBlocks.SMALL_ELECTRIC_POLE, "Small electric pole");
-            add("pack.nauvis_power.crafting_table", "Nauvis Power: Crafting Table Recipes");
+                        // "skips research" is not a caveat, it is the point of the pack and has to be on the
+            // label. The technology tree gates crafting through Facrafting's panel, which is the
+            // only place a timed craft happens; a vanilla bench recipe goes nowhere near it and
+            // there is no hook that would let it. A player who turns this on has turned the tech
+            // tree off for everything it re-enables, and the one line they read before doing so
+            // is this one.
+            add("pack.nauvis_power.crafting_table", "Nauvis Power: bench recipes (skips research)");
 
             // The boiler's screen. Its old right-click strings are gone with the right-click code.
             add("screen.nauvis_power.boiler.burning", "Burning");

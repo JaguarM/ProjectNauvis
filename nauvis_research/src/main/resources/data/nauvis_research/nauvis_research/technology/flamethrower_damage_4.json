@@ -1,0 +1,16 @@
+{
+  "name": "Flamethrower damage 4",
+  "order": "e-o-p-d",
+  "prerequisites": [
+    "nauvis_research:flamethrower_damage_3"
+  ],
+  "units": 250,
+  "ticks_per_unit": 1200,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3",
+    "nauvis_research:military_science_pack"
+  ],
+  "unlocks": []
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Character logistic slots 6",
+  "order": "c-k-e-f",
+  "prerequisites": [
+    "nauvis_research:character_logistic_slots_5"
+  ],
+  "units": 1000,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3",
+    "nauvis_research:production_science_pack",
+    "nauvis_research:high_tech_science_pack"
+  ],
+  "unlocks": []
+}

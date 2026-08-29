@@ -1,0 +1,16 @@
+{
+  "name": "Cannon shell damage 3",
+  "order": "e-k-c",
+  "prerequisites": [
+    "nauvis_research:cannon_shell_damage_2"
+  ],
+  "units": 300,
+  "ticks_per_unit": 1200,
+  "packs": [
+    "nauvis_research:military_science_pack",
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3"
+  ],
+  "unlocks": []
+}

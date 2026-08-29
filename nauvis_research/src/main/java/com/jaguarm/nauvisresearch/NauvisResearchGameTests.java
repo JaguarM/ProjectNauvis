@@ -8,6 +8,11 @@ import com.jaguarm.nauvisresearch.lab.LabShape;
 import com.jaguarm.nauvisresearch.multiblock.Multiblock;
 import com.jaguarm.nauvisresearch.registry.ModBlocks;
 import com.jaguarm.nauvisresearch.registry.ModItems;
+import com.jaguarm.nauvisresearch.research.ModTechnologies;
+import com.jaguarm.nauvisresearch.research.Research;
+import com.jaguarm.nauvisresearch.research.ResearchState;
+import com.jaguarm.nauvisresearch.research.Technology;
+import com.jaguarm.facrafting.recipe.RecipeLocks;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -22,7 +27,13 @@ import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.neoforged.bus.api.IEventBus;
@@ -76,6 +87,10 @@ public final class NauvisResearchGameTests {
         TEST_TYPES.register("lab_sleeps", () -> LabSleepsTest.CODEC);
         TEST_TYPES.register("lab_keeps_its_packs", () -> LabKeepsItsPacksTest.CODEC);
         TEST_TYPES.register("lab_breaks_as_one", () -> LabBreaksAsOneTest.CODEC);
+        TEST_TYPES.register("technology_tree_loads", () -> TechnologyTreeLoadsTest.CODEC);
+        TEST_TYPES.register("research_unlocks_a_recipe", () -> ResearchUnlocksARecipeTest.CODEC);
+        TEST_TYPES.register("lab_ignores_the_wrong_packs", () -> LabIgnoresTheWrongPacksTest.CODEC);
+        TEST_TYPES.register("the_crafting_gate_is_installed", () -> CraftingGateIsInstalledTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -95,6 +110,10 @@ public final class NauvisResearchGameTests {
         register(event, environment, "lab_sleeps", LabSleepsTest::new, 60);
         register(event, environment, "lab_keeps_its_packs", LabKeepsItsPacksTest::new, 40);
         register(event, environment, "lab_breaks_as_one", LabBreaksAsOneTest::new, 40);
+        register(event, environment, "technology_tree_loads", TechnologyTreeLoadsTest::new, 20);
+        register(event, environment, "research_unlocks_a_recipe", ResearchUnlocksARecipeTest::new, 20);
+        register(event, environment, "lab_ignores_the_wrong_packs", LabIgnoresTheWrongPacksTest::new, 120);
+        register(event, environment, "the_crafting_gate_is_installed", CraftingGateIsInstalledTest::new, 20);
     }
 
     private interface TestFactory {
@@ -138,6 +157,34 @@ public final class NauvisResearchGameTests {
             transaction.commit();
             return inserted;
         }
+    }
+
+    /**
+     * Points the world at a technology, whatever it was doing before.
+     *
+     * <p>Research is per-world - see {@code ResearchState} - so it is <b>shared between every test
+     * in a run</b>, which is a hazard worth naming: these tests can be batched together and a test
+     * that quietly assumed nothing else touched the tree would fail once in a while and never
+     * twice the same way. Each of them therefore resets what it is about to use, and the
+     * assertions below are about a single lab's own counters rather than about the world's, except
+     * where the world's is the point.
+     */
+    private static void research(GameTestHelper helper, String path) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ResearchState state = Research.state(server);
+        state.forget(ModTechnologies.key(path));
+        Research.setCurrent(server, ModTechnologies.key(path));
+    }
+
+    private static Technology technology(GameTestHelper helper, String path) {
+        return ModTechnologies.registry(helper.getLevel().registryAccess())
+                .getValue(ModTechnologies.key(path));
+    }
+
+    /** The key of the recipe file {@code gen_recipes.py} writes for an item. */
+    private static ResourceKey<Recipe<?>> recipe(String namespace, String path) {
+        return ResourceKey.create(Registries.RECIPE,
+                Identifier.fromNamespaceAndPath(namespace, path));
     }
 
     private static boolean isScheduled(GameTestHelper helper) {
@@ -202,7 +249,15 @@ public final class NauvisResearchGameTests {
         }
     }
 
-    /** Given packs and power, a lab finishes a cycle in exactly the time it says it will. */
+    /**
+     * Given packs, power and something to research, a lab finishes a unit on time and the world
+     * hears about it.
+     *
+     * <p>Both halves matter and they used to be one. The lab's own count is a readout for whoever
+     * is looking at that machine; the world's is the research, and it is what makes twelve labs
+     * worth more than one. A lab that counted its own cycles and told nobody would pass every
+     * assertion this test made before the tree existed.
+     */
     public static class LabResearchesTest extends GameTestInstance {
 
         public static final MapCodec<LabResearchesTest> CODEC =
@@ -216,6 +271,12 @@ public final class NauvisResearchGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
+            // Automation: ten units of red science at ten seconds each, and Factorio's first
+            // technology. The numbers come from the generated tree rather than from here, so a
+            // regenerated dump moves the test with it instead of breaking it.
+            research(helper, "automation");
+            int unitTicks = technology(helper, "automation").ticksPerUnit();
+
             LabBlockEntity lab = placeLab(helper);
             charge(lab);
             helper.assertValueEqual(insert(lab.automationView(),
@@ -224,19 +285,21 @@ public final class NauvisResearchGameTests {
             helper.assertValueEqual(lab.cycles(), 0, "research before it has done any");
 
             // One tick short: still working, and the pack not yet spent.
-            helper.runAfterDelay(LabBlockEntity.TICKS_PER_CYCLE - 1, () -> {
+            helper.runAfterDelay(unitTicks - 1, () -> {
                 helper.assertValueEqual(lab.cycles(), 0,
-                        "research a tick before the cycle is due");
+                        "research a tick before the unit is due");
                 helper.assertValueEqual(lab.inventory().getAmountAsInt(0), 2,
-                        "packs a tick before the cycle is due");
+                        "packs a tick before the unit is due");
             });
 
-            helper.runAfterDelay(LabBlockEntity.TICKS_PER_CYCLE + 2, () -> {
-                helper.assertValueEqual(lab.cycles(), 1, "research after one cycle");
+            helper.runAfterDelay(unitTicks + 2, () -> {
+                helper.assertValueEqual(lab.cycles(), 1, "research after one unit");
                 helper.assertValueEqual(lab.inventory().getAmountAsInt(0), 1,
-                        "packs left after one cycle");
+                        "packs left after one unit");
                 helper.assertTrue(lab.energyStored() < LabBlockEntity.ENERGY_CAPACITY,
                         "a lab that researched without spending any power");
+                helper.assertTrue(Research.state(helper.getLevel().getServer()).units() >= 1,
+                        "the world heard nothing about a unit the lab finished");
                 helper.succeed();
             });
         }
@@ -272,6 +335,10 @@ public final class NauvisResearchGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
+            // Everything but the wire: a technology chosen and the packs for it in the slots.
+            // Without the research this would pass for the wrong reason.
+            research(helper, "automation");
+
             LabBlockEntity lab = placeLab(helper);
             insert(lab.automationView(), ModItems.SCIENCE_PACK_1.get(), 4);
 
@@ -432,6 +499,260 @@ public final class NauvisResearchGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a lab breaks as one");
+        }
+    }
+
+    /**
+     * The generated tree is on disk, loads, and still says what Factorio says.
+     *
+     * <p>{@code checkTechnologies} already diffs the files against the generator, so what this
+     * adds is that they <em>load</em>: a datapack registry entry whose codec rejects it does not
+     * fail the build, it fails at world load with one line in a log nobody reads, and the
+     * research list is then quietly short.
+     *
+     * <p>Automation is the one asserted by hand because it is the technology this pack's players
+     * meet first - ten units of red science at ten seconds, unlocking the assembling machine and
+     * the long-handed inserter - and because a mistake in it would be a mistake in every number
+     * the generator produces.
+     */
+    public static class TechnologyTreeLoadsTest extends GameTestInstance {
+
+        public static final MapCodec<TechnologyTreeLoadsTest> CODEC =
+                RecordCodecBuilder.<TechnologyTreeLoadsTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(TechnologyTreeLoadsTest::info))
+                                .apply(i, TechnologyTreeLoadsTest::new));
+
+        public TechnologyTreeLoadsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            var registry = ModTechnologies.registry(helper.getLevel().registryAccess());
+            helper.assertTrue(registry.size() > 100,
+                    "only " + registry.size() + " technologies loaded; the tree is 216 files");
+
+            Technology automation = technology(helper, "automation");
+            helper.assertTrue(automation != null, "no nauvis_research:automation in the tree");
+            helper.assertValueEqual(automation.units(), 10, "units of automation");
+            helper.assertValueEqual(automation.ticksPerUnit(), 200, "ticks a unit of automation");
+            helper.assertValueEqual(automation.packs().size(), 1, "kinds of pack automation wants");
+            helper.assertValueEqual(automation.packs().get(0),
+                    Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "science_pack_1"),
+                    "the pack automation wants");
+            helper.assertTrue(automation.prerequisites().isEmpty(),
+                    "automation has prerequisites; it is the first technology");
+            helper.assertTrue(
+                    automation.unlocks().contains(recipe("nauvis_machines", "assembling_machine_1")),
+                    "automation does not unlock the assembling machine");
+
+            // The tree is a graph and every edge has to land somewhere. A dangling prerequisite
+            // is a technology nobody can ever start, and it shows in the list looking normal.
+            for (Holder.Reference<Technology> holder : registry.listElements().toList()) {
+                for (ResourceKey<Technology> prerequisite : holder.value().prerequisites()) {
+                    helper.assertTrue(registry.get(prerequisite).isPresent(),
+                            holder.key().identifier() + " needs " + prerequisite.identifier()
+                                    + ", which is not in the tree");
+                }
+            }
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("the technology tree loads");
+        }
+    }
+
+    /**
+     * Finishing a technology unlocks its recipes, and says so loudly enough for an open panel.
+     *
+     * <p>Two assertions, and the second is the one this pack has been bitten by twice. An unlock
+     * that is only ever tested by asking a player who already has it is not tested: what actually
+     * happens is that a technology completes <b>while the crafting panel is open</b>, and the
+     * newly unlocked recipe has to appear without the screen being closed and reopened. Nothing
+     * headless can look at a panel, but the mechanism it watches is
+     * {@code Research#revision}, and this asserts that it moves.
+     *
+     * <p>Steel processing rather than automation, deliberately: research is per-world and the
+     * world is shared with every other test in the run, so completing a technology some other test
+     * has made its current research would clear that research out from under it. See
+     * {@link #research}.
+     */
+    public static class ResearchUnlocksARecipeTest extends GameTestInstance {
+
+        public static final MapCodec<ResearchUnlocksARecipeTest> CODEC =
+                RecordCodecBuilder.<ResearchUnlocksARecipeTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ResearchUnlocksARecipeTest::info))
+                                .apply(i, ResearchUnlocksARecipeTest::new));
+
+        public ResearchUnlocksARecipeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            MinecraftServer server = helper.getLevel().getServer();
+            ResourceKey<Technology> steel = ModTechnologies.key("steel_processing");
+            ResourceKey<Recipe<?>> steelPlate = recipe("neoprogressivematerials", "steel_plate");
+            ResourceKey<Recipe<?>> belt = recipe("nauvis_logistics", "transport_belt");
+
+            Research.state(server).forget(steel);
+            Research.invalidate();
+
+            helper.assertFalse(Research.isUnlocked(server, steelPlate),
+                    "steel plate is craftable before steel processing is researched");
+
+            // A recipe no technology mentions is not gated by anything. That is Factorio's rule
+            // and it is what makes a belt craftable in the first minute; a lock that defaulted
+            // to closed would leave a new world with nothing to build at all.
+            helper.assertTrue(Research.isUnlocked(server, belt),
+                    "a belt, which no technology unlocks, is locked");
+
+            int before = Research.revision();
+            Research.state(server).complete(steel);
+            Research.changedForTest(server);
+
+            helper.assertTrue(Research.isUnlocked(server, steelPlate),
+                    "steel plate is still locked after researching steel processing");
+            helper.assertTrue(Research.revision() != before,
+                    "the revision did not move, so an open crafting panel would never notice");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("research unlocks a recipe");
+        }
+    }
+
+    /**
+     * A lab eats the packs the technology asks for and nothing else.
+     *
+     * <p>Before there was a tree, a cycle consumed one of every kind of item the lab happened to
+     * be holding, which was right when the only item that could be in there was a science pack.
+     * It is wrong now, and wrong in the expensive direction: a lab fed anything at all would eat
+     * it. This puts a redstone in a lab researching automation and expects it to sit there.
+     */
+    public static class LabIgnoresTheWrongPacksTest extends GameTestInstance {
+
+        public static final MapCodec<LabIgnoresTheWrongPacksTest> CODEC =
+                RecordCodecBuilder.<LabIgnoresTheWrongPacksTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(LabIgnoresTheWrongPacksTest::info))
+                                .apply(i, LabIgnoresTheWrongPacksTest::new));
+
+        public LabIgnoresTheWrongPacksTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            research(helper, "automation");
+
+            LabBlockEntity lab = placeLab(helper);
+            charge(lab);
+            insert(lab.automationView(), Items.REDSTONE, 4);
+
+            // Well past a unit of automation would take if it were counting this as science.
+            helper.runAfterDelay(60, () -> {
+                helper.assertValueEqual(lab.cycles(), 0, "research done on redstone");
+                helper.assertValueEqual(lab.progress(), 0, "progress on a lab with no packs");
+                helper.assertValueEqual(lab.inventory().getAmountAsInt(0), 4,
+                        "redstone a lab ate");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a lab ignores the wrong packs");
+        }
+    }
+
+    /**
+     * Facrafting is actually asking us, and gets the right answer.
+     *
+     * <p>Everything else here tests {@code Research} directly, which would keep passing if
+     * {@code FacraftingLock.install()} were deleted from the mod constructor - and then nothing at
+     * all would be gated, in a way no test and no log line would mention. This asserts the wiring:
+     * a locked recipe put to <em>Facrafting's</em> lock comes back locked, and an ungated one
+     * comes back craftable.
+     *
+     * <p>It reaches across a mod boundary on purpose and it is the only thing here that does.
+     * Facrafting is runtimeOnly and compileOnly for this mod - see build.gradle - so this test
+     * compiles and runs wherever the mod itself does.
+     *
+     * <p><b>Optics rather than automation, and that is not arbitrary.</b> Research is per-world
+     * and the world is shared with every other test in the run, so completing a technology that
+     * another test has set as its current research clears that research out from under it -
+     * {@code ResearchState#complete} does exactly that, and the test that broke reported a lab
+     * having done no work rather than anything about research. Optics is nobody's current
+     * research here. See {@link #research}.
+     */
+    public static class CraftingGateIsInstalledTest extends GameTestInstance {
+
+        public static final MapCodec<CraftingGateIsInstalledTest> CODEC =
+                RecordCodecBuilder.<CraftingGateIsInstalledTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(CraftingGateIsInstalledTest::info))
+                                .apply(i, CraftingGateIsInstalledTest::new));
+
+        public CraftingGateIsInstalledTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            MinecraftServer server = helper.getLevel().getServer();
+            ResourceKey<Technology> optics = ModTechnologies.key("optics");
+            ResourceKey<Recipe<?>> lamp = recipe("nauvis_circuits", "redstone_lamp");
+            ResourceKey<Recipe<?>> belt = recipe("nauvis_logistics", "transport_belt");
+
+            Research.state(server).forget(optics);
+            Research.changedForTest(server);
+
+            Player player = helper.makeMockServerPlayer(GameType.SURVIVAL);
+
+            helper.assertFalse(RecipeLocks.isOpen(),
+                    "no recipe lock is installed - see NauvisResearch's ModList check");
+            helper.assertFalse(RecipeLocks.isUnlocked(player, lamp),
+                    "the lamp is craftable before Optics is researched");
+            helper.assertTrue(RecipeLocks.isUnlocked(player, belt),
+                    "a belt, which no technology unlocks, is locked");
+
+            Research.state(server).complete(optics);
+            Research.changedForTest(server);
+            helper.assertTrue(RecipeLocks.isUnlocked(player, lamp),
+                    "the lamp is still locked after researching Optics");
+
+            // Put it back: research is per-world and this world is shared with every other test.
+            Research.state(server).forget(optics);
+            Research.changedForTest(server);
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("the crafting gate is installed");
         }
     }
 }

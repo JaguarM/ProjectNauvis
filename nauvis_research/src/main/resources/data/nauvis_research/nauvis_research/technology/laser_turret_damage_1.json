@@ -1,0 +1,15 @@
+{
+  "name": "Laser turret damage 1",
+  "order": "e-n-a",
+  "prerequisites": [
+    "nauvis_research:laser_turrets"
+  ],
+  "units": 50,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:military_science_pack"
+  ],
+  "unlocks": []
+}

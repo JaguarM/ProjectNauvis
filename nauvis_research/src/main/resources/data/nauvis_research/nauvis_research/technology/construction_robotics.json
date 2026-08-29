@@ -1,0 +1,20 @@
+{
+  "name": "Construction robotics",
+  "order": "c-k-a",
+  "prerequisites": [
+    "nauvis_research:robotics",
+    "nauvis_research:flying"
+  ],
+  "units": 100,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis_logistics:roboport",
+    "nauvis_logistics:logistic_chest_passive_provider",
+    "nauvis_logistics:logistic_chest_storage",
+    "nauvis_logistics:construction_robot"
+  ]
+}

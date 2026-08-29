@@ -1,0 +1,14 @@
+{
+  "name": "Automation",
+  "order": "a-b-a",
+  "prerequisites": [],
+  "units": 10,
+  "ticks_per_unit": 200,
+  "packs": [
+    "nauvis_research:science_pack_1"
+  ],
+  "unlocks": [
+    "nauvis_machines:assembling_machine_1",
+    "nauvis_logistics:long_handed_inserter"
+  ]
+}

@@ -26,7 +26,19 @@ public class LabMenu extends AbstractContainerMenu {
     public static final int DATA_PROGRESS = 0;
     public static final int DATA_ENERGY = 1;
     public static final int DATA_CYCLES = 2;
-    public static final int DATA_COUNT = 3;
+
+    /**
+     * How long the cycle in progress is meant to take.
+     *
+     * <p>A number rather than a constant because it is the <em>technology's</em>, not the lab's -
+     * Factorio prices research by the technology and this pack does too. The screen needs it to
+     * draw a bar against something, and sending it beats having the client look the current
+     * research up: the two would then disagree for the tick after a research was swapped, which
+     * is a bar that jumps.
+     */
+    public static final int DATA_CYCLE_TICKS = 3;
+
+    public static final int DATA_COUNT = 4;
 
     /**
      * Where the screen expects the pack slots. Shared, so the two cannot drift apart, and read
@@ -75,8 +87,11 @@ public class LabMenu extends AbstractContainerMenu {
 
     /** 0 to 1 through the cycle in progress. */
     public float progress() {
-        return Math.clamp(
-                data.get(DATA_PROGRESS) / (float) LabBlockEntity.TICKS_PER_CYCLE, 0.0f, 1.0f);
+        int total = data.get(DATA_CYCLE_TICKS);
+        if (total <= 0) {
+            total = LabBlockEntity.IDLE_TICKS_PER_CYCLE;
+        }
+        return Math.clamp(data.get(DATA_PROGRESS) / (float) total, 0.0f, 1.0f);
     }
 
     /** 0 to 1 across the energy buffer. */

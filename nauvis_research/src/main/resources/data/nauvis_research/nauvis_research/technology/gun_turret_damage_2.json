@@ -1,0 +1,14 @@
+{
+  "name": "Gun turret damage 2",
+  "order": "e-o-b",
+  "prerequisites": [
+    "nauvis_research:gun_turret_damage_1"
+  ],
+  "units": 100,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": []
+}

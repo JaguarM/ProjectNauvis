@@ -1,0 +1,19 @@
+{
+  "name": "Concrete",
+  "order": "c-c-c",
+  "prerequisites": [
+    "nauvis_research:advanced_material_processing"
+  ],
+  "units": 250,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis:gray_concrete",
+    "nauvis:yellow_concrete",
+    "nauvis:refined_concrete",
+    "nauvis:refined_hazard_concrete"
+  ]
+}

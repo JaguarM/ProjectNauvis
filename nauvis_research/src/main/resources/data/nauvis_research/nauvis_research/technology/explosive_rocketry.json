@@ -1,0 +1,19 @@
+{
+  "name": "Explosive rocketry",
+  "order": "e-h",
+  "prerequisites": [
+    "nauvis_research:rocketry",
+    "nauvis_research:military_3"
+  ],
+  "units": 100,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3",
+    "nauvis_research:military_science_pack"
+  ],
+  "unlocks": [
+    "nauvis_military:explosive_rocket"
+  ]
+}

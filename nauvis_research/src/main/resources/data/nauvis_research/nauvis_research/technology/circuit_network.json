@@ -1,0 +1,22 @@
+{
+  "name": "Circuit network",
+  "order": "a-d-d",
+  "prerequisites": [
+    "nauvis_research:electronics"
+  ],
+  "units": 100,
+  "ticks_per_unit": 300,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis_circuits:red_wire",
+    "nauvis_circuits:green_wire",
+    "nauvis_circuits:arithmetic_combinator",
+    "nauvis_circuits:decider_combinator",
+    "nauvis_circuits:constant_combinator",
+    "nauvis_power:power_switch",
+    "nauvis_circuits:programmable_speaker"
+  ]
+}

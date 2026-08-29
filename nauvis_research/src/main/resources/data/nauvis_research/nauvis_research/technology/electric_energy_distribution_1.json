@@ -1,0 +1,18 @@
+{
+  "name": "Electric energy distribution 1",
+  "order": "c-e-b",
+  "prerequisites": [
+    "nauvis_research:electronics",
+    "nauvis_research:steel_processing"
+  ],
+  "units": 120,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis_power:medium_electric_pole",
+    "nauvis_power:big_electric_pole"
+  ]
+}

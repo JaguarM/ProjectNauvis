@@ -1,0 +1,16 @@
+{
+  "name": "Cliff explosives",
+  "order": "z-c-d",
+  "prerequisites": [
+    "nauvis_research:explosives"
+  ],
+  "units": 200,
+  "ticks_per_unit": 300,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis:cliff_explosives"
+  ]
+}

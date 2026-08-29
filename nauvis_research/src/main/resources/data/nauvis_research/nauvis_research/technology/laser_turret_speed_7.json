@@ -1,0 +1,17 @@
+{
+  "name": "Laser turret speed 7",
+  "order": "e-n-n",
+  "prerequisites": [
+    "nauvis_research:laser_turret_speed_6"
+  ],
+  "units": 450,
+  "ticks_per_unit": 1200,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3",
+    "nauvis_research:military_science_pack",
+    "nauvis_research:high_tech_science_pack"
+  ],
+  "unlocks": []
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Rail signals",
+  "order": "c-g-c",
+  "prerequisites": [
+    "nauvis_research:automated_rail_transportation"
+  ],
+  "units": 100,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis_trains:rail_signal",
+    "nauvis_trains:rail_chain_signal"
+  ]
+}

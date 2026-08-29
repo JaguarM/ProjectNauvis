@@ -1,0 +1,14 @@
+{
+  "name": "Research speed 2",
+  "order": "c-m-b",
+  "prerequisites": [
+    "nauvis_research:research_speed_1"
+  ],
+  "units": 200,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": []
+}

@@ -238,6 +238,12 @@ four, so dropping them leaves it closed.
 `sulfur` in materials. **The vanilla-replacement datapack lands here** — once research gates
 progression there is somewhere for stripped vanilla recipes to go.
 
+**The tree itself is done and is all 216 finite technologies**, not the fifteen items above.
+That is deliberate and is the same rule as recipes: a technology's cost, its prerequisites and
+its unlocks are identity, they live in world saves, and generating the whole graph from Wube's
+own data costs no more than generating a tenth of it. Most of them unlock items no mod registers
+yet, and simply do nothing until one does. What is left of this milestone is the items.
+
 ### 4 — Oil, in barrels · 11 new
 
 `pumpjack`, `oil-refinery`, `chemical-plant`, `empty-barrel`, `storage-tank`,
@@ -264,7 +270,7 @@ Shortcuts, and what they defer
 | Belt | BlockEntity per block passing items along | transport lines, items at positions |
 | Power | FE per machine — burner generator, solar, FE-battery accumulator | unchanged; FE *is* the chosen model |
 | Poles | FE cables with a wide connection radius | unchanged |
-| Research | lab consumes packs, grants vanilla advancements; recipes gate on them | real tech tree screen with costs and prerequisites |
+| Research | ~~lab consumes packs, grants vanilla advancements~~ **rejected — advancements are per player and research belongs to the world.** Shipped instead: the real model, on a `SavedData`, with a list for a screen | the tech tree drawn as a tree, with a layout, pan and zoom |
 | Oil | **barrels as items, no pipes at all** | fluid network, pipes, tanks, pumps |
 | Trains | vanilla minecarts and chest minecarts | locomotives, wagons, signals, schedules |
 | Biters | vanilla hostiles + per-chunk pollution raising spawn rate near the factory | nests, expansion, evolution factor |

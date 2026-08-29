@@ -1,0 +1,19 @@
+{
+  "name": "Military 2",
+  "order": "e-a-b",
+  "prerequisites": [
+    "nauvis_research:military",
+    "nauvis_research:steel_processing"
+  ],
+  "units": 20,
+  "ticks_per_unit": 300,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis_military:piercing_rounds_magazine",
+    "nauvis_military:grenade",
+    "nauvis_research:military_science_pack"
+  ]
+}

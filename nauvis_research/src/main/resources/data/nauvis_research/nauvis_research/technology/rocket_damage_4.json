@@ -1,0 +1,16 @@
+{
+  "name": "Rocket damage 4",
+  "order": "e-j-d",
+  "prerequisites": [
+    "nauvis_research:rocket_damage_3"
+  ],
+  "units": 200,
+  "ticks_per_unit": 1200,
+  "packs": [
+    "nauvis_research:military_science_pack",
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3"
+  ],
+  "unlocks": []
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Automation 3",
+  "order": "a-b-c",
+  "prerequisites": [
+    "nauvis_research:speed_module",
+    "nauvis_research:automation_2"
+  ],
+  "units": 150,
+  "ticks_per_unit": 1200,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3",
+    "nauvis_research:production_science_pack"
+  ],
+  "unlocks": [
+    "nauvis_machines:assembling_machine_3"
+  ]
+}

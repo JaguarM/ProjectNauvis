@@ -52,13 +52,18 @@ repositories {
 }
 
 dependencies {
-    // Runtime only, and no compile-time dependency on anything. A lab consumes science packs
-    // through Capabilities.Item.BLOCK and takes power through Capabilities.Energy.BLOCK, both
-    // NeoForge's, so it never needs to know what any other mod is.
+    // Facrafting is compileOnly as well as runtimeOnly, and it is the only mod here that is.
+    // The reason is compat/facrafting/FacraftingLock: gating recipes behind research means
+    // naming a Facrafting type, because the hook is Facrafting's. It stays *optional* in
+    // neoforge.mods.toml - the class is only loaded behind a ModList check, exactly like the
+    // Jade plugins below, so this mod still runs standalone and its bench recipes still exist
+    // for that case.
     //
-    // These are here so a standalone run of this mod has the mods its recipes name: Facrafting
-    // supplies the timed recipe type, Neo Progressive Materials the iron gear wheel a science
-    // pack is paid for in.
+    // Everything else is runtime only. A lab consumes science packs through
+    // Capabilities.Item.BLOCK and takes power through Capabilities.Energy.BLOCK, both
+    // NeoForge's, so it never needs to know what any other mod is; these are here so a
+    // standalone run has the mods its recipes name.
+    compileOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
 

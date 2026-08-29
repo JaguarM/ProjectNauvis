@@ -1,0 +1,21 @@
+{
+  "name": "Tanks",
+  "order": "e-c-c",
+  "prerequisites": [
+    "nauvis_research:automobilism",
+    "nauvis_research:military_3"
+  ],
+  "units": 75,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3",
+    "nauvis_research:military_science_pack"
+  ],
+  "unlocks": [
+    "nauvis_military:tank",
+    "nauvis_military:cannon_shell",
+    "nauvis_military:explosive_cannon_shell"
+  ]
+}

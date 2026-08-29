@@ -3,8 +3,10 @@ The mapping table
 
 `data/mapping.json` answers one question for each of Factorio's 214 items: **what is this in
 Minecraft, and which mod owns it?** Every recipe in the pack is generated from it plus
-`reference/factorio/recipes.json`. It is the single review surface for the pack's naming and
-stand-in decisions — one file instead of two hundred recipe JSONs.
+`reference/factorio/recipes.json`, and every technology from it plus
+`reference/factorio/technologies.json`. It is the single review surface for the pack's naming
+and stand-in decisions — one file instead of two hundred recipe JSONs and two hundred more
+technologies.
 
 It was seeded once by `tools/gen_mapping.py` and is **hand-maintained from here on**. The
 script refuses to overwrite it without `--force`, because rerunning would discard every
@@ -56,6 +58,25 @@ are one tile there and one block here.
 build if they disagree with the number here, the way `checkRecipes` does for craft times. A shape
 opts into that by naming its entry in a `FACTORIO_ID` constant.
 
+The `unlocks` table
+-------------------
+
+A second, much smaller table beside `items`, and it exists because of one mismatch: a technology
+effect names a **recipe**, and Factorio's recipe names are not always its item names. `optics`
+unlocks `small-lamp`, which makes a `lamp`; `solar-energy` unlocks `solar-panel-equipment`, which
+makes a `portable-solar-panel`. Fifteen rows are that, and they map the recipe name to the item
+whose recipe file `gen_recipes.py` writes.
+
+The other eight rows are `null`, which means **the pack has no counterpart at all**. They are
+the oil recipes — `basic-oil-processing`, the two crackings, the three solid-fuel routes and
+`coal-liquefaction` — whose products this pack's recipe dump carries as raw inputs with no recipe
+of their own. A technology that unlocks only those unlocks nothing here.
+
+**A recipe name in neither table is a `GenError`, not a dropped unlock.** That is the same rule
+the recipe generator applies to an unmapped ingredient, and for the same reason: "no opinion" and
+"I could not work it out" must not have the same representation, or a stale table looks like a
+design decision.
+
 Naming policy
 -------------
 
@@ -104,6 +125,13 @@ Skipped outright
 
 The first three are Factorio UI affordances with no Minecraft analogue. The axes are covered
 by vanilla tools and would only duplicate them.
+
+Plus the four in `PLAN.md`'s belt note — `underground-belt` and its two upper tiers, and
+`pipe-to-ground` — which this pack does not need because it has a Y axis.
+
+`gen_technologies.py` reports these when a technology unlocks one, rather than passing on a
+recipe key nothing will ever answer to. Four of them come up: `steel-processing` unlocks the
+steel axe, and the three logistics tiers each unlock an underground belt.
 
 Open questions
 --------------

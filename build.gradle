@@ -48,6 +48,53 @@ tasks.register('checkRecipes') {
 }
 
 /**
+ * Non-negotiable #2 again, for the other generated half of the pack.
+ *
+ * The technology tree is generated from Wube's own prototype data by tools/gen_technologies.py,
+ * so a research cost is as exact as an ingredient list and as impossible to type by hand. This
+ * diffs every technology on disk against what the generator produces, and unlike checkRecipes it
+ * also fails on a file the generator no longer produces - a stale technology would still load,
+ * still show in the research list, and answer to nothing.
+ *
+ * Skips itself when reference/factorio/technologies.json is absent, the same way checkRecipes
+ * does. Write it with: python tools/fetch_technologies.py
+ */
+tasks.register('checkTechnologies') {
+    group = 'verification'
+    description = "Diffs the generated technology tree against the one committed to nauvis_research."
+
+    def dump = file('reference/factorio/technologies.json')
+    def mapping = file('data/mapping.json')
+    def script = file('tools/gen_technologies.py')
+
+    inputs.file(mapping).withPropertyName('mapping')
+    inputs.file(script).withPropertyName('generator')
+    outputs.upToDateWhen { false }
+
+    doLast {
+        if (!dump.exists()) {
+            logger.lifecycle("checkTechnologies: skipped, ${dump} is absent (it is gitignored - see reference/README.md)")
+            return
+        }
+
+        def process = new ProcessBuilder('python', script.absolutePath, '--check')
+                .directory(projectDir)
+                .redirectErrorStream(true)
+                .start()
+        def output = process.inputStream.text
+        def exitValue = process.waitFor()
+
+        logger.lifecycle(output)
+
+        if (exitValue != 0) {
+            throw new GradleException(
+                    "The technology tree on disk disagrees with the generator. Regenerate it " +
+                    "rather than editing by hand: python tools/gen_technologies.py --write")
+        }
+    }
+}
+
+/**
  * The checks that need no game, wired in so they actually run.
  *
  * Every visual bug this pack has shipped compiled, passed its tests and passed datagen. What

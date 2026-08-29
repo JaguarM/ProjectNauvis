@@ -1,0 +1,16 @@
+{
+  "name": "Braking force 5",
+  "order": "b-f-e",
+  "prerequisites": [
+    "nauvis_research:braking_force_4"
+  ],
+  "units": 450,
+  "ticks_per_unit": 700,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3",
+    "nauvis_research:production_science_pack"
+  ],
+  "unlocks": []
+}

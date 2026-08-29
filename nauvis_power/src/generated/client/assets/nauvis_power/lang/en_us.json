@@ -21,7 +21,7 @@
   "nauvis_power.small_electric_pole.status": "Network: %s poles, %s machines - live",
   "nauvis_power.small_electric_pole.status_idle": "Network: %s poles, %s machines - idle",
   "nauvis_power.steam_engine.status": "Charge: %s / %s FE",
-  "pack.nauvis_power.crafting_table": "Nauvis Power: Crafting Table Recipes",
+  "pack.nauvis_power.crafting_table": "Nauvis Power: bench recipes (skips research)",
   "screen.nauvis_power.boiler.burning": "Burning",
   "screen.nauvis_power.boiler.full": "Full of steam - nothing is drawing it off",
   "screen.nauvis_power.boiler.idle": "Out of fuel",

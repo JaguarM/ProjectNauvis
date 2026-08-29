@@ -1,0 +1,22 @@
+{
+  "name": "Artillery",
+  "order": "d-e-f",
+  "prerequisites": [
+    "nauvis_research:military_4"
+  ],
+  "units": 2000,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3",
+    "nauvis_research:military_science_pack",
+    "nauvis_research:high_tech_science_pack"
+  ],
+  "unlocks": [
+    "nauvis_trains:artillery_wagon",
+    "nauvis_military:artillery_turret",
+    "nauvis_military:artillery_shell",
+    "nauvis_military:artillery_targeting_remote"
+  ]
+}

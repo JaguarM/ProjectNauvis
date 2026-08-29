@@ -1,0 +1,18 @@
+{
+  "name": "Combat robotics",
+  "order": "e-p-a",
+  "prerequisites": [
+    "nauvis_research:military_2",
+    "nauvis_research:flying"
+  ],
+  "units": 150,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:military_science_pack"
+  ],
+  "unlocks": [
+    "nauvis_military:defender_capsule"
+  ]
+}

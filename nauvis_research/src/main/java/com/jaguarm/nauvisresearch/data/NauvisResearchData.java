@@ -80,11 +80,37 @@ public final class NauvisResearchData {
             // modern one, which is what a player will be looking for.
             addItem(ModItems.SCIENCE_PACK_1, "Automation science pack");
 
-            add("pack.nauvis_research.crafting_table", "Nauvis Research: bench recipes");
+                        // "skips research" is not a caveat, it is the point of the pack and has to be on the
+            // label. The technology tree gates crafting through Facrafting's panel, which is the
+            // only place a timed craft happens; a vanilla bench recipe goes nowhere near it and
+            // there is no hook that would let it. A player who turns this on has turned the tech
+            // tree off for everything it re-enables, and the one line they read before doing so
+            // is this one.
+            add("pack.nauvis_research.crafting_table", "Nauvis Research: bench recipes (skips research)");
 
+            // Four states a lab can be in and four different things to do about each, which is
+            // the whole reason they are four strings rather than "Idle".
             add("screen.nauvis_research.lab.idle", "Idle - give it science packs");
             add("screen.nauvis_research.lab.no_power", "No power - run a wire to it");
-            add("screen.nauvis_research.lab.researching", "Researching - %s done");
+            add("screen.nauvis_research.lab.no_research", "Nothing being researched - pick one");
+            add("screen.nauvis_research.lab.researching", "%s - %s units from this lab");
+            add("screen.nauvis_research.lab.open_research", "Tech");
+
+            // The research screen. Technology names themselves are not here: the generator ships
+            // an English fallback in every technology file, so a name only needs a key when
+            // somebody wants to override it - `technology.nauvis_research.<id>`.
+            add("screen.nauvis_research.research", "Technology");
+            add("screen.nauvis_research.research.current", "Researching %s - %s of %s");
+            add("screen.nauvis_research.research.nothing_selected",
+                    "Technology - nothing being researched");
+            add("screen.nauvis_research.research.none", "Nothing available. Research something first.");
+            add("screen.nauvis_research.research.cost", "%s x %ss - %s");
+            add("screen.nauvis_research.research.unavailable_packs",
+                    "Needs a science pack this pack does not have yet");
+            add("screen.nauvis_research.research.show_completed", "Completed >");
+            add("screen.nauvis_research.research.show_available", "< Available");
+
+            add("message.nauvis_research.research_complete", "Research complete: %s");
         }
     }
 

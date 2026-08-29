@@ -1,0 +1,14 @@
+{
+  "name": "Steel processing",
+  "order": "c-a",
+  "prerequisites": [],
+  "units": 50,
+  "ticks_per_unit": 100,
+  "packs": [
+    "nauvis_research:science_pack_1"
+  ],
+  "unlocks": [
+    "neoprogressivematerials:steel_plate",
+    "nauvis_logistics:steel_chest"
+  ]
+}

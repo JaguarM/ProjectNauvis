@@ -1,14 +1,22 @@
 package com.jaguarm.nauvisresearch.lab;
 
+import java.util.List;
+
 import com.jaguarm.nauvisresearch.registry.ModBlockEntities;
+import com.jaguarm.nauvisresearch.research.Research;
+import com.jaguarm.nauvisresearch.research.Technology;
+
+import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
@@ -24,26 +32,25 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 /**
  * A lab: turns science packs and electricity into research.
  *
- * <h2>What it is researching, and why that is not here</h2>
+ * <h2>What it is researching</h2>
  *
- * <p>There is no technology tree yet, and the lab does not need one to be built. Factorio's lab
- * does not know what it is working on either: it is told which packs a technology wants, consumes
- * one of each, and reports a cycle finished. The tree, the unlocks and the choosing all live
- * elsewhere.
+ * <p>The world is. A lab does not choose and does not remember - it asks {@link Research} what
+ * the current technology is, takes one of each pack that technology names, and reports a unit
+ * done. That is Factorio's arrangement exactly, and it is why twelve labs finish a technology
+ * twelve times as fast without any of them knowing about the others.
  *
- * <p>So this counts cycles. {@link #cycles()} is how much research this lab has done, it is saved
- * with the block, and when there is a tree to hand it to, the handing over is the only part that
- * changes. What a cycle consumes is <b>one of every kind of science pack the lab is holding</b> -
- * which today, with one pack in the game, is one red science pack, and which is exactly the rule a
- * technology imposes once technologies exist.
+ * <p>The two things that changed when the tree arrived were both handovers rather than rewrites:
+ * a cycle consumes the packs the <em>technology</em> asks for instead of one of everything the
+ * lab happens to be holding, and it takes the technology's own time instead of a fixed
+ * {@link #IDLE_TICKS_PER_CYCLE}. {@link #cycles()} still counts what this lab has contributed,
+ * because a player looking at one machine wants to know whether it is doing anything.
  *
  * <h2>The numbers</h2>
  *
  * <p>Factorio's lab draws 60 kW against an assembling machine 1's 75, and the pack keeps the
  * ratio rather than the units - so eight FE a tick against the assembler's ten. That much is
- * identity by proportion. {@link #TICKS_PER_CYCLE} is not: in Factorio the time comes from the
- * technology being researched, not from the lab, so until there are technologies it is a
- * stand-in and it is free to change.
+ * identity by proportion. The time a unit takes is not the lab's to choose: it comes from the
+ * technology, which is what {@link Technology#ticksPerUnit()} is.
  *
  * <h2>Sleeping</h2>
  *
@@ -52,6 +59,14 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * in its slots, energy arriving in its buffer (which is what {@link LabPower}'s callback is for,
  * because a lab that ran dry has stopped scheduling and cannot notice anything itself), and a
  * neighbour changing, which covers a pole being connected.
+ *
+ * <p><b>There is a fourth thing that can give it work and no signal for it:</b> somebody picking
+ * a technology on the research screen, possibly in another dimension. A lab that is fed and
+ * powered but has nothing to research therefore looks again every {@link #IDLE_RECHECK_TICKS}
+ * rather than sleeping - the same compromise the long-handed inserter makes, and for the same
+ * reason: the news it is waiting for comes from outside the one-block radius a {@code setChanged}
+ * reaches. It is bounded by the number of labs a player has deliberately loaded with packs while
+ * researching nothing, which is a state that lasts as long as it takes to open a screen.
  */
 public class LabBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -71,13 +86,23 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
     public static final int ENERGY_CAPACITY = ENERGY_PER_TICK * 200;
 
     /**
-     * How long one cycle of research takes.
+     * What the progress bar is drawn against when nothing is being researched.
      *
-     * <p><b>Not identity.</b> In Factorio this comes from the technology - most early ones are ten
-     * or fifteen seconds at a lab speed of one - so there is nothing here to be faithful to until
-     * technologies exist. Two hundred ticks is ten seconds, which is the commonest of those.
+     * <p>Only a scale. The real length of a cycle is {@link Technology#ticksPerUnit()} and comes
+     * from whatever is being researched; this is what {@code LabMenu} divides by when there is no
+     * technology to ask, so that an idle lab draws an empty bar rather than dividing by zero. Ten
+     * seconds is the commonest unit time in Factorio's early tree.
      */
-    public static final int TICKS_PER_CYCLE = 200;
+    public static final int IDLE_TICKS_PER_CYCLE = 200;
+
+    /**
+     * How often a lab with packs and power but no research looks again.
+     *
+     * <p>One second. See the class javadoc: choosing a technology happens on a screen and reaches
+     * no block, so this is the only way a fed lab hears about it. Everything else that gives a lab
+     * work arrives as a callback and costs nothing.
+     */
+    public static final int IDLE_RECHECK_TICKS = 20;
 
     private final LabInventory packs = new LabInventory(SLOT_COUNT, this::onPacksChanged);
 
@@ -90,6 +115,15 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
     private int progress;
     private int cycles;
 
+    /**
+     * The length of the cycle in progress, so the screen's bar is drawn against the right total.
+     *
+     * <p>Saved, and read from the technology when a cycle starts rather than every tick. A
+     * research swapped mid-cycle would otherwise redraw the bar against a different total while
+     * the progress underneath it had not moved.
+     */
+    private int cycleTicks = IDLE_TICKS_PER_CYCLE;
+
     /** What the screen reads. Ints only, which is all a lab has to say. */
     private final ContainerData menuData = new ContainerData() {
         @Override
@@ -98,6 +132,7 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
                 case LabMenu.DATA_PROGRESS -> progress;
                 case LabMenu.DATA_ENERGY -> energy.getAmountAsInt();
                 case LabMenu.DATA_CYCLES -> cycles;
+                case LabMenu.DATA_CYCLE_TICKS -> cycleTicks();
                 default -> 0;
             };
         }
@@ -107,6 +142,7 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
             switch (id) {
                 case LabMenu.DATA_PROGRESS -> progress = value;
                 case LabMenu.DATA_CYCLES -> cycles = value;
+                case LabMenu.DATA_CYCLE_TICKS -> cycleTicks = value;
                 default -> { }
             }
         }
@@ -147,17 +183,33 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
         return cycles;
     }
 
-    /** True while the lab has everything it needs to be working. */
-    public boolean isResearching(ServerLevel level) {
-        return hasPacks() && energy.getAmountAsInt() >= ENERGY_PER_TICK;
+    /** The length of the cycle in progress; a scale for the screen's bar, never a divisor of zero. */
+    public int cycleTicks() {
+        return cycleTicks > 0 ? cycleTicks : IDLE_TICKS_PER_CYCLE;
     }
 
-    /** Called by {@link LabBlock}, and only on a tick the lab asked for. */
+    /** True while the lab has everything it needs to be working. */
+    public boolean isResearching(ServerLevel level) {
+        return energy.getAmountAsInt() >= ENERGY_PER_TICK && wanted(level) != null;
+    }
+
+    /**
+     * Called by {@link LabBlock}, and only on a tick the lab asked for.
+     *
+     * <p>Three things stop it, and they are told apart because they want different things done
+     * about them: nothing is being researched or the packs for it are missing, there is no power,
+     * or it has just finished a unit and has nothing left to spend. The screen says which.
+     */
     public void serverTick(ServerLevel level) {
-        if (!hasPacks()) {
-            // Nothing to do. A pack arriving wakes it through onPacksChanged.
+        List<Item> wanted = wanted(level);
+        if (wanted == null) {
+            // A pack arriving wakes it through onPacksChanged; a technology being chosen happens
+            // on a screen and reaches no block at all, which is what the idle recheck is for.
             progress = 0;
             setChanged();
+            if (hasAnyPack() && energy.getAmountAsInt() >= ENERGY_PER_TICK) {
+                level.scheduleTick(worldPosition, getBlockState().getBlock(), IDLE_RECHECK_TICKS);
+            }
             return;
         }
 
@@ -167,30 +219,61 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
 
+        Holder.Reference<Technology> technology = Research.current(level.getServer());
+        cycleTicks = technology == null ? IDLE_TICKS_PER_CYCLE : technology.value().ticksPerUnit();
+
         try (Transaction transaction = Transaction.openRoot()) {
             energy.extract(ENERGY_PER_TICK, transaction);
             transaction.commit();
         }
 
         progress++;
-        if (progress >= TICKS_PER_CYCLE) {
-            if (!consumeOneOfEach()) {
+        if (progress >= cycleTicks) {
+            if (!consumeOneOfEach(wanted)) {
                 // Something took the packs between the last tick and this one. Keep the progress
                 // and wait; the cycle is not lost, it is only paused.
-                progress = TICKS_PER_CYCLE;
+                progress = cycleTicks;
                 setChanged();
                 return;
             }
             progress = 0;
             cycles++;
+            // The unit belongs to the world, not to this machine. Completing the technology is
+            // Research's business, including telling everybody about it.
+            Research.addUnit(level);
         }
 
         setChanged();
         level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
     }
 
-    /** Whether there is at least one kind of pack to work on. */
-    private boolean hasPacks() {
+    /**
+     * The packs one unit of the current research would consume, or null when there is no unit to
+     * do: nothing is being researched, or the lab is short of one of the packs it asks for.
+     *
+     * <p>Short of <em>one</em> is short of all of them. Factorio's lab consumes one of each pack a
+     * technology names and will not run on a subset, which is the rule that makes a science farm a
+     * balancing problem rather than a pile.
+     */
+    private @Nullable List<Item> wanted(ServerLevel level) {
+        Holder.Reference<Technology> technology = Research.current(level.getServer());
+        if (technology == null) {
+            return null;
+        }
+        List<Item> items = technology.value().packItems();
+        if (items == null || items.isEmpty()) {
+            return null;
+        }
+        for (Item item : items) {
+            if (countOf(item) <= 0) {
+                return null;
+            }
+        }
+        return items;
+    }
+
+    /** Whether the lab holds anything at all, which is what decides if an idle recheck is worth it. */
+    private boolean hasAnyPack() {
         for (int slot = 0; slot < packs.size(); slot++) {
             if (packs.getAmountAsInt(slot) > 0) {
                 return true;
@@ -199,28 +282,47 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
         return false;
     }
 
+    private int countOf(Item item) {
+        int total = 0;
+        for (int slot = 0; slot < packs.size(); slot++) {
+            if (packs.getAmountAsInt(slot) > 0 && packs.getResource(slot).is(item)) {
+                total += packs.getAmountAsInt(slot);
+            }
+        }
+        return total;
+    }
+
     /**
-     * Takes one of every kind of pack the lab holds, or nothing at all.
+     * Takes one of each of these packs, or nothing at all.
      *
-     * <p>One transaction for the lot, so a lab holding two kinds and one of the second cannot
-     * spend the first and stall. That is the pack's standing rule - "can I?" and "do it" are the
-     * same call - and it is what makes the tech tree's arrival cheap: this is already the
-     * behaviour a technology needing three packs will want.
+     * <p>One transaction for the lot, so a lab holding the first two packs of a three-pack
+     * technology cannot spend them and stall. That is the pack's standing rule - "can I?" and "do
+     * it" are the same call - and it is why a technology needing three packs needed no new code
+     * here.
      */
-    private boolean consumeOneOfEach() {
+    private boolean consumeOneOfEach(List<Item> wanted) {
         try (Transaction transaction = Transaction.openRoot()) {
-            for (int slot = 0; slot < packs.size(); slot++) {
-                if (packs.getAmountAsInt(slot) <= 0) {
-                    continue;
-                }
-                ItemResource pack = packs.getResource(slot);
-                if (packs.extract(slot, pack, 1, transaction) != 1) {
+            for (Item item : wanted) {
+                if (!takeOne(item, transaction)) {
                     return false;
                 }
             }
             transaction.commit();
             return true;
         }
+    }
+
+    private boolean takeOne(Item item, Transaction transaction) {
+        for (int slot = 0; slot < packs.size(); slot++) {
+            if (packs.getAmountAsInt(slot) <= 0) {
+                continue;
+            }
+            ItemResource pack = packs.getResource(slot);
+            if (pack.is(item) && packs.extract(slot, pack, 1, transaction) == 1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void onPacksChanged() {
@@ -256,6 +358,7 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
         energy.serialize(output.child("Energy"));
         output.putInt("Progress", progress);
         output.putInt("Cycles", cycles);
+        output.putInt("CycleTicks", cycleTicks);
     }
 
     @Override
@@ -265,6 +368,7 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
         input.child("Energy").ifPresent(energy::deserialize);
         progress = input.getIntOr("Progress", 0);
         cycles = input.getIntOr("Cycles", 0);
+        cycleTicks = input.getIntOr("CycleTicks", IDLE_TICKS_PER_CYCLE);
     }
 
     @Override

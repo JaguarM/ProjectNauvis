@@ -99,7 +99,11 @@ SCREENS = [
         'LabMenu.java', 'LabScreen.java',
         slots=[('pack', 'PACKS_X', 'PACKS_Y', 6, 6)],
         bars=[('cycle bar', 'PROGRESS_X', 'PROGRESS_Y', 'PROGRESS_WIDTH', 'PROGRESS_HEIGHT'),
-              ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT')],
+              ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT'),
+              # Not a bar but the same kind of box, and the first thing on any screen here that
+              # is clickable: a button drawn through the status line still reads a click, so the
+              # overlap would have shown up as a label that sometimes swallowed one.
+              ('research button', 'RESEARCH_X', 'RESEARCH_Y', 'RESEARCH_WIDTH', 'RESEARCH_HEIGHT')],
     ),
     Screen(
         'burner inserter',

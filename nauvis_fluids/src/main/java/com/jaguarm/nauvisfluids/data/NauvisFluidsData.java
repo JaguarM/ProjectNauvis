@@ -74,7 +74,13 @@ public final class NauvisFluidsData {
             add("jade.nauvis_fluids.pipe.empty", "Empty");
             add("jade.nauvis_fluids.pipe.extent", "Pipeline extent: %s pipes");
             add("jade.nauvis_fluids.pipe.flowing", "Working");
-            add("pack.nauvis_fluids.crafting_table", "Nauvis Fluids: Crafting Table Recipes");
+                        // "skips research" is not a caveat, it is the point of the pack and has to be on the
+            // label. The technology tree gates crafting through Facrafting's panel, which is the
+            // only place a timed craft happens; a vanilla bench recipe goes nowhere near it and
+            // there is no hook that would let it. A player who turns this on has turned the tech
+            // tree off for everything it re-enables, and the one line they read before doing so
+            // is this one.
+            add("pack.nauvis_fluids.crafting_table", "Nauvis Fluids: bench recipes (skips research)");
         }
     }
 

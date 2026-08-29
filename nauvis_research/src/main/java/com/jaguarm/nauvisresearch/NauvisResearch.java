@@ -1,5 +1,7 @@
 package com.jaguarm.nauvisresearch;
 
+import com.jaguarm.nauvisresearch.compat.facrafting.FacraftingLock;
+import com.jaguarm.nauvisresearch.research.ModTechnologies;
 import com.jaguarm.nauvisresearch.registry.ModBlockEntities;
 import com.jaguarm.nauvisresearch.registry.ModBlocks;
 import com.jaguarm.nauvisresearch.registry.ModItems;
@@ -7,19 +9,24 @@ import com.jaguarm.nauvisresearch.registry.ModMenus;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 
 /**
- * Factorio's research: the lab, and the science packs it eats.
+ * Factorio's research: the lab, the science packs it eats, and the tree it works through.
  *
- * <p>The lab is the machine; <b>what it is researching is not here yet</b>, and that is a
- * deliberate line rather than an oversight. Factorio's lab does not know what it is working on
- * either - it consumes one of each pack a technology asks for and reports a cycle done, and the
- * technology, the tree and the unlocks live somewhere else entirely. Building the machine first
- * means the tree can arrive later without the lab changing.
+ * <p>Three pieces, and the seam between them is Factorio's own. The <b>lab</b> is a machine that
+ * knows nothing about technologies: it is told which packs the world's current research wants,
+ * consumes one of each, and reports a unit done. The <b>tree</b> is a datapack registry generated
+ * from Wube's own prototype data by {@code tools/gen_technologies.py}, so a research cost is as
+ * exact as an ingredient list and as impossible to type by hand. What has been researched is a
+ * {@code SavedData} on the <b>world</b> and not on any player, because two people in one base with
+ * different unlocks is a different game.
  *
- * <p>So today a lab turns science packs into a count of completed research cycles, which it will
- * hand to a tech tree when there is one. See {@code LabBlockEntity}.
+ * <p>The gate itself is not here. Facrafting owns the crafting panel and must never learn what a
+ * technology is, so it exposes a hook and {@code compat/facrafting} fills it in - see
+ * {@link FacraftingLock}, and note that Facrafting stays an <em>optional</em> dependency because
+ * of it.
  */
 @Mod(NauvisResearch.MODID)
 public class NauvisResearch {
@@ -33,6 +40,14 @@ public class NauvisResearch {
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
         modEventBus.addListener(ModPacks::addPackFinders);
+        modEventBus.addListener(ModTechnologies::register);
         NauvisResearchGameTests.register(modEventBus);
+
+        // Only touched when Facrafting is there. The class names Facrafting types, and the JVM
+        // resolves that reference the first time this call runs - so with Facrafting absent it
+        // is never loaded and this mod still stands alone. Same trick as the Jade plugins.
+        if (ModList.get().isLoaded("facrafting")) {
+            FacraftingLock.install();
+        }
     }
 }

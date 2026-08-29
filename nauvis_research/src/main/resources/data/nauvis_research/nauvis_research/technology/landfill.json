@@ -1,0 +1,14 @@
+{
+  "name": "Landfill",
+  "order": "b-d",
+  "prerequisites": [],
+  "units": 50,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis:dirt"
+  ]
+}

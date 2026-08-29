@@ -1,0 +1,14 @@
+{
+  "name": "Shotgun shell damage 2",
+  "order": "e-n-b",
+  "prerequisites": [
+    "nauvis_research:shotgun_shell_damage_1"
+  ],
+  "units": 100,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": []
+}

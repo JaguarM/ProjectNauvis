@@ -1,0 +1,17 @@
+{
+  "name": "Robotics",
+  "order": "c-i",
+  "prerequisites": [
+    "nauvis_research:electric_engine",
+    "nauvis_research:battery"
+  ],
+  "units": 150,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis_logistics:flying_robot_frame"
+  ]
+}

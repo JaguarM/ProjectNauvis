@@ -1,0 +1,16 @@
+{
+  "name": "Solar panel equipment",
+  "order": "g-k",
+  "prerequisites": [
+    "nauvis_research:modular_armor"
+  ],
+  "units": 100,
+  "ticks_per_unit": 300,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis_military:portable_solar_panel"
+  ]
+}

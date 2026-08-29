@@ -14,15 +14,22 @@ the first commit — they live in world saves and in the player's head. Everythi
 may be crude and rewritten later. A belt that is a BlockEntity per block is acceptable; a
 belt that costs the wrong ingredients is not.
 
-**2. Recipes are generated, never hand-written.**
+**2. Recipes and technologies are generated, never hand-written.**
 `reference/factorio/recipes.json` is the spec: 214 entries, a closed graph, `time` already in
 seconds. `data/mapping.json` says what stands in for what. `tools/gen_recipes.py` turns the
 two into recipe JSON. If you are about to type a recipe by hand, you are doing it wrong.
 
-Run `python tools/gen_recipes.py --check` before trusting any recipe on disk. It diffs the
-generated output against the committed files and has already caught two wrong recipes in a
-released mod. Seven items genuinely cannot be generated; the tool names them rather than
-letting you discover it in-game.
+**A research cost is the same kind of fact as an ingredient list** — units, packs, seconds,
+prerequisites — so the technology tree is generated too, from
+`reference/factorio/technologies.json` by `tools/gen_technologies.py`. That dump is Wube's own
+prototype data and `tools/fetch_technologies.py` writes it; it is pinned to factorio-data 0.16.51
+because `recipes.json` is a 0.16 dump, and the two move together or not at all.
+
+Run `python tools/gen_recipes.py --check` and `python tools/gen_technologies.py --check` before
+trusting anything on disk. They diff the generated output against the committed files, and the
+recipe one has already caught two wrong recipes in a released mod. Seven items genuinely cannot
+be generated; the tool names them rather than letting you discover it in-game. Both are wired
+into `./gradlew build`.
 
 **3. One mod per subsystem, arrows pointing one way.**
 Each mod is a separate jar with its own permanent mod id, usable standalone, glued to the

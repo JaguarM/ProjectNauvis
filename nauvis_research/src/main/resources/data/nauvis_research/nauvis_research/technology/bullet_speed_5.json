@@ -1,0 +1,16 @@
+{
+  "name": "Bullet speed 5",
+  "order": "e-l-k",
+  "prerequisites": [
+    "nauvis_research:bullet_speed_4"
+  ],
+  "units": 200,
+  "ticks_per_unit": 1200,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3",
+    "nauvis_research:military_science_pack"
+  ],
+  "unlocks": []
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Advanced material processing 2",
+  "order": "c-c-b",
+  "prerequisites": [
+    "nauvis_research:advanced_material_processing",
+    "nauvis_research:advanced_electronics"
+  ],
+  "units": 250,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3"
+  ],
+  "unlocks": [
+    "nauvis_machines:electric_furnace",
+    "nauvis_research:production_science_pack"
+  ]
+}

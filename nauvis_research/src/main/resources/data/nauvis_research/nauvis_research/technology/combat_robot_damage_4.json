@@ -1,0 +1,16 @@
+{
+  "name": "Combat robot damage 4",
+  "order": "e-p-f",
+  "prerequisites": [
+    "nauvis_research:combat_robot_damage_3"
+  ],
+  "units": 300,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3",
+    "nauvis_research:military_science_pack"
+  ],
+  "unlocks": []
+}

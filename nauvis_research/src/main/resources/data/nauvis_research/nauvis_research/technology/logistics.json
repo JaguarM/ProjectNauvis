@@ -1,0 +1,14 @@
+{
+  "name": "Logistics",
+  "order": "a-f-a",
+  "prerequisites": [],
+  "units": 20,
+  "ticks_per_unit": 300,
+  "packs": [
+    "nauvis_research:science_pack_1"
+  ],
+  "unlocks": [
+    "nauvis_logistics:fast_inserter",
+    "nauvis_logistics:splitter"
+  ]
+}

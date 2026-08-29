@@ -1,0 +1,21 @@
+{
+  "name": "Rocketry",
+  "order": "e-g",
+  "prerequisites": [
+    "nauvis_research:electronics",
+    "nauvis_research:flammables",
+    "nauvis_research:explosives",
+    "nauvis_research:military_2"
+  ],
+  "units": 120,
+  "ticks_per_unit": 300,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:military_science_pack"
+  ],
+  "unlocks": [
+    "nauvis_military:rocket_launcher",
+    "nauvis_military:rocket"
+  ]
+}

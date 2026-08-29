@@ -5,12 +5,22 @@ Written 2026-08-29 for whoever picks this up cold. Read `../CLAUDE.md` first, th
 Delete or rewrite it when the jobs below are done — it describes the work in front of us, not the
 project.
 
-**Eighty-eight gametests pass, the pack builds clean, and the crafting panel was confirmed in
-game.** Every machine is the size Factorio made it, the lab exists, five checks run in
-`./gradlew build`, the transport belt works, the burner inserter fuels itself off the belt it is
-unloading, the long-handed inserter reaches two blocks — over a belt, over a walkway, over a row of
-machines — and **the crafting panel is Factorio's crafting menu**: four tabs, in Factorio's order,
-with no "everything" tab in front of them and no grouping button beside them.
+**Ninety-two gametests pass, the pack builds clean, and the client boots into a world.** Every
+machine is the size Factorio made it, six checks run in `./gradlew build`, the transport belt
+works, the burner inserter fuels itself off the belt it is unloading, the long-handed inserter
+reaches two blocks, and **the crafting panel is Factorio's crafting menu** — four tabs, in
+Factorio's order, with no "everything" tab in front of them and no grouping button beside them.
+
+**And there is research.** All 216 of Factorio's finite technologies, generated from Wube's own
+prototype data; a lab that works on whatever the world is researching and eats one of each pack
+that technology names; unlocks that belong to the world rather than to a player; and a gate
+Facrafting asks before it queues a craft, points a machine at a recipe, resolves an intermediate
+or draws the grid. **It is playable end to end today**: red science is craftable, `automation`
+costs ten units of it at ten seconds each, and it is what hands over the assembling machine and
+the long-handed inserter — which is exactly where Factorio starts.
+
+**Nobody has looked at the research screen in game.** That is the one thing owed on this work and
+it is in the playtest list below.
 
 What the tabs cost
 ------------------
@@ -85,122 +95,139 @@ downstream of it knows where the number came from.
 `ElectricInserterBlock`; `LongHandedInserterBlock` overrides them and a codec; one block entity
 type is registered against both blocks. The fast and filter arms arrive the same way.
 
-The jobs, in the order Yannic asked for them
---------------------------------------------
+What the science tree cost
+--------------------------
 
-The tabs were the first of these and are done. The science tree is milestone 3 and the biggest
-thing here; the two after it are what is left of milestone 2 and are untouched by it, so they can
-be done in any order.
+Milestone 3's biggest piece, and the whole of it is now in: 216 technologies generated from Wube's
+own data, a `SavedData` per world, a lab that works on what the world is researching, four gates,
+and a list to pick from. **The two decisions written up here last session were both right and both
+survived contact**, so this section is what changed under them rather than a re-argument.
 
-### 1. A science tree that unlocks recipes
+### The dump existed after all, and it was not the calculator
 
-This is milestone 3 and the biggest thing in the pack that is not a machine. The two decisions it
-used to open with are made and are written up at the bottom of this section. **One of them is a
-blocker with a person on the other end of it: the costs come from a `technologies.json` dump that
-does not exist yet.** Everything except the numbers can be built without it — the registry, the
-`SavedData`, the lock hook and the four gates — but a tree with no technologies in it is not
-something anybody can playtest, and this pack has been bitten twice by shipping what only a test
-has looked at.
+Last session's blocker was "the costs come from a `technologies.json` that does not exist yet",
+with `KirkMcDonald/factorio-tools` as the lead. That lead was a dead end in the useful way: the
+tools are a **Go loader that runs the game's own Lua data stage**, so they need an installed copy
+of Factorio and produce nothing on their own. The calculator's shipped data
+(`kirkmcdonald.github.io/data/vanilla-1.1.110.json`) has items, recipes, belts, machines — and no
+technologies at all.
 
-**What already exists and was built for this.** `LabBlockEntity` counts cycles and says so in its
-own comment: Factorio's lab does not know what it is researching either, it is told which packs a
-technology wants, consumes one of each, and reports a cycle done. `cycles()` is the hand-off point
-and the handing over is the only part of the lab that changes. `TICKS_PER_CYCLE` is explicitly a
-stand-in, because in Factorio the time comes from the technology.
+**`wube/factorio-data` is the answer, and it is Wube's own repository**, published for mod authors,
+tagged for every version back to 0.5. `base/prototypes/technology/technology.lua` plus
+`inserter.lua` is the entire tree, in Lua table literals.
 
-**The model, which is Factorio's and should not be invented afresh.** A technology has an id,
-prerequisites, a cost of *N units*, a set of science packs consumed one of each per unit, seconds
-per unit, and effects — of which the only one that matters now is "unlock recipe X". A lab works on
-the level's current research; each cycle consumes one of each pack and reports a unit; at N units
-the technology completes and its recipes unlock.
+**Which version is not a preference, and this is the part worth remembering.** `recipes.json`
+names `science-pack-1`, `science-pack-2`, `science-pack-3`, `high-tech-science-pack`, `iron-axe`
+and `logistic-chest-active-provider` — every one renamed or removed in 0.17. It is a **0.16 dump**,
+which `MAPPING.md` already said in passing and nobody had had a reason to act on. So the tree is
+0.16.51, `VERSION` in `fetch_technologies.py` says why, and the two files move together or not at
+all. A 0.17 tree against a 0.16 recipe dump would have asked for science packs that do not exist
+and unlocked recipes under names nothing in the pack uses — and it would have *loaded*, because a
+`ResourceKey` validates nothing.
 
-**Four decisions that are already made by the pack's own rules:**
+`tools/fetch_technologies.py` fetches and transcribes it. It contains a small Lua reader, and the
+thing to know about that reader is how it is built to fail: anything outside table literals raises
+rather than being skipped. It lost that bet exactly once, for
+`create_follower_upgrade(1, 1, 1, 0, ...)` — a real Lua function that builds six technologies in a
+loop — and the six are **printed by name** rather than silently missing. Reading them properly
+would mean running Lua, which is what factorio-tools is for.
 
-- **Research is per-world, not per-player.** Factorio's research belongs to a force, and two
-  players in one base with different unlocks is the wrong game. A `SavedData` on the server,
-  synced to clients for display.
-- **The tree is datapack data**, a datapack registry through
-  `DataPackRegistryEvent.NewRegistry`, so a technology is a JSON file and not a Java constant. Same
-  argument as recipes: it is data, and data is edited without a compile.
-- **It belongs to `nauvis_research`.** One mod per subsystem.
-- **Facrafting must not learn what a technology is.** Arrows point one way: a subsystem mod may
-  depend on Facrafting, never the reverse. So the lock is a *hook* Facrafting owns and
-  `nauvis_research` fills in — a predicate over a recipe id, defaulting to "everything is
-  unlocked", installed by whoever wants to gate.
+### Four dropped things, each a decision rather than an omission
 
-**Where the hook has to be consulted — four places, and missing one is the whole feature:**
+`gen_technologies.py` prints all four every time it runs, which is the point:
 
 | | |
 |---|---|
-| `ModNetwork.handleQueue` | a client can send any recipe key; this is the real gate |
-| `ModNetwork.handleSelectRecipe` | pointing a *machine* at a locked recipe is the same bypass |
-| `CraftResolver` | intermediates are queued for you, so it must not resolve through a locked step |
-| the panel | display only, and it needs the unlock set on the client to hide what is locked |
+| **18 technologies priced by a formula** | `count_formula = "2^(L-6)*1000"` — the fourteen infinite ones and the four levelled mining-productivity steps. "How many units" has no answer until a technology can have a level. **Not one of them unlocks a recipe.** |
+| **169 effects with no mechanic here** | ammo damage, gun speed, robot speed, braking force, laboratory speed. The technology is written *without* them rather than not written, so the day a mechanic lands its technologies are already there |
+| **8 recipes the pack does not model** | the oil-processing recipes, whose products `recipes.json` carries as raw inputs with no recipe of their own |
+| **4 items the mapping skips** | the steel axe and the three underground belts. `PLAN.md`'s belt note is why |
 
-The first three are server-side and are the enforcement; the fourth is presentation and must never
-be the only check. Note the shape: `OnDatapackSyncEvent#sendRecipes` sends every facraft recipe to
-every client, so hiding is a client-side filter over a synced unlock set rather than a smaller
-list — which is right, since the set changes while the player is logged in.
+The rest — all 216 — are written, **including the 128 that unlock nothing today**. That is the
+same rule as recipes and it is deliberate: a technology's cost, prerequisites and unlocks are
+identity, they go into world saves, and a technology that appeared later would move under a player
+who had already researched past it.
 
-**Two smaller things that fall out:**
+### The mismatch nobody predicted: a technology unlocks a *recipe*, not an item
 
-- `nauvis_research` declares `facrafting` **optional** today. Installing a hook against a
-  Facrafting type makes it required and the toml has to say so — *or* the installer goes in a
-  `compat/facrafting/` package loaded only when the mod is present, which is exactly the trick the
-  Jade plugins already use. The second keeps the mod standalone and is probably right, because the
-  standalone bench recipes exist precisely for Facrafting's absence.
-- **The `crafting_table` datapack is a hole in any gate**, and it already is one — it is off by
-  default and its whole purpose is to let a pack author trade the timed crafts away. Either the
-  gate covers those recipes too, or the datapack's description says out loud that it skips
-  research.
+`optics` unlocks `small-lamp`, which makes a `lamp`. `solar-energy` unlocks
+`solar-panel-equipment`, which makes a `portable-solar-panel`. Fifteen of Factorio's recipe names
+are not its item names, and this pack's recipe files are named after **items**. So
+`mapping.json` grew an `unlocks` table: fifteen aliases and eight nulls for the oil recipes that
+have no counterpart here. A name in neither table is a `GenError` — same rule as an unmapped
+ingredient, and for the same reason.
 
-**The two decisions were Yannic's and are made.**
+### What shipped, in the order it is worth reading
 
-**1. The costs come from a dump, and the dump has to arrive first.** `reference/factorio/
-recipes.json` has no technologies, so unlike every recipe in this pack a research cost cannot be
-generated from anything we hold — and it must not come from the model's memory of Factorio either,
-which is exactly what the recipe dump exists to prevent. So a `technologies.json` lands beside
-`recipes.json` in `reference/` (gitignored in full, like everything else in there — it is Wube's
-data whatever repository it was copied out of), and `tools/gen_technologies.py` gets written the
-way `gen_recipes.py` is: a `--check` in the build that diffs what is on disk, and a `GenError`
-rather than a guess for anything it cannot read.
+| | |
+|---|---|
+| `Technology` | the record. **Its three id fields are loose keys, not registry objects, and that is load-bearing** — a registry codec throws on an id nothing registered, and most of the tree names science packs no mod registers yet |
+| `ModTechnologies` | the datapack registry, synced, entries in `data/nauvis_research/nauvis_research/technology/` |
+| `ResearchState` | the `SavedData`. Per world, on the overworld's storage, whatever level asks |
+| `Unlocks` | the one rule: **a recipe is locked when some technology unlocks it and none of those is finished.** A recipe no technology mentions is not locked, which is how belts and furnaces are craftable in the first minute |
+| `Research` | the server's façade. Everything that moves the state goes through it, because every change has a second half — telling the clients |
+| `LabBlockEntity` | asks what the world is researching, takes one of each pack *that technology* names, reports a unit |
+| `RecipeLock` / `RecipeLocks` | **in Facrafting**, and it knows nothing about technologies |
+| `compat/facrafting/FacraftingLock` | fills the hook in. Loaded behind a `ModList` check, so Facrafting stays `optional` |
+| `ResearchScreen` | the list |
 
-**Yannic's lead for the dump is `https://github.com/KirkMcDonald/factorio-tools`.** It is a
-calculator, so it carries Factorio's own data in a machine-readable form and very likely holds
-technology costs, prerequisites and effects already. **Look at what shape it is in before writing a
-line of the generator** — the fields it has decide whether a technology's JSON is a direct
-transcription or needs a mapping table of its own. Its code is MIT; the data in it is Wube's and is
-`reference/` material like the rest.
+### Three things about it that are easy to get wrong later
 
-**2. A list first, the graph later, and the model is the real one either way.** PLAN.md's shortcut
-was "lab grants vanilla advancements; recipes gate on them" — **rejected, because advancements are
-per-player and research belongs to the world.** Two players in one base with different unlocks is
-the wrong game, and that is not a thing to discover after building on it. So research is a
-`SavedData` regardless of what is drawn on top.
+**The lock's `revision()` is not decoration.** Research completes *while the crafting panel is
+open* — that is what research is — and there is no event the panel could subscribe to that would
+not amount to Facrafting knowing what a technology is. So the lock reports a number that moves,
+the panel reads it every frame, and a strip built before a technology finished is rebuilt on the
+frame after. `research_unlocks_a_recipe` asserts the number moves, which is the only half of that
+a headless test can see; **the other half is a playtest**, and it is in the list below.
 
-What gets drawn first is a *list*: technologies whose prerequisites are met, click one to make it
-the current research, with cost and packs on the row. No graph, no layout, no pan and zoom. A
-screen in `nauvis_research`, grown out of Facrafting's panel the way every other screen here does
-rather than sitting beside it. **Yannic wants the real tech tree eventually**, and the point of
-doing the list first is that replacing it touches only the screen — the registry, the `SavedData`,
-the hook and the four gates are the same underneath, so nothing done now is thrown away.
+**Research is per world, which means it is shared between every gametest in a run.** This cost a
+red test: `the_crafting_gate_is_installed` completed `automation`, which is `lab_researches`'s
+current research, and `ResearchState.complete` clears `current` — so the failure reported *a lab
+having done no work* and said nothing about research. Every test here now resets what it is about
+to use, uses a technology nobody else does, and asserts one lab's own counters rather than the
+world's.
 
-**And the thing to be careful about, because this pack has been bitten by it twice:** an unlock
-that is only ever tested by handing a recipe to a player who already has it is not tested. The test
-to write first is the one where a technology completes *while the panel is open* and the locked
-recipe appears — the work arriving from a distance, again.
+**A fed, powered lab with no research selected cannot be woken.** Choosing a technology happens on
+a screen, possibly in another dimension, and reaches no block — so it is outside the one-block
+radius a `setChanged` covers, exactly like the long-handed inserter's problem. It rechecks once a
+second (`LabBlockEntity.IDLE_RECHECK_TICKS`) and only while it actually has packs and power, so
+the cost is bounded by the number of labs a player has loaded while researching nothing.
 
-**PLAN.md wants one more thing here**: the vanilla-replacement datapack lands at milestone 3,
-because once research gates progression there is somewhere for stripped vanilla recipes to go. It
-is a separate job and probably a KubeJS one once KubeJS ports; see the note at the bottom.
+### What is left of milestone 3
 
-### 2. The splitter
+**The items.** PLAN.md's list for this milestone is fifteen — `science-pack-2`,
+`assembling-machine-2`, `steel-furnace`, `solar-panel`, `accumulator`, `medium-electric-pole`,
+`steel-plate`, `battery`, `sulfur` — and none of them exist yet. The tree is already waiting for
+every one of them: `steel-processing` unlocks the steel plate and the steel chest, `logistics`
+unlocks the splitter and the underground belt, `solar-energy` unlocks the panel. **Adding an item
+gives its technology teeth with no change to anything here.**
+
+**The vanilla-replacement datapack**, which PLAN.md also puts at milestone 3, because once
+research gates progression there is somewhere for stripped vanilla recipes to go. Separate job,
+probably a KubeJS one once KubeJS ports; see the note at the bottom.
+
+**The tree drawn as a tree.** The screen is a list on purpose — the registry, the `SavedData`, the
+hook and the four gates are the same underneath, so replacing it touches `ResearchScreen` and
+nothing else. Yannic wants the real thing eventually.
+
+**A key of its own.** Factorio opens the technology screen with T; here it is a button on the lab.
+One `KeyMapping` and one `ClientTickEvent`, and the default key is a decision — vanilla's T is
+chat.
+
+The jobs, in the order Yannic asked for them
+--------------------------------------------
+
+The tabs were the first of these and the science tree was the second; both are done. The two
+below are what is left of milestone 2 and are untouched by either, so they can be done in any
+order.
+
+### 1. The splitter
 
 2×1 and directional — the first multi-block that is not square. `multiblock/` is the framework and
 is copied into four mods already. The belt side of it is a run that ends at the splitter and two
 that start after it, with the splitter alternating between them.
 
-### 3. Fast-replace by tier
+### 2. Fast-replace by tier
 
 A belt in hand already points the belt you click on the way you are facing, which is half of
 Factorio's belt-laying gesture. The other half is that a *faster* belt replaces a slower one, and
@@ -238,6 +265,23 @@ looking. The panel is now confirmed in game, including the config that hides the
 One question about it is still open and is in the tabs section above: **whether alphabetical
 *within* a tab reads wrong** to somebody who knows where Factorio puts things. It is the last part
 of the panel nobody has judged.
+
+**The research screen has never been looked at**, and it is the newest thing here. Four things to
+watch, and the last one is the one no test can reach:
+
+- open a lab, press **Tech**, and see whether the list reads as a technology list at all — the row
+  is a name, a cost, and the items it hands over, and nothing in this repo can say whether 320
+  pixels is enough for that;
+- **Automation should be the obvious first click** and it should say `10 x 10s` and show a red
+  science pack. Everything else available on a fresh world is either priced in packs that do not
+  exist yet — those say so instead of pricing themselves — or unlocks nothing;
+- feed a lab, power it, pick Automation, and watch the bar on the lab and the bar on the research
+  row move together. The lab's line reads `Automation - N units from this lab`, and a lab with no
+  research picked says so rather than looking broken;
+- **and the one this pack has been bitten by twice: leave the crafting panel open while the last
+  unit finishes.** The assembling machine and the long-handed inserter should appear in it without
+  the screen being closed and reopened. `RecipeLock.revision` is the mechanism and a gametest
+  asserts the number moves; **whether the panel redraws is only visible to a person.**
 
 The rest of what is owed is older, and no boot has covered it. The long-handed inserter added a
 model — a smoker-coloured cube, so it is the third furnace body on a belt line and wants a proper
@@ -429,8 +473,9 @@ Where the pack stands
 | `nauvis_power:boiler` | 3×2 and seven blocks; burns fuel, steam out of the block under the chimney |
 | `nauvis_power:steam_engine` | 5×3 and seventeen blocks; steam in at the open ends of its spine, 120 FE a tick out |
 | `nauvis_power:small_electric_pole` | four blocks tall, climbable, wires itself to whatever it can reach |
-| `nauvis_research:lab` | 3×3 and ten blocks; eats science packs on 8 FE a tick and counts research cycles |
+| `nauvis_research:lab` | 3×3 and ten blocks; on 8 FE a tick, eats one of each pack the world's current research asks for and reports a unit |
 | `nauvis_research:science_pack_1` | red science. Craftable now — copper plate and an iron gear wheel |
+| `nauvis_research:technology` | 216 technologies, a synced datapack registry, generated. One of them — `automation` — gates something that exists |
 | `neoprogressiveautomation:burner_drill` | 2×2 and five blocks; a full block with a chimney over the firebox |
 | `neoprogressiveautomation:electric_drill` | 3×3 and nine blocks; a half-block deck you walk over, output head at the front |
 
@@ -445,9 +490,10 @@ search box. Combat is empty until there is a weapon. Every part of that comes fr
 disk, so it is right for whatever subset of the pack is installed, and none of it is Facrafting
 knowing anything about Factorio.
 
-**The lab has no technology tree**, and that line is deliberate: Factorio's lab does not know what
-it is researching either, so the machine could be built without one. It counts cycles and consumes
-one of every kind of pack it holds, which is already the rule a technology will impose. Milestone 3.
+**The lab has a technology tree now**, and the seam the last session drew held exactly: the lab
+still does not know what a technology is. It asks the world what is being researched, is handed a
+list of packs, takes one of each and reports a unit. What changed in `LabBlockEntity` was two
+handovers — which packs, and how long a unit takes — and not a rewrite.
 
 **The lab's recipe woke up when belts landed.** It cost four transport belts and shipped with a
 `neoforge:registered` condition so it would start working the day belts existed; when that day came
@@ -466,6 +512,8 @@ How to run everything
 | `./gradlew :<mod>:runClientData` / `runServerData` | models and language / loot and tags |
 | `./gradlew build` | everything, including `checkRecipes` |
 | `python tools/gen_recipes.py --check` | the same recipe diff, on its own |
+| `python tools/gen_technologies.py --check` | the same for the technology tree. `--write` to regenerate it |
+| `python tools/fetch_technologies.py` | writes `reference/factorio/technologies.json` from Wube's data. Run once |
 | `python tools/check_models.py` | every model, texture and blockstate reference, resolved — and footprints and belt speeds, against `data/mapping.json` |
 | `python tools/check_duplicated.py` | the copied packages, against each other. `--sync` to fix |
 | `python tools/check_gametests.py` | every gametest, for a type registered as well as an instance |
@@ -473,9 +521,13 @@ How to run everything
 | `python texture-workshop/make_belt_textures.py` | the belt's art, from ASCII maps. `--preview` for a sheet |
 | `./gradlew :nauvis:packConfig` | the pack's own config over `run/config`. Every run task already depends on it |
 
-The last five are `checkRecipes`, `checkModels`, `checkDuplicated`, `checkGameTests` and
-`checkGuiLayout` in the root `build.gradle`, and all of them hang off `:nauvis:check`. They read
-files and start nothing, so they cost a second between them.
+The six checks are `checkRecipes`, `checkTechnologies`, `checkModels`, `checkDuplicated`,
+`checkGameTests` and `checkGuiLayout` in the root `build.gradle`, and all of them hang off
+`:nauvis:check`. They read files and start nothing, so they cost a second between them.
+
+`checkTechnologies` is stricter than `checkRecipes` in one way worth knowing: it fails on a file
+the generator **no longer produces**, not only on one that differs. A stale technology would still
+load, still show in the research list, and answer to nothing.
 
 Adding a subsystem mod is routine: a subproject in `settings.gradle`, a `build.gradle` copied with
 the ids changed, a `src/main/templates/META-INF/neoforge.mods.toml`, and two lines in
@@ -562,6 +614,21 @@ than being told which mode this pack wants. **When a change to Facrafting needs 
 Factorio, the change is in the wrong repo**; find the rule that makes the fact expressible as data,
 and put the data here. A pack config is the third form of this, for a fact that is neither a rule
 nor in the recipes — see `nauvis/pack/config/`.
+
+**The research gate is the fourth form, and the strongest one: a hook.** Facrafting had to stop
+letting a player craft things, and there is no version of that which is a rule about recipes —
+"unlocked" is not a property a recipe has, it is a question somebody else answers. So Facrafting
+gained an *interface* (`RecipeLock`), a place to install one (`RecipeLocks`), and four calls to
+it; with nothing installed everything is unlocked, which is what every pack had before. It does
+not know what a technology is, has no dependency on `nauvis_research`, and would work the same for
+a pack gating on advancements or on a quest book. **A rule Facrafting cannot express as data
+becomes a hook, and the hook's default is the old behaviour.**
+
+The mirror of that is on this side: `nauvis_research` declares Facrafting **optional** and still
+installs the hook, because the installer lives in `compat/facrafting/` behind a `ModList` check
+and the JVM resolves the reference only when that branch runs. Same trick as the Jade plugins,
+same reason — the mod's standalone bench recipes exist for Facrafting's absence and would be
+pointless if its absence were fatal.
 
 Silent failures — these compile, pass tests, and are still wrong
 ----------------------------------------------------------------
@@ -695,6 +762,36 @@ Silent failures — these compile, pass tests, and are still wrong
   never the thing they saw. **When a list reads wrong, name all four before changing one**, and
   expect to have fixed nothing visible until the last of them is right.
 
+- **A registry codec throws on an id nothing registered, and it throws while loading the file.**
+  Most of the technology tree names science packs and recipes no mod in this pack registers yet -
+  green science, the splitter, the steel plate - because the whole tree ships from the first
+  commit and the items catch up with it. Written with `BuiltInRegistries.ITEM.byNameCodec()`,
+  `automation` would have loaded and `advanced-electronics` would not, and the difference would
+  have been one line in a log and a research list that was quietly short. `Technology` keeps its
+  packs as `Identifier` and its prerequisites and unlocks as `ResourceKey`, all three of which
+  are names that validate nothing, and a technology whose packs do not all exist reports itself
+  unresearchable instead of not existing. **Whenever data ships ahead of the things it names, the
+  reference has to be a name and not a lookup.**
+
+- **A per-world `SavedData` is shared by every gametest in a run, and the failure surfaces
+  somewhere else.** `the_crafting_gate_is_installed` completed `automation` to check the gate;
+  `ResearchState.complete` clears the current research when it is the one completed;
+  `lab_researches` was researching `automation` at the time. The red test said *a lab had done no
+  work in 202 ticks* and mentioned research nowhere. Gametests get padding so their **blocks** do
+  not collide - see the entry above - and nothing gives them separate **world state**. Every test
+  that touches research now resets what it is about to use and uses a technology no other test
+  names.
+
+- **A clickable box drawn through a label reads the click anyway.** The research button was first
+  put at (116, 16), which is inside the lab screen's status line - a full-width band from x=8 to
+  x=168. Nothing rendered wrong at a glance, because the status text is usually shorter than that;
+  what would have happened is a click landing on the button while the player was reading a status
+  line that ran under it. `check_gui_layout.py` models both the title and the status line as
+  full-width boxes and catches this exactly - **but only for boxes listed in its table**, and a
+  button is not a bar, so it had to be added. It was: the lab's entry now names the button, the
+  checker rejected the first position, and the button moved to the only free block on a 176-wide
+  panel (right of the pack row).
+
 - **An empty string is a valid group, so a stale lookup table is a layout choice.** `GROUP_BY_TYPE`
   fell back to `""` for anything it did not recognise, and `""` is exactly what a recipe with no
   opinion sets — so a category the table had never heard of landed silently in the panel's
@@ -772,6 +869,45 @@ tier change too — but there is only one tier so far, so it has never been look
 its loaded chunks and a run is built from whatever belts are there. What that costs is a belt at the
 very edge of the loaded world appearing to back up when it is not. Nothing is out of step where a
 player can see it, and a chunk arriving re-seeds that block's items from the block entity.
+
+**A technology that unlocks nothing is still offered.** 128 of the 216 unlock no recipe, because
+their only effects are mechanics this pack does not have - ammo damage, gun speed, robot speed,
+laboratory speed. They cost science and give nothing until the mechanic exists, which is a trap
+from the player's side and fidelity from the tree's. They were kept because a technology's cost
+and place in the graph are identity and go into world saves; a tree that grew technologies later
+would move under a player who had already researched past them. The mitigation is presentation and
+is not built: the research row could say *no effect yet*, which is true and cheap.
+
+**Nothing gates a vanilla bench recipe.** The `crafting_table` datapacks each ship a shapeless
+copy of every recipe, off by default, so a pack author can trade the timed crafts away - and a
+vanilla crafting recipe never goes near Facrafting, which is where the gate lives. There is no
+hook that would let it. So the datapacks' labels now read **"(skips research)"**, which is not a
+caveat but the point, and is the one line a player reads before turning one on.
+
+**A lab that has never had a technology picked rechecks once a second.** Choosing research happens
+on a screen and reaches no block, so it is outside the one-block radius `setChanged` covers - the
+long-handed inserter's problem exactly. Bounded: only a lab that has packs *and* power *and* no
+research pays it, which is a state that lasts as long as it takes to open a screen. Every other
+lab still sleeps for free.
+
+**Research progress is sent to every client on every unit.** The whole state, not a delta: a list
+of finished keys, one optional key and an int, on a message that fires at best once every five
+seconds of one lab's work. It buys the property that a client is either exactly up to date or
+exactly one message behind. It would want revisiting long before it hurt.
+
+**Six technologies are missing and they are the follower-robot counts.** `technology.lua` builds
+them with a Lua function, and reading that means running Lua, which needs the game installed.
+`fetch_technologies.py` prints them by name. All six are `maximum-following-robots-count` and
+unlock nothing.
+
+**Eighteen more are missing because they are priced by a formula.** The fourteen infinite
+technologies and the four levelled mining-productivity steps set `count_formula` instead of a
+count, so "how many units" has no answer until a technology can have a level. None of them unlocks
+a recipe either.
+
+**Research cannot be un-researched in game**, and there is no command for any of it.
+`ResearchState.forget` exists and is used only by the gametests. A `/research` command is an
+afternoon and would make the tree testable by hand.
 
 **Smaller.** Nothing tests that inventories survive a save and reload, and nothing tests that a
 network rebuilds after a chunk cycle — both paths exist and are only reasoned about. The assembler's

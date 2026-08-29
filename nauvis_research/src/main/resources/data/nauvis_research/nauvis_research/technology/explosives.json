@@ -1,0 +1,17 @@
+{
+  "name": "Explosives",
+  "order": "a-e-d",
+  "prerequisites": [
+    "nauvis_research:sulfur_processing"
+  ],
+  "units": 100,
+  "ticks_per_unit": 300,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:military_science_pack"
+  ],
+  "unlocks": [
+    "nauvis_fluids:explosives"
+  ]
+}

@@ -2,9 +2,17 @@ package com.jaguarm.nauvisresearch.lab;
 
 import java.util.List;
 
+import com.jaguarm.nauvisresearch.client.ResearchScreen;
+import com.jaguarm.nauvisresearch.research.ClientResearch;
+import com.jaguarm.nauvisresearch.research.ModTechnologies;
+import com.jaguarm.nauvisresearch.research.Technology;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
@@ -53,6 +61,28 @@ public class LabScreen extends AbstractContainerScreen<LabMenu> {
     /** Clear of the bars above and vanilla's "Inventory" label at y=72. */
     private static final int STATUS_Y = 20;
 
+    /**
+     * The button that opens the technology list.
+     *
+     * <p>The lab is where a player is standing when they wonder what to research next, so it is
+     * where the list lives. Factorio puts it behind a key of its own as well, which is worth
+     * having and is not this change.
+     *
+     * <p>It sits to the right of the pack row because that is the only part of a 176-wide panel
+     * nothing else claims: the title and the status line are each a full-width band, the bars run
+     * from 26 to 134 under the slots, and vanilla's "Inventory" label owns everything from y=72
+     * down. {@code tools/check_gui_layout.py} knows about this box and would fail the build if it
+     * were put anywhere it overlapped something, which is how it was found - the first version of
+     * it was drawn straight through the status line.
+     */
+    private static final int RESEARCH_X = 138;
+    private static final int RESEARCH_Y = 36;
+    private static final int RESEARCH_WIDTH = 30;
+    private static final int RESEARCH_HEIGHT = 14;
+
+    private static final int COLOR_BUTTON = 0xFF3B3B3B;
+    private static final int COLOR_BUTTON_HOVER = 0xFF6A6A6A;
+
     public LabScreen(LabMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, PANEL_WIDTH, PANEL_HEIGHT);
     }
@@ -87,6 +117,26 @@ public class LabScreen extends AbstractContainerScreen<LabMenu> {
                 menu.progress(), COLOR_PROGRESS);
         bar(graphics, x + CHARGE_X, y + CHARGE_Y, CHARGE_WIDTH, CHARGE_HEIGHT,
                 menu.charge(), COLOR_CHARGE);
+
+        boolean hovered = within(mouseX, mouseY, x + RESEARCH_X, y + RESEARCH_Y,
+                RESEARCH_WIDTH, RESEARCH_HEIGHT);
+        graphics.fill(x + RESEARCH_X, y + RESEARCH_Y,
+                x + RESEARCH_X + RESEARCH_WIDTH, y + RESEARCH_Y + RESEARCH_HEIGHT,
+                hovered ? COLOR_BUTTON_HOVER : COLOR_BUTTON);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (within(event.x(), event.y(), leftPos + RESEARCH_X, topPos + RESEARCH_Y,
+                RESEARCH_WIDTH, RESEARCH_HEIGHT)) {
+            minecraft.gui.setScreen(new ResearchScreen());
+            return true;
+        }
+        return super.mouseClicked(event, doubleClick);
+    }
+
+    private static boolean within(double mouseX, double mouseY, int x, int y, int width, int height) {
+        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
     }
 
     private static void bar(GuiGraphicsExtractor graphics, int left, int top, int width, int height,
@@ -114,21 +164,45 @@ public class LabScreen extends AbstractContainerScreen<LabMenu> {
                 false);
 
         graphics.text(font, statusLine(), 8, STATUS_Y, COLOR_MUTED, false);
+
+        Component open = Component.translatable("screen.nauvis_research.lab.open_research");
+        graphics.text(font, open,
+                RESEARCH_X + (RESEARCH_WIDTH - font.width(open)) / 2, RESEARCH_Y + 2,
+                COLOR_TEXT, false);
     }
 
     /**
-     * One line saying which of the three things a stopped lab is doing.
+     * One line saying which of the four things a stopped lab is doing.
      *
-     * <p>Idle and unpowered look identical otherwise and want different things done about them:
-     * one needs science packs, the other needs a wire.
+     * <p>They look identical from outside and want completely different things done about them:
+     * a wire, some science packs, a technology picked on the research screen, or nothing at all
+     * because it is already working. The one that is easy to leave out is the third, and it is
+     * the one a player meets first - a lab that is fed and powered and still does nothing is
+     * indistinguishable from a broken lab unless it says so.
+     *
+     * <p>The current research is read from {@link ClientResearch} rather than sent with the menu:
+     * it is a fact about the world, the client already has it, and a copy in the menu would be a
+     * second answer that could disagree.
      */
     private Component statusLine() {
         if (!menu.hasPower()) {
             return Component.translatable("screen.nauvis_research.lab.no_power");
         }
+
+        ResourceKey<Technology> current = ClientResearch.current();
+        if (current == null) {
+            return Component.translatable("screen.nauvis_research.lab.no_research");
+        }
         if (!menu.isWorking()) {
             return Component.translatable("screen.nauvis_research.lab.idle");
         }
-        return Component.translatable("screen.nauvis_research.lab.researching", menu.cycles());
+
+        Technology technology = ModTechnologies.registry(minecraft.level.registryAccess())
+                .get(current).map(Holder.Reference::value).orElse(null);
+        if (technology == null) {
+            return Component.translatable("screen.nauvis_research.lab.idle");
+        }
+        return Component.translatable("screen.nauvis_research.lab.researching",
+                technology.title(current), menu.cycles());
     }
 }

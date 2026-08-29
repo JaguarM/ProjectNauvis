@@ -1,0 +1,14 @@
+{
+  "name": "Modules",
+  "order": "i-a",
+  "prerequisites": [
+    "nauvis_research:advanced_electronics"
+  ],
+  "units": 100,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": []
+}
