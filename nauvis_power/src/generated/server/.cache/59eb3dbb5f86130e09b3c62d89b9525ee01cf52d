@@ -1,4 +1,5 @@
-// 26.2	2026-08-28T00:25:39.7642451	Loot Tables
+// 26.2	2026-08-30T01:20:10.642649	Loot Tables
 afc50bc9201f6a35730a5a06ac5f91a332618b1a data/nauvis_power/loot_table/blocks/boiler.json
+d63c5dd0c82f1eeb3079a7d50e4bd62b02027926 data/nauvis_power/loot_table/blocks/medium_electric_pole.json
 be6943bb647ddbbcbda09f09bea277ccd50a05ea data/nauvis_power/loot_table/blocks/small_electric_pole.json
 ee91d65d681e43044599ad4b6a92a9da06f8f1b1 data/nauvis_power/loot_table/blocks/steam_engine.json

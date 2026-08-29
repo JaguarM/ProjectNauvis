@@ -24,7 +24,8 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 
 /**
- * A pole's membership of a network, and the wires it draws.
+ * A pole's membership of a network, and the wires it draws. One class and one block entity type
+ * for every tier, because a tier differs by how far it reaches and not by anything saved here.
  *
  * <p>It never ticks. It exists for three lifecycle hooks a block alone does not get - {@code
  * onLoad} when its chunk arrives, {@code setRemoved} when it is broken, {@code onChunkUnloaded}
@@ -45,7 +46,7 @@ import net.minecraft.world.phys.AABB;
  * That is also why there is no wire coil and no connector to place: poles that can see each other
  * are wired, because the network already said so.
  */
-public class SmallElectricPoleBlockEntity extends BlockEntity {
+public class ElectricPoleBlockEntity extends BlockEntity {
 
     private static final long[] NONE = new long[0];
 
@@ -59,8 +60,8 @@ public class SmallElectricPoleBlockEntity extends BlockEntity {
      */
     private long[] links = NONE;
 
-    public SmallElectricPoleBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.SMALL_ELECTRIC_POLE.get(), pos, state);
+    public ElectricPoleBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.ELECTRIC_POLE.get(), pos, state);
     }
 
     public long[] links() {
@@ -87,7 +88,7 @@ public class SmallElectricPoleBlockEntity extends BlockEntity {
         double minY = worldPosition.getY();
         double minZ = worldPosition.getZ();
         double maxX = minX + 1;
-        double maxY = minY + SmallElectricPoleBlock.HEIGHT;
+        double maxY = minY + ElectricPoleBlock.HEIGHT;
         double maxZ = minZ + 1;
 
         for (long link : links) {
@@ -96,7 +97,7 @@ public class SmallElectricPoleBlockEntity extends BlockEntity {
             minY = Math.min(minY, other.getY());
             minZ = Math.min(minZ, other.getZ());
             maxX = Math.max(maxX, other.getX() + 1);
-            maxY = Math.max(maxY, other.getY() + SmallElectricPoleBlock.HEIGHT);
+            maxY = Math.max(maxY, other.getY() + ElectricPoleBlock.HEIGHT);
             maxZ = Math.max(maxZ, other.getZ() + 1);
         }
         return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
@@ -125,8 +126,9 @@ public class SmallElectricPoleBlockEntity extends BlockEntity {
     @Override
     public void onLoad() {
         super.onLoad();
-        if (level instanceof ServerLevel serverLevel) {
-            PowerNetworkManager.of(serverLevel).polePlaced(worldPosition);
+        if (level instanceof ServerLevel serverLevel
+                && getBlockState().getBlock() instanceof ElectricPoleBlock pole) {
+            PowerNetworkManager.of(serverLevel).polePlaced(worldPosition, pole.wireReach());
         }
     }
 

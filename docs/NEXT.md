@@ -16,10 +16,10 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and four gametests pass, `./gradlew build` is clean, and the client boots into a world.
-Milestone 2 is done bar fast-replace; milestone 3 has its research half in, and four of its nine
-items — the steel line and green science, which between them give `steel-processing` and
-`science-pack-2` teeth and unblock everything else on the list.
+A hundred and five gametests pass, `./gradlew build` is clean, and the client boots into a world.
+Milestone 2 is done bar fast-replace; milestone 3 has its research half in, and five of its nine
+items — the steel line, green science and the medium pole, which between them give
+`steel-processing`, `science-pack-2` and `electric-energy-distribution-1` teeth.
 
 | | |
 |---|---|
@@ -34,7 +34,8 @@ items — the steel line and green science, which between them give `steel-proce
 | `nauvis_fluids:pipe` / `steam` | a run is one object however long; steam is a real fluid, so pipes and machines meet at the capability |
 | `nauvis_power:boiler` | 3×2, seven blocks; burns fuel, steam out under the chimney |
 | `nauvis_power:steam_engine` | 5×3, seventeen blocks; steam in at the open ends of its spine, 120 FE/t out |
-| `nauvis_power:small_electric_pole` | four blocks, climbable, wires itself to whatever it reaches |
+| `nauvis_power:small_electric_pole` | four blocks, climbable, wires itself to whatever it reaches within 7.5 |
+| `nauvis_power:medium_electric_pole` | the same in steel, reaching 9. Same 5×5 supply area, which is Factorio's |
 | `nauvis_research:lab` | 3×3, ten blocks, 8 FE/t; eats one of each pack the world's research asks for |
 | `nauvis_research:science_pack_1` | red science — a copper plate and an iron gear wheel |
 | `nauvis_research:science_pack_2` | green science — an inserter and a belt. The gate in front of the rest of milestone 3 |
@@ -74,20 +75,19 @@ recipe graph uses them, and `gen_recipes.py --check` counts them as skipped rath
 
 ### 2. The rest of the milestone 3 items
 
-`steel-plate`, `steel-chest` and `science-pack-2` are in, so `steel-processing` and
-`science-pack-2` now unlock something and everything below is reachable. **Adding an item gives its
-technology teeth with no change to the research code** — that held exactly as written, and none of
-`nauvis_research` was touched.
+`steel-plate`, `steel-chest`, `science-pack-2` and `medium-electric-pole` are in. **Adding an item
+gives its technology teeth with no change to the research code** — that held exactly as written for
+all four, and none of `nauvis_research` was touched.
+
+Wire reach is per pole now rather than one constant, and two poles are wired when the distance is
+within the **longer** of the two reaches, which is Factorio's rule and the only one that makes a
+medium pole useful at the end of an ordinary run. `CELL_BITS` went from 8-block cells to 16-block
+ones with it: the pole index's 27-cell neighbourhood is only complete while every reach is under
+the cell size, and a static block in `PowerNetworkManager` now throws if a tier is ever added that
+breaks that.
 
 What is left, in the order the tree wants them:
 
-- **`medium-electric-pole`** (`electric-energy-distribution-1`). Two copper plates and two steel
-  plates, and the only one that needs the grid to change: `PowerNetworkManager.WIRE_REACH` is a
-  single constant and a medium pole reaches 9 rather than 7.5. Two poles are wired when the
-  distance is within the *longer* of the two reaches, which is Factorio's rule. **`CELL_BITS` has
-  to grow with it** — the pole index buckets into 8-block cubes and the 27-cell neighbourhood is
-  only complete while every reach is under 8, so a reach of 9 silently misses a pole standing at a
-  cell edge. Sixteen-block cells keep the neighbourhood and the invariant.
 - **`assembling-machine-2`** (`automation-2`). An assembler that crafts faster; a tier is numbers
   on the block the way the long-handed inserter is.
 - **`solar-panel`** (`solar-energy`). 3×3 and half a block high, so it is walked over. A generator
@@ -148,6 +148,14 @@ are Facrafting recipes now at Factorio's prices.
   hand-mine, hand-craft a lab and a boiler, research Automation, *then* automate anything;
 - and time it. The lab alone is ten circuits, ten gears and four belts by hand. If it drags, the
   lever is a trigger's count in `data/technologies.json`, not the machinery under it.
+
+**The medium pole**, whose whole point is a distance.
+
+- put a small pole down, walk eight blocks, put a medium one down, and see the wire appear. Eight
+  is past the small pole's reach and inside the medium one's, so this is the item working;
+- and tell them apart. Same four blocks and the same crossarm, differing only in metal — that is a
+  decision made in `MediumElectricPoleBlock`'s comment and not in a world, and it is the same
+  complaint the three inserters already have.
 
 **The two chests**, which nobody has seen since they became real chests.
 

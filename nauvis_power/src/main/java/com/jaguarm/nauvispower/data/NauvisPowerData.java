@@ -8,7 +8,7 @@ import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.generator.BoilerShape;
 import com.jaguarm.nauvispower.generator.SteamEngineShape;
 import com.jaguarm.nauvispower.grid.PolePart;
-import com.jaguarm.nauvispower.grid.SmallElectricPoleBlock;
+import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
 import com.jaguarm.nauvispower.multiblock.MachineShape;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 import com.jaguarm.nauvispower.registry.ModItems;
@@ -72,7 +72,9 @@ public final class NauvisPowerData {
 
         @Override
         protected void addTags(HolderLookup.Provider registries) {
-            tag(BlockTags.CLIMBABLE).add(ModBlocks.SMALL_ELECTRIC_POLE.getKey());
+            tag(BlockTags.CLIMBABLE)
+                    .add(ModBlocks.SMALL_ELECTRIC_POLE.getKey())
+                    .add(ModBlocks.MEDIUM_ELECTRIC_POLE.getKey());
         }
     }
 
@@ -94,6 +96,7 @@ public final class NauvisPowerData {
             addBlock(ModBlocks.BOILER, "Boiler");
             addBlock(ModBlocks.STEAM_ENGINE, "Steam engine");
             addBlock(ModBlocks.SMALL_ELECTRIC_POLE, "Small electric pole");
+            addBlock(ModBlocks.MEDIUM_ELECTRIC_POLE, "Medium electric pole");
                         // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the
             // only place a timed craft happens; a vanilla bench recipe goes nowhere near it and
@@ -117,7 +120,7 @@ public final class NauvisPowerData {
             add("config.jade.plugin_nauvis_power", "Project Nauvis: Power");
             add("config.jade.plugin_nauvis_power.boiler", "Boiler");
             add("config.jade.plugin_nauvis_power.steam_engine", "Steam engine");
-            add("config.jade.plugin_nauvis_power.small_electric_pole", "Electric network");
+            add("config.jade.plugin_nauvis_power.electric_pole", "Electric network");
 
             // What Jade says about the block you are looking at. Present only when Jade is - the
             // strings are harmless without it, and a missing translation is worse than a spare one.
@@ -131,9 +134,9 @@ public final class NauvisPowerData {
             add("jade.nauvis_power.engine.running", "Making %s FE/t");
             add("jade.nauvis_power.engine.full", "Full - nothing is drawing the power off");
             add("jade.nauvis_power.engine.no_steam", "No steam");
-            add("nauvis_power.small_electric_pole.status", "Network: %s poles, %s machines - live");
-            add("nauvis_power.small_electric_pole.status_idle", "Network: %s poles, %s machines - idle");
-            add("nauvis_power.small_electric_pole.detached", "Not part of a network");
+            add("nauvis_power.electric_pole.status", "Network: %s poles, %s machines - live");
+            add("nauvis_power.electric_pole.status_idle", "Network: %s poles, %s machines - idle");
+            add("nauvis_power.electric_pole.detached", "Not part of a network");
         }
     }
 
@@ -154,7 +157,9 @@ public final class NauvisPowerData {
             // One pole, not four. The other three parts are torn down by the block itself and
             // must drop nothing, or a pole would be a way to make three more.
             add(ModBlocks.SMALL_ELECTRIC_POLE.get(), createSinglePropConditionTable(
-                    ModBlocks.SMALL_ELECTRIC_POLE.get(), SmallElectricPoleBlock.PART, PolePart.FOOT));
+                    ModBlocks.SMALL_ELECTRIC_POLE.get(), ElectricPoleBlock.PART, PolePart.FOOT));
+            add(ModBlocks.MEDIUM_ELECTRIC_POLE.get(), createSinglePropConditionTable(
+                    ModBlocks.MEDIUM_ELECTRIC_POLE.get(), ElectricPoleBlock.PART, PolePart.FOOT));
         }
 
         /**

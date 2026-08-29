@@ -3,7 +3,7 @@ package com.jaguarm.nauvispower.compat.jade;
 import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.grid.PowerNetwork;
 import com.jaguarm.nauvispower.grid.PowerNetworkManager;
-import com.jaguarm.nauvispower.grid.SmallElectricPoleBlock;
+import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -34,8 +34,9 @@ public class PoleReadout implements IServerDataProvider<BlockAccessor> {
 
     public static final PoleReadout INSTANCE = new PoleReadout();
 
+    /** Both tiers, so not the small pole's name. The config key in the lang file has to match. */
     static final Identifier UID =
-            Identifier.fromNamespaceAndPath(NauvisPower.MODID, "small_electric_pole");
+            Identifier.fromNamespaceAndPath(NauvisPower.MODID, "electric_pole");
 
     static final String POLES = "Poles";
     static final String MACHINES = "Machines";
@@ -69,8 +70,8 @@ public class PoleReadout implements IServerDataProvider<BlockAccessor> {
     private static BlockPos footOf(BlockAccessor accessor) {
         BlockState state = accessor.getBlockState();
         BlockPos pos = accessor.getPosition();
-        return state.hasProperty(SmallElectricPoleBlock.PART)
-                ? pos.below(state.getValue(SmallElectricPoleBlock.PART).height())
+        return state.hasProperty(ElectricPoleBlock.PART)
+                ? pos.below(state.getValue(ElectricPoleBlock.PART).height())
                 : pos;
     }
 

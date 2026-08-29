@@ -3,6 +3,7 @@ package com.jaguarm.nauvispower.registry;
 import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.generator.BoilerBlock;
 import com.jaguarm.nauvispower.generator.SteamEngineBlock;
+import com.jaguarm.nauvispower.grid.MediumElectricPoleBlock;
 import com.jaguarm.nauvispower.grid.SmallElectricPoleBlock;
 
 import net.minecraft.world.level.block.SoundType;
@@ -34,7 +35,7 @@ public final class ModBlocks {
                     .requiresCorrectToolForDrops());
 
     /**
-     * Three blocks tall - see {@link SmallElectricPoleBlock}.
+     * Three blocks tall - see {@link ElectricPoleBlock}.
      *
      * <p>Not {@code requiresCorrectToolForDrops}: a pole is two planks and two lengths of wire,
      * and the first grid a player builds should not wait on a pickaxe.
@@ -50,6 +51,24 @@ public final class ModBlocks {
                     .mapColor(MapColor.WOOD)
                     .strength(1.0F)
                     .sound(SoundType.WOOD)
+                    .pushReaction(PushReaction.BLOCK)
+                    .noOcclusion());
+
+    /**
+     * The same pole reaching nine blocks instead of seven and a half, in steel rather than wood.
+     *
+     * <p>Behind {@code electric-energy-distribution-1}, which is behind steel and green science,
+     * so a player meets it once their first grid has grown past the point where the small pole's
+     * spacing is a nuisance. Not {@code requiresCorrectToolForDrops}, for the same reason the
+     * small one is not.
+     */
+    public static final DeferredBlock<MediumElectricPoleBlock> MEDIUM_ELECTRIC_POLE = BLOCKS.registerBlock(
+            "medium_electric_pole",
+            MediumElectricPoleBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.METAL)
+                    .strength(1.5F)
+                    .sound(SoundType.METAL)
                     .pushReaction(PushReaction.BLOCK)
                     .noOcclusion());
 

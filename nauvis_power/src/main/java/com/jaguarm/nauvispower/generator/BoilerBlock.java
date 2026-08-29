@@ -42,7 +42,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * <h2>Three tiles by two, with a facing</h2>
  *
  * <p>{@link BoilerShape} is the footprint and the geometry; {@link Multiblock} is everything about
- * being made of several blocks, and it is {@code SmallElectricPoleBlock}'s four rules with two more
+ * being made of several blocks, and it is {@code ElectricPoleBlock}'s four rules with two more
  * axes. This is the first machine in the pack with <em>both</em> a footprint and a facing, so it is
  * the first to exercise the rotation: the cells turn, the geometry turns with them, and the steam
  * port turns with both.

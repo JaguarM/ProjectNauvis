@@ -22,7 +22,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
  * {@code BaseEntityBlock} and a second hierarchy would be one more thing to keep in step. A block
  * implements {@link MachineBlock}, which is two methods, and forwards its overrides here.
  *
- * <p>All of it is {@code SmallElectricPoleBlock} with two more axes. Read that first if this is
+ * <p>All of it is {@code ElectricPoleBlock} with two more axes. Read that first if this is
  * unfamiliar: it is the same four rules, and it is four blocks rather than ten so the shape of
  * the idea is easier to see there.
  *

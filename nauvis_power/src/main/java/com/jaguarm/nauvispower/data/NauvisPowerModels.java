@@ -13,7 +13,7 @@ import com.jaguarm.nauvispower.grid.PolePart;
 import com.jaguarm.nauvispower.multiblock.Boxes;
 import com.jaguarm.nauvispower.multiblock.MachineCell;
 import com.jaguarm.nauvispower.multiblock.MachineShape;
-import com.jaguarm.nauvispower.grid.SmallElectricPoleBlock;
+import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
@@ -57,7 +57,7 @@ public class NauvisPowerModels extends ModelProvider {
                 TextureMapping.getBlockTexture(Blocks.IRON_BLOCK).sprite(),
                 TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite());
 
-        pole(blockModels);
+        poles(blockModels);
     }
 
     /**
@@ -239,34 +239,41 @@ public class NauvisPowerModels extends ModelProvider {
      * is a {@code Supplier<JsonElement>}: the model file, written out directly. That is what lets
      * the shape live in exactly one place.
      */
-    private void pole(BlockModelGenerators blockModels) {
-        // Material wraps the sprite id; the model file wants the plain identifier.
-        Identifier texture = TextureMapping.getBlockTexture(Blocks.STRIPPED_OAK_LOG).sprite();
+    private void poles(BlockModelGenerators blockModels) {
+        // Material wraps the sprite id; the model file wants the plain identifier. The two tiers
+        // are the same geometry in two metals - see MediumElectricPoleBlock on why the medium one
+        // is not also taller - so telling them apart is entirely this line.
+        pole(blockModels, ModBlocks.SMALL_ELECTRIC_POLE.get(), "small_electric_pole",
+                TextureMapping.getBlockTexture(Blocks.STRIPPED_OAK_LOG).sprite());
+        pole(blockModels, ModBlocks.MEDIUM_ELECTRIC_POLE.get(), "medium_electric_pole",
+                TextureMapping.getBlockTexture(Blocks.ANVIL).sprite());
+    }
 
+    private void pole(BlockModelGenerators blockModels, Block block, String name, Identifier texture) {
         // Keyed by model name, not by part: the two shaft parts are the same post and deserve one
         // file between them.
         Map<String, Identifier> models = new HashMap<>();
         for (PolePart part : PolePart.values()) {
-            models.computeIfAbsent(part.modelName(), name -> poleModel(blockModels, part, texture));
+            models.computeIfAbsent(part.modelName(),
+                    key -> poleModel(blockModels, part, name, texture));
         }
 
         PropertyDispatch.C1<MultiVariant, PolePart> dispatch =
-                PropertyDispatch.initial(SmallElectricPoleBlock.PART);
+                PropertyDispatch.initial(ElectricPoleBlock.PART);
         for (PolePart part : PolePart.values()) {
             dispatch = dispatch.select(part,
                     BlockModelGenerators.plainVariant(models.get(part.modelName())));
         }
-        blockModels.blockStateOutput.accept(
-                MultiVariantGenerator.dispatch(ModBlocks.SMALL_ELECTRIC_POLE.get()).with(dispatch));
+        blockModels.blockStateOutput.accept(MultiVariantGenerator.dispatch(block).with(dispatch));
 
         // The crossarm is the silhouette a player recognises, so the item is the head.
-        blockModels.registerSimpleItemModel(ModBlocks.SMALL_ELECTRIC_POLE.get(),
-                models.get(PolePart.HEAD.modelName()));
+        blockModels.registerSimpleItemModel(block, models.get(PolePart.HEAD.modelName()));
     }
 
-    private static Identifier poleModel(BlockModelGenerators blockModels, PolePart part, Identifier texture) {
+    private static Identifier poleModel(BlockModelGenerators blockModels, PolePart part,
+            String name, Identifier texture) {
         Identifier id = Identifier.fromNamespaceAndPath(NauvisPower.MODID,
-                "block/small_electric_pole_" + part.modelName());
+                "block/" + name + "_" + part.modelName());
         blockModels.modelOutput.accept(id, () -> {
             JsonObject textures = new JsonObject();
             textures.addProperty("texture", texture.toString());

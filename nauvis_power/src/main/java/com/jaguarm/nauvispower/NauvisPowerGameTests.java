@@ -14,8 +14,8 @@ import com.jaguarm.nauvispower.generator.SteamEngineShape;
 import com.jaguarm.nauvispower.grid.PolePart;
 import com.jaguarm.nauvispower.grid.PowerNetwork;
 import com.jaguarm.nauvispower.grid.PowerNetworkManager;
-import com.jaguarm.nauvispower.grid.SmallElectricPoleBlock;
-import com.jaguarm.nauvispower.grid.SmallElectricPoleBlockEntity;
+import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
+import com.jaguarm.nauvispower.grid.ElectricPoleBlockEntity;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 import com.jaguarm.nauvispower.registry.ModItems;
 import com.mojang.serialization.MapCodec;
@@ -107,6 +107,7 @@ public final class NauvisPowerGameTests {
         TEST_TYPES.register("pole_needs_headroom", () -> PoleNeedsHeadroomTest.CODEC);
         TEST_TYPES.register("pole_wires_link_up", () -> PoleWiresLinkUpTest.CODEC);
         TEST_TYPES.register("pole_wire_bounds_reach_both_ends", () -> PoleWireBoundsTest.CODEC);
+        TEST_TYPES.register("medium_pole_reaches_further", () -> MediumPoleReachesFurtherTest.CODEC);
         TEST_TYPES.register("boiler_opens_a_screen", () -> BoilerOpensAScreenTest.CODEC);
         TEST_TYPES.register("boiler_refuses_what_will_not_burn", () -> BoilerRefusesNonFuelTest.CODEC);
         TEST_TYPES.register("steam_engines_chain", () -> SteamEnginesChainTest.CODEC);
@@ -142,6 +143,8 @@ public final class NauvisPowerGameTests {
         registerSpaced(event, environment, "pole_breaks_as_one", PoleBreaksAsOneTest::new, 200);
         registerSpaced(event, environment, "pole_needs_headroom", PoleNeedsHeadroomTest::new, 100);
         registerSpaced(event, environment, "pole_wires_link_up", PoleWiresLinkUpTest::new, 200);
+        registerSpaced(event, environment, "medium_pole_reaches_further",
+                MediumPoleReachesFurtherTest::new, 200);
         registerSpaced(event, environment, "pole_wire_bounds_reach_both_ends", PoleWireBoundsTest::new, 100);
         register(event, environment, "boiler_opens_a_screen", BoilerOpensAScreenTest::new, 60);
         register(event, environment, "boiler_refuses_what_will_not_burn", BoilerRefusesNonFuelTest::new, 60);
@@ -262,7 +265,7 @@ public final class NauvisPowerGameTests {
     private static @Nullable PolePart partAt(GameTestHelper helper, BlockPos pos) {
         BlockState state = helper.getLevel().getBlockState(helper.absolutePos(pos));
         return state.is(ModBlocks.SMALL_ELECTRIC_POLE.get())
-                ? state.getValue(SmallElectricPoleBlock.PART)
+                ? state.getValue(ElectricPoleBlock.PART)
                 : null;
     }
 
@@ -767,7 +770,7 @@ public final class NauvisPowerGameTests {
                         helper.setBlock(FOOT.above(), Blocks.AIR);
                     })
                     .thenExecuteAfter(5, () -> {
-                        for (int height = 0; height < SmallElectricPoleBlock.HEIGHT; height++) {
+                        for (int height = 0; height < ElectricPoleBlock.HEIGHT; height++) {
                             // Not assertValueEqual: it compares by calling equals on the value,
                             // so a null one is a crash rather than a failure.
                             helper.assertTrue(partAt(helper, FOOT.above(height)) == null,
@@ -867,6 +870,87 @@ public final class NauvisPowerGameTests {
      * all. Breaking one end has to clear the other, or the wire hangs in the air pointing at
      * nothing.
      */
+    /**
+     * A medium pole spans a gap two small poles cannot, and a small pole at the other end is still
+     * wired to it.
+     *
+     * <p>The second half is the claim worth testing. Wire reach is per pole now, and two poles are
+     * wired when the distance is within the <em>longer</em> of the two reaches - so a medium pole
+     * eight blocks from a small one is a wire, even though the small pole could not have thrown it.
+     * A rule that took the shorter reach compiles, passes any test made of medium poles only, and
+     * makes the item useless in the one place it is bought for: a long run between two ordinary
+     * grids.
+     *
+     * <p>The control is the same eight-block gap between two small poles, which must stay two
+     * networks. Without it this test would pass just as well if reach were ignored entirely.
+     */
+    public static class MediumPoleReachesFurtherTest extends GameTestInstance {
+
+        public static final MapCodec<MediumPoleReachesFurtherTest> CODEC =
+                RecordCodecBuilder.<MediumPoleReachesFurtherTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(MediumPoleReachesFurtherTest::info))
+                                .apply(i, MediumPoleReachesFurtherTest::new));
+
+        /** Eight apart: past the small pole's 7.5 and inside the medium pole's 9. */
+        private static final BlockPos WEST = new BlockPos(0, 1, 0);
+        private static final BlockPos EAST = new BlockPos(8, 1, 0);
+
+        public MediumPoleReachesFurtherTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, WEST, ModBlocks.SMALL_ELECTRIC_POLE.get());
+            place(helper, EAST, ModBlocks.SMALL_ELECTRIC_POLE.get());
+
+            helper.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(links(helper, WEST).length, 0,
+                                "wires between two small poles eight blocks apart");
+                        helper.assertValueEqual(links(helper, EAST).length, 0,
+                                "wires between two small poles eight blocks apart");
+                    })
+                    // Swap only the east one. The gap has not changed; the reach at one end has.
+                    .thenExecute(() -> {
+                        for (int height = 0; height < ElectricPoleBlock.HEIGHT; height++) {
+                            helper.setBlock(EAST.above(height), Blocks.AIR);
+                        }
+                    })
+                    .thenExecuteAfter(5,
+                            () -> place(helper, EAST, ModBlocks.MEDIUM_ELECTRIC_POLE.get()))
+                    .thenExecuteAfter(5, () -> {
+                        assertWiredTo(helper, EAST, WEST);
+                        assertWiredTo(helper, WEST, EAST);
+                    })
+                    .thenSucceed();
+        }
+
+        private static long[] links(GameTestHelper helper, BlockPos pole) {
+            return helper.getBlockEntity(pole, ElectricPoleBlockEntity.class).links();
+        }
+
+        private static void assertWiredTo(GameTestHelper helper, BlockPos from, BlockPos to) {
+            long wanted = helper.absolutePos(to).asLong();
+            for (long link : links(helper, from)) {
+                if (link == wanted) {
+                    return;
+                }
+            }
+            helper.fail("the pole at " + from + " is not wired to the one at " + to);
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("medium pole reaches further");
+        }
+    }
+
     public static class PoleWiresLinkUpTest extends GameTestInstance {
 
         public static final MapCodec<PoleWiresLinkUpTest> CODEC =
@@ -904,7 +988,7 @@ public final class NauvisPowerGameTests {
         }
 
         private static long[] links(GameTestHelper helper, BlockPos pole) {
-            return helper.getBlockEntity(pole, SmallElectricPoleBlockEntity.class).links();
+            return helper.getBlockEntity(pole, ElectricPoleBlockEntity.class).links();
         }
 
         private static void assertWiredTo(GameTestHelper helper, BlockPos from, BlockPos to) {
@@ -960,12 +1044,12 @@ public final class NauvisPowerGameTests {
             place(helper, ALSO_NEAR, ModBlocks.SMALL_ELECTRIC_POLE.get());
 
             helper.runAfterDelay(5, () -> {
-                AABB bounds = helper.getBlockEntity(NEAR, SmallElectricPoleBlockEntity.class).wireBounds();
+                AABB bounds = helper.getBlockEntity(NEAR, ElectricPoleBlockEntity.class).wireBounds();
 
                 BlockPos ownHead = helper.absolutePos(
-                        NEAR.above(SmallElectricPoleBlock.HEIGHT - 1));
+                        NEAR.above(ElectricPoleBlock.HEIGHT - 1));
                 BlockPos farHead = helper.absolutePos(
-                        ALSO_NEAR.above(SmallElectricPoleBlock.HEIGHT - 1));
+                        ALSO_NEAR.above(ElectricPoleBlock.HEIGHT - 1));
 
                 helper.assertTrue(bounds.contains(Vec3.atCenterOf(ownHead)),
                         "a pole does not claim its own head, so its wires are culled the moment "

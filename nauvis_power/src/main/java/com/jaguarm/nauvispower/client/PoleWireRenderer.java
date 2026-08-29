@@ -1,7 +1,7 @@
 package com.jaguarm.nauvispower.client;
 
-import com.jaguarm.nauvispower.grid.SmallElectricPoleBlock;
-import com.jaguarm.nauvispower.grid.SmallElectricPoleBlockEntity;
+import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
+import com.jaguarm.nauvispower.grid.ElectricPoleBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -34,7 +34,7 @@ import net.minecraft.world.phys.Vec3;
  * <p>The client is told the set of links per pole rather than working it out, because it has no
  * copy of the graph and rediscovering it would mean every pole scanning a fifteen-block cube for
  * others and then somehow noticing when one moved. See
- * {@link SmallElectricPoleBlockEntity#links()}.
+ * {@link ElectricPoleBlockEntity#links()}.
  *
  * <h2>Each wire is drawn once</h2>
  *
@@ -43,7 +43,7 @@ import net.minecraft.world.phys.Vec3;
  * with the lower packed position draws; the other does nothing. Links only ever name loaded poles,
  * so there is always exactly one of them present to do it.
  */
-public class PoleWireRenderer implements BlockEntityRenderer<SmallElectricPoleBlockEntity, PoleRenderState> {
+public class PoleWireRenderer implements BlockEntityRenderer<ElectricPoleBlockEntity, PoleRenderState> {
 
     /**
      * A solid white vanilla texture, tinted per vertex.
@@ -59,7 +59,7 @@ public class PoleWireRenderer implements BlockEntityRenderer<SmallElectricPoleBl
     private static final int COLOR = 0xFF4A2E1E;
 
     /** Where a wire attaches: the middle of the head block's crossarm. */
-    private static final float ATTACH_Y = SmallElectricPoleBlock.HEIGHT - 1 + 11.0F / 16.0F;
+    private static final float ATTACH_Y = ElectricPoleBlock.HEIGHT - 1 + 11.0F / 16.0F;
 
     /** Half-thickness of the ribbon, in blocks. */
     private static final float HALF_WIDTH = 0.02F;
@@ -76,7 +76,7 @@ public class PoleWireRenderer implements BlockEntityRenderer<SmallElectricPoleBl
     }
 
     @Override
-    public void extractRenderState(SmallElectricPoleBlockEntity pole, PoleRenderState state,
+    public void extractRenderState(ElectricPoleBlockEntity pole, PoleRenderState state,
             float partialTicks, Vec3 cameraPosition,
             ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderer.super.extractRenderState(pole, state, partialTicks, cameraPosition, breakProgress);
@@ -88,7 +88,7 @@ public class PoleWireRenderer implements BlockEntityRenderer<SmallElectricPoleBl
         }
 
         BlockPos self = pole.getBlockPos();
-        BlockPos head = self.above(SmallElectricPoleBlock.HEIGHT - 1);
+        BlockPos head = self.above(ElectricPoleBlock.HEIGHT - 1);
         // The foot of a pole stands in whatever shadow the machines cast; the wires do not.
         state.headLight = LightCoordsUtil.getLightCoords(level, head);
 
@@ -187,10 +187,10 @@ public class PoleWireRenderer implements BlockEntityRenderer<SmallElectricPoleBl
      * what it draws; a block entity is culled against one block, and has to say otherwise.
      *
      * <p>Computed on the block entity so that a headless test can assert it - see
-     * {@link SmallElectricPoleBlockEntity#wireBounds()}.
+     * {@link ElectricPoleBlockEntity#wireBounds()}.
      */
     @Override
-    public AABB getRenderBoundingBox(SmallElectricPoleBlockEntity pole) {
+    public AABB getRenderBoundingBox(ElectricPoleBlockEntity pole) {
         return pole.wireBounds();
     }
 

@@ -3,7 +3,7 @@ package com.jaguarm.nauvispower.registry;
 import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.generator.BoilerBlockEntity;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
-import com.jaguarm.nauvispower.grid.SmallElectricPoleBlockEntity;
+import com.jaguarm.nauvispower.grid.ElectricPoleBlockEntity;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -23,10 +23,19 @@ public final class ModBlockEntities {
             BLOCK_ENTITIES.register("steam_engine",
                     () -> new BlockEntityType<>(SteamEngineBlockEntity::new, ModBlocks.STEAM_ENGINE.get()));
 
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SmallElectricPoleBlockEntity>>
-            SMALL_ELECTRIC_POLE = BLOCK_ENTITIES.register("small_electric_pole",
+    /**
+     * One type for every pole tier, the way the two electric inserters share one: a tier differs
+     * by how far it reaches, which is a number on the block, and nothing saved here changes.
+     *
+     * <p>The registry name stays {@code small_electric_pole} because it is in world saves. It
+     * names the type rather than the block, and the type is now both of them.
+     */
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ElectricPoleBlockEntity>>
+            ELECTRIC_POLE = BLOCK_ENTITIES.register("small_electric_pole",
                     () -> new BlockEntityType<>(
-                            SmallElectricPoleBlockEntity::new, ModBlocks.SMALL_ELECTRIC_POLE.get()));
+                            ElectricPoleBlockEntity::new,
+                            ModBlocks.SMALL_ELECTRIC_POLE.get(),
+                            ModBlocks.MEDIUM_ELECTRIC_POLE.get()));
 
     private ModBlockEntities() {}
 }

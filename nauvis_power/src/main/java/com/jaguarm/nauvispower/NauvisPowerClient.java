@@ -32,6 +32,6 @@ public class NauvisPowerClient {
     @SubscribeEvent
     static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(
-                ModBlockEntities.SMALL_ELECTRIC_POLE.get(), context -> new PoleWireRenderer());
+                ModBlockEntities.ELECTRIC_POLE.get(), context -> new PoleWireRenderer());
     }
 }
