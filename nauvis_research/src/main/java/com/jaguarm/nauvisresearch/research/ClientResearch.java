@@ -36,23 +36,33 @@ public final class ClientResearch {
     private static int units;
     private static int revision;
 
+    /** The trigger tally, as of the last sync. */
+    private static java.util.Map<net.minecraft.resources.Identifier, Integer> made = java.util.Map.of();
+
     /** The locked set, and the registry and revision it was computed for. */
     private static @Nullable Set<ResourceKey<Recipe<?>>> lockedCache;
     private static @Nullable Registry<Technology> cachedFor;
     private static int cachedRevision = -1;
 
     public static void accept(List<ResourceKey<Technology>> completedKeys,
-            @Nullable ResourceKey<Technology> currentKey, int unitsDone) {
+            @Nullable ResourceKey<Technology> currentKey, int unitsDone,
+            java.util.Map<net.minecraft.resources.Identifier, Integer> tally) {
         completed = new LinkedHashSet<>(completedKeys);
         current = currentKey;
         units = unitsDone;
+        made = java.util.Map.copyOf(tally);
         revision++;
         lockedCache = null;
     }
 
+    /** How many of this item the world has made, for drawing a trigger's progress. */
+    public static int made(net.minecraft.resources.Identifier item) {
+        return made.getOrDefault(item, 0);
+    }
+
     /** Logging out: a stale tree would gate the next world's recipes against this one's research. */
     public static void clear() {
-        accept(List.of(), null, 0);
+        accept(List.of(), null, 0, java.util.Map.of());
     }
 
     public static Set<ResourceKey<Technology>> completed() {

@@ -38,7 +38,8 @@ public final class ResearchNetwork {
     }
 
     private static void handleSync(ResearchSyncPayload payload, IPayloadContext context) {
-        ClientResearch.accept(payload.completed(), payload.current().orElse(null), payload.units());
+        ClientResearch.accept(payload.completed(), payload.current().orElse(null), payload.units(),
+                payload.made());
     }
 
     /**

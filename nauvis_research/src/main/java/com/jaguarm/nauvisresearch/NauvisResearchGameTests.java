@@ -778,6 +778,14 @@ public final class NauvisResearchGameTests {
 
             helper.assertFalse(RecipeLocks.isOpen(),
                     "no recipe lock is installed - see NauvisResearch's ModList check");
+
+            // The other half of the same wiring, and the half that fails silently: without it a
+            // craft in Facrafting's panel tells research nothing, so the technologies triggered by
+            // crafting - red science among them - could never finish. Everything else would keep
+            // working, which is why it is asserted rather than assumed.
+            helper.assertTrue(com.jaguarm.facrafting.queue.CraftListeners.installed() > 0,
+                    "no craft listener is installed, so crafting cannot finish a triggered "
+                            + "technology - see FacraftingLock.install");
             helper.assertFalse(RecipeLocks.isUnlocked(player, splitter),
                     "the splitter is craftable before Logistics is researched");
             helper.assertTrue(RecipeLocks.isUnlocked(player, belt),

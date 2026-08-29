@@ -36,10 +36,17 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * drawn on top. Replacing this screen with a real tree touches this file and nothing else, which
  * is the property that made drawing a list first the cheap decision rather than the lazy one.
  *
- * <p>So: rows. The current research first with its progress, then everything whose prerequisites
- * are met, in Factorio's own order. Click a row to make it the current research. Completed
- * technologies are behind a toggle rather than in the list, because the list a player is looking
- * at is the list of things they could do next.
+ * <p>So: rows, in Factorio's own order, with the current research and its progress on top.
+ * Completed technologies are behind a toggle, because the list a player is looking at is the
+ * list of what is still to do.
+ *
+ * <p><b>Everything unfinished is listed, including what cannot be started yet</b>, and that is
+ * not clutter - it is the whole point. An earlier version showed only technologies whose
+ * prerequisites were met, which meant a player who crafted a lab to finish Science pack 1, and
+ * had not yet finished Steam power, saw <em>nothing happen and nothing explaining it</em>. A
+ * row that says "Needs Steam power" is the difference between a tree and a guessing game. The
+ * same reasoning puts a count on a trigger: "Craft 50 Iron Ingot, 34 done" is a job, where
+ * "Craft 50 Iron Ingot" is a riddle about how many you have already made.
  *
  * <p>Painted in the same flat colours as {@code LabScreen} and Facrafting's panel. The palette is
  * copied rather than shared for the reason {@code LabScreen} gives: a shared base could only live
@@ -103,8 +110,7 @@ public class ResearchScreen extends Screen {
         List<Holder.Reference<Technology>> found = new ArrayList<>();
         var access = minecraft.level.registryAccess();
         for (Holder.Reference<Technology> holder : ModTechnologies.all(access)) {
-            boolean done = ClientResearch.isCompleted(holder.key());
-            if (done == showingCompleted && (done || ClientResearch.isAvailable(access, holder.key()))) {
+            if (ClientResearch.isCompleted(holder.key()) == showingCompleted) {
                 found.add(holder);
             }
         }
@@ -158,15 +164,18 @@ public class ResearchScreen extends Screen {
 
         Technology technology = holder.value();
         boolean current = holder.key().equals(ClientResearch.current());
-        boolean hovered = within(mouseX, mouseY, left + PADDING, y, WIDTH - PADDING * 2, ROW - 2);
+        boolean available = showingCompleted
+                || ClientResearch.isAvailable(minecraft.level.registryAccess(), holder.key());
+        boolean hovered = available
+                && within(mouseX, mouseY, left + PADDING, y, WIDTH - PADDING * 2, ROW - 2);
 
         graphics.fill(left + PADDING, y, left + WIDTH - PADDING, y + ROW - 2,
                 current ? COLOR_CURRENT : hovered ? COLOR_ROW_HOVER : COLOR_ROW);
 
         graphics.text(font, technology.title(holder.key()), left + PADDING + 4, y + 3,
-                COLOR_TEXT, false);
-        graphics.text(font, cost(technology), left + PADDING + 4, y + 3 + font.lineHeight + 1,
-                COLOR_MUTED, false);
+                available ? COLOR_TEXT : COLOR_MUTED, false);
+        graphics.text(font, available ? cost(technology) : waitingFor(holder),
+                left + PADDING + 4, y + 3 + font.lineHeight + 1, COLOR_MUTED, false);
 
         // The packs, then what it hands over, right-aligned so the two columns line up down the
         // list even though each row holds a different number of each.
@@ -193,16 +202,42 @@ public class ResearchScreen extends Screen {
      * because most of the tree is in that state and "1000 x 60s" with an unobtainable pack reads
      * as expensive rather than as impossible.
      */
+    /**
+     * What a technology that cannot be started yet is waiting for.
+     *
+     * <p>Names the prerequisites rather than saying "locked", because "locked" is what the player
+     * can already see. Naming them turns the list into the tree it is drawn from.
+     */
+    private Component waitingFor(Holder.Reference<Technology> holder) {
+        Component needs = Component.empty();
+        boolean first = true;
+        for (ResourceKey<Technology> prerequisite : holder.value().prerequisites()) {
+            if (ClientResearch.isCompleted(prerequisite)) {
+                continue;
+            }
+            Technology value = technologyOf(prerequisite);
+            Component name = value == null
+                    ? Component.literal(prerequisite.identifier().getPath())
+                    : value.title(prerequisite);
+            needs = first ? name.copy() : needs.copy().append(", ").append(name);
+            first = false;
+        }
+        return Component.translatable("screen.nauvis_research.research.needs", needs);
+    }
+
     private Component cost(Technology technology) {
         // A triggered technology has no cost to draw. What it wants is an instruction, and it is
         // the whole of what the row has to say: there is nothing to click and no lab involved.
         if (technology.isTriggered()) {
             Technology.Trigger trigger = technology.trigger().orElseThrow();
+            // With the tally, because "craft fifty iron plates" with no idea how many you have
+            // already made is the thing that made a finished lab look like it did nothing.
             return Component.translatable("screen.nauvis_research.research.trigger",
                     trigger.count(),
                     BuiltInRegistries.ITEM.getOptional(trigger.item())
                             .map(item -> new ItemStack(item).getHoverName())
-                            .orElse(Component.literal(trigger.item().toString())))
+                            .orElse(Component.literal(trigger.item().toString())),
+                    Math.min(ClientResearch.made(trigger.item()), trigger.count()))
                     .withStyle(ChatFormatting.AQUA);
         }
         if (!technology.isResearchable()) {
@@ -261,9 +296,11 @@ public class ResearchScreen extends Screen {
             }
             Holder.Reference<Technology> holder = rows.get(scroll + i);
             // A triggered one cannot be started or stopped: it happens when the player makes the
-            // thing it is watching for. Clicking is swallowed rather than sent, so the row does
-            // not look broken.
-            if (showingCompleted || holder.value().isTriggered() || !holder.value().isResearchable()) {
+            // thing it is watching for. Nor can one whose prerequisites are outstanding. Both are
+            // drawn, both are unclickable, and the row says which it is.
+            if (showingCompleted || holder.value().isTriggered()
+                    || !holder.value().isResearchable()
+                    || !ClientResearch.isAvailable(minecraft.level.registryAccess(), holder.key())) {
                 return true;
             }
             // Clicking the current research again stops it, which is the only way to stop.

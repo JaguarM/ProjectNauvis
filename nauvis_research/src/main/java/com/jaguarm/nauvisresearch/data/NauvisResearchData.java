@@ -103,9 +103,10 @@ public final class NauvisResearchData {
             add("screen.nauvis_research.research.current", "Researching %s - %s of %s");
             add("screen.nauvis_research.research.nothing_selected",
                     "Technology - nothing being researched");
-            add("screen.nauvis_research.research.none", "Nothing available. Research something first.");
+            add("screen.nauvis_research.research.none", "Nothing left to research.");
             add("screen.nauvis_research.research.cost", "%s x %ss - %s");
-            add("screen.nauvis_research.research.trigger", "Craft %s x %s");
+            add("screen.nauvis_research.research.trigger", "Craft %s x %s  -  %s done");
+            add("screen.nauvis_research.research.needs", "Needs %s");
             add("screen.nauvis_research.research.unavailable_packs",
                     "Needs a science pack this pack does not have yet");
             add("screen.nauvis_research.research.show_completed", "Completed >");

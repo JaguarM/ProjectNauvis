@@ -110,6 +110,11 @@ public class ResearchState extends SavedData {
         return made.getOrDefault(item, 0);
     }
 
+    /** The whole tally, for the sync that lets the research screen draw a trigger's progress. */
+    public Map<Identifier, Integer> made() {
+        return java.util.Collections.unmodifiableMap(made);
+    }
+
     /** @return the new total. */
     public int recordMade(Identifier item, int count) {
         int total = made(item) + count;

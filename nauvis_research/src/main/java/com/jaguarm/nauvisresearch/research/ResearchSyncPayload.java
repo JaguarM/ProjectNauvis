@@ -1,6 +1,8 @@
 package com.jaguarm.nauvisresearch.research;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.jaguarm.nauvisresearch.NauvisResearch;
@@ -25,7 +27,8 @@ import net.minecraft.resources.ResourceKey;
 public record ResearchSyncPayload(
         List<ResourceKey<Technology>> completed,
         Optional<ResourceKey<Technology>> current,
-        int units) implements CustomPacketPayload {
+        int units,
+        Map<Identifier, Integer> made) implements CustomPacketPayload {
 
     public static final Type<ResearchSyncPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "research_sync"));
@@ -45,13 +48,19 @@ public record ResearchSyncPayload(
                     KEY_CODEC.apply(ByteBufCodecs.list()), ResearchSyncPayload::completed,
                     ByteBufCodecs.optional(KEY_CODEC), ResearchSyncPayload::current,
                     ByteBufCodecs.VAR_INT, ResearchSyncPayload::units,
+                    // The tally behind every trigger, so the screen can say 34/50 rather than
+                    // leaving a player to guess how close they are. It is one entry per item some
+                    // technology watches for - four, today - not one per item in the game.
+                    ByteBufCodecs.map(HashMap::new, Identifier.STREAM_CODEC, ByteBufCodecs.VAR_INT),
+                    ResearchSyncPayload::made,
                     ResearchSyncPayload::new);
 
     public static ResearchSyncPayload of(ResearchState state) {
         return new ResearchSyncPayload(
                 List.copyOf(state.completed()),
                 Optional.ofNullable(state.current()),
-                state.units());
+                state.units(),
+                Map.copyOf(state.made()));
     }
 
     @Override
