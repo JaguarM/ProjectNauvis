@@ -91,6 +91,7 @@ public final class NauvisResearchGameTests {
         TEST_TYPES.register("research_unlocks_a_recipe", () -> ResearchUnlocksARecipeTest.CODEC);
         TEST_TYPES.register("lab_ignores_the_wrong_packs", () -> LabIgnoresTheWrongPacksTest.CODEC);
         TEST_TYPES.register("the_crafting_gate_is_installed", () -> CraftingGateIsInstalledTest.CODEC);
+        TEST_TYPES.register("research_gates_the_early_machines", () -> ResearchGatesTheEarlyMachinesTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -114,6 +115,8 @@ public final class NauvisResearchGameTests {
         register(event, environment, "research_unlocks_a_recipe", ResearchUnlocksARecipeTest::new, 20);
         register(event, environment, "lab_ignores_the_wrong_packs", LabIgnoresTheWrongPacksTest::new, 120);
         register(event, environment, "the_crafting_gate_is_installed", CraftingGateIsInstalledTest::new, 20);
+        register(event, environment, "research_gates_the_early_machines",
+                ResearchGatesTheEarlyMachinesTest::new, 20);
     }
 
     private interface TestFactory {
@@ -753,6 +756,91 @@ public final class NauvisResearchGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("the crafting gate is installed");
+        }
+    }
+
+    /**
+     * The pack's own gating, and the guard that keeps it from locking a world out of research.
+     *
+     * <h2>Both halves are the point</h2>
+     *
+     * <p>Factorio gates 150 of its 214 items and leaves about sixty free at the start. Every one of
+     * this pack's nineteen recipes is inside that free tier, so a perfectly faithful tree gates the
+     * assembling machine and the long-handed inserter and nothing else - which reads, correctly, as
+     * research having nothing to do with crafting. {@code data/extra_unlocks.json} hangs the pack's
+     * early machines on Factorio's own early technologies to fix that, and <b>the electric mining
+     * drill is the one that was reported</b>: craftable on a fresh world, behind Electronics now.
+     *
+     * <p>The other half is the guard. Gating is one edit away from a world that cannot research
+     * anything, because a lab is built out of circuits, gears and belts and runs on a boiler, an
+     * engine and a pole. The generator computes that set out of Factorio's recipe graph and refuses
+     * to gate anything in it; <b>this asserts the same thing at run time</b>, against the recipes
+     * actually loaded, because the generator's answer and the server's could drift and only one of
+     * them is the one a player meets.
+     *
+     * <p>Electronics rather than Automation, deliberately - research is per-world and shared with
+     * every other test in the run, and Automation is what {@code lab_researches} is working on. See
+     * {@link #research}.
+     */
+    public static class ResearchGatesTheEarlyMachinesTest extends GameTestInstance {
+
+        public static final MapCodec<ResearchGatesTheEarlyMachinesTest> CODEC =
+                RecordCodecBuilder.<ResearchGatesTheEarlyMachinesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ResearchGatesTheEarlyMachinesTest::info))
+                                .apply(i, ResearchGatesTheEarlyMachinesTest::new));
+
+        public ResearchGatesTheEarlyMachinesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            MinecraftServer server = helper.getLevel().getServer();
+            ResourceKey<Technology> electronics = ModTechnologies.key("electronics");
+            ResourceKey<Recipe<?>> drill = recipe("neoprogressiveautomation", "electric_drill");
+
+            Research.state(server).forget(electronics);
+            Research.changedForTest(server);
+
+            helper.assertFalse(Research.isUnlocked(server, drill),
+                    "the electric drill is craftable with nothing researched");
+
+            // The soft-lock guard, asserted rather than trusted: everything a first lab is built
+            // and powered from has to be craftable before any research at all. If one of these is
+            // ever gated, a new world can never reach its own first technology - and every other
+            // test here would still pass, because they all start with a lab already placed.
+            for (String[] seed : new String[][] {
+                    {"nauvis_research", "lab"}, {"nauvis_research", "science_pack_1"},
+                    {"nauvis_power", "boiler"}, {"nauvis_power", "steam_engine"},
+                    {"nauvis_power", "small_electric_pole"}, {"nauvis_logistics", "transport_belt"},
+                    {"nauvis_fluids", "pipe"}, {"nauvis_machines", "furnace"},
+                    {"neoprogressivematerials", "iron_gear_wheel"},
+                    {"neoprogressivematerials", "copper_cable"},
+                    {"neoprogressivematerials", "electronic_circuit"}}) {
+                ResourceKey<Recipe<?>> key = recipe(seed[0], seed[1]);
+                helper.assertTrue(Research.isUnlocked(server, key),
+                        seed[0] + ":" + seed[1] + " is gated, so a new world can never build a lab "
+                                + "and can never research anything - see data/extra_unlocks.json");
+            }
+
+            Research.state(server).complete(electronics);
+            Research.changedForTest(server);
+            helper.assertTrue(Research.isUnlocked(server, drill),
+                    "the electric drill is still locked after researching Electronics");
+
+            Research.state(server).forget(electronics);
+            Research.changedForTest(server);
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("research gates the early machines");
         }
     }
 }

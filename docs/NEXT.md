@@ -25,9 +25,15 @@ far: the chest and the furnace, because the pack now prices them Factorio's way 
 for one item means one of them is wrong; and the **hopper** and its minecart, because a hopper is
 an inserter that costs nothing to run and makes the pack's three inserters pointless.
 
+**And research now gates seven of the pack's nineteen recipes rather than two.** Both drills, all
+three inserters, the iron chest and the assembling machine are behind Automation, Electronics and
+Logistics - Factorio's own technologies, at Factorio's own costs, with the pack's early machines
+hung on them by `data/extra_unlocks.json`. A new world hand-mines, hand-crafts a lab and a boiler,
+and researches its way to automation, which is the shape of Factorio's first hour.
+
 **Nobody has looked at the research screen in game, and nobody has played the first ten minutes
-with no hopper and no bench recipe for a furnace.** Both are in the playtest list below, and the
-second one is the bigger risk of the two.
+with no hopper, no bench recipe for a furnace and no drill until Automation.** All three are in
+the playtest list below, and the last is the bigger risk now.
 
 What the tabs cost
 ------------------
@@ -363,6 +369,12 @@ screen. That is the intended experience and it is also exactly how a new player 
   problem and the answer is probably a message rather than putting the recipe back;
 - then build a burner inserter and check it does everything a hopper did - pulling from a chest
   into a furnace is the case worth trying, because it is the one every Minecraft player builds.
+  **It is behind Automation now**, so the honest version of this test is the whole opening: hand-
+  mine, hand-craft a lab and a boiler, research Automation, and only then automate anything;
+- and watch how long that takes. The lab alone is ten circuits, ten gears and four belts by hand,
+  which is Factorio's own opening and may still be too long for a Minecraft player who does not
+  know it is coming. If it is, the lever is `data/extra_unlocks.json` - moving the burner pair off
+  Automation is one line - and not the tree.
 
 The rest of what is owed is older, and no boot has covered it. The long-handed inserter added a
 model — a smoker-coloured cube, so it is the third furnace body on a belt line and wants a proper
@@ -1006,17 +1018,19 @@ vanilla crafting recipe never goes near Facrafting, which is where the gate live
 hook that would let it. So the datapacks' labels now read **"(skips research)"**, which is not a
 caveat but the point, and is the one line a player reads before turning one on.
 
-**Almost nothing the pack ships *can* be gated, and that is arithmetic rather than policy.** Of
-the nineteen timed recipes, **thirteen are the transitive ingredients of a working lab**: the lab
-costs ten electronic circuits, ten iron gear wheels and four transport belts; red science costs a
-copper plate and a gear; running a lab needs a boiler, a steam engine and a pole; and getting the
-ore needs a drill. Gate any of those and the first research becomes impossible. That leaves six,
-of which two - the assembling machine and the long-handed inserter - are already gated, and one
-more, the burner inserter, is the only way to automate anything now that hoppers are gone. **The
-real headroom is three recipes**: the chest, the iron chest and the electric inserter. Research
-will only feel like it gates the game when there are more items, and no amount of policy changes
-that. `tools/` has no script for this; it is a ten-line walk over the shipped recipes' ingredients
-and is worth rewriting when somebody asks the question again.
+**Eleven of the nineteen recipes can never be gated, and that is arithmetic rather than policy.**
+The lab costs ten electronic circuits, ten iron gear wheels and four transport belts; red science
+costs a copper plate and a gear; running a lab needs a boiler, a steam engine and a pole; and a
+boiler needs a stone furnace and pipes. Gate any of those and a new world can never reach its own
+first research. `data/extra_unlocks.json` names those five seeds and the generator computes the
+rest out of Factorio's recipe graph and refuses to gate anything in it - and
+`research_gates_the_early_machines` asserts the same set again at run time, because the
+generator's answer and the server's could drift and only one of them is the one a player meets.
+
+**Note what is *not* in that set, because an earlier version of this file got it wrong: a mining
+drill.** In Minecraft you mine ore with a pickaxe and smelt it in a furnace, so a drill is a
+convenience rather than a prerequisite - which is the whole reason the electric drill could become
+the second research instead of a starting recipe.
 
 **Vanilla's own progression is barely touched.** Four recipes are removed. Everything else
 Minecraft can build - redstone logic, pistons, minecart automation, brewing, the whole of it - is

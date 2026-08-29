@@ -9,6 +9,8 @@
   ],
   "unlocks": [
     "nauvis_machines:assembling_machine_1",
-    "nauvis_logistics:long_handed_inserter"
+    "nauvis_logistics:long_handed_inserter",
+    "nauvis_logistics:burner_inserter",
+    "neoprogressiveautomation:burner_drill"
   ]
 }

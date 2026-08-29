@@ -2,7 +2,9 @@
 """
 Generate the technology tree from Factorio's technology dump plus the mapping table.
 
-    reference/factorio/technologies.json  +  data/mapping.json  ->  nauvis_research technology JSON
+    reference/factorio/technologies.json
+  + data/mapping.json
+  + data/extra_unlocks.json   ->  nauvis_research technology JSON
 
 Non-negotiable #2 in the other half of the pack: recipes are generated, never hand-written, and
 a research cost is the same kind of fact as an ingredient list. It lives in world saves and in
@@ -41,6 +43,27 @@ is still written. The tree is identity: its shape, its costs and its prerequisit
 whether or not the pack has caught up with it, and a technology that appears later would move
 under a player who had already researched past it.
 
+What is added, and the one guard on it
+--------------------------------------
+
+`data/extra_unlocks.json` hangs recipes on technologies that do not unlock them in Factorio. It
+exists because of an arithmetic problem rather than a taste one: Factorio gates 150 of its 214
+items, and every one of this pack's nineteen recipes is in the ~60 it leaves free at the start -
+so a perfectly faithful tree gates two things and research reads as disconnected from crafting.
+
+**Only the effect list grows.** No technology is invented and none is moved, so ids, costs,
+prerequisites and order are still Factorio's and every row is *deleted* rather than rewritten
+when the item Factorio actually gates arrives to take its place.
+
+**The guard is a soft-lock check and it is the reason this is safe.** `seeds` in that file names
+what has to stay craftable with no research at all - the first lab, the science it eats, and the
+power to run it - and this tool takes the transitive ingredients of those out of Factorio's own
+recipe graph and refuses to gate any of them. So the file cannot lock a new world out of its own
+first research, whatever anybody puts in it. Note what is *not* a seed: **ore and stone are
+hand-mined in Minecraft**, so a mining drill is a convenience rather than a prerequisite and is
+free to gate. That is the whole difference between this pack and Factorio on the point, and it is
+what makes the electric drill the second research rather than a starting recipe.
+
 Usage:
     python tools/gen_technologies.py                summary only, writes nothing
     python tools/gen_technologies.py --check        semantic diff against what is on disk
@@ -59,6 +82,7 @@ REPO = Path(__file__).resolve().parent.parent
 TECHNOLOGIES = REPO / "reference" / "factorio" / "technologies.json"
 RECIPES = REPO / "reference" / "factorio" / "recipes.json"
 MAPPING = REPO / "data" / "mapping.json"
+EXTRA_UNLOCKS = REPO / "data" / "extra_unlocks.json"
 
 TICKS_PER_SECOND = 20
 
@@ -95,6 +119,61 @@ def display_name(factorio_id: str) -> str:
     """
     words = factorio_id.replace("-", " ")
     return words[:1].upper() + words[1:]
+
+
+def critical_path(seeds: list[str], recipes: dict) -> set[str]:
+    """
+    Everything needed to build the first lab and power it, out of Factorio's own recipe graph.
+
+    Nothing in here may be gated, or a new world cannot reach its own first research. Walked over
+    the *dump* rather than over the recipes on disk, so it is the same answer whether or not the
+    pack has shipped a given item yet.
+    """
+    need: set[str] = set()
+    stack = list(seeds)
+    while stack:
+        item = stack.pop()
+        if item in need:
+            continue
+        entry = recipes.get(item)
+        if entry is None:
+            raise GenError(f"'{item}' is named as a seed but is not in the recipe dump.")
+        need.add(item)
+        for ingredient in (entry.get("recipe") or {}).get("ingredients") or []:
+            stack.append(ingredient["id"])
+    return need
+
+
+def load_extra_unlocks(recipes: dict, items: dict) -> dict[str, list[str]]:
+    """
+    Read `data/extra_unlocks.json` and refuse anything that would lock a world out of research.
+
+    Two checks and both are worth failing on. The soft-lock one is the important half: it is
+    computed rather than reviewed, so the file can be edited freely by somebody who has not
+    thought about what a lab costs.
+    """
+    if not EXTRA_UNLOCKS.exists():
+        return {}
+
+    body = json.loads(EXTRA_UNLOCKS.read_text(encoding="utf-8"))
+    protected = critical_path(body["seeds"], recipes)
+
+    extras: dict[str, list[str]] = {}
+    for technology, entry in body.get("unlocks", {}).items():
+        for item in entry["items"]:
+            if item not in items:
+                raise GenError(
+                    f"extra_unlocks gives '{technology}' the recipe '{item}', which is not in the "
+                    "mapping table."
+                )
+            if item in protected:
+                raise GenError(
+                    f"extra_unlocks would gate '{item}' behind '{technology}', but it is needed to "
+                    "build or power the first lab - so a new world could never research anything. "
+                    f"The protected set is the ingredients of {body['seeds']}."
+                )
+            extras.setdefault(technology, []).append(item)
+    return extras
 
 
 def load_inputs() -> tuple[list, dict, dict, dict]:
@@ -144,7 +223,8 @@ def recipe_key(factorio_item: str, items: dict) -> str | None:
     return f"{owner}:{item.split(':', 1)[1]}"
 
 
-def unlocks_of(technology: dict, items: dict, unlocks: dict, report: dict) -> list[str]:
+def unlocks_of(technology: dict, items: dict, unlocks: dict, report: dict,
+               extras: dict[str, list[str]]) -> list[str]:
     """The recipe keys this technology hands the player, in the order Factorio lists them."""
     keys: list[str] = []
     for effect in technology.get("effects", []):
@@ -177,6 +257,19 @@ def unlocks_of(technology: dict, items: dict, unlocks: dict, report: dict) -> li
             continue
         if key not in keys:
             keys.append(key)
+
+    # The pack's own additions go after Factorio's, so a diff of this list reads as "Factorio's,
+    # then ours" and deleting a row from extra_unlocks.json leaves the rest untouched.
+    for item in extras.get(technology["id"], []):
+        key = recipe_key(item, items)
+        if key is None:
+            raise GenError(
+                f"extra_unlocks gives '{technology['id']}' the recipe '{item}', which the mapping "
+                "marks skip or raw, so there is no recipe for it to unlock."
+            )
+        if key not in keys:
+            keys.append(key)
+            report["added"] += 1
     return keys
 
 
@@ -207,8 +300,10 @@ def ticks_per_unit(technology: dict) -> int:
     return int(ticks)
 
 
-def plan(technologies: list, items: dict, unlocks: dict) -> tuple[list, dict]:
+def plan(technologies: list, items: dict, unlocks: dict,
+         extras: dict[str, list[str]]) -> tuple[list, dict]:
     report = {
+        "added": 0,
         "formula_priced": [],
         "other_effects": {},
         "unmodelled": {},      # a recipe the pack has no counterpart for
@@ -221,6 +316,14 @@ def plan(technologies: list, items: dict, unlocks: dict) -> tuple[list, dict]:
     # `count` rather than `max_level == "infinite"`, because the four levelled
     # mining-productivity steps are finite and priced the same way.
     kept = {t["id"] for t in technologies if "count" in t["unit"]}
+
+    unknown = sorted(set(extras) - kept)
+    if unknown:
+        raise GenError(
+            f"extra_unlocks names {unknown}, which is not a technology in the generated tree. "
+            "A technology priced by a formula is not written, so nothing can be hung on it."
+        )
+
     files = []
 
     for technology in sorted(technologies, key=lambda t: t["id"]):
@@ -239,7 +342,7 @@ def plan(technologies: list, items: dict, unlocks: dict) -> tuple[list, dict]:
                 "is incomplete - `fetch_technologies.py` names what it could not read."
             )
 
-        recipes = unlocks_of(technology, items, unlocks, report)
+        recipes = unlocks_of(technology, items, unlocks, report, extras)
         if not recipes:
             report["no_unlocks"].append(technology["id"])
 
@@ -333,14 +436,16 @@ def main() -> int:
     args = ap.parse_args()
 
     try:
-        technologies, _recipes, items, unlocks = load_inputs()
-        files, report = plan(technologies, items, unlocks)
+        technologies, recipes, items, unlocks = load_inputs()
+        extras = load_extra_unlocks(recipes, items)
+        files, report = plan(technologies, items, unlocks, extras)
     except GenError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
 
     total_unlocks = sum(len(obj["unlocks"]) for _, obj in files)
     print(f"{len(files)} technologies -> {total_unlocks} recipe unlocks")
+    print(f"  added by data/extra_unlocks.json : {report['added']}")
     print(f"  priced by a formula, not written : {len(report['formula_priced'])}")
     print(f"  unlocking nothing yet            : {len(report['no_unlocks'])}")
     if report["other_effects"]:

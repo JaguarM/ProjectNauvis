@@ -9,6 +9,7 @@
   ],
   "unlocks": [
     "nauvis_logistics:fast_inserter",
-    "nauvis_logistics:splitter"
+    "nauvis_logistics:splitter",
+    "nauvis_logistics:iron_chest"
   ]
 }

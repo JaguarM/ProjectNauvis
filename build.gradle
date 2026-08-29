@@ -56,6 +56,10 @@ tasks.register('checkRecipes') {
  * also fails on a file the generator no longer produces - a stale technology would still load,
  * still show in the research list, and answer to nothing.
  *
+ * It also enforces data/extra_unlocks.json's one guard: nothing needed to build or power the first
+ * lab may be gated, computed from Factorio's own recipe graph rather than reviewed. A row that
+ * would lock a new world out of its own first research fails the build.
+ *
  * Skips itself when reference/factorio/technologies.json is absent, the same way checkRecipes
  * does. Write it with: python tools/fetch_technologies.py
  */
@@ -65,9 +69,11 @@ tasks.register('checkTechnologies') {
 
     def dump = file('reference/factorio/technologies.json')
     def mapping = file('data/mapping.json')
+    def extras = file('data/extra_unlocks.json')
     def script = file('tools/gen_technologies.py')
 
     inputs.file(mapping).withPropertyName('mapping')
+    inputs.file(extras).withPropertyName('extraUnlocks')
     inputs.file(script).withPropertyName('generator')
     outputs.upToDateWhen { false }
 

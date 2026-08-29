@@ -10,6 +10,8 @@
     "nauvis_research:science_pack_1"
   ],
   "unlocks": [
-    "nauvis_logistics:filter_inserter"
+    "nauvis_logistics:filter_inserter",
+    "nauvis_logistics:inserter",
+    "neoprogressiveautomation:electric_drill"
   ]
 }

@@ -98,6 +98,30 @@ Entries are one of two kinds:
 - a **bypass** - vanilla doing a job Factorio has a machine for. A judgement, and only ever a
   list.
 
+`data/extra_unlocks.json`, and the one guard on it
+--------------------------------------------------
+
+The third data file, and the only one that deliberately disagrees with Factorio. Factorio gates
+150 of its 214 items and leaves about sixty free at the start; **every one of this pack's nineteen
+recipes is inside that free tier**, so a perfectly faithful tree gates two things and research
+reads as having nothing to do with crafting. This file hangs the pack's early machines on
+Factorio's own early technologies instead.
+
+**Only the effect list grows.** No technology is invented and none is moved, so ids, costs,
+prerequisites and order are still Factorio's. Each row is *deleted* rather than rewritten the day
+the item Factorio actually gates arrives to take its place.
+
+**The guard is computed, not reviewed.** `seeds` names what has to stay craftable with no research
+at all - the first lab, the science it eats, and the power to run it - and
+`tools/gen_technologies.py` walks Factorio's own recipe graph from those and refuses to gate
+anything it reaches. So a row that would lock a new world out of its own first research fails the
+build rather than shipping. Six ways of getting it wrong are covered, including the transitive
+one: gating copper cable is refused because a small electric pole needs it.
+
+Note what is deliberately *not* protected: **a mining drill**. Ore and stone are hand-mined in
+Minecraft, so a drill is a convenience rather than a prerequisite, and that is the whole reason
+the electric drill can be the second research rather than a starting recipe.
+
 Naming policy
 -------------
 
