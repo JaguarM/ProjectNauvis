@@ -218,10 +218,23 @@ an assembling machine eight blocks away runs, across four mods that do not compi
 other — `power_reaches_a_machine`, in the pack mod, is that claim in one test. Milestone 1 is
 closed: chest → inserter → assembler → inserter → chest, on a grid.
 
-### 2 — Belts · 3 new
+### 2 — Belts · 3 new · *done*
 
 `transport-belt`, `splitter`, `long-handed-inserter`. Small item count, by far the largest
-engineering lift. See the belt note below.
+engineering lift. See the belt note below — it describes something that exists now.
+
+**`fast-transport-belt` came with it and closed the milestone.** A tier was always the test of
+whether the belt's architecture was right, because a belt line is the one thing in this pack a
+player edits constantly: a run is one object keyed on the *block*, so two tiers are two runs that
+hand off at the seam without a line of code saying so, and speed is a constant on a subclass, so a
+tier is a class, a palette and an entry in `data/mapping.json`. One block entity type covers every
+tier there will ever be.
+
+**And a faster belt in hand replaces the belt it is clicked on**, which is how Factorio upgrades a
+bus and the last piece of milestone 2. The block is swapped rather than a property set — so the run
+is rebuilt by the hooks that already maintain the graph — the facing is kept where a same-tier click
+would take the player's, what was standing on the belt comes across rather than falling on the
+floor, the old belt is handed back, and a *slower* belt in hand never downgrades one.
 
 **No `underground-belt`, and no `pipe-to-ground` in milestone 4.** Factorio needs them because it
 is flat: two belts that must cross have nowhere to go but under. This pack is the same game with a
@@ -284,17 +297,25 @@ The belt note
 -------------
 
 Belts are the one architectural decision that is expensive to reverse, which is why they get
-their own mod: the rewrite must be containable.
+their own mod: the rewrite must be containable. **The shortcut this note used to allow — a
+BlockEntity per belt block — was not taken, and this now describes what shipped.**
 
-The shortcut — a BlockEntity per belt block — is fine for a few hundred belts and lets
-milestone 2 ship. It will not survive a real base. The endgame is Create's architecture, and
-`reference/create-src/src/main/java/com/simibubi/create/content/kinetics/belt/transport/` is
-the reference: `TransportedItemStack` carries a position *along* the belt and `BeltInventory`
-owns the whole run, with segment blocks delegating to one controller. A transport line is one
-object; items are positions on it. That is how Factorio does it too.
+**A transport line is one object; items are positions on it.** That is how Factorio does it, it is
+where Create arrived —
+`reference/create-src/src/main/java/com/simibubi/create/content/kinetics/belt/transport/`, read for
+the architecture and reimplemented, because Create's is welded to its kinetics framework and its
+assets are All Rights Reserved regardless — and it is what `BeltRun` is. A run ticks once however
+long it is, an item crosses it at the belt's speed rather than at one block a tick, and a belt block
+holds nothing at all. Runs with something on them are ticked and the rest are not visited, so an
+empty base costs nothing and a jammed one costs nearly nothing.
 
-Read it for the architecture and reimplement — Create's version is welded to its kinetics
-framework, and its assets are All Rights Reserved regardless.
+Two things followed from it that were not the point and turned out to matter more than the tick
+count. **The client builds the same runs from the same block states and advances them with the same
+code**, so visibly moving items cost no packets — only the boundary with the rest of the world, an
+inserter putting something on or taking something off, has to travel. And **a tier is a class**:
+because a run is keyed on the block and speed is a constant on a subclass, the fast belt was one
+file, one palette and one line in a registry, and two tiers meeting is two runs that hand off at the
+seam without a line of code saying so.
 
 The electric network note
 -------------------------

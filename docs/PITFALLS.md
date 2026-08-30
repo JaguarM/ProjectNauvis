@@ -62,6 +62,14 @@ Blocks and multi-blocks
   108-slot screen that does not exist. `chestCanConnectTo` answering false is the whole fix, and
   nothing about the class hints that it is needed. **After inheriting from vanilla, list what came
   with it and decide about each one.**
+- **Replacing one block with another empties the old block entity onto the floor.**
+  `LevelChunk.setBlockState` calls `preRemoveSideEffects` whenever the block itself changes, so an
+  in-place upgrade - a belt swapped for a faster one - drops what the belt was carrying as items,
+  which reads as correct because nothing is *lost*. It is still wrong: the load ends up on the
+  ground instead of on the belt. Take it off before the swap and give it back after. And the giving
+  back has to go through the same route a chunk load uses, because **a block entity built by
+  `setBlock` does not run `onLoad` until the next `tickBlockEntities`** - so it is not in any graph
+  yet, and anything handed to it directly would be handed to nothing.
 - **A block put down by anything but a player never runs `getStateForPlacement`.** A command, a
   structure, another mod or `GameTestHelper.setBlock` write the state you hand them, so a block
   that works out its look from its neighbours is drawn wrong and stays wrong — nothing changes

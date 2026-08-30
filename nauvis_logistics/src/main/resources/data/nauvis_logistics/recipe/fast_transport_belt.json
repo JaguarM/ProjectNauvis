@@ -1,0 +1,30 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "logistics",
+  "order": "0019",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:iron_gear_wheel",
+      "count": 5
+    },
+    {
+      "ingredient": "nauvis_logistics:transport_belt",
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "nauvis_logistics:fast_transport_belt",
+    "count": 1
+  }
+}

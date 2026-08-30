@@ -76,6 +76,7 @@ public final class NauvisLogisticsData {
             addBlock(ModBlocks.IRON_CHEST, "Iron chest");
             addBlock(ModBlocks.STEEL_CHEST, "Steel chest");
             addBlock(ModBlocks.TRANSPORT_BELT, "Transport belt");
+            addBlock(ModBlocks.FAST_TRANSPORT_BELT, "Fast transport belt");
             addBlock(ModBlocks.SPLITTER, "Splitter");
             // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the
@@ -122,6 +123,7 @@ public final class NauvisLogisticsData {
             dropSelf(ModBlocks.IRON_CHEST.get());
             dropSelf(ModBlocks.STEEL_CHEST.get());
             dropSelf(ModBlocks.TRANSPORT_BELT.get());
+            dropSelf(ModBlocks.FAST_TRANSPORT_BELT.get());
             add(ModBlocks.SPLITTER.get(), anchorOnly(ModBlocks.SPLITTER.get(), SplitterShape.SHAPE));
         }
 

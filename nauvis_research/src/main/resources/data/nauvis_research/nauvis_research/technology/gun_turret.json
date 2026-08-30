@@ -1,6 +1,6 @@
 {
   "name": "Gun turret",
-  "order": "0020",
+  "order": "0021",
   "prerequisites": [
     "nauvis_research:science_pack_1"
   ],

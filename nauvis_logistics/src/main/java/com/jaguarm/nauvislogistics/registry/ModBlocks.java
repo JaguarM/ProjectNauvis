@@ -1,6 +1,7 @@
 package com.jaguarm.nauvislogistics.registry;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
+import com.jaguarm.nauvislogistics.belt.FastTransportBeltBlock;
 import com.jaguarm.nauvislogistics.belt.SplitterBlock;
 import com.jaguarm.nauvislogistics.belt.TransportBeltBlock;
 import com.jaguarm.nauvislogistics.storage.IronChestBlock;
@@ -96,6 +97,24 @@ public final class ModBlocks {
             TransportBeltBlock::new,
             properties -> properties
                     .mapColor(MapColor.COLOR_YELLOW)
+                    .strength(0.5F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
+
+    /**
+     * The red belt: the same block twice as fast, and the only thing that differs is the number
+     * on it and the colour of it.
+     *
+     * <p>Red rather than yellow because that is how a player reads a bus at a glance, and it is
+     * identity in the sense non-negotiable #1 means: the colour and the speed are how Factorio's
+     * belts are told apart, and both are written down - the speed in {@code data/mapping.json} and
+     * the palette in {@code texture-workshop/make_belt_textures.py}.
+     */
+    public static final DeferredBlock<FastTransportBeltBlock> FAST_TRANSPORT_BELT = BLOCKS.registerBlock(
+            "fast_transport_belt",
+            FastTransportBeltBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.COLOR_RED)
                     .strength(0.5F)
                     .sound(SoundType.METAL)
                     .noOcclusion());

@@ -66,14 +66,21 @@ public final class ModBlockEntities {
      * One type for every belt tier there will ever be.
      *
      * <p>A belt block entity holds no behaviour at all - the run does the work and a belt is a
-     * fact about where the run goes - so what differs between tiers is the block, not this.
+     * fact about where the run goes - so what differs between tiers is the block, not this. The
+     * red belt was the first tier to prove it: adding it was a line in this list and nothing else
+     * here, and the express belt will be the same line again.
+     *
+     * <p>It is also what makes an upgrade cheap. {@code BeltBlock.useItemOn} swaps one belt block
+     * for a faster one, which remakes the block entity - and because both tiers are this one type,
+     * what is standing on the belt is written and read by the same code either side of the swap.
      */
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BeltBlockEntity>>
             TRANSPORT_BELT = BLOCK_ENTITIES.register(
                     "transport_belt",
                     () -> new BlockEntityType<>(
                             BeltBlockEntity::new,
-                            ModBlocks.TRANSPORT_BELT.get()));
+                            ModBlocks.TRANSPORT_BELT.get(),
+                            ModBlocks.FAST_TRANSPORT_BELT.get()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SplitterBlockEntity>>
             SPLITTER = BLOCK_ENTITIES.register(

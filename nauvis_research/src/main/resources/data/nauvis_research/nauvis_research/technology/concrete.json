@@ -1,6 +1,6 @@
 {
   "name": "Concrete",
-  "order": "0025",
+  "order": "0026",
   "prerequisites": [
     "nauvis_research:advanced_material_processing",
     "nauvis_research:automation_2"

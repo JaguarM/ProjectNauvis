@@ -39,6 +39,9 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> TRANSPORT_BELT =
             ITEMS.registerSimpleBlockItem(ModBlocks.TRANSPORT_BELT);
 
+    public static final DeferredItem<BlockItem> FAST_TRANSPORT_BELT =
+            ITEMS.registerSimpleBlockItem(ModBlocks.FAST_TRANSPORT_BELT);
+
     public static final DeferredItem<BlockItem> SPLITTER =
             ITEMS.registerSimpleBlockItem(ModBlocks.SPLITTER);
 
@@ -50,6 +53,7 @@ public final class ModItems {
                     .icon(() -> new ItemStack(BURNER_INSERTER.get()))
                     .displayItems((parameters, output) -> {
                         output.accept(TRANSPORT_BELT.get());
+                        output.accept(FAST_TRANSPORT_BELT.get());
                         output.accept(SPLITTER.get());
                         output.accept(BURNER_INSERTER.get());
                         output.accept(INSERTER.get());

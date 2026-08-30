@@ -1,17 +1,18 @@
 {
-  "name": "Advanced material processing",
-  "order": "0025",
+  "name": "Logistics 2",
+  "order": "0018",
   "prerequisites": [
-    "nauvis_research:steel_processing",
+    "nauvis_research:logistics",
     "nauvis_research:science_pack_2"
   ],
-  "units": 75,
+  "units": 200,
   "ticks_per_unit": 600,
   "packs": [
     "nauvis_research:science_pack_1",
     "nauvis_research:science_pack_2"
   ],
   "unlocks": [
-    "nauvis_machines:steel_furnace"
+    "nauvis_logistics:fast_transport_belt",
+    "nauvis_logistics:fast_splitter"
   ]
 }

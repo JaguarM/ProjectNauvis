@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "nauvis_logistics:block/fast_transport_belt_bottom",
+    "side": "nauvis_logistics:block/fast_transport_belt_side",
+    "top": "nauvis_logistics:block/fast_transport_belt_top_right"
+  }
+}

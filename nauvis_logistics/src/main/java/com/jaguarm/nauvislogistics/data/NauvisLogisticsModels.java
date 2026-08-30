@@ -52,17 +52,43 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  */
 public class NauvisLogisticsModels extends ModelProvider {
 
+    /**
+     * One belt tier: three models, the blockstate that picks between them, and the item.
+     *
+     * <p>A tier is a name and a palette. The models differ only in which top texture they name -
+     * the slab and its sides are the same object whichever way a belt bends and however fast it
+     * is - and the texture names are the block's own, which is what
+     * {@code texture-workshop/make_belt_textures.py} writes for that tier.
+     */
+    private static void belt(BlockModelGenerators blockModels, Block block, String textures) {
+        Identifier straight = beltModel(blockModels, block, textures, "", "_top");
+        Identifier left = beltModel(blockModels, block, textures, "_left", "_top_left");
+        Identifier right = beltModel(blockModels, block, textures, "_right", "_top_right");
+
+        PropertyDispatch.C1<MultiVariant, BeltShape> bend = PropertyDispatch.initial(BeltBlock.SHAPE)
+                .select(BeltShape.STRAIGHT, BlockModelGenerators.plainVariant(straight))
+                .select(BeltShape.FROM_LEFT, BlockModelGenerators.plainVariant(left))
+                .select(BeltShape.FROM_RIGHT, BlockModelGenerators.plainVariant(right));
+
+        blockModels.blockStateOutput.accept(
+                MultiVariantGenerator.dispatch(block)
+                        .with(bend)
+                        .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
+
+        blockModels.registerSimpleItemModel(block, straight);
+    }
+
     /** One belt model: a bottom slab, with the given top. */
-    private static Identifier beltModel(BlockModelGenerators blockModels, String suffix, String top) {
+    private static Identifier beltModel(BlockModelGenerators blockModels, Block block, String base,
+            String suffix, String top) {
         TextureMapping textures = new TextureMapping()
-                .put(TextureSlot.TOP, texture(top))
-                .put(TextureSlot.SIDE, texture("transport_belt_side"))
-                .put(TextureSlot.BOTTOM, texture("transport_belt_bottom"));
+                .put(TextureSlot.TOP, texture(base + top))
+                .put(TextureSlot.SIDE, texture(base + "_side"))
+                .put(TextureSlot.BOTTOM, texture(base + "_bottom"));
         return suffix.isEmpty()
-                ? ModelTemplates.SLAB_BOTTOM.create(
-                        ModBlocks.TRANSPORT_BELT.get(), textures, blockModels.modelOutput)
+                ? ModelTemplates.SLAB_BOTTOM.create(block, textures, blockModels.modelOutput)
                 : ModelTemplates.SLAB_BOTTOM.createWithSuffix(
-                        ModBlocks.TRANSPORT_BELT.get(), suffix, textures, blockModels.modelOutput);
+                        block, suffix, textures, blockModels.modelOutput);
     }
 
     /**
@@ -129,24 +155,11 @@ public class NauvisLogisticsModels extends ModelProvider {
                                 BlockModelGenerators.plainVariant(longHanded))
                         .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
 
-        // The belt: a bottom slab, because it is half a block high and you walk over it.
-        // Three of it: straight, and the two hands of a corner. They differ only in which top
-        // texture they name - the slab and its sides are the same object whichever way it bends.
-        Identifier belt = beltModel(blockModels, "", "transport_belt_top");
-        Identifier left = beltModel(blockModels, "_left", "transport_belt_top_left");
-        Identifier right = beltModel(blockModels, "_right", "transport_belt_top_right");
-
-        PropertyDispatch.C1<MultiVariant, BeltShape> bend = PropertyDispatch.initial(BeltBlock.SHAPE)
-                .select(BeltShape.STRAIGHT, BlockModelGenerators.plainVariant(belt))
-                .select(BeltShape.FROM_LEFT, BlockModelGenerators.plainVariant(left))
-                .select(BeltShape.FROM_RIGHT, BlockModelGenerators.plainVariant(right));
-
-        blockModels.blockStateOutput.accept(
-                MultiVariantGenerator.dispatch(ModBlocks.TRANSPORT_BELT.get())
-                        .with(bend)
-                        .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
-
-        blockModels.registerSimpleItemModel(ModBlocks.TRANSPORT_BELT.get(), belt);
+        // The belts: a bottom slab each, because they are half a block high and you walk over
+        // them. Two tiers, one call apiece - a belt tier is a name and a palette, and the tread's
+        // animation comes from the .mcmeta the texture workshop writes beside the PNG.
+        belt(blockModels, ModBlocks.TRANSPORT_BELT.get(), "transport_belt");
+        belt(blockModels, ModBlocks.FAST_TRANSPORT_BELT.get(), "fast_transport_belt");
 
         // The splitter: 2x1 multiblock machine with iron housing and golden top
         machine(blockModels, ModBlocks.SPLITTER.get(), SplitterShape.SHAPE,

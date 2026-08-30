@@ -16,12 +16,19 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and nine gametests pass, `./gradlew build` is clean, and the client boots into a world.
-Milestone 2 is done bar fast-replace; milestone 3 has its research half in, and five of its nine
-items — the steel line, green science and the medium pole, which between them give
-`steel-processing`, `science-pack-2` and `electric-energy-distribution-1` teeth. The big pole came
-with the medium one and the substation came with the big one, because four pole tiers is one piece
-of work rather than four.
+A hundred and thirteen gametests pass, `./gradlew build` is clean, and the client boots into a
+world. **Milestone 2 is closed**: the fast belt is in and a faster belt in hand replaces the one it
+is clicked on. Milestone 3 has its research half in, and five of its nine items — the steel line,
+green science and the medium pole, which between them give `steel-processing`, `science-pack-2` and
+`electric-energy-distribution-1` teeth. The big pole came with the medium one and the substation
+came with the big one, because four pole tiers is one piece of work rather than four.
+
+**A belt tier turned out to cost a file and a palette**, which is what the three decisions behind
+the belt were for: speed is a constant on a subclass rather than a field, so a tier is a class; the
+run is keyed on the *block*, so two tiers are two runs with nothing written to make that true; and
+`make_belt_textures.py` renders a tier from a palette and derives the tread's animation from the
+speed in `data/mapping.json`. One block entity type still covers every tier there will ever be. The
+express belt is the same file again, behind `logistics-3`, which wants blue science.
 
 **All four poles are climbable multi-blocks on the same `MachineShape` a boiler is.** The pole used
 to have a mechanism of its own — a `PolePart` enum with `Multiblock`'s four rules written out again
@@ -33,6 +40,8 @@ is an int like every other machine's.
 |---|---|
 | `nauvis_machines:assembling_machine_1` | 3×3, ten blocks; recipe selector, six slots, timed craft, screen, 10 FE/t |
 | `nauvis_logistics:transport_belt` | half a block, walked over; a run is one object however long, two lanes, visible items, carries you |
+| `nauvis_logistics:fast_transport_belt` | the same at 3.75 tiles a second, in red. Five gears and a belt, behind `logistics-2` |
+| a belt in hand | points the belt you click. A **faster** one replaces it instead, keeping the facing and the load, and pays for it |
 | `nauvis_logistics:splitter` | 2×1 and directional; 50/50 per lane, overflows to the open side, sleeps when empty |
 | `nauvis_logistics:burner_inserter` | takes behind, gives in front, 30-tick swing, fuel slot. Fuels itself off the belt it unloads |
 | `nauvis_logistics:inserter` | the same on 2 FE/t and a 24-tick swing. No slot, so no screen |
@@ -50,7 +59,7 @@ is an int like every other machine's.
 | `nauvis_research:science_pack_1` | red science — a copper plate and an iron gear wheel |
 | `nauvis_research:science_pack_2` | green science — an inserter and a belt. The gate in front of the rest of milestone 3 |
 | `neoprogressivematerials:steel_plate` | five iron plates and thirty-five seconds |
-| `nauvis_research:technology` | 216 technologies, a synced datapack registry, generated. 25 are in the tree |
+| `nauvis_research:technology` | 216 technologies, a synced datapack registry, generated. 26 are in the tree |
 | `/research` | grant, forget, start, stop, list, info, all, reset. Gamemaster only. **Grant and forget cascade** — grant brings the prerequisites, forget takes the dependants |
 | `neoprogressiveautomation:burner_drill` | 2×2, five blocks |
 | `neoprogressiveautomation:electric_drill` | 3×3, nine blocks; a half-block deck you walk over |
@@ -68,43 +77,27 @@ goes only when the pack can already do that job, which the build enforces.
 The jobs
 --------
 
-### 1. The fast transport belt, and fast-replace — the rest of milestone 2
+### 1. The fast splitter, which is the belt tier's other half
 
-**This is the next job, and it was wrongly listed as blocked.** It said fast-replace "cannot be
-written until there is a second tier to hold". The second tier is **five iron gear wheels and one
-transport belt** — no oil, no plastic, nothing the pack does not already make. Of the 214 mapped
-items, 65 are reachable with no oil anywhere in their tree; this is the one that closes a milestone.
+`logistics-2` unlocks three things and the pack models two of them — the fast belt, which is in, and
+the fast splitter, which is not. Its recipe is ten circuits, ten gears and a splitter; the
+technology already ships naming `nauvis_logistics:fast_splitter`, so the recipe file and the block
+are the whole of it.
 
-Three things make it the cheap one:
+**It is not the one-file job the belt was, and the reason is worth knowing before starting.** The
+belt paid for its tiers in advance: `speed()` is abstract on `BeltBlock` and every tier is a
+subclass with a constant, because `createBlockStateDefinition` runs before any field of a subclass
+exists. `SplitterBlock` did not — `SPEED` is a `public static final` on the concrete class, and
+`SplitterBlockEntity.tick` and `SplitterBlock.stepOn` both read it *statically*. So a second
+splitter that differed only in its constant would run at the first one's speed and pass every test
+in the file. The work is: make `SplitterBlock` abstract with `speed()` and `factorioId()` on it,
+exactly as `BeltBlock` has them; register `fast_splitter` against the same block entity type, which
+already holds no speed of its own; and one gametest that a fast splitter moves items at its own
+speed, which is the test that would have caught the static read.
 
-- **the art is already drawn.** `make_belt_textures.py` has the red palette written out
-  (`A="#8d2a20", B="#d9483a"`) and `--all` renders it. `frame_schedule` derives the tread animation
-  from the speed in `data/mapping.json`, so 3.75 tiles a second needs no thought at all. Registering
-  the tier is one entry in `REGISTERED`;
-- **the block is numbers.** `BeltBlockEntity` holds no behaviour — the run does the work — so one
-  block entity type already covers every tier there will ever be, and says so;
-- **it retires a `GAPS.md` entry** rather than adding one: *two belt tiers meeting is two runs, not
-  one — correct, but there is only one tier, so it has never been looked at.*
-
-Then fast-replace, which is `BeltBlock.useItemOn`: swap the *block* rather than a property — which
-remakes the block entity, so `beltPlaced`/`beltRemoved` fire and `beltTurned` is not wanted on that
-path; carry the items across the block entity being remade, which will not happen for free; hand the
-old belt back and pay for the new one unless the player is in creative; and refuse to *downgrade*,
-or a stray click wrecks a bus. The run needs no thought — a run never spans two tiers, so the line
-splits and rejoins itself.
-
-**One thing to look up rather than remember.** The fast belt is behind `logistics-2`, which is not
-in the tree. Its prerequisites (`logistics`, `science-pack-2`) both are, so the graph is clean — but
-a research cost is identity under non-negotiable #1, `data/technologies.json` is hand-maintained and
-`reference/` carries recipes only. Its unit count, time and packs have to come from Factorio, not
-from memory.
-
-`fast-splitter` is the same shape and can follow; it is ten circuits, ten gears and a splitter.
-
-**There is no underground belt and there will not be a `pipe-to-ground`.** Factorio needs both
-because it is flat; this pack is the same game with a Y axis, so a belt crosses another by changing
-level. All four ids are marked `skip` in `data/mapping.json` with the reason, nothing else in the
-recipe graph uses them, and `gen_recipes.py --check` counts them as skipped rather than missing.
+Fast-replace does **not** extend to it, and that is a decision rather than an omission: a splitter
+is two blocks and a multiblock anchor, so swapping one in place is a different problem from swapping
+a belt, and clicking a splitter with a splitter in hand does nothing today.
 
 ### 2. The rest of the milestone 3 items
 
@@ -220,6 +213,19 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
 - and put a substation in the middle of a field of machines. Eighteen by eighteen is most of a
   chunk, and whether that feels generous or absurd at Minecraft's scale is a judgement no test
   makes.
+
+**The red belt and fast-replace**, which are new and which nothing in this repo can judge.
+
+- lay a yellow line, then walk it with red belts in hand and click each one. **Whether that reads as
+  upgrading a line rather than as breaking it** is the whole question — the belt under you changes
+  colour, keeps its direction and keeps what was on it, and you get the yellow one back;
+- click a belt that is turning a corner. The corner must survive, which is why an upgrade keeps the
+  facing where a turn takes yours;
+- run a yellow line into a red one and watch the join. The two are two runs and items cross at the
+  seam; whether the tread's change of pace reads as intended or as a stutter is a thing to look at;
+- stand on a red belt. It carries at twice the speed, and half a block is still half a block;
+- and tell red from yellow across a base, which is the thing the palette was chosen for at 8x on a
+  dark background rather than in a world at midday.
 
 **The two chests**, which nobody has seen since they became real chests.
 

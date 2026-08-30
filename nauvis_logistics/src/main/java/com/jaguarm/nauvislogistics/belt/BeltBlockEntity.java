@@ -168,6 +168,43 @@ public class BeltBlockEntity extends BlockEntity {
         }
     }
 
+    /**
+     * Lifts everything standing on this block off whatever run has it, and hands it over.
+     *
+     * <p>For upgrading a belt in place - see {@code BeltBlock.useItemOn}. Swapping the block for a
+     * faster one destroys this block entity and builds another, and the items in between belong to
+     * neither: they have to come off the old run <em>before</em> the block changes, because the
+     * moment it does {@link #preRemoveSideEffects} would spill them on the floor, and the run
+     * itself is rebuilt around a belt that is no longer there.
+     *
+     * <p>What comes back is in the same form {@link #cargo()} answers in - a lane and a distance
+     * along this block - so it can be put on the new belt exactly where it was standing.
+     */
+    public List<Cargo> takeCargo() {
+        BeltRun run = run();
+        List<Cargo> taken = run == null ? stored : takeFrom(run);
+        stored = List.of();
+        return taken;
+    }
+
+    /**
+     * Puts a lifted load onto this belt, now or as soon as it has a run.
+     *
+     * <p>The other half of {@link #takeCargo}. A block entity that has just been built by a
+     * {@code setBlock} is not in the graph yet - {@code onLoad} is deferred to the next
+     * {@code tickBlockEntities} - so this goes through {@link #stored}, which is the same route
+     * items take when a chunk is read from disk, and is handed over the moment the belt joins.
+     * That also puts it in the update tag, so a client swapping the same block gets the load with
+     * the block rather than losing it.
+     */
+    public void giveCargo(List<Cargo> cargo) {
+        if (cargo.isEmpty()) {
+            return;
+        }
+        stored = List.copyOf(cargo);
+        handOverStored();
+    }
+
     private List<Cargo> takeFrom(BeltRun run) {
         List<Cargo> taken = new ArrayList<>();
         for (BeltRun.Parked item : run.takeOn(worldPosition)) {

@@ -7,6 +7,7 @@ import com.jaguarm.nauvislogistics.belt.BeltLane;
 import com.jaguarm.nauvislogistics.belt.BeltLines;
 import com.jaguarm.nauvislogistics.belt.BeltRun;
 import com.jaguarm.nauvislogistics.belt.BeltShape;
+import com.jaguarm.nauvislogistics.belt.FastTransportBeltBlock;
 import com.jaguarm.nauvislogistics.belt.Belts;
 import com.jaguarm.nauvislogistics.belt.BeltLines;
 import com.jaguarm.nauvislogistics.belt.SplitterBlock;
@@ -41,6 +42,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.entity.player.Player;
@@ -115,6 +117,11 @@ public final class NauvisLogisticsBeltGameTests {
         TEST_TYPES.register("belt_loop_carries_round", () -> LoopCarriesRoundTest.CODEC);
         TEST_TYPES.register("belt_bends_the_way_it_carries", () -> BendsTheWayItCarriesTest.CODEC);
         TEST_TYPES.register("belt_turns_when_clicked_with_a_belt", () -> TurnsWhenClickedTest.CODEC);
+        TEST_TYPES.register("fast_belt_moves_at_its_declared_speed", () -> FastBeltSpeedTest.CODEC);
+        TEST_TYPES.register("belt_upgrades_when_clicked_with_a_faster_belt",
+                () -> UpgradesWhenClickedTest.CODEC);
+        TEST_TYPES.register("belt_is_not_downgraded_by_a_slower_belt", () -> NotDowngradedTest.CODEC);
+        TEST_TYPES.register("belt_tiers_meet_as_two_runs", () -> TiersMeetTest.CODEC);
         TEST_TYPES.register("inserter_loads_a_belt", () -> InserterLoadsABeltTest.CODEC);
         TEST_TYPES.register("inserter_takes_from_a_belt", () -> InserterTakesFromABeltTest.CODEC);
         TEST_TYPES.register("inserter_fills_only_the_far_lane", () -> OnlyTheFarLaneTest.CODEC);
@@ -164,6 +171,13 @@ public final class NauvisLogisticsBeltGameTests {
                 BendsTheWayItCarriesTest::new, 60);
         register(event, environment, "belt_turns_when_clicked_with_a_belt",
                 TurnsWhenClickedTest::new, 60);
+        register(event, environment, "fast_belt_moves_at_its_declared_speed",
+                FastBeltSpeedTest::new, 200);
+        register(event, environment, "belt_upgrades_when_clicked_with_a_faster_belt",
+                UpgradesWhenClickedTest::new, 60);
+        register(event, environment, "belt_is_not_downgraded_by_a_slower_belt",
+                NotDowngradedTest::new, 60);
+        register(event, environment, "belt_tiers_meet_as_two_runs", TiersMeetTest::new, 200);
         register(event, environment, "inserter_loads_a_belt", InserterLoadsABeltTest::new, 200);
         register(event, environment, "inserter_takes_from_a_belt", InserterTakesFromABeltTest::new, 200);
         register(event, environment, "inserter_fills_only_the_far_lane", OnlyTheFarLaneTest::new, 60);
@@ -202,8 +216,13 @@ public final class NauvisLogisticsBeltGameTests {
 
     /** A straight line of belts running east from {@link #TAIL}. */
     private static void line(GameTestHelper helper, int length) {
+        line(helper, length, ModBlocks.TRANSPORT_BELT.get());
+    }
+
+    /** The same, in a named tier. */
+    private static void line(GameTestHelper helper, int length, Block tier) {
         for (int i = 0; i < length; i++) {
-            place(helper, TAIL.east(i), Direction.EAST);
+            place(helper, TAIL.east(i), Direction.EAST, tier);
         }
     }
 
@@ -212,10 +231,56 @@ public final class NauvisLogisticsBeltGameTests {
         return new ItemStack(ModItems.TRANSPORT_BELT.get());
     }
 
+    /** A red belt item, the thing you hold to make a line faster. */
+    private static ItemStack fastBelt() {
+        return new ItemStack(ModItems.FAST_TRANSPORT_BELT.get());
+    }
+
     /** One belt, pointing a given way. */
     private static void place(GameTestHelper helper, BlockPos pos, Direction facing) {
-        helper.setBlock(pos, ModBlocks.TRANSPORT_BELT.get().defaultBlockState()
-                .setValue(BeltBlock.FACING, facing));
+        place(helper, pos, facing, ModBlocks.TRANSPORT_BELT.get());
+    }
+
+    private static void place(GameTestHelper helper, BlockPos pos, Direction facing, Block tier) {
+        helper.setBlock(pos, tier.defaultBlockState().setValue(BeltBlock.FACING, facing));
+    }
+
+    /**
+     * One second of a belt of the given tier, against the tier's own speed.
+     *
+     * <p>Shared by the two speed tests rather than written twice, because the claim is the same
+     * one: a run carries things at the speed of the block it is made of.
+     */
+    private static void movesAtItsSpeed(GameTestHelper helper, Block tier, int speed) {
+        line(helper, 8, tier);
+        helper.runAfterDelay(SETTLED, () -> {
+            put(belt(helper, TAIL, Direction.NORTH), Items.IRON_INGOT, 1);
+
+            helper.runAfterDelay(1, () -> {
+                BeltRun run = runAt(helper, TAIL);
+                int lane = run.lane(Belts.LEFT).isEmpty() ? Belts.RIGHT : Belts.LEFT;
+                int start = run.lane(lane).position(0);
+
+                helper.runAfterDelay(20, () -> {
+                    BeltRun now = runAt(helper, TAIL);
+                    helper.assertValueEqual(now.lane(lane).size(), 1, "items still on the lane");
+                    helper.assertValueEqual(start - now.lane(lane).position(0), speed * 20,
+                            "sixty-fourths of a block travelled in one second");
+                    helper.succeed();
+                });
+            });
+        });
+    }
+
+    /** How many of an item a player is holding, anywhere in their inventory. */
+    private static int carrying(Player player, Item item) {
+        int total = 0;
+        for (ItemStack stack : player.getInventory().getNonEquipmentItems()) {
+            if (stack.is(item)) {
+                total += stack.getCount();
+            }
+        }
+        return total;
     }
 
     private static BeltLines lines(GameTestHelper helper) {
@@ -241,7 +306,7 @@ public final class NauvisLogisticsBeltGameTests {
      *
      * @param facing which way the player is looking, which is what a belt takes from the click.
      */
-    private static void click(GameTestHelper helper, BlockPos pos, ItemStack held, Direction facing) {
+    private static Player click(GameTestHelper helper, BlockPos pos, ItemStack held, Direction facing) {
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
         player.setItemInHand(InteractionHand.MAIN_HAND, held);
         player.setYRot(facing.toYRot());
@@ -249,6 +314,7 @@ public final class NauvisLogisticsBeltGameTests {
         helper.getLevel().getBlockState(absolute).useItemOn(held, helper.getLevel(), player,
                 InteractionHand.MAIN_HAND,
                 new BlockHitResult(Vec3.atCenterOf(absolute), Direction.UP, absolute, false));
+        return player;
     }
 
     private static ResourceHandler<ItemResource> container(GameTestHelper helper, BlockPos pos) {
@@ -382,25 +448,7 @@ public final class NauvisLogisticsBeltGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            line(helper, 8);
-            helper.runAfterDelay(SETTLED, () -> {
-                put(belt(helper, TAIL, Direction.NORTH), Items.IRON_INGOT, 1);
-
-                helper.runAfterDelay(1, () -> {
-                    BeltRun run = runAt(helper, TAIL);
-                    int lane = run.lane(Belts.LEFT).isEmpty() ? Belts.RIGHT : Belts.LEFT;
-                    int start = run.lane(lane).position(0);
-
-                    helper.runAfterDelay(20, () -> {
-                        BeltRun now = runAt(helper, TAIL);
-                        helper.assertValueEqual(now.lane(lane).size(), 1, "items still on the lane");
-                        helper.assertValueEqual(start - now.lane(lane).position(0),
-                                TransportBeltBlock.SPEED * 20,
-                                "sixty-fourths of a block travelled in one second");
-                        helper.succeed();
-                    });
-                });
-            });
+            movesAtItsSpeed(helper, ModBlocks.TRANSPORT_BELT.get(), TransportBeltBlock.SPEED);
         }
 
         @Override
@@ -1028,6 +1076,221 @@ public final class NauvisLogisticsBeltGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a belt in hand turns a belt");
+        }
+    }
+
+    /**
+     * The red belt, at its own speed.
+     *
+     * <p>Not a duplicate of {@link FactorioSpeedTest}: that one holds the yellow belt to Factorio's
+     * figure, and this one holds the <em>run</em> to whichever belt it is made of. Speed lives on
+     * the block and the run reads it once when it is built, so a run that had kept a constant of
+     * its own would carry red belts at yellow speed and pass every other test in this file.
+     */
+    public static class FastBeltSpeedTest extends GameTestInstance {
+
+        public static final MapCodec<FastBeltSpeedTest> CODEC =
+                RecordCodecBuilder.<FastBeltSpeedTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(FastBeltSpeedTest::info))
+                                .apply(i, FastBeltSpeedTest::new));
+
+        public FastBeltSpeedTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            movesAtItsSpeed(helper, ModBlocks.FAST_TRANSPORT_BELT.get(), FastTransportBeltBlock.SPEED);
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a fast belt moves at twice a belt's speed");
+        }
+    }
+
+    /**
+     * Fast-replace: a faster belt in hand upgrades the belt it is clicked on.
+     *
+     * <p>Four claims, and all four are things that would go wrong quietly. The block is swapped
+     * rather than a property set; the facing is <em>kept</em>, unlike the turn this same button
+     * does with a belt of the same tier, so a line with a corner in it is not silently
+     * straightened; what was standing on the belt is still standing on it afterwards rather than
+     * on the floor; and it is paid for, one belt off the stack and the old one back.
+     */
+    public static class UpgradesWhenClickedTest extends GameTestInstance {
+
+        public static final MapCodec<UpgradesWhenClickedTest> CODEC =
+                RecordCodecBuilder.<UpgradesWhenClickedTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(UpgradesWhenClickedTest::info))
+                                .apply(i, UpgradesWhenClickedTest::new));
+
+        public UpgradesWhenClickedTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos head = TAIL.east(2);
+            line(helper, 3);
+            helper.runAfterDelay(SETTLED, () -> {
+                helper.assertValueEqual(runAt(helper, TAIL).blocks().size(), 3, "belts in the line");
+                // On the head of the line, which has nothing beyond it, so the item stays where it
+                // is put and this test is about the upgrade rather than about timing.
+                put(belt(helper, head, Direction.NORTH), Items.IRON_INGOT, 1);
+
+                // Clicked by a player looking south. A belt of the same tier would have turned it
+                // to face south; this one must not.
+                ItemStack held = new ItemStack(ModItems.FAST_TRANSPORT_BELT.get(), 2);
+                Player player = click(helper, head, held, Direction.SOUTH);
+
+                helper.assertBlockPresent(ModBlocks.FAST_TRANSPORT_BELT.get(), head);
+                helper.assertBlockProperty(head, BeltBlock.FACING, Direction.EAST);
+                helper.assertValueEqual(held.getCount(), 1, "fast belts left in hand");
+                helper.assertValueEqual(carrying(player, ModItems.TRANSPORT_BELT.get()), 1,
+                        "belts handed back for the one replaced");
+
+                // A tick for the new block entity to join the graph, which is what every belt
+                // placement costs - see SETTLED.
+                helper.runAfterDelay(SETTLED, () -> {
+                    helper.assertValueEqual(runAt(helper, TAIL).blocks().size(), 2,
+                            "belts left on the slow line behind the upgrade");
+                    BeltRun upgraded = runAt(helper, head);
+                    helper.assertValueEqual(upgraded.blocks().size(), 1, "belts in the upgraded run");
+                    helper.assertValueEqual(upgraded.itemCount(), 1,
+                            "items still standing where they stood before the upgrade");
+                    // The one failure this whole path exists to avoid: replacing the block runs
+                    // preRemoveSideEffects, which spills what is standing on a belt.
+                    helper.assertItemEntityNotPresent(Items.IRON_INGOT, head, 2.0);
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a faster belt in hand upgrades a belt");
+        }
+    }
+
+    /**
+     * And a slower belt in hand never downgrades one.
+     *
+     * <p>Factorio allows the downgrade; this pack does not, because a bus is a thing a player walks
+     * along with a belt in hand and one stray click that quietly halves a main line costs more than
+     * the convenience. What a slower belt still does is point the belt, which is the ordinary
+     * belt-in-hand rule and leaves the line's speed alone.
+     */
+    public static class NotDowngradedTest extends GameTestInstance {
+
+        public static final MapCodec<NotDowngradedTest> CODEC =
+                RecordCodecBuilder.<NotDowngradedTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(NotDowngradedTest::info))
+                                .apply(i, NotDowngradedTest::new));
+
+        public NotDowngradedTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            line(helper, 3, ModBlocks.FAST_TRANSPORT_BELT.get());
+            helper.runAfterDelay(SETTLED, () -> {
+                ItemStack held = new ItemStack(ModItems.TRANSPORT_BELT.get(), 2);
+                Player player = click(helper, TAIL.east(), held, Direction.EAST);
+
+                helper.assertBlockPresent(ModBlocks.FAST_TRANSPORT_BELT.get(), TAIL.east());
+                helper.assertValueEqual(held.getCount(), 2, "belts left in hand");
+                helper.assertValueEqual(carrying(player, ModItems.FAST_TRANSPORT_BELT.get()), 0,
+                        "fast belts handed back");
+
+                // It still points it, which is the whole of what a slower belt in hand does here.
+                click(helper, TAIL.east(), belt(), Direction.SOUTH);
+                helper.assertBlockPresent(ModBlocks.FAST_TRANSPORT_BELT.get(), TAIL.east());
+                helper.assertBlockProperty(TAIL.east(), BeltBlock.FACING, Direction.SOUTH);
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a slower belt in hand does not downgrade a belt");
+        }
+    }
+
+    /**
+     * Where two tiers meet: two runs, and the items cross.
+     *
+     * <p>A run has one speed, so it cannot span a tier change - {@link BeltLines} follows a line
+     * only through belts of the same block, and the boundary is a hand-off exactly like the one at
+     * a merge. That was written when there was one tier to try it with; this is the test.
+     */
+    public static class TiersMeetTest extends GameTestInstance {
+
+        public static final MapCodec<TiersMeetTest> CODEC =
+                RecordCodecBuilder.<TiersMeetTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(TiersMeetTest::info))
+                                .apply(i, TiersMeetTest::new));
+
+        public TiersMeetTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos join = TAIL.east(3);
+            for (int i = 0; i < 3; i++) {
+                place(helper, TAIL.east(i), Direction.EAST);
+                place(helper, join.east(i), Direction.EAST, ModBlocks.FAST_TRANSPORT_BELT.get());
+            }
+
+            helper.runAfterDelay(SETTLED, () -> {
+                BeltRun slow = runAt(helper, TAIL);
+                BeltRun fast = runAt(helper, join);
+                helper.assertTrue(slow != fast, "two tiers meeting should be two runs");
+                helper.assertValueEqual(slow.blocks().size(), 3, "belts in the slow run");
+                helper.assertValueEqual(fast.blocks().size(), 3, "belts in the fast run");
+
+                put(belt(helper, TAIL, Direction.NORTH), Items.IRON_INGOT, 1);
+
+                helper.runAfterDelay(45, () -> {
+                    helper.assertValueEqual(runAt(helper, TAIL).itemCount(), 0,
+                            "items left behind on the slow line");
+                    BeltRun arrived = runAt(helper, join);
+                    helper.assertValueEqual(arrived.itemCount(), 1, "items handed to the fast line");
+                    // Put on from the north, so it is on the far lane - the right one - and it is
+                    // still there after crossing, because going straight in at the back of a tile
+                    // does not swap lanes over.
+                    helper.assertValueEqual(arrived.lane(Belts.RIGHT).size(), 1,
+                            "an item going straight in at the back keeps the lane it was on");
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("two belt tiers meet as two runs");
         }
     }
 

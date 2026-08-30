@@ -91,7 +91,7 @@ Read `nauvis_logistics/.../belt/` in this order and the whole thing falls out:
 | `BeltAccess.java` | how everything else meets a belt, and why giving and taking are two rules |
 | `BeltShape.java` | how a corner knows it is one, and why there are two rather than eight |
 | `BeltBlock.stepOn` | why standing on a belt carries you, and why that is not `entityInside` |
-| `BeltBlock.useItemOn` | a belt in hand points the belt you click on the way you are facing |
+| `BeltBlock.useItemOn` | a belt in hand points the belt you click on the way you are facing, and a **faster** one replaces it instead |
 | `client/BeltRenderer.java` | the items you can see |
 | `texture-workshop/make_belt_textures.py` | the art, and why the tread scrolls at 1.875 tiles a second |
 
@@ -113,6 +113,15 @@ Four things are load-bearing for anything built on top:
   will.*
 - A closed ring of belts is one run that wraps, and a block state change does not touch the graph —
   turning a belt leaves its block entity alone, so `BeltLines.beltTurned` is a third way in.
+- **A tier is a class, and a run is keyed on the block.** Speed is a constant on a `BeltBlock`
+  subclass rather than a field, because `createBlockStateDefinition` runs before any field of a
+  subclass exists; `BeltLines` follows a line only through belts of the same block, so two tiers are
+  two runs that hand off at the seam with nothing written to make it so. Adding the fast belt was a
+  file, a palette and a line in each registry, and one block entity type still covers every tier.
+  **Swapping one belt block for another** — fast-replace — is therefore not a state change but a
+  new block entity: the graph hooks fire on their own, and the only thing that needs carrying by
+  hand is the load, which `BeltBlockEntity.takeCargo` lifts *before* the swap because
+  `preRemoveSideEffects` would otherwise spill it on the floor.
 
 `BeltLines` also owns the tick of anything that carries items *along* a belt line — the splitter is
 ticked there rather than by a scheduled block tick, because the client simulates belts and a

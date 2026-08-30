@@ -1,5 +1,7 @@
 package com.jaguarm.nauvislogistics.belt;
 
+import java.util.List;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundSource;
@@ -217,22 +219,22 @@ public abstract class BeltBlock extends BaseEntityBlock {
      * the same action with the same result, and running a belt in hand along a row you have already
      * built rewrites the lot to face the way you are walking, which is how a belt gets laid.
      *
-     * <p><b>The tier is the other half of this, and it is not done.</b> Holding a <em>faster</em>
-     * belt against a slower one should replace it - that is how Factorio upgrades a line, and it is
-     * the same gesture for the same reason. Today any belt merely re-points any belt, because
-     * only one tier is registered and a path nothing can run is a path nothing checks. What it
-     * will need when a second tier lands is written up in {@code docs/NEXT.md}: the block swapped
-     * rather than the state set, the old belt handed back, the stack paid, and the run rebuilt -
-     * which it already is, since a run never spans two tiers.
+     * <p><b>A faster belt replaces instead of turning</b> - see {@link #upgrade}. That is the other
+     * half of the same gesture: running a red belt along a yellow line upgrades the lot, exactly as
+     * running a yellow one along it re-points the lot.
      */
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
             Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (!(stack.getItem() instanceof BlockItem item) || !(item.getBlock() instanceof BeltBlock)) {
+        if (!(stack.getItem() instanceof BlockItem item) || !(item.getBlock() instanceof BeltBlock held)) {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (!(level instanceof ServerLevel server)) {
             return InteractionResult.SUCCESS;
+        }
+
+        if (held.speed() > speed()) {
+            return upgrade(server, state, pos, player, stack, held);
         }
 
         Direction placed = player.getDirection();
@@ -252,6 +254,72 @@ public abstract class BeltBlock extends BaseEntityBlock {
         SoundType sound = state.getSoundType(server, pos, player);
         server.playSound(null, pos, sound.getPlaceSound(), SoundSource.BLOCKS,
                 sound.getVolume() * 0.6F, sound.getPitch() * 1.2F);
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Replaces this belt with a faster one, keeping the line and everything standing on it.
+     *
+     * <p>Factorio's fast-replace, and the reason a bus is ever upgraded rather than rebuilt: you
+     * run a red belt along a yellow line and the line becomes red under you, still pointing the way
+     * it pointed, still carrying what it was carrying. Doing it by breaking and re-placing costs a
+     * dropped item for every belt and cuts the line in two while you do it.
+     *
+     * <h2>Five things it has to get right</h2>
+     *
+     * <p><b>The block is swapped, not a property set.</b> Speed is a fact about the block - see the
+     * class note - so an upgrade is a different block, which destroys the block entity and builds
+     * another. That is what {@link BeltLines#beltRemoved} and {@link BeltLines#beltPlaced} are for
+     * and they fire on their own, so {@code beltTurned} is wrong on this path: it is for the case
+     * where the block entity <em>survives</em> and nothing else would notice.
+     *
+     * <p><b>The load is carried across by hand.</b> Nothing does it for free, and the default is
+     * worse than nothing: replacing the block runs {@code preRemoveSideEffects}, which spills what
+     * is standing here onto the floor. So it comes off the old run before the swap and goes onto
+     * the new one after - see {@link BeltBlockEntity#takeCargo}. The rest of the line is untouched,
+     * because every item on it is pinned to the block it is standing on.
+     *
+     * <p><b>The facing is kept, and this is the one place the belt-in-hand rule does not apply.</b>
+     * Turning takes the way the player is looking, because pointing a belt is what that gesture is
+     * for. Upgrading must not: a player walking a red belt along a line is saying <em>faster</em>,
+     * not <em>this way</em>, and a line with a corner in it would be silently straightened - which
+     * breaks it where it is least visible. The bend is re-read rather than copied, because the belt
+     * behind this one is a different block now and so is no longer a feeder.
+     *
+     * <p><b>It is paid for.</b> One belt off the stack, the old one back in the player's hands,
+     * unless they are in creative - the same trade breaking and re-placing would have made.
+     *
+     * <p><b>And it never downgrades.</b> A slower belt in hand falls through to turning, which
+     * leaves the line's speed alone. Factorio allows the downgrade; here a bus is a thing a player
+     * walks along with a belt in hand, and one stray click that quietly halves a main line is worth
+     * more than the convenience.
+     */
+    private InteractionResult upgrade(ServerLevel level, BlockState state, BlockPos pos, Player player,
+            ItemStack stack, BeltBlock faster) {
+        List<BeltBlockEntity.Cargo> carried = level.getBlockEntity(pos) instanceof BeltBlockEntity belt
+                ? belt.takeCargo()
+                : List.of();
+
+        BlockState upgraded = faster.defaultBlockState().setValue(FACING, state.getValue(FACING));
+        level.setBlock(pos, withShape(upgraded, level, pos), Block.UPDATE_ALL);
+
+        if (level.getBlockEntity(pos) instanceof BeltBlockEntity fresh) {
+            fresh.giveCargo(carried);
+        }
+
+        // As after a turn: the belts either side may have stopped being corners, or started, and
+        // a tier boundary is never a corner - the two belts are different blocks, so neither
+        // feeds the other in the sense a bend is drawn from.
+        refreshShapes(level, pos);
+
+        if (!player.hasInfiniteMaterials()) {
+            stack.shrink(1);
+            player.getInventory().placeItemBackInInventory(new ItemStack(state.getBlock()));
+        }
+
+        SoundType sound = upgraded.getSoundType(level, pos, player);
+        level.playSound(null, pos, sound.getPlaceSound(), SoundSource.BLOCKS,
+                sound.getVolume() * 0.6F, sound.getPitch());
         return InteractionResult.SUCCESS;
     }
 

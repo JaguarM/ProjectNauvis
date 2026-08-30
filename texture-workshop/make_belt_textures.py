@@ -161,8 +161,9 @@ TIERS = {
     ),
 }
 
-# Only this one is registered. The others are drawn on request; see --all.
-REGISTERED = ["transport_belt"]
+# The tiers the mod actually registers, and so the ones written by default. The express belt
+# is drawn on request; see --all.
+REGISTERED = ["transport_belt", "fast_transport_belt"]
 
 # The tread's own repeat, in pixels. Must divide 16.
 TREAD_PERIOD = 8

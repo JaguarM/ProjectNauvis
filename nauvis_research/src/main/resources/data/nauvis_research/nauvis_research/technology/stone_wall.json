@@ -1,6 +1,6 @@
 {
   "name": "Stone wall",
-  "order": "0026",
+  "order": "0027",
   "prerequisites": [
     "nauvis_research:science_pack_1"
   ],
