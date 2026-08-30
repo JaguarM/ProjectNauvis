@@ -4,6 +4,5 @@
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../CrumblingOre" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../Facrafting" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../NeoProgressiveAutomation" vcs="Git" />
   </component>
 </project>

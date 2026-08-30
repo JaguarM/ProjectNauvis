@@ -58,7 +58,7 @@ The multiblock mechanism
 ------------------------
 
 `multiblock/` — `MachineCell`, `MachineShape`, `MachineParts`, `Boxes`, `Multiblock` — is copied
-into the subsystem mods and `NeoProgressiveAutomation`, and `tools/check_duplicated.py` holds the
+into every subsystem mod that has machines, and `tools/check_duplicated.py` holds the
 copies byte-identical (`--sync` pushes the original out; the copies are never edited). It is
 one mechanism for every machine *and every pole*. Read `MachineShape` and `Multiblock` and you
 have it.

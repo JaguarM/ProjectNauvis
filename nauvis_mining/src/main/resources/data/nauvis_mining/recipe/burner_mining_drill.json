@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 80,
+  "group": "production",
+  "order": "0069",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:iron_gear_wheel",
+      "count": 3
+    },
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 3
+    },
+    {
+      "ingredient": "minecraft:furnace",
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "nauvis_mining:burner_mining_drill",
+    "count": 1
+  }
+}

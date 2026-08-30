@@ -10,6 +10,6 @@
     "nauvis_research:science_pack_1"
   ],
   "unlocks": [
-    "neoprogressiveautomation:electric_drill"
+    "nauvis_mining:electric_mining_drill"
   ]
 }

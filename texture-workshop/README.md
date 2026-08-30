@@ -1,11 +1,14 @@
 Making block textures
 =====================
 
-This is the pack's half of the workshop Neo Progressive Automation started. **Read
-`../../NeoProgressiveAutomation/texture-workshop/README.md` first** — it covers how a block
-gets its look, what the file actually is, and the one lesson from vanilla (six colours for
-an entire rocky surface; if you are picking a twelfth shade of grey you have left the
-style). None of that is repeated here.
+This workshop started in Neo Progressive Automation, whose own
+`texture-workshop/README.md` — in that repo, which the pack no longer builds — is still the
+fuller document: it covers how a block gets its look, what the file actually is, and the one
+lesson from vanilla (six colours for an entire rocky surface; if you are picking a twelfth
+shade of grey you have left the style). None of that is repeated here.
+
+`make_miner_textures.py` came across with the drills when `nauvis_mining` was forked out of
+that mod, so every block texture in the pack is now made here.
 
 What is here is one script per subsystem that needs art, writing into that mod's
 `assets/<modid>/textures/block/`. The rule is the same as over there: **a texture is an

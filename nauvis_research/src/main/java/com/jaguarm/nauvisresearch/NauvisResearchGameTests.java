@@ -970,7 +970,7 @@ public final class NauvisResearchGameTests {
         public void run(GameTestHelper helper) {
             MinecraftServer server = helper.getLevel().getServer();
             ResourceKey<Technology> drillTech = ModTechnologies.key("electric_mining_drill");
-            ResourceKey<Recipe<?>> drill = recipe("neoprogressiveautomation", "electric_drill");
+            ResourceKey<Recipe<?>> drill = recipe("nauvis_mining", "electric_mining_drill");
 
             Research.state(server).forget(drillTech);
             Research.changedExternally(server);

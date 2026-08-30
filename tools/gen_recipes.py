@@ -82,12 +82,11 @@ GROUP_BY_CATEGORY = {
 # for a dump several times this size.
 ORDER_DIGITS = 4
 
-# The four released mods live in their own repos beside this one; everything else is a
+# The three released mods live in their own repos beside this one; everything else is a
 # subproject here. Both are resolved to a `src/main/resources` root.
 SIBLING_REPOS = {
     "facrafting": "Facrafting",
     "neoprogressivematerials": "NeoProgressiveMaterials",
-    "neoprogressiveautomation": "NeoProgressiveAutomation",
     "crumblingore": "CrumblingOre",
 }
 
@@ -439,10 +438,10 @@ def do_check(files: dict) -> int:
                 # is a defect, and catching it is the entire point of generating these.
                 wrong.append((path, on_disk, obj))
             else:
-                # A bench fallback. These are sometimes hand-authored on purpose - Neo
-                # Progressive Automation substitutes a burner drill and a redstone block for
-                # ingredients a missing mod would have supplied, which no generator can
-                # invent. Listed so they stay visible, but not a failure.
+                # A bench fallback. These are sometimes hand-authored on purpose - the
+                # drills substitute a burner drill and a redstone block for ingredients a
+                # missing mod would have supplied, which no generator can invent. Listed so
+                # they stay visible, but not a failure.
                 diverged.append(path)
 
     print(f"  matched                {matching}")

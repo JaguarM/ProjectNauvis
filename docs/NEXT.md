@@ -77,6 +77,13 @@ there was — all of which count items rather than time them. `SplitterBlock` is
 now holds a splitter's speed to `data/mapping.json` the way it holds a belt's, so the next tier
 cannot be wrong quietly either.
 
+**The mining drills are a subproject now, not a sibling repo.** `nauvis_mining` is a fork of Neo
+Progressive Automation taken for one reason: `nauvis_mining:burner_mining_drill` is what Factorio
+calls that entity and `neoprogressiveautomation:burner_drill` is what a mod already in players'
+worlds is stuck with. Same code, same art, same recipes and footprints; the ids, the namespace and
+the wiring changed, and the behaviour is still Progressive Automation's — which is job 1. NPA is
+left alone in its own repo, still released.
+
 **All four poles are climbable multi-blocks on the same `MachineShape` a boiler is.** The pole used
 to have a mechanism of its own — a `PolePart` enum with `Multiblock`'s four rules written out again
 — and the tiers ended it: five blocks tall needs a five-value enum and two-by-two needs two more
@@ -110,8 +117,8 @@ is an int like every other machine's.
 | `neoprogressivematerials:steel_plate` | five iron plates and thirty-five seconds |
 | `nauvis_research:technology` | 216 technologies, a synced datapack registry, generated. 26 are in the tree |
 | `/research` | grant, forget, start, stop, list, info, all, reset. Gamemaster only. **Grant and forget cascade** — grant brings the prerequisites, forget takes the dependants |
-| `neoprogressiveautomation:burner_drill` | 2×2, five blocks |
-| `neoprogressiveautomation:electric_drill` | 3×3, nine blocks; a half-block deck you walk over |
+| `nauvis_mining:burner_mining_drill` | 2×2, five blocks. Digs down, not across — see below |
+| `nauvis_mining:electric_mining_drill` | 3×3, nine blocks; a half-block deck you walk over |
 
 Power numbers keep Factorio's ratios rather than its units: one engine runs twelve assemblers, one
 boiler runs twenty-four. None of that is identity; ids, ingredients and craft times are.
@@ -126,7 +133,37 @@ goes only when the pack can already do that job, which the build enforces.
 The jobs
 --------
 
-### 1. The rest of the milestone 3 items
+### 1. Make the drills Factorio's drills
+
+**`nauvis_mining` is a fork of Neo Progressive Automation**, taken so the drills could have
+Factorio's ids: `nauvis_mining:burner_mining_drill` and `nauvis_mining:electric_mining_drill`,
+where a released mod was stuck with `burner_drill`. The fork is the ids and the wiring — the
+behaviour that came across is still Progressive Automation's, and **that is the job**. NPA is
+untouched in its own repo and stays released; nothing here changes it.
+
+What a Factorio drill does that this one does not:
+
+- **It sits on an ore patch and eats it.** Ours digs *downwards* beneath itself, one block at a
+  time, in a spiral — a quarry rather than a drill. Factorio's covers a fixed area at ground
+  level and takes the resource out of the tiles under it, leaving the terrain alone. Crumbling
+  Ore is already the pack's answer to a patch that runs out, so the two want designing together.
+- **It has no dig modes and needs no tools.** Ours has three modes on a button — ore only, clear
+  and fill, clear — plus a pickaxe, a shovel and fill material to do them, all of which are
+  answers to being a quarry. A Factorio drill needs fuel or power and nothing else.
+- **It outputs to the front, onto a belt.** Ours pushes into any container beside it. Factorio's
+  has one output tile it drops onto — which is what makes a drill-and-belt line a thing you lay
+  out rather than a chest you place.
+- **Its modules are Factorio's modules.** Ours are `speed`, `efficiency` and `range`, invented
+  for NPA. Factorio has speed, efficiency and productivity in three tiers each, they are
+  `nauvis_machines`' to own per `PLAN.md`, and `range` has no counterpart at all — a drill's area
+  is the entity's. **The three module items in `nauvis_mining` are the first thing to resolve**,
+  because they are ids in a namespace that is now the pack's.
+
+None of that is a small change, and none of it is urgent: the drills work, their tests pass, and
+their recipes and footprints are already Factorio-correct. Do it as one designed piece rather
+than four.
+
+### 2. The rest of the milestone 3 items
 
 `steel-plate`, `steel-chest`, `science-pack-2` and `medium-electric-pole` are in. **Adding an item
 gives its technology teeth with no change to the research code** — that held exactly as written for
@@ -173,7 +210,7 @@ the one to leave: it is oil-free but it forces a decision that comes before the 
 whether this pack has a smelting machine of its own at all — `stone-furnace` stands in as
 `minecraft:furnace` today.
 
-### 2. More removals follow the items
+### 3. More removals follow the items
 
 The conflict half of `data/removals.json` is already waiting: the moment a mod ships a recipe for
 `minecraft:redstone_lamp`, `cobblestone_wall`, `rail` or `iron_door`, the build fails until
@@ -361,7 +398,16 @@ one state vanilla cannot override is absent. `nauvis:timed_recipes_are_timed` ho
 ids changed, a `src/main/templates/META-INF/neoforge.mods.toml`, and two lines in
 `nauvis/build.gradle` — the `runtimeOnly project(':...')` and its namespace in
 `pack_gametest_namespaces`. `nauvis_power/` is the fullest template; `nauvis_research/` is the
-newest and was made by following exactly that list, so its diff is what adding a mod costs.
+newest written from scratch and was made by following exactly that list, so its diff is what
+adding a mod costs.
+
+**Bringing a sibling repo in as a subproject** costs that list plus six more places, which
+`nauvis_mining` is the worked example of: the `includeBuild` and its `dependencySubstitution` go
+from `settings.gradle`, its version from `gradle.properties`, and it stops being a special case
+in `check_models.py`'s `MODS`, `check_gametests.py`'s namespaces, `check_duplicated.py`'s copy
+list and `gen_recipes.py`/`gen_removals.py`'s `SIBLING_REPOS` — that last one silently resolves
+to `../<mod_id>` if you leave the entry in, and the recipe check reports the mod's files as
+*missing* rather than failing.
 
 **Recipes** generate into a staging directory —
 `python tools/gen_recipes.py --only <modid> --out <tmp>` — then copy across only the files for items

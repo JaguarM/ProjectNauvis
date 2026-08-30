@@ -44,14 +44,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# The subprojects in settings.gradle. The four siblings in ../ are their own repos and their own
+# The subprojects in settings.gradle. The three siblings in ../ are their own repos and their own
 # builds; a checker in this repo that failed on their assets would fail a clean clone.
+#
+# `nauvis_mining` was the exception that made this list two lists: the drills lived in a sibling
+# repo, and a Factorio entity's footprint is worth checking wherever it is registered. Forking it
+# in put them under the same rule as everything else, and none of the three mods left over there
+# registers a machine.
 MODS = ['nauvis', 'nauvis_machines', 'nauvis_logistics', 'nauvis_fluids', 'nauvis_power',
-        'nauvis_research']
-
-# Mods in their own repos beside this one, pulled in by settings.gradle. Only their machine
-# shapes are looked at - see check_footprints.
-SIBLINGS = ['../NeoProgressiveAutomation']
+        'nauvis_research', 'nauvis_mining']
 
 # Where datagen writes, and where anything hand-written lives. Both are shipped, so both count.
 ASSET_ROOTS = ['src/generated/client/assets', 'src/main/resources/assets']
@@ -324,17 +325,9 @@ def check_footprints():
     """
     mapping = json.loads((ROOT / 'data' / 'mapping.json').read_text(encoding='utf-8'))['items']
 
-    # The sibling repos are checked for footprints and nothing else. Their assets are their own -
-    # they ship separately, with their own datagen - but a Factorio entity is a Factorio entity
-    # wherever it is registered, and the drills live over there.
-    for mod in MODS + SIBLINGS:
+    for mod in MODS:
         source = ROOT / mod / 'src' / 'main' / 'java'
         if not source.is_dir():
-            # A sibling that is not checked out here. The composite build needs it and would have
-            # failed long before this, so it is a clone that cannot build rather than a problem
-            # with footprints.
-            if mod in SIBLINGS:
-                notes.append(f'{mod} is not checked out here - its footprints are unchecked')
             continue
         for path in sorted(source.rglob('*Shape.java')):
             text = path.read_text(encoding='utf-8')
@@ -488,7 +481,7 @@ def check_belt_speeds():
     """
     mapping = json.loads((ROOT / 'data' / 'mapping.json').read_text(encoding='utf-8'))['items']
 
-    for mod in MODS + SIBLINGS:
+    for mod in MODS:
         source = ROOT / mod / 'src' / 'main' / 'java'
         if not source.is_dir():
             continue

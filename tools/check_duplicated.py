@@ -32,7 +32,7 @@ DUPLICATED = [
      [('nauvis_power', 'nauvispower'),
       ('nauvis_research', 'nauvisresearch'),
       ('nauvis_logistics', 'nauvislogistics'),
-      ('../NeoProgressiveAutomation', 'neoprogressiveautomation')]),
+      ('nauvis_mining', 'nauvismining')]),
 ]
 
 PACKAGE = re.compile(r'^package\s+[\w.]+;', re.MULTILINE)

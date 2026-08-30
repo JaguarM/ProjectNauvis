@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "conditions": [
+            {
+              "block": "nauvis_mining:electric_mining_drill",
+              "condition": "minecraft:block_state_property",
+              "properties": {
+                "part": "1"
+              }
+            }
+          ],
+          "name": "nauvis_mining:electric_mining_drill"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "nauvis_mining:blocks/electric_mining_drill"
+}

@@ -49,7 +49,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  * <p>A furnace body gives the inserter a distinct front face, which is the one thing its model
  * genuinely has to communicate: an inserter that is facing the wrong way looks exactly like one
  * that is working. Real art is Yannic's half; see
- * {@code ../NeoProgressiveAutomation/texture-workshop/}.
+ * {@code texture-workshop/}.
  */
 public class NauvisLogisticsModels extends ModelProvider {
 

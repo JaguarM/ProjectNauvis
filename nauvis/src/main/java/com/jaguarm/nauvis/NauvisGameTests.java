@@ -118,7 +118,7 @@ public final class NauvisGameTests {
                         List.of(
                                 "neoprogressivematerials:iron_gear_wheel",
                                 "neoprogressivematerials:electronic_circuit",
-                                "neoprogressiveautomation:burner_drill",
+                                "nauvis_mining:burner_mining_drill",
                                 "nauvis_machines:assembling_machine_1",
                                 "nauvis_logistics:burner_inserter",
                                 "nauvis_logistics:inserter",
@@ -611,7 +611,7 @@ public final class NauvisGameTests {
                     "nauvis_fluids:pipe",
                     "nauvis_research:science_pack_1",
                     "neoprogressivematerials:iron_gear_wheel",
-                    "neoprogressiveautomation:burner_drill")) {
+                    "nauvis_mining:burner_mining_drill")) {
 
                 Identifier type = typeOf(helper, id);
                 helper.assertTrue(type != null, id + " has no recipe at all");

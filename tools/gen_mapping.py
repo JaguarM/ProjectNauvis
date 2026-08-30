@@ -19,8 +19,8 @@ BY_ID = {
     "small-electric-pole": "power", "medium-electric-pole": "power",
     "big-electric-pole": "power", "substation": "power", "power-switch": "power",
     # already-shipped mods
-    "burner-mining-drill": "neoprogressiveautomation",
-    "electric-mining-drill": "neoprogressiveautomation",
+    "burner-mining-drill": "nauvis_mining",
+    "electric-mining-drill": "nauvis_mining",
     # research
     "lab": "research",
     # fluids / oil / nuclear chemistry
@@ -68,7 +68,7 @@ MODID = {
     "trains": "nauvis_trains", "circuits": "nauvis_circuits",
     "military": "nauvis_military", "rocket": "nauvis_rocket",
     "neoprogressivematerials": "neoprogressivematerials",
-    "neoprogressiveautomation": "neoprogressiveautomation",
+    "nauvis_mining": "nauvis_mining",
 }
 
 # --- stand-ins: a Factorio item that an existing Minecraft item already covers ----------

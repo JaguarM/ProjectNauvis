@@ -10,7 +10,9 @@ plugins {
 
 rootProject.name = 'ProjectNauvis'
 
-// The four released mods keep their own repos and their own release cycles. Including their
+// The three released mods the pack still ships keep their own repos and their own release
+// cycles. Neo Progressive Automation was the fourth; `nauvis_mining` below is a fork of it, so
+// the pack builds the fork and the original is left alone in its own repo. Including their
 // builds substitutes their published coordinates with the local checkout, so an edit to one
 // is picked up here without publishing, and each still produces its own jar on its own.
 //
@@ -29,11 +31,6 @@ includeBuild('../Facrafting') {
 includeBuild('../NeoProgressiveMaterials') {
     dependencySubstitution {
         substitute module('com.jaguarm.neoprogressivematerials:neoprogressivematerials') using project(':')
-    }
-}
-includeBuild('../NeoProgressiveAutomation') {
-    dependencySubstitution {
-        substitute module('com.jaguarm.neoprogressiveautomation:neoprogressiveautomation') using project(':')
     }
 }
 includeBuild('../CrumblingOre') {
@@ -67,3 +64,8 @@ include 'nauvis_power'
 // Labs, science packs, tech gating. The lab arrives ahead of its milestone because a factory
 // that makes things and never learns anything is only half a game.
 include 'nauvis_research'
+
+// The two mining drills. Forked from Neo Progressive Automation, which still exists and is
+// still released - what a fork buys is Factorio's ids, `burner_mining_drill` rather than
+// `burner_drill`, which a mod already in players' worlds could never be given.
+include 'nauvis_mining'

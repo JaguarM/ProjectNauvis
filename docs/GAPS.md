@@ -84,6 +84,21 @@ Belts
   loaded chunks. It costs a belt at the very edge of the loaded world appearing to back up when it
   is not; a chunk arriving re-seeds that block's items from the block entity.
 
+Mining
+------
+
+- **The drills are quarries, not Factorio drills.** `nauvis_mining` is a fork of Neo Progressive
+  Automation and carries its behaviour: a drill digs *downwards* beneath itself in a spiral, has
+  three dig modes on a button, wants a pickaxe and a shovel and fill material, and pushes what it
+  finds into any container beside it. Factorio's sits on an ore patch, takes the resource out of
+  the tiles it covers, needs nothing but fuel or power, and drops onto one output tile in front.
+  The fork bought the ids; the behaviour is `NEXT.md`'s job 1.
+- **Its three modules are not Factorio's.** `speed`, `efficiency` and `range` were invented for
+  NPA. Factorio has speed, efficiency and productivity in three tiers, they belong to
+  `nauvis_machines` per `PLAN.md`, and a range module has no counterpart at all — a drill's area
+  is a property of the entity. The three items are live ids in the pack's namespace, which is why
+  they are the first thing job 1 resolves.
+
 Crafting and the panel
 ----------------------
 

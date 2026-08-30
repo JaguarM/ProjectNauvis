@@ -1,0 +1,27 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "c": "neoprogressivematerials:electronic_circuit",
+    "g": "neoprogressivematerials:iron_gear_wheel",
+    "i": "minecraft:iron_ingot"
+  },
+  "pattern": [
+    "ccc",
+    "ggg",
+    "iii"
+  ],
+  "result": {
+    "id": "nauvis_mining:electric_mining_drill"
+  }
+}

@@ -38,9 +38,10 @@ Where things are
 | `nauvis_fluids/` | barrels then pipes, oil, chemistry, nuclear |
 | `reference/` | Factorio's data and Create's source. Gitignored, not ours |
 
-The four mods that already exist live in their own repos alongside this one:
-[Facrafting][fc], [Neo Progressive Materials][npm], [Neo Progressive Automation][npa],
-[Crumbling Ore][co].
+Three mods live in their own repos alongside this one: [Facrafting][fc],
+[Neo Progressive Materials][npm] and [Crumbling Ore][co]. A fourth,
+[Neo Progressive Automation][npa], is where the mining drills came from; `nauvis_mining/` is a
+fork of it carrying Factorio's ids, and the original is still its own released mod.
 
 The shape of it
 ---------------

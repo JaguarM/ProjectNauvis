@@ -37,7 +37,7 @@ import net.minecraft.world.level.block.Blocks;
  * which matters, because the person judging whether a machine looks right is looking at it in
  * game. A blast furnace body is the nearest vanilla thing to an assembler.
  *
- * <p>Real art is Yannic's half - see {@code ../NeoProgressiveAutomation/texture-workshop/} for the
+ * <p>Real art is Yannic's half - see {@code texture-workshop/} for the
  * approach that produced the drills - and swapping it in is a one-line change here.
  *
  * <h2>One model per shape, not per block</h2>

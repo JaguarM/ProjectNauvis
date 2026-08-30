@@ -99,19 +99,20 @@ author before copying a line of it. Reading it is fine either way.
 The mods
 --------
 
-Four already exist and are released; their ids are permanent. Ten are new.
+Three already exist in their own repos; Crumbling Ore is released and its ids are permanent.
+Eleven are built here.
 
 | Mod id | Owns | Items |
 |---|---|---|
 | `facrafting` | the timed crafting model | — |
 | `neoprogressivematerials` | intermediate products | 18 |
-| `neoprogressiveautomation` | the two mining drills | 2 |
 | `crumblingore` | ore depletion | — |
 | `nauvis` | pack policy, vanilla replacement, raw resources, terrain | 16 |
 | `nauvis_logistics` | belts, inserters, splitters, chests, robots | 28 |
 | `nauvis_machines` | assemblers, furnaces, modules, beacon, radar | 18 |
 | `nauvis_power` | boiler, steam engine, solar, accumulator, poles | 13 |
 | `nauvis_research` | labs, science packs, tech gating | 7 |
+| `nauvis_mining` | the two mining drills | 2 |
 | `nauvis_fluids` | barrels then pipes, oil, chemistry, nuclear | 33 |
 | `nauvis_trains` | rails, locomotives, wagons, signals | 9 |
 | `nauvis_circuits` | combinators, wires, lamps, speakers | 7 |
@@ -125,9 +126,9 @@ The workspace
 -------------
 
 Project Nauvis is a **Gradle multi-project build**. Every new mod is a subproject here; each
-still produces its own jar with its own mod id and is publishable standalone. The four
-released mods stay in their own repos and are pulled in with
-`includeBuild("../NeoProgressiveAutomation")` and friends, so one `./gradlew runServer` puts
+still produces its own jar with its own mod id and is publishable standalone. The three
+sibling mods stay in their own repos and are pulled in with
+`includeBuild("../NeoProgressiveMaterials")` and friends, so one `./gradlew runServer` puts
 the whole pack on the classpath and cross-mod edits are possible in one pass.
 
 **Settled: ModDevGradle does not fight composite builds**, so the `run/mods` fallback is not

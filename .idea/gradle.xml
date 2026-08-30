@@ -17,11 +17,6 @@
                   <project path="$PROJECT_DIR$/../Facrafting" />
                 </projects>
               </build>
-              <build path="$PROJECT_DIR$/../NeoProgressiveAutomation" name="NeoProgressiveAutomation">
-                <projects>
-                  <project path="$PROJECT_DIR$/../NeoProgressiveAutomation" />
-                </projects>
-              </build>
               <build path="$PROJECT_DIR$/../NeoProgressiveMaterials" name="NeoProgressiveMaterials">
                 <projects>
                   <project path="$PROJECT_DIR$/../NeoProgressiveMaterials" />
@@ -35,13 +30,13 @@
           <set>
             <option value="$PROJECT_DIR$/../CrumblingOre" />
             <option value="$PROJECT_DIR$/../Facrafting" />
-            <option value="$PROJECT_DIR$/../NeoProgressiveAutomation" />
             <option value="$PROJECT_DIR$/../NeoProgressiveMaterials" />
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/nauvis" />
             <option value="$PROJECT_DIR$/nauvis_fluids" />
             <option value="$PROJECT_DIR$/nauvis_logistics" />
             <option value="$PROJECT_DIR$/nauvis_machines" />
+            <option value="$PROJECT_DIR$/nauvis_mining" />
             <option value="$PROJECT_DIR$/nauvis_power" />
             <option value="$PROJECT_DIR$/nauvis_research" />
           </set>

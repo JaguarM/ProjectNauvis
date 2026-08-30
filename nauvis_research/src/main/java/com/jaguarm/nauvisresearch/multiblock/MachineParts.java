@@ -12,8 +12,8 @@ package com.jaguarm.nauvisresearch.multiblock;
  * {@code tools/check_duplicated.py} holds the copies to being identical. That is on purpose and it
  * is the point: a boiler that grew a slightly different wall from an assembler would look like a
  * mistake long before anyone could say which of the two was wrong. Compare
- * {@code ../NeoProgressiveAutomation/texture-workshop/}, where sixteen textures come off three
- * shared maps for the same reason - a family cannot drift apart if there is only one of it.
+ * {@code texture-workshop/}, where every block texture in the pack comes off a handful of shared
+ * maps for the same reason - a family cannot drift apart if there is only one of it.
  *
  * <h2>The heights are the walkability rule</h2>
  *

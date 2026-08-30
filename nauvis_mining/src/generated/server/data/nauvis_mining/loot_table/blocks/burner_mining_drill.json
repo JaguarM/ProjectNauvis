@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "conditions": [
+            {
+              "block": "nauvis_mining:burner_mining_drill",
+              "condition": "minecraft:block_state_property",
+              "properties": {
+                "part": "0"
+              }
+            }
+          ],
+          "name": "nauvis_mining:burner_mining_drill"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "nauvis_mining:blocks/burner_mining_drill"
+}

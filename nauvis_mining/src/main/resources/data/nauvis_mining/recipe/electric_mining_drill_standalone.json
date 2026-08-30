@@ -1,0 +1,36 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:and",
+        "values": [
+          {
+            "type": "neoforge:mod_loaded",
+            "modid": "facrafting"
+          },
+          {
+            "type": "neoforge:mod_loaded",
+            "modid": "neoprogressivematerials"
+          }
+        ]
+      }
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "i": "minecraft:iron_ingot",
+    "b": "nauvis_mining:burner_mining_drill",
+    "r": "minecraft:redstone_block",
+    "p": "minecraft:iron_pickaxe"
+  },
+  "pattern": [
+    "iri",
+    "ibi",
+    "ipi"
+  ],
+  "result": {
+    "id": "nauvis_mining:electric_mining_drill"
+  }
+}

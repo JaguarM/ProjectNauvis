@@ -12,10 +12,10 @@ ext {
     // Every mod in the pack whose gametests should run here. A subsystem mod tests its own
     // behaviour, in its own source tree, and these runs are where all of it happens at once on
     // a classpath that has the whole pack on it.
-    // The sibling repos count too: Neo Progressive Automation owns the two mining drills, and
-    // since they became multi-blocks their tests are as much part of the pack's health as ours.
+    // The sibling repos would count too if any of them had tests the pack cares about; the
+    // drills' did, and they are nauvis_mining's now.
     pack_gametest_namespaces = 'nauvis,nauvis_machines,nauvis_logistics,nauvis_fluids,' +
-            'nauvis_power,nauvis_research,neoprogressiveautomation'
+            'nauvis_power,nauvis_research,nauvis_mining'
 }
 
 version = '0.1.0'
@@ -63,13 +63,12 @@ repositories {
 }
 
 dependencies {
-    // The four released mods, pulled in to run the pack from one classpath. runtimeOnly, not
+    // The three released mods, pulled in to run the pack from one classpath. runtimeOnly, not
     // implementation, because the pack mod has no compile-time dependency on any of them and
     // must not grow one - the coupling is recipe conditions, not Java. settings.gradle
     // substitutes each of these with the local checkout beside this repo.
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
-    runtimeOnly "com.jaguarm.neoprogressiveautomation:neoprogressiveautomation:${neoprogressiveautomation_version}"
     runtimeOnly "com.jaguarm.crumblingore:crumblingore:${crumblingore_version}"
 
     // The subsystem mods in this repo, on the same terms. This is what makes
@@ -80,6 +79,7 @@ dependencies {
     runtimeOnly project(':nauvis_fluids')
     runtimeOnly project(':nauvis_power')
     runtimeOnly project(':nauvis_research')
+    runtimeOnly project(':nauvis_mining')
 
     // Not a dependency of anything, deliberately: it is in the pack because the readout is worth
     // having, and every mod still runs without it.

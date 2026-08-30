@@ -1,0 +1,154 @@
+{
+  "variants": {
+    "facing=east,lit=false,part=0": {
+      "model": "nauvis_mining:block/burner_mining_drill_face",
+      "y": 90
+    },
+    "facing=east,lit=false,part=1": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 180
+    },
+    "facing=east,lit=false,part=2": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 270
+    },
+    "facing=east,lit=false,part=3": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner"
+    },
+    "facing=east,lit=false,part=4": {
+      "model": "nauvis_mining:block/burner_mining_drill_chimney",
+      "y": 90
+    },
+    "facing=east,lit=true,part=0": {
+      "model": "nauvis_mining:block/burner_mining_drill_face_on",
+      "y": 90
+    },
+    "facing=east,lit=true,part=1": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 180
+    },
+    "facing=east,lit=true,part=2": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 270
+    },
+    "facing=east,lit=true,part=3": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner"
+    },
+    "facing=east,lit=true,part=4": {
+      "model": "nauvis_mining:block/burner_mining_drill_chimney",
+      "y": 90
+    },
+    "facing=north,lit=false,part=0": {
+      "model": "nauvis_mining:block/burner_mining_drill_face"
+    },
+    "facing=north,lit=false,part=1": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 90
+    },
+    "facing=north,lit=false,part=2": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 180
+    },
+    "facing=north,lit=false,part=3": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 270
+    },
+    "facing=north,lit=false,part=4": {
+      "model": "nauvis_mining:block/burner_mining_drill_chimney"
+    },
+    "facing=north,lit=true,part=0": {
+      "model": "nauvis_mining:block/burner_mining_drill_face_on"
+    },
+    "facing=north,lit=true,part=1": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 90
+    },
+    "facing=north,lit=true,part=2": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 180
+    },
+    "facing=north,lit=true,part=3": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 270
+    },
+    "facing=north,lit=true,part=4": {
+      "model": "nauvis_mining:block/burner_mining_drill_chimney"
+    },
+    "facing=south,lit=false,part=0": {
+      "model": "nauvis_mining:block/burner_mining_drill_face",
+      "y": 180
+    },
+    "facing=south,lit=false,part=1": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 270
+    },
+    "facing=south,lit=false,part=2": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner"
+    },
+    "facing=south,lit=false,part=3": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 90
+    },
+    "facing=south,lit=false,part=4": {
+      "model": "nauvis_mining:block/burner_mining_drill_chimney",
+      "y": 180
+    },
+    "facing=south,lit=true,part=0": {
+      "model": "nauvis_mining:block/burner_mining_drill_face_on",
+      "y": 180
+    },
+    "facing=south,lit=true,part=1": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 270
+    },
+    "facing=south,lit=true,part=2": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner"
+    },
+    "facing=south,lit=true,part=3": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 90
+    },
+    "facing=south,lit=true,part=4": {
+      "model": "nauvis_mining:block/burner_mining_drill_chimney",
+      "y": 180
+    },
+    "facing=west,lit=false,part=0": {
+      "model": "nauvis_mining:block/burner_mining_drill_face",
+      "y": 270
+    },
+    "facing=west,lit=false,part=1": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner"
+    },
+    "facing=west,lit=false,part=2": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 90
+    },
+    "facing=west,lit=false,part=3": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 180
+    },
+    "facing=west,lit=false,part=4": {
+      "model": "nauvis_mining:block/burner_mining_drill_chimney",
+      "y": 270
+    },
+    "facing=west,lit=true,part=0": {
+      "model": "nauvis_mining:block/burner_mining_drill_face_on",
+      "y": 270
+    },
+    "facing=west,lit=true,part=1": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner"
+    },
+    "facing=west,lit=true,part=2": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 90
+    },
+    "facing=west,lit=true,part=3": {
+      "model": "nauvis_mining:block/burner_mining_drill_corner",
+      "y": 180
+    },
+    "facing=west,lit=true,part=4": {
+      "model": "nauvis_mining:block/burner_mining_drill_chimney",
+      "y": 270
+    }
+  }
+}

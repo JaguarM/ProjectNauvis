@@ -210,8 +210,8 @@
     },
     "burner-mining-drill": {
       "name": "Burner mining drill",
-      "owner": "neoprogressiveautomation",
-      "item": "neoprogressiveautomation:burner_drill",
+      "owner": "nauvis_mining",
+      "item": "nauvis_mining:burner_mining_drill",
       "size": [2, 2],
       "craft": {
         "time": 4,
@@ -471,8 +471,8 @@
     },
     "electric-mining-drill": {
       "name": "Electric mining drill",
-      "owner": "neoprogressiveautomation",
-      "item": "neoprogressiveautomation:electric_drill",
+      "owner": "nauvis_mining",
+      "item": "nauvis_mining:electric_mining_drill",
       "size": [3, 3],
       "craft": {
         "time": 2,

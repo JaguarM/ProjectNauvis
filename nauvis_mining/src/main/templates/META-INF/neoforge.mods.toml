@@ -1,0 +1,54 @@
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="JaguarM"
+iconFile="${mod_id}.png"
+displayURL="https://github.com/JaguarM/ProjectNauvis"
+issueTrackerURL="https://github.com/JaguarM/ProjectNauvis/issues"
+
+description='''
+Factorio's two mining drills.
+
+A Burner Mining Drill runs on solid fuel and covers two tiles by two. An Electric Mining Drill
+runs on FE, covers three by three, and takes modules. Both push what they dig into whatever you
+put beside them, so a drill and a chest is the first thing in the pack that works while you are
+somewhere else.
+
+Forked from Neo Progressive Automation, which is where the drills come from and which is still
+its own mod. This one carries Factorio's ids and is being taken the rest of the way: an ore
+patch it sits on rather than a hole it digs, and Factorio's own modules when nauvis_machines
+ships them.
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# Optional on purpose. With both present the drills cost gears, circuits and seconds; with
+# either one missing, the conditioned standalone recipes put the original ones back.
+[[dependencies.${mod_id}]]
+    modId="facrafting"
+    type="optional"
+    versionRange="[${facrafting_version},)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="neoprogressivematerials"
+    type="optional"
+    versionRange="[1.0.0,)"
+    ordering="AFTER"
+    side="BOTH"

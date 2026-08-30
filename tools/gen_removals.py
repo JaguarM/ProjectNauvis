@@ -95,7 +95,6 @@ NEOFORGE_JAR = str(Path.home() / ".gradle" / "caches" / "modules-2" / "files-2.1
 SIBLING_REPOS = {
     "facrafting": "Facrafting",
     "neoprogressivematerials": "NeoProgressiveMaterials",
-    "neoprogressiveautomation": "NeoProgressiveAutomation",
     "crumblingore": "CrumblingOre",
 }
 

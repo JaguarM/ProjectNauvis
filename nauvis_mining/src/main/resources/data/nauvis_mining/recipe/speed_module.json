@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "p": "minecraft:redstone",
+    "c": "minecraft:gold_ingot"
+  },
+  "pattern": [ "ppp", "pcp", "ppp" ],
+  "result": { "id": "nauvis_mining:speed_module" }
+}

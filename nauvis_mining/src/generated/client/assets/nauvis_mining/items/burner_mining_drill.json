@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "nauvis_mining:block/burner_mining_drill_inventory"
+  }
+}

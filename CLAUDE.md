@@ -79,18 +79,17 @@ The same applies to any mod worth learning from. Most of the tech ecosystem is s
 licence before adapting a line of it — MIT wants attribution, and assets are almost always
 reserved regardless of what the code says. Ours are ours.
 
-The four sibling mods
----------------------
+The three sibling mods
+----------------------
 
 They live in their own repos at `../` and Project Nauvis consumes them via `includeBuild`, which
-means an edit to one is picked up here immediately — no publishing step. **Two of them are
+means an edit to one is picked up here immediately — no publishing step. **One of them is
 released and two are not, and that is the whole difference:**
 
 | Repo | Mod id | Owns | |
 |---|---|---|---|
 | `../Facrafting` | `facrafting` | The timed crafting model, and the crafting UI. | **ours to change** |
 | `../NeoProgressiveMaterials` | `neoprogressivematerials` | Intermediate products. | **ours to change** |
-| `../NeoProgressiveAutomation` | `neoprogressiveautomation` | The two mining drills. | released |
 | `../CrumblingOre` | `crumblingore` | Ore depletion. | released |
 
 **Facrafting and Neo Progressive Materials are not published** — no remote, no tags, and NPM is
@@ -98,15 +97,22 @@ not even a git repository. Change them freely: they are part of this project, an
 particular is the foundation the rest builds on. Its crafting panel is the interface every
 machine screen should grow out of rather than sit beside.
 
-**Neo Progressive Automation and Crumbling Ore are on GitHub and in players' worlds.** Their ids
-are permanent and their behaviour should not change under an existing save.
+**Crumbling Ore is on GitHub and in players' worlds.** Its ids are permanent and its behaviour
+should not change under an existing save.
+
+**Neo Progressive Automation was the fourth, and `nauvis_mining` is a fork of it.** The drills
+are a subproject here now, under Factorio's ids — `nauvis_mining:burner_mining_drill`, not
+`neoprogressiveautomation:burner_drill`, which is a thing a released mod could never be given.
+NPA still exists at `../NeoProgressiveAutomation`, still released and still in players' worlds;
+the pack does not build it, and nothing here should change it.
 
 Three ids are frozen anyway, whatever the above says, because the released NPA names them in its
 own shipped recipes: **`facrafting:facraft`**, **`neoprogressivematerials:electronic_circuit`**
-and **`neoprogressivematerials:iron_gear_wheel`**. Renaming any of those breaks a mod that is
-already out. Check `grep -rho "neoprogressivematerials:[a-z_]*\|facrafting:[a-z_]*"
+and **`neoprogressivematerials:iron_gear_wheel`**. Forking did not unfreeze them — the mod that
+names them is out there either way. Check
+`grep -rho "neoprogressivematerials:[a-z_]*\|facrafting:[a-z_]*"
 ../NeoProgressiveAutomation/src/main/resources` before assuming an id in those two mods is free.
 
-The four repos are still four repos. Folding the two unreleased ones into this one is a
+The three repos are still three repos. Folding the two unreleased ones into this one is a
 reasonable thing to want and a separate job from changing them — ask before doing it, because
 their git history is not this repo's to rewrite.
