@@ -29,12 +29,17 @@ either - so a line goes up a hill by being built up a hill, and there is no item
 belongs to the lower of the two blocks, again as vanilla does it, and `BeltShape` gained two values
 rather than eight: `up` rises the way the belt faces, `down` against it.
 
-The model is a 45-degree slab plus a squared-off adapter at its low end. **Vanilla's raised rail is
-a plane with no thickness**, which is how it gets away with a bare rotation; a belt is half a block
-thick, and a rotated box's ends tilt with it, so the joint against a flat belt would be a wedge of
-open air. The adapter is what closes it. The high joint needs nothing, because a slab that thick
-already overhangs the block it climbs into. The collision is four steps of a quarter block, so a
-slope is *walked* up - vanilla's rail slope is an 8-pixel box you have to jump.
+The model is a 45-degree slab squared off at both ends. **Vanilla's raised rail is a plane with no
+thickness**, which is how it gets away with a bare rotation; a belt is half a block thick, and every
+problem here came from that. A rotated box's ends tilt with it, so it neither ends where the block
+ends nor meets a flat belt's upright face: the slab is clipped to its own block - a first version
+was not, and reached through the belt at the top of every climb - and the ends are squared off with
+plain boxes, one at the low joint and six little ones climbing the corner the clip leaves at the
+top. Those boxes are held a tenth of a pixel back from the sides, because a square box has to
+overlap the slab and two full-width boxes share their side planes, which is z-fighting.
+`withinItsBlock` refuses a ramp that reaches out of its block now, since the first one did on one
+side only and looked right from every angle but one. The collision is four steps of a quarter block,
+so a slope is *walked* up - vanilla's rail slope is an 8-pixel box you have to jump.
 
 **And it turned up a bug that had nothing to do with slopes.** A belt that is turned changes a block
 state and nothing else; the server said so by hand and the client, which keeps its own copy of every

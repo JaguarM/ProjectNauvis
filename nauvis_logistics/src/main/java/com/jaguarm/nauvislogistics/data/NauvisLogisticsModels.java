@@ -96,25 +96,79 @@ public class NauvisLogisticsModels extends ModelProvider {
     private static final float BELT_PIXELS = (float) (Belts.HEIGHT * 16.0);
 
     /**
-     * A sloped belt: one rotated slab, and one square box to end it with.
+     * How far a tilted end reaches past the surface above it, along the belt.
+     *
+     * <p>The slab is rotated, so its ends tilt with it: the underside of the high end sticks out
+     * beyond the top corner by the thickness laid over at 45 degrees. <b>Left alone it reaches
+     * into the block the belt at the top of the climb is in, and through that belt's own slab</b> -
+     * both span the full width, so their sides land on the same plane and fight, and the ramp's
+     * surface carries on rising past the belt it is supposed to meet. See {@link #beltRamp}.
+     */
+    private static final float RAMP_OVERHANG = (float) (BELT_PIXELS / Math.sqrt(2.0));
+
+    /**
+     * How many boxes the corner left over at the top of a clipped ramp is filled with.
+     *
+     * <p>Six, so each is under a pixel: the tip has to reach the full height of the belt it joins
+     * at the seam - anything less is a slot of daylight across the top of every ramp - and it may
+     * not poke up through the slope to get there, so it climbs in steps sized to be invisible
+     * rather than in one flat landing.
+     */
+    private static final int RAMP_TIP_STEPS = 6;
+
+    /**
+     * How far the square boxes are held back from the sides of the rotated slab.
+     *
+     * <p>A tenth of a pixel, and it is the whole of the z-fighting fix. Every helper box overlaps
+     * the slab somewhere - it has to, because a square box cannot end flush against a 45-degree
+     * face without either overlapping it or leaving a gap - and while both spanned the full width
+     * their side faces sat on the same two planes and flickered against each other.
+     *
+     * <p><b>Held back rather than pushed out</b>, which is the other way this could have gone: a
+     * box wider than the block would poke into the belt beside it, and belt lines are laid side by
+     * side all the time. A tenth of a pixel is a hundred and sixtieth of a block - far too small to
+     * see, far too big for a depth buffer to confuse.
+     */
+    private static final float RAMP_INSET = 0.1F;
+
+    /**
+     * A sloped belt: a rotated slab clipped to its own block, squared off at both ends.
      *
      * <p><b>Vanilla's raised rail is a plane with no thickness</b> - {@code template_rail_raised_ne}
      * is a single element whose Y extent is zero - which is why it can be rotated 45 degrees and
-     * still meet a flat rail cleanly. A belt is half a block thick, and a rotated box's end faces
-     * tilt with it: butt one against the upright end of a flat belt and the joint is a wedge-shaped
-     * hole, wide at one corner and closed at the other.
+     * still meet a flat rail cleanly. A belt is half a block thick, and <b>every problem here comes
+     * from that</b>: a rotated box's end faces tilt with it, so it neither ends where the block ends
+     * nor meets a flat belt's upright face.
      *
-     * <p>So the ramp is two elements. The rotated slab is sized to the block's <em>diagonal</em>
-     * rather than its side - {@code rescale} would do that too, but it stretches the thickness with
-     * it and an 8-pixel belt would come out 11 - and its top surface therefore runs corner to
-     * corner, from half a block up at the low edge to half a block up in the block above at the
-     * high edge, which is exactly where the flat belts at either end are.
+     * <h2>The slab</h2>
      *
-     * <p>The second element is the adapter: a plain, unrotated half-slab filling the low half of the
-     * tile. It squares off the low joint against the flat belt in front of it. <b>The high joint
-     * needs nothing</b>, and that falls out of the geometry rather than being lucky: the slab's
-     * underside overhangs the high edge by the same amount it is thick, so it already covers the
-     * face of the belt at the top of the climb.
+     * <p>Sized to the block's <em>diagonal</em> rather than its side, so its top surface runs corner
+     * to corner - from half a block up at the low edge to half a block up in the block above at the
+     * high edge, which is exactly where the flat belts at either end are. {@code rescale} would
+     * stretch it corner to corner too, and would stretch the thickness with it: an 8-pixel belt
+     * would come out 11.
+     *
+     * <p>Then <b>shortened at the high end by exactly its own thickness</b>, which pulls the tilted
+     * underside back from {@link #RAMP_OVERHANG} pixels outside the block to flush with its face.
+     * Without that the ramp reaches into the block the next belt is in and passes through that
+     * belt's slab: two full-width boxes overlapping means two pairs of coplanar side faces, which is
+     * z-fighting, and the ramp's surface goes on climbing past the belt it is meant to meet, which
+     * is a blade of belt sticking up out of the line. Clipping it costs the last
+     * {@code RAMP_OVERHANG} pixels of surface, and the tip below puts them back.
+     *
+     * <h2>The two square ends</h2>
+     *
+     * <p><b>The low end</b> is one box filling the low half of the tile, squaring the joint off
+     * against the flat belt in front of it.
+     *
+     * <p><b>The high end</b> is {@link #RAMP_TIP_STEPS} boxes climbing the corner the clip left
+     * behind. Each one's top is the height of the surface at its high edge, so the first reaches the
+     * full height of the belt it joins - a step short would be a slot of daylight across the top of
+     * every ramp - and none of them stands proud of the slope by more than the width of a step.
+     *
+     * <p>Every one of those boxes overlaps the slab, and none of them can avoid it: a square box
+     * cannot end flush against a 45-degree face without either overlapping it or leaving a gap. What
+     * they can avoid is sharing a plane with it, and {@link #RAMP_INSET} is how.
      *
      * @param rises whether the ramp climbs the way the belt faces, which is the whole of the
      *              difference between {@link BeltShape#UP} and {@link BeltShape#DOWN}
@@ -126,10 +180,16 @@ public class NauvisLogisticsModels extends ModelProvider {
             JsonArray elements = new JsonArray();
 
             // The slab, laid flat and pivoted about the midpoint of the surface it will become.
-            // Modelled facing north, like every other belt model, so `up` climbs towards -Z.
+            // Modelled facing north, like every other belt model, so `up` climbs towards -Z, and
+            // shortened at that end so the whole thing stays inside its own block.
+            // Shortened at the high end, which is the far end going up and the near end coming
+            // down: the clip mirrors with the ramp, and leaving it on one side is a `down` ramp
+            // that reaches a third of a block into its neighbour.
+            float low = 8 - RAMP_REACH + (rises ? BELT_PIXELS : 0);
+            float high = 8 + RAMP_REACH - (rises ? 0 : BELT_PIXELS);
             JsonObject ramp = beltElement(
-                    new float[] {0, 16 - BELT_PIXELS, 8 - RAMP_REACH, 16, 16, 8 + RAMP_REACH},
-                    false, true);
+                    new float[] {0, 16 - BELT_PIXELS, low, 16, 16, high}, false, true);
+            withinItsBlock(low, high, rises);
             JsonObject rotation = new JsonObject();
             rotation.add("origin", vector(8, 16, 8));
             rotation.addProperty("axis", "x");
@@ -137,9 +197,19 @@ public class NauvisLogisticsModels extends ModelProvider {
             ramp.add("rotation", rotation);
             elements.add(ramp);
 
-            // The adapter, in the low half of the tile: the half the belt in front of it joins.
-            float near = rises ? 8 : 0;
-            elements.add(beltElement(new float[] {0, 0, near, 16, BELT_PIXELS, near + 8}, true, false));
+            // The low end, squared off against the flat belt it joins.
+            elements.add(squared(new float[] {8, 0, 16, BELT_PIXELS}, rises, true));
+
+            // And the high end, climbing to meet the belt at the top of the slope. The underside
+            // of the clipped slab crosses the block's face at this height, so the boxes hang from
+            // there rather than from the floor - anything lower would be solid belt under a ramp.
+            float foot = 16 + BELT_PIXELS - 2 * RAMP_OVERHANG;
+            for (int step = 0; step < RAMP_TIP_STEPS; step++) {
+                float near = RAMP_OVERHANG * step / RAMP_TIP_STEPS;
+                float far = RAMP_OVERHANG * (step + 1) / RAMP_TIP_STEPS;
+                elements.add(squared(
+                        new float[] {near, foot, far, 16 + BELT_PIXELS - near}, rises, false));
+            }
 
             return beltModel(elements, base);
         });
@@ -147,13 +217,63 @@ public class NauvisLogisticsModels extends ModelProvider {
     }
 
     /**
+     * Refuses a ramp whose slab would reach outside its own block along the belt.
+     *
+     * <p>The one thing about this model that cannot be seen from the JSON and cannot be seen in
+     * game either until it is too late: a slab that reaches past its block passes through the belt
+     * at the top of the climb, and two overlapping full-width boxes means two pairs of coplanar
+     * faces flickering against each other. It shipped once, mirrored onto one side and not the
+     * other, and looked fine from every angle but one.
+     *
+     * <p>Checked here rather than in {@code tools/check_models.py} because it is a fact about
+     * <em>belts</em> - plenty of models in this pack reach outside their block on purpose, and a
+     * rule that forbade it everywhere would have to be relaxed the first time one did.
+     */
+    private static void withinItsBlock(float low, float high, boolean rises) {
+        // All four corners, not just the two that look dangerous: the rotation turns the box about
+        // the middle of the surface it becomes, and which corner ends up furthest along the belt
+        // swaps over between a ramp that rises and one that falls.
+        double turn = Math.toRadians(rises ? 45 : -45);
+        for (float y : new float[] {0, -BELT_PIXELS}) {
+            for (float z : new float[] {low, high}) {
+                double reached = 8 + y * Math.sin(turn) + (z - 8) * Math.cos(turn);
+                if (reached < -1.0E-4 || reached > 16 + 1.0E-4) {
+                    throw new IllegalStateException(String.format(
+                            "a %s ramp reaches %.3f along its block, which is outside 0..16 - it "
+                            + "would pass through the belt it joins. See beltRamp.",
+                            rises ? "rising" : "falling", reached));
+                }
+            }
+        }
+    }
+
+    /**
+     * One square box of a ramp, given in the coordinates a ramp is reasoned about.
+     *
+     * <p>Those are: distance along the belt measured from the <em>high</em> end, and height. A
+     * {@code down} ramp is an {@code up} ramp seen from the other end, so it is the same numbers
+     * mirrored, which is why there are two shapes and not eight.
+     *
+     * <p>Held back from both sides by {@link #RAMP_INSET}, which is what keeps it from sharing a
+     * plane with the rotated slab it overlaps.
+     */
+    private static JsonObject squared(float[] box, boolean rises, boolean cull) {
+        float near = rises ? box[0] : 16 - box[2];
+        float far = rises ? box[2] : 16 - box[0];
+        return beltElement(
+                new float[] {RAMP_INSET, box[1], near, 16 - RAMP_INSET, box[3], far}, cull, false);
+    }
+
+    /**
      * One box of a belt model, textured the way a slab is: tread on top, tin down the sides.
      *
-     * @param stretch whether to spell the top and bottom UVs out rather than letting Minecraft
-     *                derive them from the box. Required for the ramp and only for the ramp: a
-     *                derived UV is the element's own x and z extents, and the ramp is longer than
-     *                its block, so the tread would be sampled from past the edge of its own texture
-     *                and come back wrapped. {@code tools/check_models.py} fails the build on it.
+     * @param stretch whether the top and bottom carry one whole tread stretched over the element,
+     *                which is what the ramp itself wants: it is longer than its block, so a derived
+     *                UV would sample the tread from past the edge of its own texture and bring it
+     *                back wrapped. Everything else takes the slice of tread under its own footprint.
+     *                Neither is left to be derived, because none of these elements stays inside its
+     *                block - {@code tools/check_models.py} fails the build on a derived UV that
+     *                cannot be trusted.
      */
     private static JsonObject beltElement(float[] box, boolean cull, boolean stretch) {
         JsonObject element = new JsonObject();
@@ -178,6 +298,12 @@ public class NauvisLogisticsModels extends ModelProvider {
                 // slower up a slope than along the flat - which is the same stretch the items on it
                 // get, and so reads as one thing rather than two.
                 face.add("uv", uv(0, 0, 16, 16));
+            } else {
+                // The slice of tread this box actually stands on, which is what Minecraft would
+                // have derived for it - said out loud because a box that leaves its block in any
+                // direction gets no derived UV it can trust, and the ramp's end caps climb out of
+                // theirs. See tools/check_models.py.
+                face.add("uv", uv(box[0], box[2], box[3], box[5]));
             }
             if (cull && direction == Direction.DOWN) {
                 face.addProperty("cullface", direction.getSerializedName());

@@ -60,9 +60,16 @@ Belts
   disagree here: each step is a quarter block, well under the 0.6 step height, so a slope is walked
   up rather than jumped - vanilla's rail slope is a plain 8-pixel box and does have to be jumped.
   Standing on one puts you within a quarter block of the drawn surface.
-- **A ramp reaches half a block into the block above it**, which is where the belt at the top of the
-  climb is and why the two meet with no gap. It also means a solid block placed directly above a
-  ramp will clip it. Vanilla's raised rail has the same overhang for the same reason.
+- **A ramp reaches half a block up into the block above it**, which is where the surface has to be
+  to meet the belt at the top of the climb. It stays inside its own block *along* the belt - that is
+  checked when the model is generated, because a ramp that did not would pass through the belt it
+  joins - but a solid block placed directly above one will clip it. Vanilla's raised rail reaches
+  into the block above for the same reason.
+- **The last pixel of a ramp is six little steps rather than a slope.** Clipping the slab to its own
+  block leaves a corner at the top, and a square box cannot fill a 45-degree corner exactly; the
+  steps are under a pixel each and none stands more than that proud of the slope. Everything square
+  in a ramp is also held a tenth of a pixel back from the sides, so that it never shares a plane
+  with the slab it overlaps - which is what z-fighting is made of.
 - **Client and server runs can differ at a chunk edge**, because a client only has the belts in its
   loaded chunks. It costs a belt at the very edge of the loaded world appearing to back up when it
   is not; a chunk arriving re-seeds that block's items from the block entity.

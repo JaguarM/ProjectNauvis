@@ -8,6 +8,18 @@ companion: the rules these are the ways of breaking.
 Models, datagen and rendering
 -----------------------------
 
+- **Two overlapping elements that share a face plane z-fight, and rotation makes the overlap
+  unavoidable.** A square box cannot end flush against a 45-degree face without either overlapping
+  it or leaving a gap, so a sloped belt's square end caps have to overlap its rotated slab - and
+  while both spanned the block's full width, their side faces sat on the same two planes and
+  flickered. Holding the square boxes a tenth of a pixel back from the sides is the whole fix; the
+  tempting other direction, making them *wider* than the block, puts them inside the belt line laid
+  beside it. **The same trap across blocks**: the same ramp's underside reached a third of a block
+  past its own block and through the neighbouring belt's slab, which both z-fought *and* left the
+  ramp's surface climbing visibly through the belt it was supposed to meet. Mirroring the fix onto
+  the descending ramp was forgotten, and it looked perfect from every angle except the one that
+  showed it. `NauvisLogisticsModels.withinItsBlock` refuses it at datagen time now.
+
 - **A model file renamed out from under its item.** `CUBE_COLUMN_HORIZONTAL` writes to
   `block/<name>_horizontal`; the item model defaults to `block/<name>`. The block rendered and the
   item was a checkerboard, and datagen reported nothing — both files were written exactly as asked.
