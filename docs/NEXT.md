@@ -121,6 +121,7 @@ is an int like every other machine's.
 | the columns | measured from the selection - longest path back to it on the left, forward from it on the right - **not the tree's global depth**, or a root technology floats to the far edge of every view it appears in |
 | a node | state as colour, the science packs it costs as twelve-pixel items under the icon, units paid as a bar under those |
 | search | matches **what a technology unlocks**, not only its name. Players think in items |
+| the list | sorted into three blocks and coloured by them — ready in yellow-brown, unreachable in red, researched in green at the bottom. The current research sits above the rest of the first block |
 | research progress | **kept per technology.** Switching away from one and back finds it where it was left, which is Factorio's rule and was not ours |
 | `/research` | grant, forget, start, stop, list, info, all, reset. Gamemaster only. **Grant and forget cascade** — grant brings the prerequisites, forget takes the dependants |
 | `nauvis_mining:burner_mining_drill` | 2×2, five blocks; mines the 2×2 it stands on. Digs down, not across — see below |
@@ -395,6 +396,12 @@ and has not been looked at since.
 - **the pack pips**, twelve-pixel science packs under each node's icon. Whether red and green are
   distinguishable there, and whether the icon above them still reads at thirty-six pixels, is the
   thing to look at — the levers are `PIP` and `NODE` in `ResearchScreen`;
+- **read the list top to bottom.** It is sorted into what it is coloured by — what can be advanced
+  now in yellow-brown, then what cannot in red, then what is done in green at the bottom, which is
+  Factorio's. **Whether the first block really is "what to do next"** is the thing to check: a
+  triggered technology counts as ready, because *craft fifty iron plates* is a thing to go and do,
+  and the research being worked on sits above the rest of its block in blue. If that fourth colour
+  is one too many, `rank` and `colourOf` in `ResearchScreen` are the two methods;
 - **type an item name into the search**, not a technology name — "assembling machine", "belt",
   "steel". The list matches what a technology unlocks, which is how a player actually looks for
   one, and **whether the results feel right is only judgeable by somebody who knows what they

@@ -59,6 +59,12 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * is a button on the right</b>. Clicking a node used to start it, which was the same gesture as
  * "show me what this needs" and could only ever be one of the two.
  *
+ * <p><b>The list is sorted into what it is coloured by</b> - what can be advanced now in
+ * yellow-brown, then what cannot in red, then what is done in green at the bottom. That is
+ * Factorio's, and the sort is what makes the colours worth having: the top of the list is the
+ * answer to "what next", and everything below the first block is there to be read rather than
+ * acted on.
+ *
  * <h2>What a node says without being hovered</h2>
  *
  * <p>Colour is state, and the states are the questions a player actually has: done, being
@@ -124,6 +130,17 @@ public class ResearchScreen extends Screen {
     /** Laid over a researched ancestor, which is context rather than work anybody has left. */
     private static final int COLOR_DIMMED = 0x66141414;
     private static final int COLOR_SELECTED_ROW = 0xFF3A4A5A;
+
+    /**
+     * The list's three colours, which are its three groups - see {@link #rank}.
+     *
+     * <p>Factorio's, and the reason they work is that they are not decoration: the list is sorted
+     * into them, so the colour tells you which block of the list you are looking at and the block
+     * tells you what to do about it.
+     */
+    private static final int COLOR_LIST_READY = 0xFFD8A33F;
+    private static final int COLOR_LIST_LOCKED = 0xFFC05B5B;
+    private static final int COLOR_LIST_DONE = 0xFF6FDF8F;
 
     private int left;
     private int top;
@@ -543,14 +560,50 @@ public class ResearchScreen extends Screen {
         graphics.item(new ItemStack(iconOf(holder.value())), 0, 0);
         graphics.pose().popMatrix();
 
-        int colour = ClientResearch.isCompleted(holder.key()) ? COLOR_BORDER_DONE
-                : holder.key().equals(ClientResearch.current()) ? COLOR_BORDER_CURRENT
-                : ClientResearch.isAvailable(minecraft.level.registryAccess(), holder.key())
-                        ? COLOR_TEXT
-                : COLOR_MUTED;
         String name = holder.value().title(holder.key()).getString();
         graphics.text(font, font.plainSubstrByWidth(name, LIST_WIDTH - 18),
-                left + 14, y + 3, colour, false);
+                left + 14, y + 3, colourOf(holder), false);
+    }
+
+    /**
+     * Which block of the list a technology belongs in: what can be advanced now, then what cannot,
+     * then what is done.
+     *
+     * <p>Factorio's order, and it is the order because it is a list of what to do next rather than
+     * an index of everything there is. A researched technology is still listed - you go back to
+     * them to read what they gave you - but it is listed last, because it is not work.
+     *
+     * <p>A triggered technology counts as ready: <em>craft fifty iron plates</em> is a thing to go
+     * and do, even though no lab does it, and burying it with what cannot be reached at all would
+     * hide the whole of the early game.
+     *
+     * <p>The one being researched sorts above the rest of its block and keeps its own colour. That
+     * is a fourth thing on a list of three, and it earns it: "which one am I on" is the question
+     * the screen is opened for most often.
+     */
+    private int rank(Holder.Reference<Technology> holder) {
+        if (ClientResearch.isCompleted(holder.key())) {
+            return 3;
+        }
+        if (holder.key().equals(ClientResearch.current())) {
+            return 0;
+        }
+        return ready(holder) ? 1 : 2;
+    }
+
+    /** Whether anything can be done about this technology today. */
+    private boolean ready(Holder.Reference<Technology> holder) {
+        return holder.value().isResearchable()
+                && ClientResearch.isAvailable(minecraft.level.registryAccess(), holder.key());
+    }
+
+    private int colourOf(Holder.Reference<Technology> holder) {
+        return switch (rank(holder)) {
+            case 0 -> COLOR_BORDER_CURRENT;
+            case 1 -> COLOR_LIST_READY;
+            case 2 -> COLOR_LIST_LOCKED;
+            default -> COLOR_LIST_DONE;
+        };
     }
 
     /**
@@ -572,6 +625,9 @@ public class ResearchScreen extends Screen {
                 found.add(holder);
             }
         }
+        // Stable, so the tree's own order survives inside each block - which is what keeps two
+        // technologies that are equally ready in the order Factorio names them.
+        found.sort(java.util.Comparator.comparingInt(this::rank));
         listed = List.copyOf(found);
         listScroll = Mth.clamp(listScroll, 0, listOverflow());
     }
