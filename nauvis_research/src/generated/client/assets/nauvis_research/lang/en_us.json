@@ -50,6 +50,7 @@
   "screen.nauvis_research.research.current": "Researching %s - %s of %s",
   "screen.nauvis_research.research.done": "Researched",
   "screen.nauvis_research.research.needs": "Needs %s",
+  "screen.nauvis_research.research.no_effect": "No effect yet - this pack has none of what it unlocks",
   "screen.nauvis_research.research.none": "Nothing left to research.",
   "screen.nauvis_research.research.nothing_selected": "Technology - nothing being researched",
   "screen.nauvis_research.research.trigger": "Craft %s x %s  -  %s done",

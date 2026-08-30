@@ -49,18 +49,19 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * the pack on one classpath, runs every test in every one of them, and exits non-zero if any
  * failed.
  *
- * <h2>The world these run in is not the world the pack ships</h2>
+ * <h2>The world these run in is the world the pack ships, and that took arranging</h2>
  *
  * <p>{@code GameTestServer} selects <b>every available datapack</b> - vanilla's own line is
  * {@code new ArrayList<>(packRepository.getAvailableIds())} - so the {@code crafting_table} packs
- * each mod ships <em>switched off</em> are on here. They carry a shapeless copy of every recipe
- * under the same recipe id, so sixteen of the pack's nineteen timed recipes are ordinary crafting
- * recipes while these tests run; only the assembler, the steam engine and the lab survive as
- * timed ones, being the three too big for a grid to have a bench copy at all.
+ * every mod ships <em>switched off</em> used to be on here, and each carries a shapeless copy of a
+ * recipe under the same id as the timed one. Sixteen of the pack's nineteen timed recipes were
+ * ordinary bench recipes while the suite ran. Nothing failed; what was lost was the craft times.
  *
- * <p>Nothing here depends on that, and a real world is unaffected. But <b>do not write a test
- * that assumes a recipe is a {@code facrafting:facraft} one</b> without checking, and do not read
- * a green suite as evidence that the timed-crafting path works. See {@code docs/PITFALLS.md}.
+ * <p>Being switched off is no defence, because vanilla never asks. So the packs are not
+ * <em>offered</em> at all under {@code -Djaguarm.benchRecipePacks=false}, which the
+ * {@code gameTestServer} run sets - see any mod's {@code ModPacks} - and
+ * {@code timed_recipes_are_timed} asks the running recipe manager what type each of them actually
+ * is, so the day one of them slips back nothing has to be remembered.
  *
  * <p>The 26.2 shape is registry-driven and unlike every tutorial. See {@code docs/API-26.2.md}
  * — in particular, {@code FunctionGameTestInstance} is unavailable to mods, because the
@@ -93,6 +94,7 @@ public final class NauvisGameTests {
         TEST_TYPES.register("steam_travels_down_a_pipe", () -> SteamTravelsDownAPipeTest.CODEC);
         TEST_TYPES.register("vanilla_recipes_are_replaced", () -> VanillaRecipesAreReplacedTest.CODEC);
         TEST_TYPES.register("one_tool_does_everything", () -> OneToolDoesEverythingTest.CODEC);
+        TEST_TYPES.register("timed_recipes_are_timed", () -> TimedRecipesAreTimedTest.CODEC);
     }
 
     /** Called from the mod constructor so the test type registers with everything else. */
@@ -145,6 +147,11 @@ public final class NauvisGameTests {
         event.registerTest(
                 Identifier.fromNamespaceAndPath(Nauvis.MODID, "one_tool_does_everything"),
                 new OneToolDoesEverythingTest(
+                        new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE)));
+
+        event.registerTest(
+                Identifier.fromNamespaceAndPath(Nauvis.MODID, "timed_recipes_are_timed"),
+                new TimedRecipesAreTimedTest(
                         new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE)));
     }
 
@@ -556,6 +563,81 @@ public final class NauvisGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("one tool does everything");
+        }
+    }
+
+    /**
+     * Every timed recipe is still a timed recipe when a server has finished loading.
+     *
+     * <p><b>This is the test for a hole that swallowed sixteen of nineteen recipes.</b> Each mod
+     * ships a {@code crafting_table} datapack of shapeless bench copies, switched off, and each
+     * copy has the <em>same id</em> as the timed recipe it stands in for - so whichever pack is
+     * applied last wins and nothing anywhere says which that was. {@code GameTestServer} enables
+     * every pack it can see regardless of the switch, so for a long while the suite was quietly
+     * exercising bench recipes.
+     *
+     * <p>Asked of the running recipe manager rather than of the files, for the same reason
+     * {@code vanilla_recipes_are_replaced} is: what is on disk and what a server ends up holding
+     * are different questions, and only the second one is what a player meets.
+     *
+     * <p>The type is compared by <em>name</em>. The pack mod depends on no other mod at compile
+     * time - non-negotiable #3 - so it may not name {@code FacraftRecipe}, and an identifier is a
+     * fact two mods can share without either one importing the other.
+     *
+     * <p>One from each mod that ships them, chosen small enough to have a bench copy: a recipe too
+     * big for a 3x3 grid has no copy to be shadowed by and would pass this test in any world.
+     */
+    public static class TimedRecipesAreTimedTest extends GameTestInstance {
+
+        public static final MapCodec<TimedRecipesAreTimedTest> CODEC =
+                RecordCodecBuilder.<TimedRecipesAreTimedTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(TimedRecipesAreTimedTest::info))
+                                .apply(i, TimedRecipesAreTimedTest::new));
+
+        /** Facrafting's timed recipe type, by name. See the class comment for why by name. */
+        private static final Identifier FACRAFT =
+                Identifier.fromNamespaceAndPath("facrafting", "facraft");
+
+        public TimedRecipesAreTimedTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            for (String id : List.of(
+                    "nauvis_logistics:transport_belt",
+                    "nauvis_logistics:burner_inserter",
+                    "nauvis_power:small_electric_pole",
+                    "nauvis_fluids:pipe",
+                    "nauvis_research:science_pack_1",
+                    "neoprogressivematerials:iron_gear_wheel",
+                    "neoprogressiveautomation:burner_drill")) {
+
+                Identifier type = typeOf(helper, id);
+                helper.assertTrue(type != null, id + " has no recipe at all");
+                helper.assertTrue(FACRAFT.equals(type),
+                        id + " is a " + type + " recipe rather than a timed one - a crafting_table "
+                                + "pack is being applied over it. See ModPacks and PITFALLS.md");
+            }
+            helper.succeed();
+        }
+
+        /** The recipe type registered for {@code id}, or null if nothing is registered under it. */
+        private static @Nullable Identifier typeOf(GameTestHelper helper, String id) {
+            return helper.getLevel().getServer().getRecipeManager()
+                    .byKey(ResourceKey.create(Registries.RECIPE, Identifier.parse(id)))
+                    .map(holder -> BuiltInRegistries.RECIPE_TYPE.getKey(holder.value().getType()))
+                    .orElse(null);
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("the timed recipes are timed recipes");
         }
     }
 }

@@ -87,7 +87,8 @@ public final class ModBlockEntities {
                     "splitter",
                     () -> new BlockEntityType<>(
                             SplitterBlockEntity::new,
-                            ModBlocks.SPLITTER.get()));
+                            ModBlocks.SPLITTER.get(),
+                            ModBlocks.FAST_SPLITTER.get()));
 
     private ModBlockEntities() {}
 }

@@ -328,10 +328,15 @@ public class NauvisLogisticsModels extends ModelProvider {
         belt(blockModels, ModBlocks.TRANSPORT_BELT.get(), "transport_belt");
         belt(blockModels, ModBlocks.FAST_TRANSPORT_BELT.get(), "fast_transport_belt");
 
-        // The splitter: 2x1 multiblock machine with iron housing and golden top
+        // The splitters: 2x1 multiblock machines with an iron housing, and a top that says which
+        // belt they keep pace with - gold for the yellow tier, redstone for the red one. The same
+        // shape and the same call twice, because a splitter tier is a speed and a colour.
         machine(blockModels, ModBlocks.SPLITTER.get(), SplitterShape.SHAPE,
                 TextureMapping.getBlockTexture(Blocks.IRON_BLOCK).sprite(),
                 TextureMapping.getBlockTexture(Blocks.GOLD_BLOCK).sprite());
+        machine(blockModels, ModBlocks.FAST_SPLITTER.get(), SplitterShape.SHAPE,
+                TextureMapping.getBlockTexture(Blocks.IRON_BLOCK).sprite(),
+                TextureMapping.getBlockTexture(Blocks.REDSTONE_BLOCK).sprite());
 
         // The chests are drawn by a block entity renderer, not by a block model, so what
         // `createChest` writes is a blockstate pointing at a model that holds nothing but a

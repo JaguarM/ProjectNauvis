@@ -158,7 +158,14 @@ public class SplitterBlockEntity extends BlockEntity {
     }
 
     public void tick(Level level) {
-        Direction facing = getBlockState().getValue(SplitterBlock.FACING);
+        BlockState state = getBlockState();
+        Direction facing = state.getValue(SplitterBlock.FACING);
+
+        // Asked of the block every tick rather than kept here, because the tier is the block: a
+        // fast splitter is a FastSplitterBlock against this same block entity type, and a speed
+        // remembered in the block entity - or read through a class name - would be the yellow
+        // one's. See SplitterBlock.
+        int speed = ((SplitterBlock) state.getBlock()).speed();
 
         // 1. Hand off items reaching the front (position == 0). Each one goes to the track it was
         //    given on arrival, or to the other one if that is jammed or is not there at all.
@@ -177,7 +184,7 @@ public class SplitterBlockEntity extends BlockEntity {
         boolean moved = false;
         for (int track = 0; track < 2; track++) {
             for (int lane = 0; lane < Belts.LANES; lane++) {
-                moved |= lanes[track][lane].advance(SplitterBlock.SPEED);
+                moved |= lanes[track][lane].advance(speed);
             }
         }
 

@@ -44,6 +44,11 @@ Belts
 - **A belt in hand re-points the belt it replaces**, which is Factorio's fast-replace and is worth
   knowing before you walk a line with one: upgrading a corner points it wherever you were looking,
   so a bus is upgraded by walking *along* it. Turning and replacing are one gesture on purpose.
+- **Fast-replace does not extend to a splitter.** Clicking a splitter with a splitter in hand does
+  nothing, whichever tier is in the hand. A belt is one block and one block state, so swapping it is
+  a swap; a splitter is two blocks, a multiblock anchor and a deck with items on both tracks of it,
+  and re-anchoring that in place is a different problem from re-pointing a belt. Break it and place
+  the other one — the deck drops what it was carrying, as breaking any belt does.
 - **A replacement is one belt per click.** Factorio has an upgrade planner that does a whole line at
   once; here you walk the line with a belt in hand, which is the same gesture laying one takes.
 - **Items cross a ramp faster than they cross flat ground**, by the diagonal of a square: about 41%.
@@ -100,11 +105,12 @@ Research
 
 - **The tree is 25 technologies, not Factorio's whole one** — the early game plus the branches the
   pack can reach. Adding one is a JSON entry, and the build reports missing prerequisites.
-- **A technology that unlocks nothing is still offered.** 128 of the 216 unlock no recipe, because
-  their only effects are mechanics this pack lacks. They were kept because a technology's cost and
-  place in the graph are identity and go into world saves; a tree that grew later would move under a
-  player who had researched past it. The mitigation is presentation and is not built: the research
-  row could say *no effect yet*, which is true and cheap.
+- **A technology that unlocks nothing is still offered**, and now says so. 128 of the 216 unlock no
+  recipe, because their only effects are mechanics this pack lacks; four of those are in the tree
+  today. They were kept because a technology's cost and place in the graph are identity and go into
+  world saves; a tree that grew later would move under a player who had researched past it. The
+  mitigation is presentation and is built: a node whose unlock list comes out empty says **no effect
+  yet** in its tooltip where the others list what they hand over.
 - **A technology's modifiers do nothing** — damage, laboratory speed, mining speed are transcribed
   and dropped. The generator counts them by type so it is visible how much is waiting. Research
   speed is the one that would be felt first: `research-speed-1` and `-2` change nothing.
@@ -127,9 +133,10 @@ Research
 - **Research progress is sent whole to every client on every unit** — a list of finished keys, one
   optional key and an int, at best once every five seconds of one lab's work. It buys the property
   that a client is either exactly up to date or exactly one message behind.
-- **Research cannot be un-researched in game**, and there is no command for any of it.
-  `ResearchState.forget` exists and is used only by the gametests. A `/research` command is an
-  afternoon and would make the tree testable by hand.
+- **Research is un-researched only by a gamemaster.** `/research` grants, forgets, starts, stops and
+  resets, and both grant and forget cascade — a grant brings the prerequisites, a forget takes the
+  dependants. There is nothing a player can do about a finished technology, which is Factorio's
+  rule; the command exists so the tree can be reached by hand during a playtest.
 
 Vanilla, and what is left alone
 -------------------------------

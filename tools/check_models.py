@@ -470,7 +470,7 @@ def check_fluid_models(assets):
 
 
 def check_belt_speeds():
-    """Every belt block's speed constant, against the tiles per second Factorio publishes.
+    """Every belt and splitter block's speed constant, against the tiles per second Factorio publishes.
 
     A belt's speed is identity in the sense non-negotiable #1 means: it is what a player's mental
     picture of a factory is built on - how many machines one belt feeds, how far apart to space a
@@ -481,6 +481,10 @@ def check_belt_speeds():
     The code holds it as whole units a tick - see Belts.java for why sixty-four - and this does the
     conversion, so the number in the source and the number on the wiki can be compared without
     either of them being the other's translation.
+
+    Splitters are checked with the belts and for the same reason: a splitter runs at its tier's
+    belt speed, so a red splitter with a yellow splitter's constant would throttle every red line
+    that split - quietly, and everywhere. `data/mapping.json` gives each one a speed of its own.
     """
     mapping = json.loads((ROOT / 'data' / 'mapping.json').read_text(encoding='utf-8'))['items']
 
@@ -488,7 +492,9 @@ def check_belt_speeds():
         source = ROOT / mod / 'src' / 'main' / 'java'
         if not source.is_dir():
             continue
-        for path in sorted(source.rglob('*BeltBlock.java')):
+        tiered = sorted(set(source.rglob('*BeltBlock.java'))
+                        | set(source.rglob('*SplitterBlock.java')))
+        for path in tiered:
             text = path.read_text(encoding='utf-8')
             speed = re.search(r'int SPEED\s*=\s*(\d+)\s*;', text)
             factorio_id = re.search(r'FACTORIO_ID\s*=\s*"([a-z0-9-]+)"', text)

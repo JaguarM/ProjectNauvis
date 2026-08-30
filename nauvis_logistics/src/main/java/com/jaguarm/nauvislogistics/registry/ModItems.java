@@ -45,6 +45,9 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> SPLITTER =
             ITEMS.registerSimpleBlockItem(ModBlocks.SPLITTER);
 
+    public static final DeferredItem<BlockItem> FAST_SPLITTER =
+            ITEMS.registerSimpleBlockItem(ModBlocks.FAST_SPLITTER);
+
     /** Its own tab. A subsystem mod has to be usable without the rest of the pack installed. */
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
             "nauvis_logistics",
@@ -55,6 +58,7 @@ public final class ModItems {
                         output.accept(TRANSPORT_BELT.get());
                         output.accept(FAST_TRANSPORT_BELT.get());
                         output.accept(SPLITTER.get());
+                        output.accept(FAST_SPLITTER.get());
                         output.accept(BURNER_INSERTER.get());
                         output.accept(INSERTER.get());
                         output.accept(LONG_HANDED_INSERTER.get());

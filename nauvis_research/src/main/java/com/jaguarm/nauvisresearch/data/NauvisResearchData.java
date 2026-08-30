@@ -112,6 +112,8 @@ public final class NauvisResearchData {
                     "Needs a science pack this pack does not have yet");
             add("screen.nauvis_research.research.done", "Researched");
             add("screen.nauvis_research.research.unlocks", "Unlocks:");
+            add("screen.nauvis_research.research.no_effect",
+                    "No effect yet - this pack has none of what it unlocks");
 
             add("message.nauvis_research.research_complete", "Research complete: %s");
 

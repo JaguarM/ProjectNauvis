@@ -16,12 +16,13 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and seventeen gametests pass, `./gradlew build` is clean, and the client boots into a
-world. **Milestone 2 is closed**: the fast belt is in, a belt in hand replaces the one it is clicked
-on, and **belt lines climb**. Milestone 3 has its research half in, and five of its nine items — the steel line,
-green science and the medium pole, which between them give `steel-processing`, `science-pack-2` and
-`electric-energy-distribution-1` teeth. The big pole came with the medium one and the substation
-came with the big one, because four pole tiers is one piece of work rather than four.
+A hundred and twenty gametests pass, `./gradlew build` is clean, and the client boots into a
+world. **Milestone 2 is closed**: the red tier is in whole — the fast belt and the fast splitter —
+a belt in hand replaces the one it is clicked on, and **belt lines climb**. Milestone 3 has its
+research half in, and five of its nine items — the steel line, green science and the medium pole,
+which between them give `steel-processing`, `science-pack-2` and `electric-energy-distribution-1`
+teeth. The big pole came with the medium one and the substation came with the big one, because four
+pole tiers is one piece of work rather than four.
 
 **Belt lines change level the way rails do.** A belt hands to the first belt of its own tier
 straight ahead, one above, or one below - vanilla's `RailState` probe, with level winning over
@@ -65,6 +66,17 @@ run is keyed on the *block*, so two tiers are two runs with nothing written to m
 speed in `data/mapping.json`. One block entity type still covers every tier there will ever be. The
 express belt is the same file again, behind `logistics-3`, which wants blue science.
 
+**The fast splitter cost more than that, and the difference is the whole lesson.** The belt paid for
+its tiers in advance and the splitter had not: `SPEED` was a constant on the one concrete splitter
+class, and `SplitterBlockEntity.tick` and `stepOn` both read it *through the class name*, so a
+second splitter would have crossed its deck at the yellow one's speed and passed every splitter test
+there was — all of which count items rather than time them. `SplitterBlock` is abstract now with
+`speed()` and `factorioId()` on it, exactly as `BeltBlock` has them, the two tiers are
+`BasicSplitterBlock` and `FastSplitterBlock` against one block entity type, and
+`fast_splitter_moves_at_its_declared_speed` is the test that would have caught it. `check_models.py`
+now holds a splitter's speed to `data/mapping.json` the way it holds a belt's, so the next tier
+cannot be wrong quietly either.
+
 **All four poles are climbable multi-blocks on the same `MachineShape` a boiler is.** The pole used
 to have a mechanism of its own — a `PolePart` enum with `Multiblock`'s four rules written out again
 — and the tiers ended it: five blocks tall needs a five-value enum and two-by-two needs two more
@@ -79,6 +91,7 @@ is an int like every other machine's.
 | `nauvis_logistics:fast_transport_belt` | the same at 3.75 tiles a second, in red. Five gears and a belt, behind `logistics-2` |
 | a belt in hand | **puts that belt there, pointing the way you face** — another tier swaps the block, keeps the load and pays for it. Factorio's fast-replace, either way up |
 | `nauvis_logistics:splitter` | 2×1 and directional; 50/50 per lane, overflows to the open side, sleeps when empty |
+| `nauvis_logistics:fast_splitter` | the same at the red belt's speed, so a red line is not throttled where it splits |
 | `nauvis_logistics:burner_inserter` | takes behind, gives in front, 30-tick swing, fuel slot. Fuels itself off the belt it unloads |
 | `nauvis_logistics:inserter` | the same on 2 FE/t and a 24-tick swing. No slot, so no screen |
 | `nauvis_logistics:long_handed_inserter` | the same arm reaching two blocks. 3 FE/t, 17-tick swing, the only block that does not sleep perfectly |
@@ -113,29 +126,7 @@ goes only when the pack can already do that job, which the build enforces.
 The jobs
 --------
 
-### 1. The fast splitter, which is the belt tier's other half
-
-`logistics-2` unlocks three things and the pack models two of them — the fast belt, which is in, and
-the fast splitter, which is not. Its recipe is ten circuits, ten gears and a splitter; the
-technology already ships naming `nauvis_logistics:fast_splitter`, so the recipe file and the block
-are the whole of it.
-
-**It is not the one-file job the belt was, and the reason is worth knowing before starting.** The
-belt paid for its tiers in advance: `speed()` is abstract on `BeltBlock` and every tier is a
-subclass with a constant, because `createBlockStateDefinition` runs before any field of a subclass
-exists. `SplitterBlock` did not — `SPEED` is a `public static final` on the concrete class, and
-`SplitterBlockEntity.tick` and `SplitterBlock.stepOn` both read it *statically*. So a second
-splitter that differed only in its constant would run at the first one's speed and pass every test
-in the file. The work is: make `SplitterBlock` abstract with `speed()` and `factorioId()` on it,
-exactly as `BeltBlock` has them; register `fast_splitter` against the same block entity type, which
-already holds no speed of its own; and one gametest that a fast splitter moves items at its own
-speed, which is the test that would have caught the static read.
-
-Fast-replace does **not** extend to it, and that is a decision rather than an omission: a splitter
-is two blocks and a multiblock anchor, so swapping one in place is a different problem from swapping
-a belt, and clicking a splitter with a splitter in hand does nothing today.
-
-### 2. The rest of the milestone 3 items
+### 1. The rest of the milestone 3 items
 
 `steel-plate`, `steel-chest`, `science-pack-2` and `medium-electric-pole` are in. **Adding an item
 gives its technology teeth with no change to the research code** — that held exactly as written for
@@ -182,7 +173,7 @@ the one to leave: it is oil-free but it forces a decision that comes before the 
 whether this pack has a smelting machine of its own at all — `stone-furnace` stands in as
 `minecraft:furnace` today.
 
-### 3. More removals follow the items
+### 2. More removals follow the items
 
 The conflict half of `data/removals.json` is already waiting: the moment a mod ships a recipe for
 `minecraft:redstone_lamp`, `cobblestone_wall`, `rail` or `iron_door`, the build fails until
@@ -193,8 +184,6 @@ steel, and the wall belongs to `nauvis_military`, which does not exist.
 Loose ends — small enough to finish in an afternoon
 ---------------------------------------------------
 
-- **"No effect yet" on a research row.** 128 of the 216 technologies unlock nothing here. The row
-  can say so; it is true, cheap, and the only mitigation for the one real trap in the tree.
 - **Tree polish, all optional.** No zoom (at 6×11 it fits a window), no search, no highlight of the
   path to a hovered node, and columns are top-aligned rather than centred. Centring is a drawing
   decision and belongs in `ResearchScreen`, not in `TechnologyLayout`.
@@ -202,10 +191,6 @@ Loose ends — small enough to finish in an afternoon
   it is one file — but it is duplicated, so edit the original and run `check_duplicated.py --sync`.
 - **The long-handed inserter's model** is a smoker-coloured cube — the third furnace body on a belt
   line. Telling the three inserters apart at a glance is the thing to fix.
-- **The gametest datapack hole.** `GameTestServer` force-enables the `crafting_table` packs, so
-  sixteen of nineteen timed recipes are shapeless bench recipes while tests run (see `PITFALLS.md`).
-  A system property the run config sets and `ModPacks` reads would close it; the alternative changes
-  a released mod's permanent ids and should not be taken.
 
 The playtest, which is still owed
 ---------------------------------
@@ -289,6 +274,10 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
 - run a yellow line into a red one and watch the join. The two are two runs and items cross at the
   seam; whether the tread's change of pace reads as intended or as a stutter is a thing to look at;
 - stand on a red belt. It carries at twice the speed, and half a block is still half a block;
+- put a fast splitter in a red line and a yellow splitter in the same line beside it. The red one
+  keeps the line's throughput and the yellow one halves it, which is the reason it exists; **whether
+  the two read as a pair with the belts they belong to is the question** — the housing is the same
+  iron and only the top changes, gold for yellow and redstone for red, and nothing here can see it;
 - and tell red from yellow across a base, which is the thing the palette was chosen for at 8x on a
   dark background rather than in a world at midday.
 
@@ -305,8 +294,13 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
 
 **The research screen and the tree**, neither of which anyone has looked at.
 
-- open a lab, press **Tech**, and see whether the row — a name, a cost, the items it hands over —
-  reads as a technology list in 320 pixels;
+- open a lab, press **Tech** — it opens the tree, there is no list — and hover a node. Whether the
+  tooltip reads as a row of its own, a name over a cost over the items it hands over, is the
+  question; it is the only place any of that is written;
+- **hover `research_speed_1`, which unlocks nothing.** It should say *no effect yet* where the
+  others list what they hand over — that is the mitigation for the one real trap in the tree, and
+  whether a yellow line in a tooltip is enough warning is a judgement no test makes. Four nodes in
+  the tree are in that state: it, `research_speed_2`, `steel_axe` and `physical_projectile_damage_1`;
 - Automation should be the obvious first click, saying `10 x 10s` with a red science pack;
 - feed a lab, power it, pick Automation, and watch the lab's bar and the research row move together;
 - **leave the crafting panel open while the last unit finishes.** The assembler and the long-handed
@@ -357,6 +351,11 @@ The seven checks — `checkRecipes`, `checkTechnologies`, `checkRemovals`, `chec
 `:nauvis:check`. They read files and start nothing, so they cost a second between them.
 `checkTechnologies` is the strict one: it fails on a file the generator **no longer produces**, not
 only on one that differs, because a stale technology would still load and answer to nothing.
+
+**A gametest run now sees the recipes the pack ships.** `GameTestServer` force-enables every
+datapack it can see, bench-recipe packs included, so each `gameTestServer` run passes
+`-Djaguarm.benchRecipePacks=false` and every `ModPacks` declines to offer its pack under it — the
+one state vanilla cannot override is absent. `nauvis:timed_recipes_are_timed` holds it there.
 
 **Adding a subsystem mod** is routine: a subproject in `settings.gradle`, a `build.gradle` with the
 ids changed, a `src/main/templates/META-INF/neoforge.mods.toml`, and two lines in

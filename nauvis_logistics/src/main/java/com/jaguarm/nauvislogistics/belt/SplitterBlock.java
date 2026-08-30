@@ -2,7 +2,6 @@ package com.jaguarm.nauvislogistics.belt;
 
 import com.jaguarm.nauvislogistics.multiblock.MachineShape;
 import com.jaguarm.nauvislogistics.multiblock.Multiblock;
-import com.mojang.serialization.MapCodec;
 
 import org.jspecify.annotations.Nullable;
 
@@ -35,21 +34,23 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * The 2x1 splitter block: splits and balances items across two belt lines.
  *
  * <p>Directional multiblock (2 wide, 1 deep). The left cell (part 0) carries the block entity.
+ *
+ * <h2>Abstract, for the same reason {@link BeltBlock} is</h2>
+ *
+ * <p>A splitter has a tier and the tier is a speed, so speed is {@link #speed()} on the block and
+ * never a constant anybody reads through a class name. It was one for a while, and that is a trap
+ * worth naming: {@code SplitterBlockEntity} read {@code SplitterBlock.SPEED} statically, so a fast
+ * splitter would have carried items at the yellow one's speed and passed every test in the file
+ * except the one that measures it. A method on a subclass is also safe from the
+ * {@code createBlockStateDefinition} trap a field would fall into - see docs/PITFALLS.md.
  */
-public class SplitterBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
-
-    public static final MapCodec<SplitterBlock> CODEC = simpleCodec(SplitterBlock::new);
+public abstract class SplitterBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-    /** 6 units a tick = 1.875 tiles a second, matching the transport belt. */
-    public static final int SPEED = 6;
-
-    public static final String FACTORIO_ID = "splitter";
-
     private static final VoxelShape COLLISION_BOX = Block.box(0, 0, 0, 16, Belts.HEIGHT * 16, 16);
 
-    public SplitterBlock(Properties properties) {
+    protected SplitterBlock(Properties properties) {
         super(properties);
         registerDefaultState(getStateDefinition().any()
                 .setValue(FACING, Direction.NORTH)
@@ -66,18 +67,11 @@ public class SplitterBlock extends BaseEntityBlock implements Multiblock.Machine
         return state.getValue(FACING);
     }
 
-    public int speed() {
-        return SPEED;
-    }
+    /** How far an item on this splitter's deck moves in one tick, in {@link Belts#UNITS_PER_BLOCK}ths. */
+    public abstract int speed();
 
-    public String factorioId() {
-        return FACTORIO_ID;
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    /** The Factorio entity this is, so {@code check_models.py} can hold the speed to the wiki. */
+    public abstract String factorioId();
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
@@ -157,7 +151,7 @@ public class SplitterBlock extends BaseEntityBlock implements Multiblock.Machine
             return;
         }
         Direction travel = state.getValue(FACING);
-        double step = SPEED / (double) Belts.UNITS_PER_BLOCK;
+        double step = speed() / (double) Belts.UNITS_PER_BLOCK;
 
         boolean standing = entity.onGround();
         entity.move(MoverType.SELF, new Vec3(travel.getStepX() * step, 0.0, travel.getStepZ() * step));

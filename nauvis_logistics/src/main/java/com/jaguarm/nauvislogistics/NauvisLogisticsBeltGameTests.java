@@ -7,6 +7,7 @@ import com.jaguarm.nauvislogistics.belt.BeltLane;
 import com.jaguarm.nauvislogistics.belt.BeltLines;
 import com.jaguarm.nauvislogistics.belt.BeltRun;
 import com.jaguarm.nauvislogistics.belt.BeltShape;
+import com.jaguarm.nauvislogistics.belt.FastSplitterBlock;
 import com.jaguarm.nauvislogistics.belt.FastTransportBeltBlock;
 import com.jaguarm.nauvislogistics.belt.Belts;
 import com.jaguarm.nauvislogistics.belt.BeltLines;
@@ -147,6 +148,8 @@ public final class NauvisLogisticsBeltGameTests {
                 () -> SplitterSleepsWhenEmptyTest.CODEC);
         TEST_TYPES.register("splitter_is_two_by_one_and_breaks_together",
                 () -> SplitterBreaksTogetherTest.CODEC);
+        TEST_TYPES.register("fast_splitter_moves_at_its_declared_speed",
+                () -> FastSplitterSpeedTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -209,6 +212,8 @@ public final class NauvisLogisticsBeltGameTests {
                 SplitterSleepsWhenEmptyTest::new, 200);
         register(event, environment, "splitter_is_two_by_one_and_breaks_together",
                 SplitterBreaksTogetherTest::new, 60);
+        register(event, environment, "fast_splitter_moves_at_its_declared_speed",
+                FastSplitterSpeedTest::new, 60);
     }
 
     private interface TestFactory {
@@ -2009,12 +2014,18 @@ public final class NauvisLogisticsBeltGameTests {
     }
 
     private static void placeSplitter(GameTestHelper helper, BlockPos pos, Direction facing) {
+        placeSplitter(helper, pos, facing, ModBlocks.SPLITTER.get());
+    }
+
+    /** A splitter of a named tier, anchored at {@code pos}. */
+    private static void placeSplitter(GameTestHelper helper, BlockPos pos, Direction facing,
+            SplitterBlock tier) {
         BlockPos absolute = helper.absolutePos(pos);
-        BlockState state = ModBlocks.SPLITTER.get().defaultBlockState()
+        BlockState state = tier.defaultBlockState()
                 .setValue(SplitterBlock.FACING, facing)
                 .setValue(SplitterShape.SHAPE.part(), SplitterShape.SHAPE.anchor());
         helper.setBlock(pos, state);
-        Multiblock.setPlacedBy(ModBlocks.SPLITTER.get(), helper.getLevel(), absolute, state);
+        Multiblock.setPlacedBy(tier, helper.getLevel(), absolute, state);
     }
 
     /** The block entity of the splitter anchored at {@code pos}, in test coordinates. */
@@ -2318,6 +2329,71 @@ public final class NauvisLogisticsBeltGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a 2x1 splitter breaks together");
+        }
+    }
+
+    /**
+     * The red splitter, at its own speed.
+     *
+     * <p><b>This is the test that would have caught the bug the tier was built out of.</b> Speed
+     * used to be a constant on the one concrete splitter class, read through the class name by
+     * {@code SplitterBlockEntity.tick} - so a second splitter that differed only in its constant
+     * would have crossed its deck at the yellow one's speed and passed every other splitter test
+     * here, all of which count items rather than time them.
+     *
+     * <p>Measured on the deck rather than through the belts either side of it, because the deck is
+     * the only part a splitter moves items along itself: an item is put on at the far edge and its
+     * position is read a fixed number of ticks later. Four ticks, so a fast splitter is still short
+     * of the exit and nothing has been handed anywhere.
+     */
+    public static class FastSplitterSpeedTest extends GameTestInstance {
+
+        public static final MapCodec<FastSplitterSpeedTest> CODEC =
+                RecordCodecBuilder.<FastSplitterSpeedTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(FastSplitterSpeedTest::info))
+                                .apply(i, FastSplitterSpeedTest::new));
+
+        private static final int TICKS = 4;
+
+        public FastSplitterSpeedTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos pos = new BlockPos(2, 1, 1);
+            placeSplitter(helper, pos, Direction.EAST, ModBlocks.FAST_SPLITTER.get());
+
+            helper.runAfterDelay(SETTLED, () -> {
+                splitter(helper, pos).insertAt(SplitterShape.LEFT_TRACK, Belts.LEFT,
+                        Belts.UNITS_PER_BLOCK, ItemResource.of(Items.IRON_INGOT));
+
+                helper.runAfterDelay(1, () -> {
+                    BeltLane lane = splitter(helper, pos).lane(SplitterShape.LEFT_TRACK, Belts.LEFT);
+                    helper.assertValueEqual(lane.size(), 1, "items on the deck");
+                    int start = lane.position(0);
+
+                    helper.runAfterDelay(TICKS, () -> {
+                        BeltLane now = splitter(helper, pos)
+                                .lane(SplitterShape.LEFT_TRACK, Belts.LEFT);
+                        helper.assertValueEqual(now.size(), 1, "items still on the deck");
+                        helper.assertValueEqual(start - now.position(0),
+                                FastSplitterBlock.SPEED * TICKS,
+                                "sixty-fourths of a block crossed in " + TICKS + " ticks");
+                        helper.succeed();
+                    });
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a fast splitter moves items at its own speed");
         }
     }
 }

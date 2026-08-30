@@ -1,8 +1,9 @@
 package com.jaguarm.nauvislogistics.registry;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
+import com.jaguarm.nauvislogistics.belt.BasicSplitterBlock;
+import com.jaguarm.nauvislogistics.belt.FastSplitterBlock;
 import com.jaguarm.nauvislogistics.belt.FastTransportBeltBlock;
-import com.jaguarm.nauvislogistics.belt.SplitterBlock;
 import com.jaguarm.nauvislogistics.belt.TransportBeltBlock;
 import com.jaguarm.nauvislogistics.storage.IronChestBlock;
 import com.jaguarm.nauvislogistics.storage.SteelChestBlock;
@@ -122,11 +123,29 @@ public final class ModBlocks {
     /**
      * The splitter: 2x1 multiblock balancing items across two belt tracks.
      */
-    public static final DeferredBlock<SplitterBlock> SPLITTER = BLOCKS.registerBlock(
+    public static final DeferredBlock<BasicSplitterBlock> SPLITTER = BLOCKS.registerBlock(
             "splitter",
-            SplitterBlock::new,
+            BasicSplitterBlock::new,
             properties -> properties
                     .mapColor(MapColor.COLOR_YELLOW)
+                    .strength(1.0F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
+
+    /**
+     * The red splitter: the same machine at the red belt's speed, and the other half of what
+     * {@code logistics-2} unlocks.
+     *
+     * <p>A red line that split through a yellow splitter would be throttled to half its throughput
+     * at every split, which is why Factorio ships a splitter with each belt tier and why this is
+     * not optional decoration. It costs one class and this entry - see {@code FastSplitterBlock}
+     * for what had to change first.
+     */
+    public static final DeferredBlock<FastSplitterBlock> FAST_SPLITTER = BLOCKS.registerBlock(
+            "fast_splitter",
+            FastSplitterBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.COLOR_RED)
                     .strength(1.0F)
                     .sound(SoundType.METAL)
                     .noOcclusion());

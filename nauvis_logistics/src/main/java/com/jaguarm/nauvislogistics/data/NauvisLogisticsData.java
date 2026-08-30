@@ -78,6 +78,7 @@ public final class NauvisLogisticsData {
             addBlock(ModBlocks.TRANSPORT_BELT, "Transport belt");
             addBlock(ModBlocks.FAST_TRANSPORT_BELT, "Fast transport belt");
             addBlock(ModBlocks.SPLITTER, "Splitter");
+            addBlock(ModBlocks.FAST_SPLITTER, "Fast splitter");
             // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the
             // only place a timed craft happens; a vanilla bench recipe goes nowhere near it and
@@ -125,6 +126,8 @@ public final class NauvisLogisticsData {
             dropSelf(ModBlocks.TRANSPORT_BELT.get());
             dropSelf(ModBlocks.FAST_TRANSPORT_BELT.get());
             add(ModBlocks.SPLITTER.get(), anchorOnly(ModBlocks.SPLITTER.get(), SplitterShape.SHAPE));
+            add(ModBlocks.FAST_SPLITTER.get(),
+                    anchorOnly(ModBlocks.FAST_SPLITTER.get(), SplitterShape.SHAPE));
         }
 
         private LootTable.Builder anchorOnly(Block block, MachineShape shape) {

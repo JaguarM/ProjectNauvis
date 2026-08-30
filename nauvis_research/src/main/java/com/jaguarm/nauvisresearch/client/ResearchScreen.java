@@ -338,7 +338,21 @@ public class ResearchScreen extends Screen {
             BuiltInRegistries.ITEM.getOptional(recipe.identifier())
                     .ifPresent(item -> unlocks.add(new ItemStack(item).getHoverName()));
         }
-        if (!unlocks.isEmpty()) {
+        if (unlocks.isEmpty()) {
+            // The one real trap in the tree, said out loud. A hundred and twenty-eight of the two
+            // hundred and sixteen technologies unlock nothing here - their Factorio effects are
+            // mechanics this pack has not built - and they are kept because a technology's cost
+            // and its place in the graph are identity and go into world saves. Four of them are in
+            // the tree today. Nothing else on the node distinguishes them from a technology worth
+            // a hundred science packs, so a player pays for one and looks for what changed.
+            //
+            // Empty is the whole test, and it is the honest one: `unlocks` is what this pack could
+            // find an item for, so a technology whose recipes exist in Factorio and not here reads
+            // the same as one with no recipe effects at all - which, to the player, it is.
+            lines.add(Component.empty());
+            lines.add(Component.translatable("screen.nauvis_research.research.no_effect")
+                    .withStyle(ChatFormatting.YELLOW));
+        } else {
             lines.add(Component.empty());
             lines.add(Component.translatable("screen.nauvis_research.research.unlocks")
                     .withStyle(ChatFormatting.GRAY));

@@ -180,11 +180,15 @@ Gametests
   item over a one-block-wide thing hangs half off it. Use the `(float, float, float)` overload.
 - **`GameTestServer` force-enables every datapack, including ones shipped switched off.** Vanilla
   selects `getAvailableIds()`, so `alwaysActive = false` means nothing there. Every mod's
-  `crafting_table` pack is on during `runGameTestServer`, and those packs ship a shapeless copy of
-  each recipe *under the same id* — so of nineteen timed recipes, **sixteen are not timed recipes
-  while the tests run**. Nothing fails; what it costs is fidelity. A real world is unaffected. The
-  fix is a system property or separate ids for the bench copies, and the second would change a
-  released mod's permanent ids, so it is written down rather than done.
+  `crafting_table` pack was on during `runGameTestServer`, and those packs ship a shapeless copy of
+  each recipe *under the same id* — so of nineteen timed recipes, **sixteen were not timed recipes
+  while the tests ran**. Nothing failed; what it cost was fidelity, and a real world was never
+  affected. **Fixed by not offering the pack at all**: every `ModPacks` returns early when
+  `-Djaguarm.benchRecipePacks=false`, which each `gameTestServer` run sets and nothing else does.
+  Off is no defence when the thing enabling it never asks whether it was off; the only state vanilla
+  cannot override is *absent*. Separate ids for the bench copies was the other fix and would have
+  changed a released mod's permanent ids. `nauvis:timed_recipes_are_timed` asks the running recipe
+  manager what type each of seven recipes is, so this cannot come back quietly.
 
 Data, recipes and registries
 ----------------------------

@@ -89,6 +89,10 @@ neoForge {
         gameTestServer {
             type = 'gameTestServer'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            // The bench-recipe datapacks off, which is not the default and cannot be:
+            // GameTestServer force-enables every pack it can see, and a bench copy ships
+            // under the same id as the timed recipe it replaces. See ModPacks.
+            systemProperty 'jaguarm.benchRecipePacks', 'false'
         }
 
         // Client and server datagen are separate runs since 1.21.4. Models and language go
