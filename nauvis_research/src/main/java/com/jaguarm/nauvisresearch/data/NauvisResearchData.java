@@ -119,6 +119,15 @@ public final class NauvisResearchData {
             add("screen.nauvis_research.research.part_done", "%s of %s units already done");
             add("screen.nauvis_research.research.search", "Search");
 
+            // The screen is a list, a picture of one technology's neighbourhood, and a panel.
+            // The packs are drawn as items on the node rather than named, so the cost line no
+            // longer carries them - which is why there are two cost strings.
+            add("screen.nauvis_research.research.cost_units", "%s x %ss");
+            add("screen.nauvis_research.research.hide_done", "Hide researched");
+            add("screen.nauvis_research.research.start", "Start research");
+            add("screen.nauvis_research.research.stop", "Stop research");
+            add("screen.nauvis_research.research.also_needs", "+%s more not shown here");
+
             add("message.nauvis_research.research_complete", "Research complete: %s");
 
             // /research. A testing command, so the strings say what happened and how much of it -
@@ -173,6 +182,11 @@ public final class NauvisResearchData {
                     "Everything this world has researched");
             add("advancements.nauvis_research.researched", "Research complete");
             add("key.categories.nauvis_research.nauvis", "Project Nauvis");
+            // Jade. The plugin key is not optional decoration: Jade's settings screen asserts on
+            // a plugin with no name, and it does it from ScreenEvent.Init - so a missing key is a
+            // crash the moment any screen opens, not a blank line in a menu. This mod registers no
+            // readout of its own, only the multiblock redirect, and the key is cheap either way.
+            add("config.jade.plugin_nauvis_research", "Project Nauvis: Research");
         }
     }
 

@@ -239,6 +239,13 @@ Screens and config
   one channel, the channel is part of the layout** — `TechnologyLayout.Edge` carries a lane, and
   `technology_layout_is_sound` fails if two arrows share one where their runs could overlap.
 
+- **A one-pixel line inside a scaled transform rounds away to nothing.** The technology screen
+  drew its arrows as one-unit `fill` calls inside a `pose().scale(zoom, zoom)`, which is correct at
+  1x and silently loses lines below it — the arrows a player reported missing were being drawn, at
+  a width that rounded to zero coverage. **Thickness is a screen-pixel quantity, not a canvas one**:
+  `max(1, ceil(1 / zoom))` in canvas units. Anything one pixel wide inside a scale has this bug, and
+  it appears the day zoom is added rather than the day the drawing is written.
+
 - **The obvious fix for a tangled graph is a better ordering, and it was worth nothing here.**
   Told the tech tree needed the ordering step of a layered layout — barycentre sweeps both
   directions, dummy nodes, keep the pass that crosses least — the tempting move is to write it and
@@ -250,6 +257,12 @@ Screens and config
   twenty-two to one. The ordering machinery is in anyway, for a tree of two hundred; it just was not
   the bug. **Measure the objective before implementing the fix for it**, and prefer removing the
   thing being drawn to arranging it better.
+
+  The end of that road is that **the whole tree was the wrong picture**. Drawing less of it - one
+  technology's ancestors and two levels of what it leads to, with a list and a search box for
+  getting anywhere else - is what Factorio does, and it made the layout problem small enough that
+  the clever parts stopped mattering. The gate rule went with it: a science pack is worth an arrow
+  again once a view holds a dozen nodes instead of the tree.
 
 - **A comment that says "which is Factorio's rule too" is a claim, and this one was false.**
   Research progress was thrown away on switching, with a paragraph explaining that Factorio does the
@@ -263,6 +276,19 @@ Screens and config
   `config.jade.plugin_<modid>.<uid>` key crashes the moment any screen opens.
 - **A Jade provider must not be both halves.** Jade throws at registration if one object implements
   both `IServerDataProvider` and `IComponentProvider`. Outer data class, nested `Client`, shared uid.
+- **On a multiblock, Jade reads the block you point at, and only one of them has anything to say.**
+  A machine here is four, nine or seventeen blocks with a single block entity, so an electric mining
+  drill showed its stored FE on the middle block of nine and nothing on the other eight — the middle
+  being the one block you can least easily look at. Ours were registered against the *block* class
+  and still failed, because they fetched `accessor.getBlockEntity()`, which is the entity at the
+  hovered position. **Jade's own universal providers are worse**: the energy bar and the item
+  contents are registered against `BlockEntity`, so no amount of fixing our providers would have
+  moved them. The answer is not per-provider — it is `IWailaClientRegistration.addRayTraceCallback`,
+  returning a `BlockAccessor` rebuilt at the anchor, which every provider then sees and whose
+  position is what gets sent to the server for `appendServerData`. Verified against the bytecode
+  rather than assumed: `WailaTickHandler` runs the callbacks and *then* calls
+  `ObjectDataCenter.set`, so the redirected accessor is the one the server data is fetched for. See
+  any mod's `compat/jade/MultiblockRedirect`.
 - **A special item model names no model, and the checker said so for a year.**
   A `minecraft:special` item definition - a chest, a bed, a banner, a shield - puts its *renderer*
   under `"model"` as an object and the model carrying the display transforms under `"base"`, so

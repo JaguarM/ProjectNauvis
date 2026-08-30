@@ -1191,24 +1191,26 @@ public final class NauvisResearchGameTests {
      * <em>true or false</em> rather than <em>nice or ugly</em> are asserted here, and a playtest
      * is left to judge the things only a person can.
      *
-     * <p>Four properties, and each one is a way the picture would be wrong rather than plain:
+     * <p>It checks <b>every technology's own view</b>, not one: the picture is drawn around
+     * whatever is selected, so a layout that only holds for the technology somebody happened to
+     * open is not a layout.
      *
      * <ul>
-     *   <li><b>every node is right of every prerequisite.</b> This is the whole claim a tech tree
-     *       makes. An edge pointing backwards is a diagram that lies about what comes first;</li>
+     *   <li><b>the selection is in its own picture</b>, and everything it needs is there with it,
+     *       to the left of it. That is the whole claim the screen makes;</li>
      *   <li><b>no two nodes share a cell</b>, or one is drawn on top of another and simply cannot
      *       be clicked;</li>
-     *   <li><b>every technology is placed exactly once</b> - a tree that quietly omits a node is
-     *       the failure a player would never report, because they cannot miss what they cannot
-     *       see;</li>
-     *   <li><b>every arrow drawn is a real prerequisite</b>, and <b>every prerequisite is drawn,
-     *       implied by another, or a science pack</b>. The tree deliberately leaves two kinds of
-     *       arrow out - see {@code TechnologyLayout} - and the point of saying so here is that
-     *       nothing else may go missing quietly;</li>
+     *   <li><b>every arrow points right and is a real prerequisite</b>, and every prerequisite
+     *       between two technologies in the picture is drawn or implied by others. An arrow the
+     *       data does not support is the screen making something up; one silently dropped is a
+     *       cost a player cannot see;</li>
+     *   <li><b>{@code outside} counts what is missing.</b> A descendant that needs three other
+     *       technologies must say so, or the picture promises something it cannot give;</li>
      *   <li><b>two arrows share a lane only when their runs cannot touch.</b> A lane is where an
      *       elbow turns, and two that overlap in one are drawn as a single line - which is what
-     *       the third gap of this tree looked like before lanes existed;</li>
-     *   <li><b>the same tree lays out the same way twice.</b> A layout that shuffled between
+     *       this tree looked like before lanes existed;</li>
+     *   <li><b>hiding the researched ancestors hides exactly those</b> and keeps the selection;</li>
+     *   <li><b>the same view lays out the same way twice.</b> A layout that shuffled between
      *       openings would be unusable however good it looked, and nothing about a single frame
      *       would reveal it.</li>
      * </ul>
@@ -1227,69 +1229,144 @@ public final class NauvisResearchGameTests {
         @Override
         public void run(GameTestHelper helper) {
             var access = helper.getLevel().registryAccess();
-            TechnologyLayout.Layout layout = TechnologyLayout.of(access);
-            int expected = ModTechnologies.registry(access).size();
+            List<Holder.Reference<Technology>> all = ModTechnologies.all(access);
+            helper.assertTrue(!all.isEmpty(), "no technologies to lay out");
 
-            helper.assertValueEqual(layout.nodes().size(), expected,
-                    "technologies placed; a tree that omits one is a gap nobody can report");
+            java.util.Set<ResourceKey<Technology>> everything = new java.util.HashSet<>();
+            for (Holder.Reference<Technology> holder : all) {
+                everything.add(holder.key());
+            }
+
+            for (Holder.Reference<Technology> holder : all) {
+                check(helper, all, holder.key());
+
+                // The same view with every ancestor researched and hidden. What is left is the
+                // work outstanding, which is the point of the toggle, so the selection has to
+                // survive it and no ancestor may.
+                TechnologyLayout.Layout thinned =
+                        TechnologyLayout.around(all, holder.key(), everything, true);
+                helper.assertTrue(thinned.at(holder.key()) != null,
+                        "hiding the researched ancestors of " + holder.key().identifier()
+                                + " took the selected technology with them");
+                for (TechnologyLayout.Placed placed : thinned.nodes()) {
+                    helper.assertTrue(placed.kind() != TechnologyLayout.Kind.ANCESTOR,
+                            placed.key().identifier() + " is a researched ancestor that was asked "
+                                    + "to be hidden and is drawn anyway");
+                }
+            }
+            helper.succeed();
+        }
+
+        /** Everything one view has to be true about. */
+        private static void check(GameTestHelper helper, List<Holder.Reference<Technology>> all,
+                ResourceKey<Technology> selected) {
+
+            TechnologyLayout.Layout layout =
+                    TechnologyLayout.around(all, selected, Set.of(), false);
+            java.util.Map<ResourceKey<Technology>, Technology> byKey = new java.util.HashMap<>();
+            for (Holder.Reference<Technology> holder : all) {
+                byKey.put(holder.key(), holder.value());
+            }
+
+            TechnologyLayout.Placed centre = layout.at(selected);
+            helper.assertTrue(centre != null,
+                    selected.identifier() + " is not in its own view");
+            helper.assertTrue(centre.kind() == TechnologyLayout.Kind.SELECTED,
+                    selected.identifier() + " is not the selection of its own view");
 
             java.util.Set<Long> cells = new java.util.HashSet<>();
             for (TechnologyLayout.Placed placed : layout.nodes()) {
                 helper.assertTrue(cells.add((long) placed.column() << 32 | placed.row()),
-                        placed.key().identifier() + " shares a cell with something else, so one of "
-                                + "the two is drawn underneath and cannot be clicked");
+                        placed.key().identifier() + " shares a cell with something else in the "
+                                + "view of " + selected.identifier() + ", so one of the two is "
+                                + "drawn underneath and cannot be clicked");
                 helper.assertTrue(placed.column() >= 0 && placed.row() >= 0,
                         placed.key().identifier() + " is placed off the grid");
             }
 
-            // The claim the whole picture rests on.
+            // Everything the selection needs, however far back, is in front of the player.
+            for (ResourceKey<Technology> ancestor : ancestors(byKey, selected)) {
+                TechnologyLayout.Placed placed = layout.at(ancestor);
+                helper.assertTrue(placed != null,
+                        selected.identifier() + " needs " + ancestor.identifier()
+                                + ", which its view does not draw at all");
+                helper.assertTrue(placed.kind() == TechnologyLayout.Kind.ANCESTOR,
+                        ancestor.identifier() + " leads to " + selected.identifier()
+                                + " and is not drawn as one of its ancestors");
+                helper.assertTrue(placed.column() < centre.column(),
+                        ancestor.identifier() + " is not left of " + selected.identifier()
+                                + " - the picture is lying about what comes first");
+            }
+
+            for (TechnologyLayout.Placed placed : layout.nodes()) {
+                if (placed.kind() == TechnologyLayout.Kind.DESCENDANT) {
+                    helper.assertTrue(placed.column() > centre.column(),
+                            placed.key().identifier() + " comes after " + selected.identifier()
+                                    + " and is not drawn to the right of it");
+                    helper.assertTrue(
+                            placed.column() - centre.column() <= TechnologyLayout.DESCENDANT_DEPTH,
+                            placed.key().identifier() + " is further past " + selected.identifier()
+                                    + " than the view is supposed to reach");
+                }
+
+                // What is not in the picture, said on the node that wants it.
+                int missing = 0;
+                for (ResourceKey<Technology> prerequisite
+                        : placed.technology().prerequisites()) {
+                    if (byKey.containsKey(prerequisite) && layout.at(prerequisite) == null) {
+                        missing++;
+                    }
+                }
+                helper.assertValueEqual(placed.outside(), missing,
+                        "prerequisites of " + placed.key().identifier()
+                                + " outside the view of " + selected.identifier());
+            }
+
             for (TechnologyLayout.Edge edge : layout.edges()) {
                 TechnologyLayout.Placed from = layout.at(edge.from());
                 TechnologyLayout.Placed to = layout.at(edge.to());
                 helper.assertTrue(from != null && to != null,
-                        "an edge points at a technology that was never placed");
+                        "an arrow points at a technology that was never placed");
                 helper.assertTrue(from.column() < to.column(),
-                        edge.to().identifier() + " is not right of its prerequisite "
-                                + edge.from().identifier() + " - the arrow points backwards and "
-                                + "the diagram is lying about what comes first");
+                        edge.to().identifier() + " is not right of " + edge.from().identifier()
+                                + " - the arrow points backwards");
+                helper.assertTrue(to.technology().prerequisites().contains(edge.from()),
+                        edge.to().identifier() + " is drawn as needing " + edge.from().identifier()
+                                + ", which is not a prerequisite of it");
             }
 
-            // Every arrow drawn is a real prerequisite. The reverse of the rule below, and the
-            // one that would matter most: an arrow the data does not support is the screen making
-            // something up about what a technology costs.
-            for (TechnologyLayout.Edge edge : layout.edges()) {
-                helper.assertTrue(
-                        layout.at(edge.to()).technology().prerequisites().contains(edge.from()),
-                        edge.to().identifier() + " is drawn as needing "
-                                + edge.from().identifier() + ", which is not a prerequisite of it");
-            }
-
-            // And every prerequisite is either drawn, implied by another one, or a science pack.
-            // Two of those are deliberate - see `TechnologyLayout` - and the point of checking is
-            // that nothing else may quietly go missing. An arrow silently dropped is a technology
-            // whose real cost is invisible, which is the one thing a player opens this to learn.
-            java.util.Set<ResourceKey<Technology>> gates =
-                    TechnologyLayout.gates(ModTechnologies.all(access));
+            // Nothing goes missing: a prerequisite joining two drawn technologies is drawn, or
+            // another pair of arrows already says it.
             java.util.Set<String> drawn = new java.util.HashSet<>();
             for (TechnologyLayout.Edge edge : layout.edges()) {
                 drawn.add(edge.from() + " -> " + edge.to());
             }
             for (TechnologyLayout.Placed placed : layout.nodes()) {
                 for (ResourceKey<Technology> prerequisite : placed.technology().prerequisites()) {
-                    if (layout.at(prerequisite) == null || gates.contains(prerequisite)
+                    if (layout.at(prerequisite) == null
                             || drawn.contains(prerequisite + " -> " + placed.key())) {
                         continue;
                     }
                     helper.assertTrue(implied(layout, placed.key(), prerequisite),
                             placed.key().identifier() + " needs " + prerequisite.identifier()
-                                    + ", which is not drawn, not a science pack and not implied by "
-                                    + "anything else it needs - the arrow has gone missing");
+                                    + " and, in the view of " + selected.identifier()
+                                    + ", that arrow is neither drawn nor implied by others");
                 }
             }
 
-            // Lanes. Two arrows may share a vertical run only when their runs cannot touch: same
-            // parent, or spans that do not overlap. Otherwise elbows leaving a column are drawn on
-            // top of each other and a fan reads as a single bar, which is exactly what it did.
+            lanes(helper, layout, selected);
+
+            helper.assertValueEqual(
+                    TechnologyLayout.around(all, selected, Set.of(), false).nodes(),
+                    layout.nodes(),
+                    "the view of " + selected.identifier() + " is not deterministic - it would "
+                            + "shuffle between openings");
+        }
+
+        /** Two arrows may share a channel only where their vertical runs cannot overlap. */
+        private static void lanes(GameTestHelper helper, TechnologyLayout.Layout layout,
+                ResourceKey<Technology> selected) {
+
             java.util.Map<ResourceKey<Technology>, int[]> spans = new java.util.HashMap<>();
             for (TechnologyLayout.Edge edge : layout.edges()) {
                 helper.assertTrue(edge.lane() >= 0 && edge.lane() < edge.lanes(),
@@ -1313,16 +1390,34 @@ public final class NauvisResearchGameTests {
                     }
                     helper.assertTrue(a[1] < b[0] || b[1] < a[0],
                             one.getKey().identifier() + " and " + two.getKey().identifier()
-                                    + " share lane " + a[3] + " and overlap between rows "
-                                    + Math.max(a[0], b[0]) + " and " + Math.min(a[1], b[1])
-                                    + " - the two would be drawn as one line");
+                                    + " share lane " + a[3] + " in the view of "
+                                    + selected.identifier() + " and overlap - the two would be "
+                                    + "drawn as one line");
                 }
             }
+        }
 
-            TechnologyLayout.Layout again = TechnologyLayout.of(access);
-            helper.assertValueEqual(again.nodes(), layout.nodes(),
-                    "the layout is not deterministic - it would shuffle between openings");
-            helper.succeed();
+        /** Everything a technology needs, transitively. */
+        private static Set<ResourceKey<Technology>> ancestors(
+                java.util.Map<ResourceKey<Technology>, Technology> byKey,
+                ResourceKey<Technology> key) {
+
+            java.util.Set<ResourceKey<Technology>> found = new java.util.HashSet<>();
+            java.util.Deque<ResourceKey<Technology>> frontier =
+                    new java.util.ArrayDeque<>(List.of(key));
+            while (!frontier.isEmpty()) {
+                Technology technology = byKey.get(frontier.removeFirst());
+                if (technology == null) {
+                    continue;
+                }
+                for (ResourceKey<Technology> prerequisite : technology.prerequisites()) {
+                    if (byKey.containsKey(prerequisite) && !prerequisite.equals(key)
+                            && found.add(prerequisite)) {
+                        frontier.add(prerequisite);
+                    }
+                }
+            }
+            return found;
         }
 
         /** Whether {@code prerequisite} is reached from {@code key} through drawn arrows. */

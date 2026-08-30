@@ -1,95 +1,95 @@
 package com.jaguarm.nauvisresearch.research;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jetbrains.annotations.Nullable;
+
 import net.minecraft.core.Holder;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.item.crafting.Recipe;
 
 /**
- * Where each technology sits when the tree is drawn as a tree, and which arrows are worth drawing.
+ * The piece of the technology tree worth drawing around one technology, and where it goes.
  *
  * <h2>Why this is here and not in the screen</h2>
  *
  * <p>Nothing in this repository can look at a screen - that is a standing hole and not a gap in
  * the suite, and three of this pack's bugs have lived in it. So the part of "draw a tech tree"
- * that <em>can</em> be checked is separated from the part that cannot: this computes positions,
- * edges and lanes and is asserted by {@code technology_layout_is_sound}, and the screen does
- * nothing but paint what it is handed. It is also common code rather than client code, which is
- * what lets a gametest reach it at all.
+ * that <em>can</em> be checked is separated from the part that cannot: this computes which nodes
+ * are in view, their positions, their arrows and their lanes, and is asserted by
+ * {@code technology_layout_is_sound}; the screen does nothing but paint what it is handed. It is
+ * also common code rather than client code, which is what lets a gametest reach it at all.
  *
- * <h2>Columns are Factorio's, and they are not negotiable</h2>
+ * <h2>The whole tree is not the picture. One technology's neighbourhood is</h2>
  *
- * <p><b>A column is the longest path from a root.</b> Not the shortest - a technology sits to the
- * right of <em>every</em> prerequisite, so an edge never points backwards and the eye can read
- * left to right as "what comes first". `automation_2` needs Automation, Steel processing and
- * green science, and it lands one column right of the last of them rather than one right of the
- * first. <b>Columns are computed from every prerequisite, including the ones not drawn below</b>,
- * so what is drawn can change without a technology moving.
+ * <p>Drawing all of it was the first two attempts and both failed the same way: a graph with a
+ * couple of hub technologies produces bundles of arrows that no ordering can separate, and the
+ * measurements said so - the ordering was already optimal at twenty-two crossings and sixty
+ * randomised restarts never beat it. <b>Factorio does not draw the whole tree either.</b> It shows
+ * what you are pointed at, everything that leads to it, and a little of what it leads to, with a
+ * list and a search box for getting anywhere else.
  *
- * <h2>Which arrows are drawn, which is where the tangle was</h2>
- *
- * <p>The first version drew every prerequisite, and the third gap came out as several full-height
- * vertical bars side by side with no way to tell which parent fed which child. Measuring it said
- * something useful: <b>the ordering was already optimal</b> - twenty-two crossings, and sixty
- * randomised restarts of barycentre sweeps with adjacent transposition never beat it - and no
- * arrangement could have helped, because two technologies each fed most of the next column. The
- * problem was the number of arrows, not their order.
- *
- * <p>Two rules cut it from thirty-five arrows to eighteen and from twenty-two crossings to one:
+ * <p>So a view is:
  *
  * <ul>
- *   <li><b>An implied prerequisite is not drawn.</b> If A is a prerequisite of B and B of C, the
- *       arrow from A to C says nothing the other two did not - a transitive reduction. It removes
- *       nothing from today's tree and is here because it is the cheap half of the problem and the
- *       tree is going to grow to two hundred;</li>
- *   <li><b>A science pack is a gate, not a parent.</b> Everything past red science needs red
- *       science, and drawing eleven identical arrows out of one node to say so is the same
- *       sentence eleven times. Factorio does not draw them either: a technology's node carries the
- *       pack icons it costs, and this one does now. It is the rule that actually untangled the
- *       tree - the two hubs feeding most of a column were both science packs.</li>
+ *   <li><b>the selected technology</b>, in the middle;</li>
+ *   <li><b>every ancestor</b> - the full transitive closure of what it needs, because that is the
+ *       question a player opens this to answer. Researched ones can be hidden, and what is left is
+ *       exactly the work outstanding;</li>
+ *   <li><b>descendants two deep</b>, so it is clear what the thing is for. Each of those carries
+ *       {@link Placed#outside}, the number of its prerequisites that are <em>not</em> in the
+ *       picture, or a player reads "research this and you get that" when three other technologies
+ *       are also wanted.</li>
  * </ul>
  *
- * <p><b>Both are about drawing and neither touches research.</b> {@code Research.isAvailable}
- * still wants every prerequisite finished; a gate is still a technology you have to research. All
- * that changes is what the picture repeats.
+ * <h2>Columns are measured from the selection, not from the roots</h2>
+ *
+ * <p><b>An ancestor's column is the longest path from it to the selected technology</b>, negated,
+ * and a descendant's is the longest path from the selection to it. Reusing the tree's global depth
+ * is the obvious shortcut and it is wrong: a technology that is a root of the whole tree would sit
+ * at the far left of every view it appears in, with one arrow reaching all the way across to
+ * whatever late prerequisite it feeds. Measured from the selection, everything sits as far away as
+ * it actually is <em>from what you are looking at</em>.
+ *
+ * <p>Hiding the researched ancestors does not break the picture: an arrow is drawn between two
+ * visible technologies whenever a path joins them through nothing but hidden ones, so the shape of
+ * what is left survives. An arrow that another arrow already implies is then dropped - a
+ * transitive reduction - because saying it twice is what made the first version unreadable.
  *
  * <h2>Rows, in the two steps a layered layout takes</h2>
  *
  * <p><b>Order first.</b> Sweeping a column and sorting it by the median row of its neighbours in
- * the column before is the standard cheap answer to edge crossings; sweeping back the other way
- * against the column after, several times, and keeping whichever pass crossed least is the rest of
- * it. Adjacent pairs are then swapped wherever a swap crosses fewer arrows. Ties break on the
- * tree's own `order` string throughout, so the result is <b>deterministic</b> - the same tree lays
- * out the same way every time, which matters because a layout that shuffled between openings would
- * be unusable whatever it looked like.
+ * the column before is the standard cheap answer to edge crossings; sweeping back the other way,
+ * several times, and keeping whichever pass crossed least is the rest of it. Adjacent pairs are
+ * then swapped wherever a swap crosses fewer arrows. Ties break on the tree's own `order` string
+ * throughout, so the result is <b>deterministic</b> - the same view lays out the same way every
+ * time, which matters because a layout that shuffled between openings would be unusable whatever
+ * it looked like.
  *
  * <p><b>Then position.</b> Order says who is above whom; it does not say a child should be level
  * with its parent. Each column is pulled towards the average row of its neighbours and squeezed
  * back into distinct rows by isotonic regression, which is the least-squares way to keep an order
- * while honouring what everything wanted. <b>Rows are sparse</b> - a column of two beside a column
- * of eleven sits where its arrows point rather than at the top, and there is no centring left for
- * the screen to do.
+ * while honouring what everything wanted. Rows are sparse, so a column of two sits where its
+ * arrows point rather than at the top.
  *
- * <p><b>An edge that skips a column</b> gets an invisible node in each column it skips, so every
- * arrow the ordering sees joins neighbours. Today's tree has none; a tree of two hundred will.
+ * <p><b>An arrow that skips a column</b> gets an invisible node in each column it skips, so every
+ * arrow the ordering sees joins neighbours - which is what makes a crossing count mean anything.
  *
  * <h2>Lanes</h2>
  *
  * <p>An arrow is drawn as an elbow - out of the parent, across, then into the child - and the
  * across is a vertical run in the gap between two columns. Every arrow out of one parent shares
- * one, which is what makes a fan read as a fan. Two <em>different</em> parents may share one only
- * when their runs do not overlap vertically, which is greedy interval colouring and is optimal
- * here; the third gap needs two lanes rather than the five it has parents.
+ * one, which is what makes a fan read as a fan. Two <em>different</em> parents share one only when
+ * their runs cannot overlap, which is greedy interval colouring and is optimal on intervals.
  *
  * <p><b>Nothing is authored.</b> There are no coordinates in the data files and there must not be:
  * the tree is twenty-six technologies today and Factorio's is two hundred, and hand-placing them
@@ -99,14 +99,32 @@ public final class TechnologyLayout {
 
     private TechnologyLayout() {}
 
+    /** How far past the selection the picture goes. Factorio shows about this much. */
+    public static final int DESCENDANT_DEPTH = 2;
+
     /** How many times the ordering sweeps back and forth. Past this it stops improving. */
     private static final int ORDER_SWEEPS = 8;
 
     /** How many times each column is pulled towards its neighbours' rows. */
     private static final int POSITION_SWEEPS = 10;
 
-    /** One technology's place: {@code column} across, {@code row} down, both zero-based. */
-    public record Placed(ResourceKey<Technology> key, Technology technology, int column, int row) {}
+    /** Which side of the selection a technology is on, which is all the screen needs to colour it. */
+    public enum Kind {
+        SELECTED,
+        ANCESTOR,
+        DESCENDANT
+    }
+
+    /**
+     * One technology's place: {@code column} across, {@code row} down, both zero-based.
+     *
+     * @param outside how many of its prerequisites are not in the picture at all. Zero for the
+     *                selection and its ancestors, by construction; the number that matters is on a
+     *                descendant, where it is the difference between "this unlocks that" and "this
+     *                and two other things unlock that".
+     */
+    public record Placed(ResourceKey<Technology> key, Technology technology, int column, int row,
+            Kind kind, int outside) {}
 
     /**
      * One prerequisite arrow, from {@code from} to {@code to}.
@@ -122,7 +140,9 @@ public final class TechnologyLayout {
     /** The whole picture, in grid cells. A screen decides what a cell is worth in pixels. */
     public record Layout(List<Placed> nodes, List<Edge> edges, int columns, int rows) {
 
-        public Placed at(ResourceKey<Technology> key) {
+        public static final Layout EMPTY = new Layout(List.of(), List.of(), 0, 0);
+
+        public @Nullable Placed at(ResourceKey<Technology> key) {
             for (Placed placed : nodes) {
                 if (placed.key().equals(key)) {
                     return placed;
@@ -132,51 +152,93 @@ public final class TechnologyLayout {
         }
     }
 
-    public static Layout of(RegistryAccess access) {
-        return of(ModTechnologies.all(access));
-    }
-
     /**
-     * @param all every technology, already in the tree's own order - {@code ModTechnologies.all}.
-     *            That order is the tiebreak throughout, so passing an unsorted list would still
-     *            produce a valid layout and not the same one twice.
+     * The picture around one technology.
+     *
+     * @param all       every technology, in the tree's own order - {@code ModTechnologies.all}.
+     *                  That order is the tiebreak throughout, so an unsorted list would still lay
+     *                  out validly and not the same way twice.
+     * @param selected  what the view is centred on. Null, or a technology this list does not hold,
+     *                  gives {@link Layout#EMPTY} rather than throwing - a datapack reload can take
+     *                  a technology away while a screen is open.
+     * @param completed what the world has researched, for {@code hideResearched}.
+     * @param hideResearched drops researched ancestors, keeping the arrows that ran through them.
      */
-    public static Layout of(List<Holder.Reference<Technology>> all) {
+    public static Layout around(List<Holder.Reference<Technology>> all,
+            @Nullable ResourceKey<Technology> selected,
+            Set<ResourceKey<Technology>> completed, boolean hideResearched) {
+
         Map<ResourceKey<Technology>, Technology> byKey = new LinkedHashMap<>();
         for (Holder.Reference<Technology> holder : all) {
             byKey.put(holder.key(), holder.value());
         }
-
-        Map<ResourceKey<Technology>, Integer> column = new HashMap<>();
-        for (ResourceKey<Technology> key : byKey.keySet()) {
-            column(key, byKey, column, 0);
+        if (selected == null || !byKey.containsKey(selected)) {
+            return Layout.EMPTY;
         }
 
-        List<ResourceKey<Technology>> keys = List.copyOf(byKey.keySet());
-        List<int[]> drawn = drawnEdges(keys, byKey);
+        Map<ResourceKey<Technology>, List<ResourceKey<Technology>>> children = children(byKey);
 
-        Graph graph = Graph.of(keys.size(), drawn, index -> column.get(keys.get(index)));
+        Set<ResourceKey<Technology>> ancestors = ancestors(selected, byKey);
+        Map<ResourceKey<Technology>, Integer> descendants =
+                descendants(selected, children, ancestors);
+
+        Set<ResourceKey<Technology>> inView = new LinkedHashSet<>();
+        inView.add(selected);
+        inView.addAll(ancestors);
+        inView.addAll(descendants.keySet());
+
+        Set<ResourceKey<Technology>> hidden = new HashSet<>();
+        if (hideResearched) {
+            for (ResourceKey<Technology> ancestor : ancestors) {
+                if (completed.contains(ancestor)) {
+                    hidden.add(ancestor);
+                }
+            }
+        }
+
+        // Order matters for the tiebreak, so walk `all` rather than the sets.
+        List<ResourceKey<Technology>> visible = new ArrayList<>();
+        for (Holder.Reference<Technology> holder : all) {
+            if (inView.contains(holder.key()) && !hidden.contains(holder.key())) {
+                visible.add(holder.key());
+            }
+        }
+
+        Map<ResourceKey<Technology>, Integer> column =
+                columns(selected, ancestors, descendants, children, visible);
+        List<int[]> drawn = arrows(visible, children, hidden, column);
+
+        Map<ResourceKey<Technology>, Integer> index = new HashMap<>();
+        for (int i = 0; i < visible.size(); i++) {
+            index.put(visible.get(i), i);
+        }
+        Graph graph = Graph.of(visible.size(), drawn, at -> column.get(visible.get(at)));
         graph.order();
 
-        // Normalised over the technologies rather than over every vertex, or an invisible node
-        // above the first real one would leave an empty row at the top of the screen.
         int[] row = graph.rows();
         int lowest = Integer.MAX_VALUE;
-        for (int i = 0; i < keys.size(); i++) {
+        for (int i = 0; i < visible.size(); i++) {
             lowest = Math.min(lowest, row[i]);
         }
-        for (int i = 0; i < keys.size(); i++) {
-            row[i] -= lowest;
-        }
 
-        List<Placed> nodes = new ArrayList<>(keys.size());
-        for (int i = 0; i < keys.size(); i++) {
-            nodes.add(new Placed(keys.get(i), byKey.get(keys.get(i)),
-                    column.get(keys.get(i)), row[i]));
+        List<Placed> nodes = new ArrayList<>(visible.size());
+        for (int i = 0; i < visible.size(); i++) {
+            ResourceKey<Technology> key = visible.get(i);
+            Kind kind = key.equals(selected) ? Kind.SELECTED
+                    : ancestors.contains(key) ? Kind.ANCESTOR
+                    : Kind.DESCENDANT;
+            int outside = 0;
+            for (ResourceKey<Technology> prerequisite : byKey.get(key).prerequisites()) {
+                if (byKey.containsKey(prerequisite) && !inView.contains(prerequisite)) {
+                    outside++;
+                }
+            }
+            nodes.add(new Placed(key, byKey.get(key), column.get(key), row[i] - lowest,
+                    kind, outside));
         }
         nodes.sort(Comparator.comparingInt(Placed::column).thenComparingInt(Placed::row));
 
-        List<Edge> edges = lanes(keys, drawn, graph, row);
+        List<Edge> edges = lanes(visible, drawn, column, row);
 
         int columns = 0;
         int rows = 0;
@@ -187,145 +249,208 @@ public final class TechnologyLayout {
         return new Layout(List.copyOf(nodes), List.copyOf(edges), columns, rows);
     }
 
-    // ---------------------------------------------------------------------- which arrows to draw
-
-    /**
-     * Every prerequisite worth an arrow, as {@code {parent index, child index}} pairs.
-     *
-     * <p>The two rules are in the class comment. Both are about the picture: a prerequisite that
-     * is not drawn is still a prerequisite, and {@code Research} never sees this list.
-     */
-    private static List<int[]> drawnEdges(List<ResourceKey<Technology>> keys,
+    /** Forward edges, which the prerequisite lists only give backwards. */
+    private static Map<ResourceKey<Technology>, List<ResourceKey<Technology>>> children(
             Map<ResourceKey<Technology>, Technology> byKey) {
 
-        Map<ResourceKey<Technology>, Integer> index = new HashMap<>();
-        for (int i = 0; i < keys.size(); i++) {
-            index.put(keys.get(i), i);
-        }
-
-        Set<ResourceKey<Technology>> gates = gates(byKey);
-        Map<ResourceKey<Technology>, Set<ResourceKey<Technology>>> behind = new HashMap<>();
-        for (ResourceKey<Technology> key : keys) {
-            behind(key, byKey, behind, 0);
-        }
-
-        List<int[]> edges = new ArrayList<>();
-        for (ResourceKey<Technology> key : keys) {
-            List<ResourceKey<Technology>> prerequisites = byKey.get(key).prerequisites();
-            for (ResourceKey<Technology> prerequisite : prerequisites) {
-                if (!index.containsKey(prerequisite) || gates.contains(prerequisite)) {
-                    continue;
-                }
-                boolean implied = false;
-                for (ResourceKey<Technology> other : prerequisites) {
-                    if (!other.equals(prerequisite)
-                            && behind.getOrDefault(other, Set.of()).contains(prerequisite)) {
-                        implied = true;
-                        break;
-                    }
-                }
-                if (!implied) {
-                    edges.add(new int[] {index.get(prerequisite), index.get(key)});
-                }
-            }
-        }
-        return edges;
-    }
-
-    /**
-     * The technologies that hand over a science pack.
-     *
-     * <p>Found from the data rather than named here, so blue science gates the same way red does
-     * the day somebody adds it: a technology is a gate when it unlocks a recipe for an item that
-     * some technology names among the packs it costs.
-     */
-    public static Set<ResourceKey<Technology>> gates(List<Holder.Reference<Technology>> all) {
-        Map<ResourceKey<Technology>, Technology> byKey = new LinkedHashMap<>();
-        for (Holder.Reference<Technology> holder : all) {
-            byKey.put(holder.key(), holder.value());
-        }
-        return gates(byKey);
-    }
-
-    private static Set<ResourceKey<Technology>> gates(
-            Map<ResourceKey<Technology>, Technology> byKey) {
-
-        Set<Identifier> packs = new HashSet<>();
-        for (Technology technology : byKey.values()) {
-            packs.addAll(technology.packs());
-        }
-        Set<ResourceKey<Technology>> gates = new HashSet<>();
+        Map<ResourceKey<Technology>, List<ResourceKey<Technology>>> children = new HashMap<>();
         for (Map.Entry<ResourceKey<Technology>, Technology> entry : byKey.entrySet()) {
-            for (ResourceKey<Recipe<?>> unlock : entry.getValue().unlocks()) {
-                if (packs.contains(unlock.identifier())) {
-                    gates.add(entry.getKey());
-                    break;
+            for (ResourceKey<Technology> prerequisite : entry.getValue().prerequisites()) {
+                if (byKey.containsKey(prerequisite)) {
+                    children.computeIfAbsent(prerequisite, ignored -> new ArrayList<>())
+                            .add(entry.getKey());
                 }
             }
         }
-        return gates;
+        return children;
     }
 
     /**
-     * Everything a technology needs, transitively - what makes a prerequisite implied.
+     * Everything the selected technology needs, however far back.
      *
-     * <p>Depth-limited for the same reason {@link #column} is: this is fed by a datapack registry
-     * and a cycle in one must not be a stack overflow while opening a screen.
+     * <p>Breadth-first with a seen set rather than recursion, so a cycle written into a datapack is
+     * a strange picture rather than a stack overflow while a screen opens.
      */
-    private static Set<ResourceKey<Technology>> behind(ResourceKey<Technology> key,
-            Map<ResourceKey<Technology>, Technology> byKey,
-            Map<ResourceKey<Technology>, Set<ResourceKey<Technology>>> known, int depth) {
+    private static Set<ResourceKey<Technology>> ancestors(ResourceKey<Technology> selected,
+            Map<ResourceKey<Technology>, Technology> byKey) {
 
-        Set<ResourceKey<Technology>> cached = known.get(key);
-        if (cached != null) {
-            return cached;
-        }
-        Technology technology = byKey.get(key);
-        if (technology == null || depth > byKey.size()) {
-            return Set.of();
-        }
-        // Seeded before recursing, so a cycle sees a partial answer rather than looping.
-        Set<ResourceKey<Technology>> found = new HashSet<>();
-        known.put(key, found);
-        for (ResourceKey<Technology> prerequisite : technology.prerequisites()) {
-            if (byKey.containsKey(prerequisite)) {
-                found.add(prerequisite);
-                found.addAll(behind(prerequisite, byKey, known, depth + 1));
+        Set<ResourceKey<Technology>> found = new LinkedHashSet<>();
+        Deque<ResourceKey<Technology>> frontier = new ArrayDeque<>(List.of(selected));
+        while (!frontier.isEmpty()) {
+            Technology technology = byKey.get(frontier.removeFirst());
+            if (technology == null) {
+                continue;
+            }
+            for (ResourceKey<Technology> prerequisite : technology.prerequisites()) {
+                if (byKey.containsKey(prerequisite) && !prerequisite.equals(selected)
+                        && found.add(prerequisite)) {
+                    frontier.add(prerequisite);
+                }
             }
         }
         return found;
     }
 
     /**
-     * The longest path from a technology with no prerequisites.
+     * What the selection leads to, and how far - the <b>longest</b> way round, capped at
+     * {@link #DESCENDANT_DEPTH}.
      *
-     * <p>Depth-limited rather than cycle-checked: the generator already refuses a tree it cannot
-     * bootstrap, so a cycle cannot reach here from generated data - but this is fed by a datapack
-     * registry, which anybody can write, and a stack overflow while opening a screen is a worse
-     * way to find that out than a technology drawn in the wrong column.
+     * <p>Longest rather than shortest so that a technology which is both a child and a grandchild
+     * sits in the grandchild column, where its other arrow can reach it from the left. Shortest
+     * would put it beside its own prerequisite.
      */
-    private static int column(ResourceKey<Technology> key,
-            Map<ResourceKey<Technology>, Technology> byKey,
+    private static Map<ResourceKey<Technology>, Integer> descendants(
+            ResourceKey<Technology> selected,
+            Map<ResourceKey<Technology>, List<ResourceKey<Technology>>> children,
+            Set<ResourceKey<Technology>> ancestors) {
+
+        Map<ResourceKey<Technology>, Integer> depth = new LinkedHashMap<>();
+        List<ResourceKey<Technology>> frontier = List.of(selected);
+        for (int step = 1; step <= DESCENDANT_DEPTH; step++) {
+            List<ResourceKey<Technology>> next = new ArrayList<>();
+            for (ResourceKey<Technology> at : frontier) {
+                for (ResourceKey<Technology> child : children.getOrDefault(at, List.of())) {
+                    if (child.equals(selected) || ancestors.contains(child)) {
+                        continue;
+                    }
+                    depth.put(child, step);
+                    next.add(child);
+                }
+            }
+            frontier = next;
+        }
+        return depth;
+    }
+
+    /**
+     * How far each visible technology is from the selection, in columns, counted from zero.
+     *
+     * <p>Ancestors negative, the selection zero, descendants positive, and then everything shifted
+     * and squeezed so the columns actually used run 0, 1, 2 with no gaps - hiding the researched
+     * ancestors can empty a column, and an empty column drawn as a column is a hole in the picture.
+     */
+    private static Map<ResourceKey<Technology>, Integer> columns(ResourceKey<Technology> selected,
+            Set<ResourceKey<Technology>> ancestors,
+            Map<ResourceKey<Technology>, Integer> descendants,
+            Map<ResourceKey<Technology>, List<ResourceKey<Technology>>> children,
+            List<ResourceKey<Technology>> visible) {
+
+        Map<ResourceKey<Technology>, Integer> distance = new HashMap<>();
+        distance.put(selected, 0);
+        for (ResourceKey<Technology> ancestor : ancestors) {
+            toSelection(ancestor, selected, ancestors, children, distance, 0);
+        }
+
+        Map<ResourceKey<Technology>, Integer> raw = new HashMap<>();
+        raw.put(selected, 0);
+        for (ResourceKey<Technology> ancestor : ancestors) {
+            raw.put(ancestor, -distance.getOrDefault(ancestor, 1));
+        }
+        raw.putAll(descendants);
+
+        List<Integer> used = new ArrayList<>(new java.util.TreeSet<>(
+                visible.stream().map(raw::get).toList()));
+        Map<ResourceKey<Technology>, Integer> column = new HashMap<>();
+        for (ResourceKey<Technology> key : visible) {
+            column.put(key, used.indexOf(raw.get(key)));
+        }
+        return column;
+    }
+
+    /** The longest path from an ancestor forward to the selection, in steps. */
+    private static int toSelection(ResourceKey<Technology> key, ResourceKey<Technology> selected,
+            Set<ResourceKey<Technology>> ancestors,
+            Map<ResourceKey<Technology>, List<ResourceKey<Technology>>> children,
             Map<ResourceKey<Technology>, Integer> known, int depth) {
 
         Integer cached = known.get(key);
         if (cached != null) {
             return cached;
         }
-        Technology technology = byKey.get(key);
-        if (technology == null || depth > byKey.size()) {
-            return 0;
+        if (depth > ancestors.size() + 1) {
+            return 1;
         }
-
-        int deepest = -1;
-        for (ResourceKey<Technology> prerequisite : technology.prerequisites()) {
-            if (byKey.containsKey(prerequisite)) {
-                deepest = Math.max(deepest, column(prerequisite, byKey, known, depth + 1));
+        int furthest = 0;
+        for (ResourceKey<Technology> child : children.getOrDefault(key, List.of())) {
+            if (child.equals(selected) || ancestors.contains(child)) {
+                furthest = Math.max(furthest,
+                        toSelection(child, selected, ancestors, children, known, depth + 1));
             }
         }
-        int result = deepest + 1;
+        int result = furthest + 1;
         known.put(key, result);
         return result;
+    }
+
+    /**
+     * Which arrows to draw, as {@code {from index, to index}} into {@code visible}.
+     *
+     * <p>Two technologies are joined when a path runs from one to the other through nothing but
+     * hidden ones - so hiding the researched ancestors thins the picture without breaking it. An
+     * arrow implied by two others is then dropped, because a graph that says the same thing twice
+     * is the thing that made the first version of this unreadable.
+     */
+    private static List<int[]> arrows(List<ResourceKey<Technology>> visible,
+            Map<ResourceKey<Technology>, List<ResourceKey<Technology>>> children,
+            Set<ResourceKey<Technology>> hidden,
+            Map<ResourceKey<Technology>, Integer> column) {
+
+        Map<ResourceKey<Technology>, Integer> index = new HashMap<>();
+        for (int i = 0; i < visible.size(); i++) {
+            index.put(visible.get(i), i);
+        }
+
+        // Straight joins first: walk forward from each visible node, stepping only through hidden
+        // ones, and take every visible node reached.
+        List<Set<Integer>> direct = new ArrayList<>();
+        for (ResourceKey<Technology> from : visible) {
+            Set<Integer> reached = new LinkedHashSet<>();
+            Set<ResourceKey<Technology>> seen = new HashSet<>();
+            Deque<ResourceKey<Technology>> frontier = new ArrayDeque<>(List.of(from));
+            while (!frontier.isEmpty()) {
+                for (ResourceKey<Technology> child : children.getOrDefault(
+                        frontier.removeFirst(), List.of())) {
+                    if (!seen.add(child)) {
+                        continue;
+                    }
+                    if (hidden.contains(child)) {
+                        frontier.add(child);
+                    } else if (index.containsKey(child)) {
+                        reached.add(index.get(child));
+                    }
+                }
+            }
+            direct.add(reached);
+        }
+
+        // Everything each node reaches through the joins above, for the reduction below.
+        List<Set<Integer>> beyond = new ArrayList<>();
+        for (int i = 0; i < visible.size(); i++) {
+            beyond.add(new HashSet<>());
+        }
+        for (int i = visible.size() - 1; i >= 0; i--) {
+            for (int child : direct.get(i)) {
+                beyond.get(i).add(child);
+                beyond.get(i).addAll(beyond.get(child));
+            }
+        }
+
+        List<int[]> drawn = new ArrayList<>();
+        for (int from = 0; from < visible.size(); from++) {
+            for (int to : direct.get(from)) {
+                boolean implied = false;
+                for (int through : direct.get(from)) {
+                    if (through != to && beyond.get(through).contains(to)) {
+                        implied = true;
+                        break;
+                    }
+                }
+                if (!implied && column.get(visible.get(from)) < column.get(visible.get(to))) {
+                    drawn.add(new int[] {from, to});
+                }
+            }
+        }
+        return drawn;
     }
 
     // ------------------------------------------------------------------------------------ lanes
@@ -338,15 +463,14 @@ public final class TechnologyLayout {
      * different channels exactly when those spans overlap, which is an interval graph, which is
      * the one case where colouring greedily in order of where each span starts is optimal.
      */
-    private static List<Edge> lanes(List<ResourceKey<Technology>> keys, List<int[]> drawn,
-            Graph graph, int[] row) {
+    private static List<Edge> lanes(List<ResourceKey<Technology>> visible, List<int[]> drawn,
+            Map<ResourceKey<Technology>, Integer> column, int[] row) {
 
         Map<Integer, List<Integer>> children = new LinkedHashMap<>();
         for (int[] edge : drawn) {
             children.computeIfAbsent(edge[0], ignored -> new ArrayList<>()).add(edge[1]);
         }
 
-        // Parents grouped by column, each with the span its arrows cover, top edge first.
         Map<Integer, List<int[]>> byColumn = new LinkedHashMap<>();
         for (Map.Entry<Integer, List<Integer>> entry : children.entrySet()) {
             int parent = entry.getKey();
@@ -356,7 +480,7 @@ public final class TechnologyLayout {
                 low = Math.min(low, row[child]);
                 high = Math.max(high, row[child]);
             }
-            byColumn.computeIfAbsent(graph.column(parent), ignored -> new ArrayList<>())
+            byColumn.computeIfAbsent(column.get(visible.get(parent)), ignored -> new ArrayList<>())
                     .add(new int[] {low, high, parent});
         }
 
@@ -387,25 +511,16 @@ public final class TechnologyLayout {
 
         List<Edge> edges = new ArrayList<>(drawn.size());
         for (int[] edge : drawn) {
-            int at = graph.column(edge[0]);
-            edges.add(new Edge(keys.get(edge[0]), keys.get(edge[1]),
-                    lane.get(edge[0]), count.get(at)));
+            edges.add(new Edge(visible.get(edge[0]), visible.get(edge[1]),
+                    lane.get(edge[0]), count.get(column.get(visible.get(edge[0])))));
         }
-        edges.sort(Comparator.comparing((Edge e) -> e.from().identifier().toString())
-                .thenComparing(e -> e.to().identifier().toString()));
+        edges.sort(Comparator.comparing((Edge edge) -> edge.from().identifier().toString())
+                .thenComparing(edge -> edge.to().identifier().toString()));
         return edges;
     }
 
     // ------------------------------------------------------------------------- the layered graph
 
-    /**
-     * The graph the ordering and positioning work on: integer vertices in layers.
-     *
-     * <p>Vertices {@code 0..technologies-1} are the technologies, in the tree's own order, and
-     * everything above that is an invisible node standing in for one column of an arrow that skips
-     * a column. The dummies exist so that every arrow the ordering counts joins two neighbouring
-     * layers, which is what makes crossing counts mean anything; nothing ever draws one.
-     */
     private static final class Graph {
 
         private final int[] column;

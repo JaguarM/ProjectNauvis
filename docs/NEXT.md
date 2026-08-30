@@ -116,8 +116,11 @@ is an int like every other machine's.
 | `nauvis_research:science_pack_2` | green science — an inserter and a belt. The gate in front of the rest of milestone 3 |
 | `neoprogressivematerials:steel_plate` | five iron plates and thirty-five seconds |
 | `nauvis_research:technology` | 216 technologies, a synced datapack registry, generated. 26 are in the tree |
-| the tree screen | drag to pan, wheel to zoom, a search box, and the hovered node's whole path back to a root lit up — including the part of it no arrow is drawn for |
-| the tree's arrows | **eighteen, not thirty-five.** An implied prerequisite is not drawn, and a science pack is a gate rather than a parent: the packs a technology costs are pips above its node, which is Factorio's own answer. Rows are placed against what feeds them, and two arrows share a lane only where their runs cannot touch |
+| the tech screen | **a list and a search box on the left, one technology's neighbourhood in the middle, its cost and unlocks on the right.** Factorio's shape. Clicking a node re-centres the picture on it; the button on the right is what starts a research |
+| a view | the selection, **every** ancestor, and descendants two deep. Four to thirteen nodes rather than twenty-six. A node that needs technologies the picture does not show says so with `+n` in its corner |
+| the columns | measured from the selection - longest path back to it on the left, forward from it on the right - **not the tree's global depth**, or a root technology floats to the far edge of every view it appears in |
+| a node | state as colour, the science packs it costs as twelve-pixel items under the icon, units paid as a bar under those |
+| search | matches **what a technology unlocks**, not only its name. Players think in items |
 | research progress | **kept per technology.** Switching away from one and back finds it where it was left, which is Factorio's rule and was not ours |
 | `/research` | grant, forget, start, stop, list, info, all, reset. Gamemaster only. **Grant and forget cascade** — grant brings the prerequisites, forget takes the dependants |
 | `nauvis_mining:burner_mining_drill` | 2×2, five blocks; mines the 2×2 it stands on. Digs down, not across — see below |
@@ -285,6 +288,16 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
   chunk, and whether that feels generous or absurd at Minecraft's scale is a judgement no test
   makes.
 
+**The hover readout on every machine**, which is new and which no test can see.
+
+- look at a boiler, a steam engine, an assembler, a lab and both drills **from a corner rather than
+  from the middle**. Jade should say exactly what it says from the middle — the same name, the same
+  energy bar, the same lines. Before, all of it appeared on the one block holding the block entity
+  and nowhere else;
+- and check the two-block machines the same way: a splitter from either half, a pole from any
+  height. **If a readout is missing on one block of a machine, the redirect is not seeing that
+  block** and `MultiblockRedirect` is where to look.
+
 **The drills**, whose dig area is now the machine itself.
 
 - put a burner drill and an electric one down and look at each. The blue outline should sit
@@ -371,20 +384,25 @@ and has not been looked at since.
 - press **G**. Whether eleven nodes in a column read as a fan or a wall, whether the elbows are
   followable where three converge on `automation_2`, whether the state colours are distinguishable,
   and whether dragging to pan is discoverable. The grid underneath is proven; none of that is;
-- **look at the gap between the third and fourth columns**, which is where the tangle was: several
-  full-height verticals side by side with no way to tell which parent fed which child. It is four
-  bundles in two lanes now — one long fan out of `steel_processing` and three short hops sharing the
-  other lane. **Whether that reads as followable is the whole question.** The levers are `LANE_STEP`
-  in `ResearchScreen` and, if it is still too busy, one more gate rule in `TechnologyLayout`;
-- **the seven nodes with no arrows at all**, which is what the gate rule costs. `electric_mining_drill`,
-  `repair_pack`, `radar`, `fast_inserter`, `gun_turret`, `stone_wall` and `science_pack_2` needed only
-  red science, and red science is a gate. **Whether a node floating with no wire into it reads as
-  "needs nothing but the pack above it" or as a bug is the judgement to make** — the pips above the
-  node and the hovered path are what is supposed to answer it, and if they do not, the honest fix is
-  to draw gate arrows dimmed rather than not at all;
-- **the pack pips**, two six-pixel icons above each node. Whether red and green are distinguishable
-  at that size, and whether the strip reads as belonging to the node under it rather than the one
-  above it, is a thing no test sees;
+- **click through five or six technologies in the list.** Every click redraws the picture around
+  what was clicked, and **whether that reads as navigating or as the screen jumping about** is the
+  whole question. A typical view is four to thirteen nodes; the two worst are `science_pack_1` at
+  twenty-three and `steam_power` at thirteen, because selecting a hub means seeing what hangs off
+  it — look at `science_pack_1` specifically and decide whether it needs a cap;
+- **select `automation` and read the `+2` on `automation_2`.** It means "this also needs two
+  technologies you cannot see from here". Whether a badge says that, or whether it needs the
+  tooltip line as well, is a judgement no test makes;
+- **the pack pips**, twelve-pixel science packs under each node's icon. Whether red and green are
+  distinguishable there, and whether the icon above them still reads at thirty-six pixels, is the
+  thing to look at — the levers are `PIP` and `NODE` in `ResearchScreen`;
+- **type an item name into the search**, not a technology name — "assembling machine", "belt",
+  "steel". The list matches what a technology unlocks, which is how a player actually looks for
+  one, and **whether the results feel right is only judgeable by somebody who knows what they
+  wanted**;
+- **tick "hide researched"** with a few technologies done. What is left should be the work
+  outstanding, with the arrows through the hidden ones kept, so the shape survives;
+- **the start button on the right**, which is now the only way to begin a research — the graph is
+  for looking at. Whether losing click-to-start is missed is a judgement for whoever uses it;
 - **hover `automation_2` and look at what lights up.** Its three prerequisites and everything behind
   them go amber, edges included. Whether that answers "what do I have to do first" at a glance, or
   whether amber on a green-and-grey tree is one colour too many, is a judgement no test makes;
