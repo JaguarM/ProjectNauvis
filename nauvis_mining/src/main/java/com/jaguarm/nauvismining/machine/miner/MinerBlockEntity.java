@@ -73,18 +73,22 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * the block directly beneath the machine down to the configured floor.
  *
  * <p>It needs solid fuel and a pickaxe, and — unless disabled in the config — one
- * cobblestone per block mined, which it uses to backfill the hole. The shovel slot is
- * optional: it only makes dirt, sand and gravel fast, since those drop by hand anyway.
- * Tools take durability damage per block and respect Silk Touch, Fortune and Efficiency.
+ * cobblestone per block mined, which it uses to backfill the hole. The pickaxe takes
+ * durability damage per block and respects Silk Touch, Fortune and Efficiency.
+ *
+ * <p><b>There is no shovel slot.</b> Dirt, sand and gravel drop when broken by hand, so a
+ * shovel only ever bought speed on blocks that were never in the way; what it cost was a
+ * second tool to keep supplied and a slot on the panel. A block that insists on a shovel
+ * for its drops — a modded thing to do — is skipped, the way anything else this drill
+ * cannot take is skipped. Factorio's drill carries no tools at all; this is a step.
  */
 public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, MenuProvider {
 
     public static final int SLOT_FUEL = 0;
     public static final int SLOT_COBBLE = 1;
     public static final int SLOT_PICKAXE = 2;
-    public static final int SLOT_SHOVEL = 3;
     /** Module slots are always allocated; the tier decides how many are unlocked. */
-    public static final int SLOT_MODULE_START = 4;
+    public static final int SLOT_MODULE_START = 3;
     public static final int MODULE_SLOTS = MachineTier.MAX_MODULE_SLOTS;
     public static final int SLOT_OUTPUT_START = SLOT_MODULE_START + MODULE_SLOTS;
     public static final int OUTPUT_SLOTS = 9;
@@ -96,8 +100,7 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
         NONE,
         /** Breakable by hand, no tool damage. */
         HAND,
-        PICKAXE,
-        SHOVEL
+        PICKAXE
     }
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
@@ -139,13 +142,6 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
 
     /** Set when the search stopped on the budget rather than on running out of area. */
     private boolean scanBudgetExhausted;
-
-    /**
-     * Set when the search passed over a block that needs a shovel for its drops while the
-     * shovel slot could not supply one. Only then is a missing shovel worth reporting;
-     * vanilla's shovel blocks all drop by hand, so an empty slot is normally fine.
-     */
-    private boolean shovelSkipped;
 
     /** Block currently showing our break overlay, so it can be cleared when we move on. */
     private @Nullable BlockPos visualTarget;
@@ -343,9 +339,7 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
             if (scanBudgetExhausted) {
                 return MinerStatus.RUNNING;
             }
-            // Finished, but something in the area insisted on a shovel we do not have, so
-            // say so rather than claiming the area is cleared.
-            return shovelSkipped ? MinerStatus.NO_SHOVEL : MinerStatus.COMPLETE;
+            return MinerStatus.COMPLETE;
         }
 
         advanceMining(level, target);
@@ -584,18 +578,11 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
             return items.get(SLOT_PICKAXE).isCorrectToolForDrops(state) ? ToolChoice.PICKAXE : ToolChoice.NONE;
         }
         if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) {
-            if (items.get(SLOT_SHOVEL).isCorrectToolForDrops(state)) {
-                return ToolChoice.SHOVEL;
-            }
-            // The shovel slot is optional. Dirt, sand and gravel drop when broken by hand,
-            // so an empty slot costs speed — vanilla's wrong-tool penalty — instead of
-            // stopping the machine. Only a block that insists on a shovel for its drops,
-            // which is a modded thing to do, is skipped.
-            if (state.requiresCorrectToolForDrops()) {
-                shovelSkipped = true;
-                return ToolChoice.NONE;
-            }
-            return ToolChoice.HAND;
+            // By hand, at vanilla's wrong-tool speed. Dirt, sand and gravel drop that way,
+            // so the drill loses nothing but time on them - and time on dirt is not what
+            // this machine is for. A block that insists on a correct tool for its drops is
+            // skipped instead, since there is no slot to put one in.
+            return state.requiresCorrectToolForDrops() ? ToolChoice.NONE : ToolChoice.HAND;
         }
         return ToolChoice.HAND;
     }
@@ -635,7 +622,7 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
             return 1.0f;
         }
 
-        ItemStack toolStack = tool == ToolChoice.HAND ? ItemStack.EMPTY : items.get(slotFor(tool));
+        ItemStack toolStack = tool == ToolChoice.HAND ? ItemStack.EMPTY : items.get(SLOT_PICKAXE);
         // 30 with the right tool, 100 without: vanilla's own penalty for bare hands or the
         // wrong tool, which is why punching stone takes so long.
         float modifier = toolStack.isCorrectToolForDrops(state) ? 30.0f : 100.0f;
@@ -658,7 +645,7 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
 
     private void mineBlock(ServerLevel level, BlockPos target, BlockState state, ToolChoice tool) {
         BlockEntity targetEntity = level.getBlockEntity(target);
-        ItemStack toolStack = tool == ToolChoice.HAND ? ItemStack.EMPTY : items.get(slotFor(tool));
+        ItemStack toolStack = tool == ToolChoice.HAND ? ItemStack.EMPTY : items.get(SLOT_PICKAXE);
         FakePlayer miner = fakePlayer(level);
 
         // Announce the break the same way a player's would be. Without this the machine is
@@ -675,7 +662,7 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
             // each time and drops one harvest, and the drill simply keeps working it.
             boolean handled = absorbDrops(level, target);
             if (tool != ToolChoice.HAND) {
-                damageTool(level, slotFor(tool));
+                damageTool(level, SLOT_PICKAXE);
             }
             if (!handled) {
                 // Nothing came of it, so this was a refusal rather than somebody else
@@ -703,7 +690,7 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
         replaceMinedBlock(level, target);
 
         if (tool != ToolChoice.HAND) {
-            damageTool(level, slotFor(tool));
+            damageTool(level, SLOT_PICKAXE);
         }
 
         // Always move down after taking a block, rather than letting the next scan decide.
@@ -842,10 +829,6 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
         return EnchantmentHelper.getItemEnchantmentLevel(holder, stack);
     }
 
-    private static int slotFor(ToolChoice tool) {
-        return tool == ToolChoice.PICKAXE ? SLOT_PICKAXE : SLOT_SHOVEL;
-    }
-
     /**
      * How many modules of a type are installed in unlocked slots.
      *
@@ -892,7 +875,6 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
         currentY = worldPosition.getY() - 1;
         elapsedTicks = 0;
         requiredTicks = 0;
-        shovelSkipped = false;
     }
 
     /**
@@ -970,11 +952,6 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
     public void setItem(int slot, ItemStack stack) {
         items.set(slot, stack);
         stack.limitSize(getMaxStackSize(stack));
-        // Supplying the shovel that the search had been walking past changes what the
-        // machine is looking for, so send it back over the area it gave up on.
-        if (slot == SLOT_SHOVEL && shovelSkipped && !stack.isEmpty()) {
-            restartScan();
-        }
         setChanged();
     }
 
@@ -1017,7 +994,6 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
             // Only a boring drill fills its holes, so only a boring drill takes fill.
             case SLOT_COBBLE -> rules.needsFill() && isFillMaterial(stack);
             case SLOT_PICKAXE -> stack.is(ItemTags.PICKAXES);
-            case SLOT_SHOVEL -> stack.is(ItemTags.SHOVELS);
             default -> {
                 int moduleIndex = slot - SLOT_MODULE_START;
                 yield moduleIndex >= 0
@@ -1040,7 +1016,7 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
             java.util.stream.IntStream.range(SLOT_OUTPUT_START, SLOT_COUNT).toArray();
     private static final int[] INPUT_SLOTS_BY_INDEX = java.util.stream.IntStream
             .concat(
-                    java.util.stream.IntStream.of(SLOT_FUEL, SLOT_COBBLE, SLOT_PICKAXE, SLOT_SHOVEL),
+                    java.util.stream.IntStream.of(SLOT_FUEL, SLOT_COBBLE, SLOT_PICKAXE),
                     java.util.stream.IntStream.range(SLOT_MODULE_START, SLOT_OUTPUT_START))
             .toArray();
 

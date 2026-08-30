@@ -89,10 +89,16 @@ Mining
 
 - **The drills are quarries, not Factorio drills.** `nauvis_mining` is a fork of Neo Progressive
   Automation and carries its behaviour: a drill digs *downwards* beneath itself in a spiral, has
-  three dig modes on a button, wants a pickaxe and a shovel and fill material, and pushes what it
-  finds into any container beside it. Factorio's sits on an ore patch, takes the resource out of
-  the tiles it covers, needs nothing but fuel or power, and drops onto one output tile in front.
-  The fork bought the ids; the behaviour is `NEXT.md`'s job 1.
+  three dig modes on a button, wants a pickaxe and fill material, and pushes what it finds into
+  any container beside it. Factorio's sits on an ore patch, takes the resource out of the tiles it
+  covers, needs nothing but fuel or power, and drops onto one output tile in front. The fork
+  bought the ids; the behaviour is `NEXT.md`'s job 1.
+- **A block that insists on a shovel for its drops is skipped.** The shovel slot is gone — a
+  Factorio drill carries no tools, and vanilla's shovel blocks all drop by hand, so the slot only
+  ever bought speed on dirt. Dirt, sand and gravel are still dug, by hand at vanilla's wrong-tool
+  rate; a modded block that *requires* a shovel is left standing, the way anything else the drill
+  cannot take is left standing, and the area still reports itself cleared. The pickaxe slot stays
+  until the whole tool idea goes.
 - **Its three modules are not Factorio's.** `speed`, `efficiency` and `range` were invented for
   NPA. Factorio has speed, efficiency and productivity in three tiers, they belong to
   `nauvis_machines` per `PLAN.md`, and a range module has no counterpart at all — a drill's area

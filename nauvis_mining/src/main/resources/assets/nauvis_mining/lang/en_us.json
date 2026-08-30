@@ -23,7 +23,6 @@
   "gui.nauvis_mining.miner.status.no_fuel": "Needs fuel",
   "gui.nauvis_mining.miner.status.no_energy": "Needs power",
   "gui.nauvis_mining.miner.status.no_pickaxe": "Needs a pickaxe",
-  "gui.nauvis_mining.miner.status.no_shovel": "Needs a shovel to finish",
   "gui.nauvis_mining.miner.status.no_cobble": "Needs fill material",
   "gui.nauvis_mining.miner.status.complete": "Area cleared",
   "nauvis_mining.configuration.title": "Project Nauvis: Mining Configs",

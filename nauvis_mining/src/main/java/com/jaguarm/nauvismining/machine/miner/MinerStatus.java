@@ -5,8 +5,8 @@ import net.minecraft.network.chat.Component;
 /**
  * Why the miner is or is not running, surfaced in the GUI.
  *
- * <p>The original mod gave no feedback at all when a machine sat idle, which made a
- * missing shovel indistinguishable from a bug. Each constant maps to a translation key.
+ * <p>The original mod gave no feedback at all when a machine sat idle, which made an empty
+ * fuel slot indistinguishable from a bug. Each constant maps to a translation key.
  */
 public enum MinerStatus {
     /**
@@ -19,7 +19,6 @@ public enum MinerStatus {
     NO_FUEL("no_fuel"),
     NO_ENERGY("no_energy"),
     NO_PICKAXE("no_pickaxe"),
-    NO_SHOVEL("no_shovel"),
     NO_COBBLE("no_cobble"),
     COMPLETE("complete");
 

@@ -18,9 +18,9 @@ put beside them, so a drill and a chest is the first thing in the pack that work
 somewhere else.
 
 Forked from Neo Progressive Automation, which is where the drills come from and which is still
-its own mod. This one carries Factorio's ids and is being taken the rest of the way: an ore
-patch it sits on rather than a hole it digs, and Factorio's own modules when nauvis_machines
-ships them.
+its own mod. This one carries Factorio's ids and is being taken the rest of the way: no shovel
+to keep supplied, an ore patch it sits on rather than a hole it digs, and Factorio's own
+modules when nauvis_machines ships them.
 '''
 
 [[dependencies.${mod_id}]]

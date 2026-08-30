@@ -16,7 +16,7 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and twenty gametests pass, `./gradlew build` is clean, and the client boots into a
+A hundred and twenty-one gametests pass, `./gradlew build` is clean, and the client boots into a
 world. **Milestone 2 is closed**: the red tier is in whole — the fast belt and the fast splitter —
 a belt in hand replaces the one it is clicked on, and **belt lines climb**. Milestone 3 has its
 research half in, and five of its nine items — the steel line, green science and the medium pole,
@@ -148,8 +148,10 @@ What a Factorio drill does that this one does not:
   level and takes the resource out of the tiles under it, leaving the terrain alone. Crumbling
   Ore is already the pack's answer to a patch that runs out, so the two want designing together.
 - **It has no dig modes and needs no tools.** Ours has three modes on a button — ore only, clear
-  and fill, clear — plus a pickaxe, a shovel and fill material to do them, all of which are
-  answers to being a quarry. A Factorio drill needs fuel or power and nothing else.
+  and fill, clear — plus a pickaxe and fill material to do them, both answers to being a quarry.
+  A Factorio drill needs fuel or power and nothing else. **The shovel slot is already gone**, which
+  is the shape the rest of this takes: the slot went, the well it sat in is painted out of the
+  panel, and blocks that insisted on one are skipped rather than reported.
 - **It outputs to the front, onto a belt.** Ours pushes into any container beside it. Factorio's
   has one output tile it drops onto — which is what makes a drill-and-belt line a thing you lay
   out rather than a chest you place.

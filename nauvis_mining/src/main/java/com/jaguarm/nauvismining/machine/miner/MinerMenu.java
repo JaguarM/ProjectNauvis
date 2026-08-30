@@ -16,8 +16,8 @@ import net.minecraft.world.item.ItemStack;
 
 public class MinerMenu extends AbstractContainerMenu {
 
-    /** Fuel, fill, pickaxe, shovel, then the module slots. */
-    private static final int MACHINE_MENU_SLOTS = 4 + MinerBlockEntity.MODULE_SLOTS;
+    /** Fuel, fill, pickaxe, then the module slots. */
+    private static final int MACHINE_MENU_SLOTS = 3 + MinerBlockEntity.MODULE_SLOTS;
 
     /** Top-left of the 2x2 module block. The screen mirrors these. */
     public static final int MODULE_X = 74;
@@ -54,7 +54,6 @@ public class MinerMenu extends AbstractContainerMenu {
         addSlot(new RuleSlot(container, MinerBlockEntity.SLOT_FUEL, FUEL_X, FUEL_Y));
         addSlot(new RuleSlot(container, MinerBlockEntity.SLOT_COBBLE, 48, 17));
         addSlot(new RuleSlot(container, MinerBlockEntity.SLOT_PICKAXE, 30, 35));
-        addSlot(new RuleSlot(container, MinerBlockEntity.SLOT_SHOVEL, 48, 35));
 
         // Modules as a 2x2 block. All four always exist so the container size is fixed
         // across tiers; locked ones reject everything and the screen hides them.
@@ -265,9 +264,8 @@ public class MinerMenu extends AbstractContainerMenu {
         containerSlots[0] = MinerBlockEntity.SLOT_FUEL;
         containerSlots[1] = MinerBlockEntity.SLOT_COBBLE;
         containerSlots[2] = MinerBlockEntity.SLOT_PICKAXE;
-        containerSlots[3] = MinerBlockEntity.SLOT_SHOVEL;
         for (int i = 0; i < MinerBlockEntity.MODULE_SLOTS; i++) {
-            containerSlots[4 + i] = MinerBlockEntity.SLOT_MODULE_START + i;
+            containerSlots[3 + i] = MinerBlockEntity.SLOT_MODULE_START + i;
         }
 
         for (int menuIndex = 0; menuIndex < containerSlots.length; menuIndex++) {

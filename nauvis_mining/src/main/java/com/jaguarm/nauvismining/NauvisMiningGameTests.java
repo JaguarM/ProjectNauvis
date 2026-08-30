@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.jaguarm.nauvismining.machine.MachineTier;
 import com.jaguarm.nauvismining.machine.miner.MinerBlock;
+import com.jaguarm.nauvismining.machine.miner.MinerBlockEntity;
 import com.jaguarm.nauvismining.multiblock.MachineShape;
 import com.jaguarm.nauvismining.multiblock.Multiblock;
 import com.jaguarm.nauvismining.registry.ModBlocks;
@@ -22,6 +23,8 @@ import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -71,6 +74,7 @@ public final class NauvisMiningGameTests {
         TEST_TYPES.register("drills_are_factorio_sized", () -> DrillSizeTest.CODEC);
         TEST_TYPES.register("drill_breaks_as_one", () -> DrillBreaksAsOneTest.CODEC);
         TEST_TYPES.register("drill_field_is_walkable", () -> DrillFieldIsWalkableTest.CODEC);
+        TEST_TYPES.register("drill_takes_no_shovel", () -> NoShovelSlotTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -87,6 +91,7 @@ public final class NauvisMiningGameTests {
         register(event, environment, "drills_are_factorio_sized", DrillSizeTest::new);
         register(event, environment, "drill_breaks_as_one", DrillBreaksAsOneTest::new);
         register(event, environment, "drill_field_is_walkable", DrillFieldIsWalkableTest::new);
+        register(event, environment, "drill_takes_no_shovel", NoShovelSlotTest::new);
     }
 
     private interface TestFactory {
@@ -314,6 +319,70 @@ public final class NauvisMiningGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a drill field is walkable");
+        }
+    }
+
+    /**
+     * There is no shovel slot, and the slots after it did not stay where they were.
+     *
+     * <p>Two claims, and the second is the one that would go wrong quietly. Removing a slot from
+     * the middle of a container renumbers everything after it - the modules moved from 4..7 to
+     * 3..6 and the output grid with them - and every one of those indices is written into a saved
+     * drill and read back out. A drill that loaded a module into an output slot would look like a
+     * machine that had eaten it, and nothing else here would notice.
+     *
+     * <p>Asked of {@code acceptsInSlot}, which is the rule both the menu and the block entity go
+     * through, rather than of a placed machine: it is a pure function of the slot number, so this
+     * pins the numbering itself rather than one drill's behaviour on one tick.
+     */
+    public static class NoShovelSlotTest extends GameTestInstance {
+
+        public static final MapCodec<NoShovelSlotTest> CODEC =
+                RecordCodecBuilder.<NoShovelSlotTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(NoShovelSlotTest::info))
+                                .apply(i, NoShovelSlotTest::new));
+
+        public NoShovelSlotTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            // An electric drill's rules: every module slot unlocked, no fuel slot, and fill
+            // wanted - the most permissive set there is, so a shovel getting in anywhere would
+            // get in here.
+            MinerBlockEntity.SlotRules rules = new MinerBlockEntity.SlotRules(
+                    MinerBlockEntity.MODULE_SLOTS, true, true);
+            ItemStack shovel = new ItemStack(Items.IRON_SHOVEL);
+
+            for (int slot = 0; slot < MinerBlockEntity.SLOT_COUNT; slot++) {
+                helper.assertFalse(
+                        MinerBlockEntity.acceptsInSlot(slot, shovel, helper.getLevel(), rules),
+                        "slot " + slot + " still takes a shovel");
+            }
+
+            // And the numbering the removal shifted. Written out rather than derived, because
+            // deriving them from the same constants the code uses would assert nothing.
+            helper.assertValueEqual(MinerBlockEntity.SLOT_PICKAXE, 2, "the pickaxe slot");
+            helper.assertValueEqual(MinerBlockEntity.SLOT_MODULE_START, 3, "the first module slot");
+            helper.assertValueEqual(MinerBlockEntity.SLOT_OUTPUT_START, 7, "the first output slot");
+            helper.assertValueEqual(MinerBlockEntity.SLOT_COUNT, 16, "slots in a drill");
+
+            helper.assertTrue(
+                    MinerBlockEntity.acceptsInSlot(MinerBlockEntity.SLOT_PICKAXE,
+                            new ItemStack(Items.IRON_PICKAXE), helper.getLevel(), rules),
+                    "the pickaxe slot stopped taking a pickaxe");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a drill has no shovel slot");
         }
     }
 }

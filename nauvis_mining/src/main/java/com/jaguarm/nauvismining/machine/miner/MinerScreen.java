@@ -28,6 +28,14 @@ public class MinerScreen extends AbstractContainerScreen<MinerMenu> {
     private static final int LOCKED_SLOT_OVERLAY = 0xA0101010;
 
     /** Must match MinerMenu's module slot placement. */
+    /**
+     * Where the shovel slot was: right of the pickaxe, under the fill slot. Kept as a
+     * constant rather than two numbers in a call, because it is a hole in a texture and
+     * the next person to open that texture needs to know why nothing is drawn there.
+     */
+    private static final int SHOVEL_WELL_X = 48;
+    private static final int SHOVEL_WELL_Y = 35;
+
     private static final int MODULE_SLOT_X = 44;
     private static final int MODULE_SLOT_Y = 53;
 
@@ -140,6 +148,7 @@ public class MinerScreen extends AbstractContainerScreen<MinerMenu> {
                 256, 256);
 
         shadeLockedModuleSlots(graphics, x, y);
+        hideRemovedShovelWell(graphics, x, y);
         hideUnusedPowerUi(graphics, x, y);
         drawEnergyBar(graphics, x, y);
         drawFlame(graphics, x, y);
@@ -184,6 +193,18 @@ public class MinerScreen extends AbstractContainerScreen<MinerMenu> {
             paintOverWell(graphics, originX + ENERGY_BAR_X, originY + ENERGY_BAR_Y,
                     ENERGY_BAR_W, ENERGY_BAR_H);
         }
+    }
+
+    /**
+     * Covers the well the shovel slot used to sit in.
+     *
+     * <p>The texture is a fixed image with a 2x2 block of wells drawn into it and there is
+     * no generator for it any more, so the fourth well outlives the slot. Painting it out
+     * is the same trick the locked module slots and the unused power UI use, and it beats
+     * shipping a second texture: an empty well invites a player to try filling it.
+     */
+    private void hideRemovedShovelWell(GuiGraphicsExtractor graphics, int originX, int originY) {
+        paintOverWell(graphics, originX + SHOVEL_WELL_X, originY + SHOVEL_WELL_Y, 16, 16);
     }
 
     /** Covers a well and its bevel in panel colour, so it is simply not there. */
