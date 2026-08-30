@@ -8,17 +8,19 @@ companion: the rules these are the ways of breaking.
 Models, datagen and rendering
 -----------------------------
 
-- **Two overlapping elements that share a face plane z-fight, and rotation makes the overlap
-  unavoidable.** A square box cannot end flush against a 45-degree face without either overlapping
-  it or leaving a gap, so a sloped belt's square end caps have to overlap its rotated slab - and
-  while both spanned the block's full width, their side faces sat on the same two planes and
-  flickered. Holding the square boxes a tenth of a pixel back from the sides is the whole fix; the
-  tempting other direction, making them *wider* than the block, puts them inside the belt line laid
-  beside it. **The same trap across blocks**: the same ramp's underside reached a third of a block
-  past its own block and through the neighbouring belt's slab, which both z-fought *and* left the
-  ramp's surface climbing visibly through the belt it was supposed to meet. Mirroring the fix onto
-  the descending ramp was forgotten, and it looked perfect from every angle except the one that
-  showed it. `NauvisLogisticsModels.withinItsBlock` refuses it at datagen time now.
+- **Two overlapping elements that share a face plane z-fight, and a rotated element cannot avoid
+  overlapping.** A square box cannot end flush against a 45-degree face without either overlapping
+  it or leaving a gap, and a tilted end cannot stop square at a block boundary — so a sloped belt's
+  slab necessarily runs through the square box under it *and* into the flat belt at the top of the
+  climb. While all three spanned the full width their side faces sat on the same two planes and
+  flickered. **Shrink the overlapping piece, not the pieces it overlaps**: a tenth of a pixel off
+  each side of the slab clears every pair at once and leaves the flat joints exactly as wide as the
+  belts they meet, where insetting the square boxes instead would have narrowed those joints. Never
+  the other direction — a box wider than its block reaches into whatever is placed beside it.
+  **And geometry that merely interpenetrates is usually fine**: the first fix for this clipped the
+  slab back inside its block and rebuilt the missing corner out of six little boxes, which was more
+  code, looked worse, and was solving the flicker by removing an overlap that was never the
+  problem.
 
 - **A model file renamed out from under its item.** `CUBE_COLUMN_HORIZONTAL` writes to
   `block/<name>_horizontal`; the item model defaults to `block/<name>`. The block rendered and the

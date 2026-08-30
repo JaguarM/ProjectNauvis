@@ -60,16 +60,16 @@ Belts
   disagree here: each step is a quarter block, well under the 0.6 step height, so a slope is walked
   up rather than jumped - vanilla's rail slope is a plain 8-pixel box and does have to be jumped.
   Standing on one puts you within a quarter block of the drawn surface.
-- **A ramp reaches half a block up into the block above it**, which is where the surface has to be
-  to meet the belt at the top of the climb. It stays inside its own block *along* the belt - that is
-  checked when the model is generated, because a ramp that did not would pass through the belt it
-  joins - but a solid block placed directly above one will clip it. Vanilla's raised rail reaches
-  into the block above for the same reason.
-- **The last pixel of a ramp is six little steps rather than a slope.** Clipping the slab to its own
-  block leaves a corner at the top, and a square box cannot fill a 45-degree corner exactly; the
-  steps are under a pixel each and none stands more than that proud of the slope. Everything square
-  in a ramp is also held a tenth of a pixel back from the sides, so that it never shares a plane
-  with the slab it overlaps - which is what z-fighting is made of.
+- **A ramp reaches out of its own block at both ends**, and is meant to. Up into the block above,
+  which is where the surface has to be to meet the belt at the top of the climb - vanilla's raised
+  rail does the same - and, because a rotated box's ends tilt with it, a third of a block *along*
+  the belt into the block that belt is in. There the ramp's material lies inside the belt or along
+  the top of it. It does mean a solid block placed directly above a ramp will clip it.
+- **The slanted slab is a tenth of a pixel narrower than its block**, which is the whole of the
+  z-fighting fix: it overlaps the square box under its low end and the flat belt at the top of the
+  climb, neither of which can be avoided, and while all three spanned the full width they sat their
+  side faces on the same planes. Pulling in the slanted piece - rather than the square ones - leaves
+  every flat joint exactly as wide as the belt it meets.
 - **Client and server runs can differ at a chunk edge**, because a client only has the belts in its
   loaded chunks. It costs a belt at the very edge of the loaded world appearing to back up when it
   is not; a chunk arriving re-seeds that block's items from the block entity.
