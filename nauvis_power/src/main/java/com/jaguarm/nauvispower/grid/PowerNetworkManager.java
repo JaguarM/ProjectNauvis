@@ -1,5 +1,6 @@
 package com.jaguarm.nauvispower.grid;
 
+import com.jaguarm.nauvispower.multiblock.MachineShape;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.IdentityHashMap;
@@ -10,7 +11,6 @@ import java.util.Set;
 
 import org.jspecify.annotations.Nullable;
 
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongIterator;
@@ -74,40 +74,38 @@ import net.minecraft.world.level.ChunkPos;
  */
 public final class PowerNetworkManager {
 
-    /**
-     * The longest wire reach any pole tier has, which is the medium pole's nine blocks.
-     *
-     * <p>Not the reach used for anything - each pole answers for itself, see
-     * {@link #withinWireReach} - but the bound the cell index is sized against, and the one number
-     * that has to move when a longer-reaching pole is added. A tier over {@link #CELL_BITS}'s cell
-     * size would be missed at a cell edge and nothing would say so.
-     */
-    public static final double LONGEST_WIRE_REACH = MediumElectricPoleBlock.WIRE_REACH;
 
     /**
-     * Factorio's small pole supplies a 5x5 area - two blocks either side. Kept as a cube here,
-     * because a machine stacked above another is a reasonable thing to build and refusing it
-     * would be a rule the player has to learn for no reason.
+     * Factorio's small and medium poles supply a 5x5 area - two blocks either side of a one-tile
+     * pole. Kept as a cube in Y here, because a machine stacked above another is a reasonable
+     * thing to build and refusing it would be a rule the player has to learn for no reason.
+     *
+     * <p>The big pole is 4x4, which is not a smaller radius around a bigger point: it is its
+     * two-by-two footprint plus one tile on every side. So supply is measured from the
+     * <em>footprint</em> rather than from the foot, and a one-tile pole with a reach of two comes
+     * out at exactly the 5x5 it always was. See {@link Pole}.
      */
     public static final int SUPPLY_RADIUS = 2;
 
     /**
-     * Cell size for the pole index, as a shift. Sixteen blocks, which must stay larger than
-     * {@link #LONGEST_WIRE_REACH} - the 27-cell neighbourhood below is only complete because it
-     * is, and a pole standing at a cell edge would otherwise silently fail to see one it reaches.
+     * Cell size for the pole index, as a shift.
      *
-     * <p>It was eight while every pole reached 7.5. The medium pole reaches nine, so it is
-     * sixteen; the alternative - keeping eight and widening the neighbourhood to 125 cells -
+     * <p>It was eight while every pole reached 7.5, and the neighbourhood was the 27 cells around
+     * one, which is complete only while the cell is wider than the reach. The medium pole reaches
+     * nine, so cells are sixteen; the alternative - keeping eight and widening the neighbourhood -
      * covers a smaller volume for more lookups.
+     *
+     * <p>The big pole reaches thirty and no sane cell size covers that, so the scan is sized from
+     * the asking pole's own reach ({@link #cellSpan}) and poles that out-reach a cell are held in
+     * {@link #longReach} as well, where everybody looks. **That second index is not an
+     * optimisation, it is the correctness.** Without it, a small pole would find a big one only
+     * when the big one happened to fall inside the small one's own three-cell scan, so a wire
+     * would be there or not depending on where the two stood - and both halves would look right
+     * in isolation.
      */
     private static final int CELL_BITS = 4;
 
-    static {
-        if (LONGEST_WIRE_REACH >= (1 << CELL_BITS)) {
-            throw new AssertionError("a wire reach of " + LONGEST_WIRE_REACH
-                    + " needs cells larger than " + (1 << CELL_BITS) + " blocks");
-        }
-    }
+    private static final int CELL_SIZE = 1 << CELL_BITS;
 
     /**
      * How often a network that is not moving energy is looked at again.
@@ -127,14 +125,22 @@ public final class PowerNetworkManager {
     private final Long2ObjectOpenHashMap<PowerNetwork> networkByPole = new Long2ObjectOpenHashMap<>();
 
     /**
-     * How far each indexed pole reaches, so the graph never has to look at a block state.
+     * What each indexed pole is, so the graph never has to look at a block state.
      *
      * <p>Read off the block once, when the pole joins. Looking it up on demand would mean a block
      * state read per candidate inside {@link #collectWireNeighbours}, and one of the two poles in
      * that comparison has often just been broken - so the block is already gone and the answer
      * would be wrong exactly when it matters.
      */
-    private final Long2DoubleOpenHashMap reachByPole = new Long2DoubleOpenHashMap();
+    private final Long2ObjectOpenHashMap<Pole> poleData = new Long2ObjectOpenHashMap<>();
+
+    /**
+     * The poles that reach further than a cell of the index is wide.
+     *
+     * <p>Scanned in full by every lookup, which is affordable only because there are few of them -
+     * a big pole is what a base has tens of, not thousands. See {@link #CELL_BITS}.
+     */
+    private final LongOpenHashSet longReach = new LongOpenHashSet();
     private final Long2ObjectOpenHashMap<LongOpenHashSet> polesByCell = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectOpenHashMap<LongOpenHashSet> polesBySuppliedChunk = new Long2ObjectOpenHashMap<>();
 
@@ -148,6 +154,34 @@ public final class PowerNetworkManager {
     private final LongOpenHashSet pendingBlocks = new LongOpenHashSet();
 
     private long tickCount;
+
+    /**
+     * What the graph needs to know about a pole, read off its block when it joins.
+     *
+     * <p>Four numbers rather than a reference to the block, because every one of them is still
+     * wanted after the block is gone: a pole leaving is the expensive half of its life, and every
+     * question asked on that path - what it was wired to, what it was the last one supplying - is
+     * about a pole that no longer exists.
+     *
+     * @param wireReach   how far it throws a wire, in blocks
+     * @param width       its footprint east-west, in blocks, from the foot outwards
+     * @param depth       its footprint north-south
+     * @param supplyReach how far past that footprint it supplies machines. Factorio's areas are
+     *                    5x5 for a one-tile pole and 4x4 for the two-tile one, which is this plus
+     *                    the footprint in both cases and is not a radius in either
+     */
+    private record Pole(double wireReach, int width, int depth, int supplyReach) {}
+
+    /**
+     * What an unindexed pole is taken to be: a small one.
+     *
+     * <p>Reached only for a pole that has already left, and only on the paths that pass their own
+     * details in anyway, so in practice it is never the answer to anything. It is the short reach
+     * rather than the long one because a wrong short answer loses a wire and a wrong long one
+     * invents a network.
+     */
+    private static final Pole UNKNOWN =
+            new Pole(SmallElectricPoleBlock.WIRE_REACH, 1, 1, SUPPLY_RADIUS);
 
     private PowerNetworkManager(ServerLevel level) {
         this.level = level;
@@ -168,12 +202,12 @@ public final class PowerNetworkManager {
      * A pole exists at {@code pos}: join it to whatever it can reach, merging networks if it
      * bridges two.
      */
-    public void polePlaced(BlockPos pos, double wireReach) {
+    public void polePlaced(BlockPos pos, ElectricPoleBlock block) {
         long key = pos.asLong();
         if (networkByPole.containsKey(key)) {
             return;
         }
-        index(key, wireReach);
+        index(key, describe(block));
 
         LongArrayList reachable = new LongArrayList();
         collectWireNeighbours(key, reachable);
@@ -195,6 +229,12 @@ public final class PowerNetworkManager {
         refreshWires(key, reachable);
     }
 
+    /** Everything the graph keeps about a pole, taken off its block once. */
+    private static Pole describe(ElectricPoleBlock block) {
+        MachineShape shape = block.shape();
+        return new Pole(block.wireReach(), shape.width(), shape.depth(), block.supplyReach());
+    }
+
     /**
      * A pole is gone: drop the machines only it reached, and split the network if it was the
      * only thing holding two halves together.
@@ -202,9 +242,9 @@ public final class PowerNetworkManager {
     public void poleRemoved(BlockPos pos) {
         long key = pos.asLong();
         PowerNetwork network = networkByPole.remove(key);
-        // Its own reach has to outlive the index entry: everything below asks what this pole
-        // could see, and a pole that has left still decides half of that answer.
-        double reach = reachOf(key);
+        // Its own numbers have to outlive the index entry: everything below asks what this pole
+        // could see and what it supplied, and a pole that has left still decides half of that.
+        Pole self = poleOf(key);
         unindex(key);
         pendingPoles.remove(key);
         if (network == null) {
@@ -212,11 +252,11 @@ public final class PowerNetworkManager {
         }
 
         network.removePole(key);
-        dropUnreachedEndpoints(network, key);
+        dropUnreachedEndpoints(network, key, self);
 
         // This pole is already out of the index, so what it could reach is what is left standing.
         LongArrayList orphaned = new LongArrayList();
-        collectWireNeighbours(key, reach, orphaned);
+        collectWireNeighbours(key, self, orphaned);
         for (int i = 0; i < orphaned.size(); i++) {
             refreshWires(orphaned.getLong(i), null);
         }
@@ -227,7 +267,7 @@ public final class PowerNetworkManager {
             return;
         }
 
-        splitIfSevered(network, key, reach);
+        splitIfSevered(network, key, self);
     }
 
     /**
@@ -387,9 +427,9 @@ public final class PowerNetworkManager {
      * a pole with one wire neighbour, or none, cannot have been holding anything together, and
      * most poles in a base are the end of a line rather than the middle of one.
      */
-    private void splitIfSevered(PowerNetwork network, long removed, double removedReach) {
+    private void splitIfSevered(PowerNetwork network, long removed, Pole removedPole) {
         LongArrayList seeds = new LongArrayList();
-        collectWireNeighbours(removed, removedReach, seeds);
+        collectWireNeighbours(removed, removedPole, seeds);
         if (seeds.size() <= 1) {
             return;
         }
@@ -483,8 +523,8 @@ public final class PowerNetworkManager {
     }
 
     /** Forgets the machines that the pole at {@code removed} was the last one reaching. */
-    private void dropUnreachedEndpoints(PowerNetwork network, long removed) {
-        forEachSupplyPosition(removed, position -> {
+    private void dropUnreachedEndpoints(PowerNetwork network, long removed, Pole data) {
+        forEachSupplyPosition(removed, data, position -> {
             if (network.hasEndpoint(position) && !reaches(network, position)) {
                 network.removeEndpoint(position);
             }
@@ -492,25 +532,30 @@ public final class PowerNetworkManager {
     }
 
     private void scanSupplyArea(long pole, PowerNetwork network) {
-        forEachSupplyPosition(pole, network::addEndpoint);
+        forEachSupplyPosition(pole, poleOf(pole), network::addEndpoint);
     }
 
     // --- indexes ------------------------------------------------------------------------------
 
-    private void index(long pole, double wireReach) {
-        reachByPole.put(pole, wireReach);
+    private void index(long pole, Pole data) {
+        poleData.put(pole, data);
         polesByCell.computeIfAbsent(cellOf(pole), key -> new LongOpenHashSet()).add(pole);
-        forEachSuppliedChunk(pole, chunk ->
+        if (data.wireReach() > CELL_SIZE) {
+            longReach.add(pole);
+        }
+        forEachSuppliedChunk(pole, data, chunk ->
                 polesBySuppliedChunk.computeIfAbsent(chunk, key -> new LongOpenHashSet()).add(pole));
     }
 
     private void unindex(long pole) {
-        reachByPole.remove(pole);
+        Pole data = poleOf(pole);
+        poleData.remove(pole);
+        longReach.remove(pole);
         LongOpenHashSet cell = polesByCell.get(cellOf(pole));
         if (cell != null && cell.remove(pole) && cell.isEmpty()) {
             polesByCell.remove(cellOf(pole));
         }
-        forEachSuppliedChunk(pole, chunk -> {
+        forEachSuppliedChunk(pole, data, chunk -> {
             LongOpenHashSet poles = polesBySuppliedChunk.get(chunk);
             if (poles != null && poles.remove(pole) && poles.isEmpty()) {
                 polesBySuppliedChunk.remove(chunk);
@@ -532,21 +577,28 @@ public final class PowerNetworkManager {
      * other therefore cannot be more than one cell apart on any axis.
      */
     private void collectWireNeighbours(long pole, LongArrayList out) {
-        collectWireNeighbours(pole, reachOf(pole), out);
+        collectWireNeighbours(pole, poleOf(pole), out);
     }
 
     /**
-     * The same, for a pole whose reach the index no longer holds - which is every caller on the
-     * removal path, because the pole is out of the index before its consequences are worked out.
+     * The same, for a pole the index no longer holds - which is every caller on the removal path,
+     * because the pole is out of the index before its consequences are worked out.
+     *
+     * <p>Two passes, and the second is not a shortcut. The cell scan is sized from <em>this</em>
+     * pole's reach, so it finds everything this pole can see; what it cannot find is a pole that
+     * out-reaches it from further away, and a wire runs on the longer of the two reaches. That is
+     * what {@link #longReach} is for, and skipping the ones the first pass already covered is what
+     * keeps a neighbour from being listed twice.
      */
-    private void collectWireNeighbours(long pole, double reach, LongArrayList out) {
+    private void collectWireNeighbours(long pole, Pole self, LongArrayList out) {
         int cellX = BlockPos.getX(pole) >> CELL_BITS;
         int cellY = BlockPos.getY(pole) >> CELL_BITS;
         int cellZ = BlockPos.getZ(pole) >> CELL_BITS;
+        int span = cellSpan(self.wireReach());
 
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                for (int dz = -1; dz <= 1; dz++) {
+        for (int dx = -span; dx <= span; dx++) {
+            for (int dy = -span; dy <= span; dy++) {
+                for (int dz = -span; dz <= span; dz++) {
                     LongOpenHashSet cell =
                             polesByCell.get(BlockPos.asLong(cellX + dx, cellY + dy, cellZ + dz));
                     if (cell == null) {
@@ -554,13 +606,41 @@ public final class PowerNetworkManager {
                     }
                     for (LongIterator it = cell.iterator(); it.hasNext();) {
                         long other = it.nextLong();
-                        if (other != pole && withinWireReach(pole, reach, other)) {
+                        if (other != pole && withinWireReach(pole, self, other)) {
                             out.add(other);
                         }
                     }
                 }
             }
         }
+
+        for (LongIterator it = longReach.iterator(); it.hasNext();) {
+            long other = it.nextLong();
+            if (other == pole || withinCells(cellX, cellY, cellZ, other, span)) {
+                continue;  // itself, or already looked at by the scan above
+            }
+            if (withinWireReach(pole, self, other)) {
+                out.add(other);
+            }
+        }
+    }
+
+    /**
+     * How many cells away a pole reaching this far can still be.
+     *
+     * <p>Two positions at most {@code reach} apart differ by at most
+     * {@code floor((CELL_SIZE - 1 + reach) / CELL_SIZE)} cells, the worst case being a pole
+     * sitting hard against a cell boundary. The reach is ceilinged first, since 7.5 has to cover
+     * 7.5 rather than 7.
+     */
+    private static int cellSpan(double reach) {
+        return (CELL_SIZE - 1 + (int) Math.ceil(reach)) / CELL_SIZE;
+    }
+
+    private static boolean withinCells(int cellX, int cellY, int cellZ, long other, int span) {
+        return Math.abs((BlockPos.getX(other) >> CELL_BITS) - cellX) <= span
+                && Math.abs((BlockPos.getY(other) >> CELL_BITS) - cellY) <= span
+                && Math.abs((BlockPos.getZ(other) >> CELL_BITS) - cellZ) <= span;
     }
 
     /**
@@ -574,32 +654,39 @@ public final class PowerNetworkManager {
      * flood fill in {@link #components} quietly depends on - an asymmetric one would put two poles
      * in the same network or not depending on which end the walk started from.
      */
-    private boolean withinWireReach(long a, double reachA, long b) {
+    private boolean withinWireReach(long a, Pole poleA, long b) {
         double dx = BlockPos.getX(a) - BlockPos.getX(b);
         double dy = BlockPos.getY(a) - BlockPos.getY(b);
         double dz = BlockPos.getZ(a) - BlockPos.getZ(b);
-        double reach = Math.max(reachA, reachOf(b));
+        double reach = Math.max(poleA.wireReach(), poleOf(b).wireReach());
         return dx * dx + dy * dy + dz * dz <= reach * reach;
     }
 
-    /**
-     * A pole's reach, or the small pole's if it is not indexed.
-     *
-     * <p>The fallback is reached only for a pole that has already left, and only on the paths that
-     * pass their own reach in anyway, so in practice it is never the answer to anything. It is the
-     * short reach rather than the long one because a wrong short answer loses a wire and a wrong
-     * long one invents a network.
-     */
-    private double reachOf(long pole) {
-        return reachByPole.containsKey(pole)
-                ? reachByPole.get(pole)
-                : SmallElectricPoleBlock.WIRE_REACH;
+    /** What the index says a pole is, or {@link #UNKNOWN} if it is not in there. */
+    private Pole poleOf(long pole) {
+        return poleData.getOrDefault(pole, UNKNOWN);
     }
 
-    private static boolean supplies(long pole, long position) {
-        return Math.abs(BlockPos.getX(pole) - BlockPos.getX(position)) <= SUPPLY_RADIUS
-                && Math.abs(BlockPos.getY(pole) - BlockPos.getY(position)) <= SUPPLY_RADIUS
-                && Math.abs(BlockPos.getZ(pole) - BlockPos.getZ(position)) <= SUPPLY_RADIUS;
+    /**
+     * Whether a pole supplies a position: inside its footprint grown by its own margin.
+     *
+     * <p>Horizontally that is Factorio's area exactly - 5x5 around a one-tile pole with a margin
+     * of two, 4x4 around a two-tile one with a margin of one, 18x18 around a substation with a
+     * margin of eight. Vertically it stays two blocks either side of the <em>foot</em> for every
+     * tier, which is deliberate: a taller pole is not a pole that feeds machines further into the
+     * sky, and letting a substation supply eight blocks up would put a machine on a roof on the
+     * grid without the player doing anything to put it there.
+     */
+    private boolean supplies(long pole, long position) {
+        return supplies(pole, poleOf(pole), position);
+    }
+
+    private static boolean supplies(long pole, Pole data, long position) {
+        int dx = BlockPos.getX(position) - BlockPos.getX(pole);
+        int dz = BlockPos.getZ(position) - BlockPos.getZ(pole);
+        return dx >= -data.supplyReach() && dx < data.width() + data.supplyReach()
+                && dz >= -data.supplyReach() && dz < data.depth() + data.supplyReach()
+                && Math.abs(BlockPos.getY(pole) - BlockPos.getY(position)) <= SUPPLY_RADIUS;
     }
 
     private interface PositionSink {
@@ -610,13 +697,14 @@ public final class PowerNetworkManager {
         void accept(long chunk);
     }
 
-    private static void forEachSupplyPosition(long pole, PositionSink sink) {
+    private static void forEachSupplyPosition(long pole, Pole data, PositionSink sink) {
         int x = BlockPos.getX(pole);
         int y = BlockPos.getY(pole);
         int z = BlockPos.getZ(pole);
-        for (int dx = -SUPPLY_RADIUS; dx <= SUPPLY_RADIUS; dx++) {
+        int margin = data.supplyReach();
+        for (int dx = -margin; dx < data.width() + margin; dx++) {
             for (int dy = -SUPPLY_RADIUS; dy <= SUPPLY_RADIUS; dy++) {
-                for (int dz = -SUPPLY_RADIUS; dz <= SUPPLY_RADIUS; dz++) {
+                for (int dz = -margin; dz < data.depth() + margin; dz++) {
                     if (dx != 0 || dy != 0 || dz != 0) {
                         sink.accept(BlockPos.asLong(x + dx, y + dy, z + dz));
                     }
@@ -625,11 +713,12 @@ public final class PowerNetworkManager {
         }
     }
 
-    private static void forEachSuppliedChunk(long pole, ChunkSink sink) {
-        int minX = (BlockPos.getX(pole) - SUPPLY_RADIUS) >> 4;
-        int maxX = (BlockPos.getX(pole) + SUPPLY_RADIUS) >> 4;
-        int minZ = (BlockPos.getZ(pole) - SUPPLY_RADIUS) >> 4;
-        int maxZ = (BlockPos.getZ(pole) + SUPPLY_RADIUS) >> 4;
+    private static void forEachSuppliedChunk(long pole, Pole data, ChunkSink sink) {
+        int margin = data.supplyReach();
+        int minX = (BlockPos.getX(pole) - margin) >> 4;
+        int maxX = (BlockPos.getX(pole) + data.width() - 1 + margin) >> 4;
+        int minZ = (BlockPos.getZ(pole) - margin) >> 4;
+        int maxZ = (BlockPos.getZ(pole) + data.depth() - 1 + margin) >> 4;
         for (int x = minX; x <= maxX; x++) {
             for (int z = minZ; z <= maxZ; z++) {
                 sink.accept(ChunkPos.pack(x, z));

@@ -31,8 +31,8 @@ import net.minecraft.world.phys.AABB;
  * onLoad} when its chunk arrives, {@code setRemoved} when it is broken, {@code onChunkUnloaded}
  * when its chunk leaves - and, since there are wires, for one piece of state.
  *
- * <p>Only the {@link PolePart#FOOT} of a pole has one of these. The other three blocks are
- * structure.
+ * <p>Only the foot of a pole has one of these. The other blocks - three of them for a small pole,
+ * twenty-three for a big one - are structure.
  *
  * <h2>The wires</h2>
  *
@@ -49,6 +49,17 @@ import net.minecraft.world.phys.AABB;
 public class ElectricPoleBlockEntity extends BlockEntity {
 
     private static final long[] NONE = new long[0];
+
+    /**
+     * The tallest and widest any pole gets, in blocks, used as the allowance at both ends of every
+     * wire in {@link #wireBounds()}.
+     *
+     * <p>The tier at the far end is not read. This is a culling box - being too big costs a pole
+     * that is drawn when it need not have been, being too small costs a wire that vanishes while
+     * you are looking at it - so one number covering every tier is the right trade, and it saves a
+     * block state read per link on a path that runs for every pole on screen.
+     */
+    private static final int TALLEST = 6;
 
     private static final Codec<List<Long>> LINKS_CODEC = Codec.LONG.listOf();
 
@@ -87,18 +98,18 @@ public class ElectricPoleBlockEntity extends BlockEntity {
         double minX = worldPosition.getX();
         double minY = worldPosition.getY();
         double minZ = worldPosition.getZ();
-        double maxX = minX + 1;
-        double maxY = minY + ElectricPoleBlock.HEIGHT;
-        double maxZ = minZ + 1;
+        double maxX = minX + TALLEST;
+        double maxY = minY + TALLEST;
+        double maxZ = minZ + TALLEST;
 
         for (long link : links) {
             BlockPos other = BlockPos.of(link);
             minX = Math.min(minX, other.getX());
             minY = Math.min(minY, other.getY());
             minZ = Math.min(minZ, other.getZ());
-            maxX = Math.max(maxX, other.getX() + 1);
-            maxY = Math.max(maxY, other.getY() + ElectricPoleBlock.HEIGHT);
-            maxZ = Math.max(maxZ, other.getZ() + 1);
+            maxX = Math.max(maxX, other.getX() + TALLEST);
+            maxY = Math.max(maxY, other.getY() + TALLEST);
+            maxZ = Math.max(maxZ, other.getZ() + TALLEST);
         }
         return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
@@ -128,7 +139,7 @@ public class ElectricPoleBlockEntity extends BlockEntity {
         super.onLoad();
         if (level instanceof ServerLevel serverLevel
                 && getBlockState().getBlock() instanceof ElectricPoleBlock pole) {
-            PowerNetworkManager.of(serverLevel).polePlaced(worldPosition, pole.wireReach());
+            PowerNetworkManager.of(serverLevel).polePlaced(worldPosition, pole);
         }
     }
 

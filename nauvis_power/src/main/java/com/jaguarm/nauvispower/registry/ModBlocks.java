@@ -3,7 +3,9 @@ package com.jaguarm.nauvispower.registry;
 import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.generator.BoilerBlock;
 import com.jaguarm.nauvispower.generator.SteamEngineBlock;
+import com.jaguarm.nauvispower.grid.BigElectricPoleBlock;
 import com.jaguarm.nauvispower.grid.MediumElectricPoleBlock;
+import com.jaguarm.nauvispower.grid.SubstationBlock;
 import com.jaguarm.nauvispower.grid.SmallElectricPoleBlock;
 
 import net.minecraft.world.level.block.SoundType;
@@ -55,7 +57,7 @@ public final class ModBlocks {
                     .noOcclusion());
 
     /**
-     * The same pole reaching nine blocks instead of seven and a half, in steel rather than wood.
+     * Reaching nine blocks instead of seven and a half, a block taller, and in steel.
      *
      * <p>Behind {@code electric-energy-distribution-1}, which is behind steel and green science,
      * so a player meets it once their first grid has grown past the point where the small pole's
@@ -68,6 +70,28 @@ public final class ModBlocks {
             properties -> properties
                     .mapColor(MapColor.METAL)
                     .strength(1.5F)
+                    .sound(SoundType.METAL)
+                    .pushReaction(PushReaction.BLOCK)
+                    .noOcclusion());
+
+    /** Two tiles by two and six blocks tall, reaching thirty. The bus pole. */
+    public static final DeferredBlock<BigElectricPoleBlock> BIG_ELECTRIC_POLE = BLOCKS.registerBlock(
+            "big_electric_pole",
+            BigElectricPoleBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.METAL)
+                    .strength(2.0F)
+                    .sound(SoundType.METAL)
+                    .pushReaction(PushReaction.BLOCK)
+                    .noOcclusion());
+
+    /** The same tower one storey shorter, reaching eighteen and covering eighteen by eighteen. */
+    public static final DeferredBlock<SubstationBlock> SUBSTATION = BLOCKS.registerBlock(
+            "substation",
+            SubstationBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.METAL)
+                    .strength(2.0F)
                     .sound(SoundType.METAL)
                     .pushReaction(PushReaction.BLOCK)
                     .noOcclusion());

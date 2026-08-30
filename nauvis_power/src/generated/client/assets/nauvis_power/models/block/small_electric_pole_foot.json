@@ -4,22 +4,23 @@
     {
       "faces": {
         "down": {
-          "texture": "#texture"
+          "cullface": "down",
+          "texture": "#bottom"
         },
         "east": {
-          "texture": "#texture"
+          "texture": "#side"
         },
         "north": {
-          "texture": "#texture"
+          "texture": "#side"
         },
         "south": {
-          "texture": "#texture"
+          "texture": "#side"
         },
         "up": {
-          "texture": "#texture"
+          "texture": "#top"
         },
         "west": {
-          "texture": "#texture"
+          "texture": "#side"
         }
       },
       "from": [
@@ -36,22 +37,23 @@
     {
       "faces": {
         "down": {
-          "texture": "#texture"
+          "texture": "#bottom"
         },
         "east": {
-          "texture": "#texture"
+          "texture": "#side"
         },
         "north": {
-          "texture": "#texture"
+          "texture": "#side"
         },
         "south": {
-          "texture": "#texture"
+          "texture": "#side"
         },
         "up": {
-          "texture": "#texture"
+          "cullface": "up",
+          "texture": "#top"
         },
         "west": {
-          "texture": "#texture"
+          "texture": "#side"
         }
       },
       "from": [
@@ -67,7 +69,9 @@
     }
   ],
   "textures": {
+    "bottom": "minecraft:block/stripped_oak_log",
     "particle": "minecraft:block/stripped_oak_log",
-    "texture": "minecraft:block/stripped_oak_log"
+    "side": "minecraft:block/stripped_oak_log",
+    "top": "minecraft:block/stripped_oak_log"
   }
 }

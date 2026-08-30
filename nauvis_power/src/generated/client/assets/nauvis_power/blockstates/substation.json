@@ -1,0 +1,79 @@
+{
+  "variants": {
+    "part=0": {
+      "model": "nauvis_power:block/substation_foot"
+    },
+    "part=1": {
+      "model": "nauvis_power:block/substation_foot",
+      "y": 90
+    },
+    "part=10": {
+      "model": "nauvis_power:block/substation_shaft",
+      "y": 180
+    },
+    "part=11": {
+      "model": "nauvis_power:block/substation_shaft",
+      "y": 270
+    },
+    "part=12": {
+      "model": "nauvis_power:block/substation_shaft"
+    },
+    "part=13": {
+      "model": "nauvis_power:block/substation_shaft",
+      "y": 90
+    },
+    "part=14": {
+      "model": "nauvis_power:block/substation_shaft",
+      "y": 180
+    },
+    "part=15": {
+      "model": "nauvis_power:block/substation_shaft",
+      "y": 270
+    },
+    "part=16": {
+      "model": "nauvis_power:block/substation_head"
+    },
+    "part=17": {
+      "model": "nauvis_power:block/substation_head",
+      "y": 90
+    },
+    "part=18": {
+      "model": "nauvis_power:block/substation_head",
+      "y": 180
+    },
+    "part=19": {
+      "model": "nauvis_power:block/substation_head",
+      "y": 270
+    },
+    "part=2": {
+      "model": "nauvis_power:block/substation_foot",
+      "y": 180
+    },
+    "part=3": {
+      "model": "nauvis_power:block/substation_foot",
+      "y": 270
+    },
+    "part=4": {
+      "model": "nauvis_power:block/substation_shaft"
+    },
+    "part=5": {
+      "model": "nauvis_power:block/substation_shaft",
+      "y": 90
+    },
+    "part=6": {
+      "model": "nauvis_power:block/substation_shaft",
+      "y": 180
+    },
+    "part=7": {
+      "model": "nauvis_power:block/substation_shaft",
+      "y": 270
+    },
+    "part=8": {
+      "model": "nauvis_power:block/substation_shaft"
+    },
+    "part=9": {
+      "model": "nauvis_power:block/substation_shaft",
+      "y": 90
+    }
+  }
+}

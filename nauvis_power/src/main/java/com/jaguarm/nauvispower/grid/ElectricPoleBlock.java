@@ -1,5 +1,8 @@
 package com.jaguarm.nauvispower.grid;
 
+import com.jaguarm.nauvispower.multiblock.MachineShape;
+import com.jaguarm.nauvispower.multiblock.Multiblock;
+
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
@@ -18,24 +21,15 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * An electric pole. Four blocks tall, and the reason the rest of this package exists.
- *
- * <p>A tier is one number - how far it can throw a wire - so the tiers are subclasses of this
- * rather than copies of it, and they share a block entity type the way the two electric inserters
- * do: what differs is a number the block already knows, and nothing about what is <em>saved</em>
- * changes. {@link #wireReach()} is the number, and {@code PowerNetworkManager} reads it off the
- * block rather than holding a constant, because two poles of different tiers have to agree about
- * whether they can see each other.
+ * An electric pole, and the reason the rest of this package exists.
  *
  * <p><b>It has no ticker and no {@code tick} override</b>, and that is the point rather than an
  * omission. A pole does nothing on its own: it joins a {@link PowerNetwork} when it loads and
@@ -43,166 +37,129 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * which schedule their own ticks because each can answer "have I got work?" by looking at itself.
  * A pole cannot - it is a node in a graph, and the graph is the thing with work to do.
  *
- * <h2>Four blocks, one thing</h2>
+ * <h2>A tier is a shape and a reach</h2>
  *
- * <p>A one-block pole reads as a fence post. A real one has to stand well over the machines it
- * feeds, and the honest way to do that in Minecraft is a true multi-block: four real blocks with a
- * {@link PolePart} property, placed together and broken together. The alternative - one block with
- * a {@code VoxelShape} four blocks tall - looks the same until you walk up to it, at which point
- * the renderer culls the whole pole the moment its one real block leaves the screen.
+ * <p>Three of them: one tile four blocks tall, one tile five blocks tall, and two tiles by two
+ * six blocks tall. Both numbers are constants on a subclass rather than constructor arguments,
+ * because {@code createBlockStateDefinition} runs inside {@link Block}'s constructor and a field
+ * of a subclass does not exist yet when it does - see PITFALLS.md. An overridden method returning
+ * a static is safe there, and is what {@link #shape()} and {@link #wireReach()} are.
  *
- * <p>The mechanism is vanilla's, from {@code DoorBlock} and {@code DoublePlantBlock}:
+ * <p>The three share a block entity type, the way the two electric inserters do: what differs is
+ * a number the block already knows, and nothing that is saved changes.
  *
- * <ul>
- *   <li>{@link #getStateForPlacement} returns null when there is no headroom, so the pole is never
- *       placed half-built;
- *   <li>{@link #setPlacedBy} puts the other two blocks in;
- *   <li>{@link #updateShape} turns a part to air the moment the part above or below it is not what
- *       it should be. That one rule is the whole teardown, and it covers every way a block can
- *       vanish - broken, exploded, {@code /setblock}, another mod - rather than only the ones
- *       somebody thought to handle.
- * </ul>
+ * <h2>The multi-block is not this class's</h2>
  *
- * <p>Only the bottom drops an item, by a loot table condition, and only the bottom carries the
- * block entity. Breaking the middle or the top destroys the bottom through the same rule, and the
- * bottom's own destruction is what hands the player their pole back.
+ * <p>Placement, teardown, which cell holds the block entity and which one you clicked are all
+ * {@link Multiblock}'s - the same mechanism the boiler and the steam engine use. It did not start
+ * that way: the pole had four rules of its own over a {@code PolePart} enum, and {@code Multiblock}
+ * was generalised out of them. Keeping both was tolerable while a pole was one tile and always
+ * four blocks tall; the tiers ended it, because a five-block pole needs a five-value enum and a
+ * two-by-two one needs two more axes, and {@link MachineShape} has had both all along.
  *
- * <p>Immersive Engineering's {@code wooden_post} is the reference for the shape of this - base
- * block holds the logic, dummies above, break one and the whole thing goes. Read and reimplemented
- * rather than copied; the mechanism below is vanilla's rather than theirs.
+ * <p>What is still the pole's own is the part {@code Multiblock} has no opinion about: it is
+ * climbable, so you go up it like a ladder, which is why the post collides even though the
+ * crossarm does not. That is Immersive Engineering's behaviour too, and it is the difference
+ * between a pole being scenery and being somewhere to stand while you wire the next one.
  *
  * <p>Right-click any part to see what it is connected to, which is the only way to see a network
  * from inside the game and is how the wire reach and the supply area were checked by hand.
  */
-public abstract class ElectricPoleBlock extends BaseEntityBlock {
-
-    public static final EnumProperty<PolePart> PART = EnumProperty.create("part", PolePart.class);
-
-    /** How tall a pole is, in blocks. Behaviour, so it is yours to tune - see {@link PolePart}. */
-    public static final int HEIGHT = PolePart.values().length;
+public abstract class ElectricPoleBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
     protected ElectricPoleBlock(Properties properties) {
         super(properties);
-        registerDefaultState(getStateDefinition().any().setValue(PART, PolePart.FOOT));
+        registerDefaultState(getStateDefinition().any().setValue(shape().part(), shape().anchor()));
     }
 
     /**
      * How far this pole can throw a wire to another, in blocks.
      *
-     * <p>Factorio's numbers: 7.5 for the small pole, 9 for the medium one. It is behaviour rather
-     * than identity, so it is tunable - but the <em>gap</em> between the tiers is the whole reason
-     * the medium pole exists, so moving one without the other makes the item pointless.
-     *
-     * <p>A constant on a subclass rather than a constructor argument. See PITFALLS.md:
-     * {@code createBlockStateDefinition} runs inside {@code Block}'s constructor, so a field of a
-     * subclass does not exist yet when the block is being built.
+     * <p>Factorio's numbers: 7.5, 9 and 30. Behaviour rather than identity, so it is tunable - but
+     * the <em>gaps</em> between the tiers are the whole reason the upper two exist, so moving one
+     * without the others makes an item pointless.
      */
     public abstract double wireReach();
 
+    /**
+     * How far past its own footprint this pole supplies machines, in blocks.
+     *
+     * <p>Factorio states supply as a square: 5x5 for the one-tile poles, 4x4 for the big one,
+     * 18x18 for the substation. Those are the footprint plus this on every side, which is why it
+     * is a margin rather than a radius - a two-tile pole has no middle tile to measure from.
+     */
+    public int supplyReach() {
+        return PowerNetworkManager.SUPPLY_RADIUS;
+    }
+
+    /** How tall this tier stands, in blocks. Read off the shape, so it cannot disagree with it. */
+    public int height() {
+        return shape().height();
+    }
+
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(PART);
+        builder.add(shape().part());
     }
 
     /**
-     * Only the bottom has one. The other two parts are structure, and a block entity each would be
-     * three times the memory for a base of ten thousand poles to hold nothing.
+     * Only the foot has one. The other cells are structure, and a block entity each would be
+     * twenty-four times the memory for a base of big poles to hold nothing.
      */
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return state.getValue(PART) == PolePart.FOOT
-                ? new ElectricPoleBlockEntity(pos, state)
-                : null;
+        return Multiblock.isAnchor(this, state) ? new ElectricPoleBlockEntity(pos, state) : null;
     }
 
     @Override
-    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return state.getValue(PART).shape();
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
+            CollisionContext context) {
+        return shape().cell(Multiblock.part(this, state)).shape(facing(state));
     }
 
     /**
      * The post, never the crossarm.
      *
      * <p>An arm that reaches most of the way across its block would catch you as you walked past
-     * the top of a pole - from a shape three blocks over your head that you were not looking at.
-     * The outline still traces the whole pole; only what you bump into is trimmed.
-     *
-     * <p>The post itself does collide, because a pole is climbable: it is in
-     * {@code minecraft:climbable}, so you go up it like a ladder, and something has to be there to
-     * climb. That is Immersive Engineering's behaviour too, and it is the difference between a
-     * pole being scenery and being somewhere to stand while you wire the next one.
+     * the top of a pole - from a shape several blocks over your head that you were not looking at.
+     * The outline still traces the whole pole; only what you bump into is trimmed. See
+     * {@link PoleBoxes}.
      */
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos,
             CollisionContext context) {
-        return state.getValue(PART).collisionShape();
+        return shape().cell(Multiblock.part(this, state)).collisionShape(facing(state));
     }
 
     /** Null - and so no placement at all - unless the whole pole fits. */
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
-        Level level = context.getLevel();
-        BlockPos pos = context.getClickedPos();
-        for (int above = 1; above < HEIGHT; above++) {
-            BlockPos part = pos.above(above);
-            if (part.getY() > level.getMaxY() || !level.getBlockState(part).canBeReplaced(context)) {
-                return null;
-            }
-        }
-        return defaultBlockState();
+        return Multiblock.getStateForPlacement(this, defaultBlockState(), context);
     }
 
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity by,
             ItemStack stack) {
-        for (int above = 1; above < HEIGHT; above++) {
-            level.setBlockAndUpdate(pos.above(above),
-                    state.setValue(PART, PolePart.values()[above]));
-        }
+        Multiblock.setPlacedBy(this, level, pos, state);
     }
 
-    /**
-     * The whole teardown, in one rule: a part whose neighbour above or below is not the part it
-     * should be stops existing.
-     *
-     * <p>Turning to air here rather than calling {@code removeBlock} matters. The neighbour-update
-     * machinery routes an air result through {@code Block.updateOrDestroy}, which <em>destroys</em>
-     * the block with drops enabled - so the bottom's loot table is what gives the player their pole
-     * back, whichever of the three parts they actually hit.
-     */
+    /** The whole teardown, in one rule. See {@link Multiblock#updateShape}. */
     @Override
     protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks,
             BlockPos pos, Direction direction, BlockPos neighbourPos, BlockState neighbourState,
             RandomSource random) {
-        if (direction.getAxis() == Direction.Axis.Y) {
-            PolePart part = state.getValue(PART);
-            PolePart expected = direction == Direction.UP ? part.above() : part.below();
-            if (expected != null
-                    && !(neighbourState.is(this) && neighbourState.getValue(PART) == expected)) {
-                return Blocks.AIR.defaultBlockState();
-            }
-        }
-        return super.updateShape(state, level, ticks, pos, direction, neighbourPos, neighbourState, random);
+        BlockState result = Multiblock.updateShape(
+                this, state, level, pos, direction, neighbourPos, neighbourState);
+        return result.isAir()
+                ? result
+                : super.updateShape(state, level, ticks, pos, direction, neighbourPos,
+                        neighbourState, random);
     }
 
-    /**
-     * In creative, take the bottom out silently first.
-     *
-     * <p>Without this a creative player breaking the top would get a free pole: the teardown above
-     * destroys the bottom with drops enabled, and creative only suppresses the drop from the block
-     * the player actually hit. Flag 32 is {@code UPDATE_SUPPRESS_DROPS}. This is
-     * {@code DoublePlantBlock#preventDropFromBottomPart}, with a taller pole.
-     */
+    /** Creative would otherwise hand back a free pole. See {@link Multiblock}. */
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide() && player.isCreative()) {
-            BlockPos bottom = pos.below(state.getValue(PART).height());
-            BlockState bottomState = level.getBlockState(bottom);
-            if (bottomState.is(this) && bottomState.getValue(PART) == PolePart.FOOT) {
-                level.setBlock(bottom, Blocks.AIR.defaultBlockState(), 35);
-                level.levelEvent(player, 2001, bottom, Block.getId(bottomState));
-            }
-        }
+        Multiblock.preventDropFromAnchor(this, level, pos, state, player);
         return super.playerWillDestroy(level, pos, state, player);
     }
 
@@ -213,10 +170,10 @@ public abstract class ElectricPoleBlock extends BaseEntityBlock {
             return InteractionResult.SUCCESS;
         }
 
-        // Whichever part was clicked, the network hangs off the bottom.
-        BlockPos bottom = pos.below(state.getValue(PART).height());
+        // Whichever cell was clicked, the network hangs off the foot.
+        BlockPos foot = Multiblock.anchorPos(this, state, pos);
         PowerNetworkManager manager = PowerNetworkManager.of(serverLevel);
-        PowerNetwork network = manager.networkAt(bottom);
+        PowerNetwork network = manager.networkAt(foot);
         if (network == null) {
             player.sendOverlayMessage(Component.translatable("nauvis_power.electric_pole.detached"));
             return InteractionResult.SUCCESS;

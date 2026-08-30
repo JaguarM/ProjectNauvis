@@ -11,10 +11,11 @@ import com.jaguarm.nauvispower.generator.BoilerMenu;
 import com.jaguarm.nauvispower.generator.SteamEngineBlock;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
 import com.jaguarm.nauvispower.generator.SteamEngineShape;
-import com.jaguarm.nauvispower.grid.PolePart;
 import com.jaguarm.nauvispower.grid.PowerNetwork;
 import com.jaguarm.nauvispower.grid.PowerNetworkManager;
+import com.jaguarm.nauvispower.grid.BigPoleShape;
 import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
+import com.jaguarm.nauvispower.multiblock.Multiblock;
 import com.jaguarm.nauvispower.grid.ElectricPoleBlockEntity;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 import com.jaguarm.nauvispower.registry.ModItems;
@@ -108,6 +109,10 @@ public final class NauvisPowerGameTests {
         TEST_TYPES.register("pole_wires_link_up", () -> PoleWiresLinkUpTest.CODEC);
         TEST_TYPES.register("pole_wire_bounds_reach_both_ends", () -> PoleWireBoundsTest.CODEC);
         TEST_TYPES.register("medium_pole_reaches_further", () -> MediumPoleReachesFurtherTest.CODEC);
+        TEST_TYPES.register("big_pole_stands_two_by_two", () -> BigPoleStandsTwoByTwoTest.CODEC);
+        TEST_TYPES.register("long_reach_pole_is_found_from_afar",
+                () -> LongReachPoleIsFoundFromAfarTest.CODEC);
+        TEST_TYPES.register("substation_covers_more_ground", () -> SubstationCoversMoreGroundTest.CODEC);
         TEST_TYPES.register("boiler_opens_a_screen", () -> BoilerOpensAScreenTest.CODEC);
         TEST_TYPES.register("boiler_refuses_what_will_not_burn", () -> BoilerRefusesNonFuelTest.CODEC);
         TEST_TYPES.register("steam_engines_chain", () -> SteamEnginesChainTest.CODEC);
@@ -145,6 +150,12 @@ public final class NauvisPowerGameTests {
         registerSpaced(event, environment, "pole_wires_link_up", PoleWiresLinkUpTest::new, 200);
         registerSpaced(event, environment, "medium_pole_reaches_further",
                 MediumPoleReachesFurtherTest::new, 200);
+        registerSpaced(event, environment, "big_pole_stands_two_by_two",
+                BigPoleStandsTwoByTwoTest::new, 200);
+        registerWide(event, environment, "long_reach_pole_is_found_from_afar",
+                LongReachPoleIsFoundFromAfarTest::new, 200);
+        registerWide(event, environment, "substation_covers_more_ground",
+                SubstationCoversMoreGroundTest::new, 200);
         registerSpaced(event, environment, "pole_wire_bounds_reach_both_ends", PoleWireBoundsTest::new, 100);
         register(event, environment, "boiler_opens_a_screen", BoilerOpensAScreenTest::new, 60);
         register(event, environment, "boiler_refuses_what_will_not_burn", BoilerRefusesNonFuelTest::new, 60);
@@ -170,6 +181,9 @@ public final class NauvisPowerGameTests {
      */
     private static final int PADDING = 24;
 
+    /** Room for the two tests that stand poles thirty blocks apart. See {@link #registerWide}. */
+    private static final int WIDE_PADDING = 72;
+
     private static void register(RegisterGameTestsEvent event,
             Holder<TestEnvironmentDefinition<?>> environment, String name, TestFactory factory, int maxTicks) {
         event.registerTest(
@@ -187,6 +201,23 @@ public final class NauvisPowerGameTests {
     private static void registerSpaced(RegisterGameTestsEvent event,
             Holder<TestEnvironmentDefinition<?>> environment, String name, TestFactory factory, int maxTicks) {
         register(event, environment, name, factory, maxTicks);
+    }
+
+    /**
+     * For the two tests that reach further than {@link #PADDING} does.
+     *
+     * <p>A test builds outside its declared one-by-one structure - every test here does - so what
+     * keeps two of them apart is the padding and nothing else. The long-reach tests put poles
+     * thirty-odd blocks from the origin, which is past 24, and a pole landing in the next test
+     * along joins <em>its</em> network: the failure appears in whichever test ran second, and says
+     * nothing about the one that caused it. See PITFALLS.md.
+     */
+    private static void registerWide(RegisterGameTestsEvent event,
+            Holder<TestEnvironmentDefinition<?>> environment, String name, TestFactory factory, int maxTicks) {
+        event.registerTest(
+                Identifier.fromNamespaceAndPath(NauvisPower.MODID, name),
+                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true,
+                        Rotation.NONE, false, 1, 1, false, WIDE_PADDING)));
     }
 
     /**
@@ -261,12 +292,25 @@ public final class NauvisPowerGameTests {
                 .setValue(SteamEngineBlock.FACING, Direction.NORTH));
     }
 
-    /** Which part of a pole, if any, stands at a test-relative position. */
-    private static @Nullable PolePart partAt(GameTestHelper helper, BlockPos pos) {
+    /** Which cell of a pole, if any, stands at a test-relative position; -1 for no pole. */
+    private static int partAt(GameTestHelper helper, BlockPos pos, ElectricPoleBlock pole) {
         BlockState state = helper.getLevel().getBlockState(helper.absolutePos(pos));
-        return state.is(ModBlocks.SMALL_ELECTRIC_POLE.get())
-                ? state.getValue(ElectricPoleBlock.PART)
-                : null;
+        return state.is(pole) ? Multiblock.part(pole, state) : -1;
+    }
+
+    /** The poles this one is wired to, which is what the client draws from. */
+    private static long[] links(GameTestHelper helper, BlockPos pole) {
+        return helper.getBlockEntity(pole, ElectricPoleBlockEntity.class).links();
+    }
+
+    private static void assertWiredTo(GameTestHelper helper, BlockPos from, BlockPos to) {
+        long wanted = helper.absolutePos(to).asLong();
+        for (long link : links(helper, from)) {
+            if (link == wanted) {
+                return;
+            }
+        }
+        helper.fail("the pole at " + from + " is not wired to the one at " + to);
     }
 
     private static PowerNetworkManager grid(GameTestHelper helper) {
@@ -703,20 +747,18 @@ public final class NauvisPowerGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            place(helper, FOOT, ModBlocks.SMALL_ELECTRIC_POLE.get());
+            ElectricPoleBlock pole = ModBlocks.SMALL_ELECTRIC_POLE.get();
+            place(helper, FOOT, pole);
 
-            for (PolePart part : PolePart.values()) {
-                helper.assertValueEqual(partAt(helper, FOOT.above(part.height())), part,
-                        "the part " + part.height() + " blocks up");
-            }
-
-            for (PolePart part : PolePart.values()) {
-                boolean expected = part == PolePart.FOOT;
+            helper.assertValueEqual(pole.height(), 4, "blocks in a small pole");
+            for (int height = 0; height < pole.height(); height++) {
+                helper.assertValueEqual(partAt(helper, FOOT.above(height), pole), height,
+                        "the cell " + height + " blocks up");
                 helper.assertTrue(
                         (helper.getLevel().getBlockEntity(
-                                helper.absolutePos(FOOT.above(part.height()))) != null) == expected,
-                        "block entity at the " + part.getSerializedName() + " of a pole - only the "
-                                + "foot should have one, or a base of poles pays four times over");
+                                helper.absolutePos(FOOT.above(height))) != null) == (height == 0),
+                        "block entity " + height + " blocks up a pole - only the foot should have "
+                                + "one, or a base of poles pays four times over");
             }
 
             helper.runAfterDelay(5, () -> {
@@ -770,10 +812,10 @@ public final class NauvisPowerGameTests {
                         helper.setBlock(FOOT.above(), Blocks.AIR);
                     })
                     .thenExecuteAfter(5, () -> {
-                        for (int height = 0; height < ElectricPoleBlock.HEIGHT; height++) {
-                            // Not assertValueEqual: it compares by calling equals on the value,
-                            // so a null one is a crash rather than a failure.
-                            helper.assertTrue(partAt(helper, FOOT.above(height)) == null,
+                        for (int height = 0; height < ModBlocks.SMALL_ELECTRIC_POLE.get().height(); height++) {
+                            helper.assertTrue(
+                                    partAt(helper, FOOT.above(height),
+                                            ModBlocks.SMALL_ELECTRIC_POLE.get()) < 0,
                                     "part of the pole is still standing " + height
                                             + " blocks up after the middle was broken");
                         }
@@ -913,7 +955,7 @@ public final class NauvisPowerGameTests {
                     })
                     // Swap only the east one. The gap has not changed; the reach at one end has.
                     .thenExecute(() -> {
-                        for (int height = 0; height < ElectricPoleBlock.HEIGHT; height++) {
+                        for (int height = 0; height < ModBlocks.SMALL_ELECTRIC_POLE.get().height(); height++) {
                             helper.setBlock(EAST.above(height), Blocks.AIR);
                         }
                     })
@@ -926,18 +968,79 @@ public final class NauvisPowerGameTests {
                     .thenSucceed();
         }
 
-        private static long[] links(GameTestHelper helper, BlockPos pole) {
-            return helper.getBlockEntity(pole, ElectricPoleBlockEntity.class).links();
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
         }
 
-        private static void assertWiredTo(GameTestHelper helper, BlockPos from, BlockPos to) {
-            long wanted = helper.absolutePos(to).asLong();
-            for (long link : links(helper, from)) {
-                if (link == wanted) {
-                    return;
-                }
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("medium pole reaches further");
+        }
+    }
+
+    /**
+     * A big pole is twenty-four blocks and one item, and its wires come off one network node.
+     *
+     * <p>The two-by-two footprint is the part worth asserting. A pole was a column for as long as
+     * there was one tier, so everything about it - placement, teardown, which cell drops the item,
+     * where a wire attaches - had only ever been exercised in one dimension. All of it is
+     * {@code Multiblock}'s now, and this is the first pole that would notice if it were not.
+     */
+    public static class BigPoleStandsTwoByTwoTest extends GameTestInstance {
+
+        public static final MapCodec<BigPoleStandsTwoByTwoTest> CODEC =
+                RecordCodecBuilder.<BigPoleStandsTwoByTwoTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(BigPoleStandsTwoByTwoTest::info))
+                                .apply(i, BigPoleStandsTwoByTwoTest::new));
+
+        private static final BlockPos FOOT = new BlockPos(0, 1, 0);
+
+        public BigPoleStandsTwoByTwoTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            ElectricPoleBlock pole = ModBlocks.BIG_ELECTRIC_POLE.get();
+            place(helper, FOOT, pole);
+
+            helper.assertValueEqual(pole.shape().cellCount(), 24, "blocks in a big pole");
+            helper.assertValueEqual(pole.shape().width(), 2, "tiles across");
+            helper.assertValueEqual(pole.shape().depth(), 2, "tiles deep");
+            helper.assertValueEqual(pole.height(), 6, "blocks tall");
+
+            for (int index = 0; index < pole.shape().cellCount(); index++) {
+                BlockPos cell = pole.shape().cellPos(FOOT, index, Direction.NORTH);
+                helper.assertValueEqual(partAt(helper, cell, pole), index,
+                        "the cell at " + cell);
+                helper.assertTrue(
+                        (helper.getLevel().getBlockEntity(helper.absolutePos(cell)) != null)
+                                == (index == BigPoleShape.FOOT),
+                        "block entity at cell " + index + " - only the foot should have one");
             }
-            helper.fail("the pole at " + from + " is not wired to the one at " + to);
+
+            helper.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        PowerNetwork network = requireNetwork(helper, FOOT, "the big pole has no network");
+                        helper.assertValueEqual(network.poleCount(), 1,
+                                "poles in the network - twenty-four blocks are one pole");
+                        // A leg that is not the foot, so the teardown has to cross the footprint
+                        // and not just run down a column.
+                        helper.setBlock(FOOT.east().above(3), Blocks.AIR);
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        for (int index = 0; index < pole.shape().cellCount(); index++) {
+                            BlockPos cell = pole.shape().cellPos(FOOT, index, Direction.NORTH);
+                            helper.assertTrue(partAt(helper, cell, pole) < 0,
+                                    "cell " + index + " is still standing after one leg was broken");
+                        }
+                        helper.assertTrue(networkAt(helper, FOOT) == null,
+                                "a pole that no longer exists is still in the grid index");
+                        helper.assertItemEntityCountIs(
+                                ModItems.BIG_ELECTRIC_POLE.get(), FOOT, 6.0, 1);
+                    })
+                    .thenSucceed();
         }
 
         @Override
@@ -947,7 +1050,145 @@ public final class NauvisPowerGameTests {
 
         @Override
         protected MutableComponent typeDescription() {
-            return Component.literal("medium pole reaches further");
+            return Component.literal("big pole stands two by two");
+        }
+    }
+
+    /**
+     * A small pole is wired to a big one that reaches it from further than the small one can see.
+     *
+     * <p><b>This is the test for {@code PowerNetworkManager}'s long-reach index, and it needs its
+     * alignment chosen rather than hoped for.</b> Poles are bucketed into sixteen-block cells and
+     * a pole scans the cells its own reach can span - one cell either way, for a small pole. A big
+     * pole seventeen blocks away is within its thirty, and is two cells away only when the small
+     * pole happens to stand hard against the top of a cell. Every other alignment finds it through
+     * the ordinary scan and proves nothing at all.
+     *
+     * <p>A gametest lands wherever the framework puts it, so the offset is worked out from the
+     * absolute position rather than assumed. Without that this test passes fifteen times in
+     * sixteen with the second index deleted.
+     */
+    public static class LongReachPoleIsFoundFromAfarTest extends GameTestInstance {
+
+        public static final MapCodec<LongReachPoleIsFoundFromAfarTest> CODEC =
+                RecordCodecBuilder.<LongReachPoleIsFoundFromAfarTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(LongReachPoleIsFoundFromAfarTest::info))
+                                .apply(i, LongReachPoleIsFoundFromAfarTest::new));
+
+        /** Inside the big pole's thirty and outside the small pole's seven and a half. */
+        private static final int GAP = 17;
+
+        /** The pole index's cell size. Not imported: this test is about what happens at its edges. */
+        private static final int CELL = 16;
+
+        public LongReachPoleIsFoundFromAfarTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            // Put the small pole on the last block of a cell, so the big pole seventeen east of it
+            // lands two cells over.
+            int align = Math.floorMod(helper.absolutePos(BlockPos.ZERO).getX(), CELL);
+            BlockPos near = new BlockPos(Math.floorMod(CELL - 1 - align, CELL), 1, 0);
+            BlockPos far = near.east(GAP);
+
+            helper.assertValueEqual(
+                    Math.abs((helper.absolutePos(far).getX() >> 4) - (helper.absolutePos(near).getX() >> 4)),
+                    2, "cells between the two poles - the arrangement this test is about");
+
+            // **The big pole goes down first**, and that ordering is the test.
+            //
+            // A pole joining looks at what it can see and merges with whatever it finds, so the
+            // second one placed is the one whose scan has to be right. Put the big pole down
+            // second and it finds the small one through its own two-cell span, the networks merge,
+            // and the assertion below passes with the long-reach index deleted - which is exactly
+            // what happened the first time this was written.
+            place(helper, far, ModBlocks.BIG_ELECTRIC_POLE.get());
+
+            helper.startSequence()
+                    .thenExecuteAfter(5, () -> place(helper, near, ModBlocks.SMALL_ELECTRIC_POLE.get()))
+                    .thenExecuteAfter(5, () -> {
+                        PowerNetwork network =
+                                requireNetwork(helper, near, "the small pole has no network");
+                        helper.assertValueEqual(network.poleCount(), 2,
+                                "poles in the network - a big pole reaches a small one, and a wire "
+                                        + "has one length whichever end you measure it from");
+
+                        // And both ends know about the wire, which is a second answer from the
+                        // same method: the client draws from `links`, and a pole that had joined
+                        // the right network with no link would look detached and work perfectly.
+                        assertWiredTo(helper, near, far);
+                        assertWiredTo(helper, far, near);
+                        helper.succeed();
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("long reach pole is found from afar");
+        }
+    }
+
+    /**
+     * A substation supplies a machine nine blocks away and a small pole does not.
+     *
+     * <p>Supply is measured from the footprint outwards now rather than as a radius around the
+     * foot, because Factorio's areas are 5x5 around a one-tile pole and 18x18 around a two-tile
+     * one and neither is a radius. The one-tile case has to come out at exactly the 5x5 it always
+     * was, so the small pole is the control rather than an afterthought.
+     */
+    public static class SubstationCoversMoreGroundTest extends GameTestInstance {
+
+        public static final MapCodec<SubstationCoversMoreGroundTest> CODEC =
+                RecordCodecBuilder.<SubstationCoversMoreGroundTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SubstationCoversMoreGroundTest::info))
+                                .apply(i, SubstationCoversMoreGroundTest::new));
+
+        private static final BlockPos SUBSTATION = new BlockPos(0, 1, 0);
+        private static final BlockPos SMALL = new BlockPos(0, 1, 24);
+
+        /** Nine east of each: outside a 5x5 area, inside an 18x18 one. */
+        private static final int GAP = 9;
+
+        public SubstationCoversMoreGroundTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            placeEngine(helper, SUBSTATION.east(GAP));
+            placeEngine(helper, SMALL.east(GAP));
+            place(helper, SUBSTATION, ModBlocks.SUBSTATION.get());
+            place(helper, SMALL, ModBlocks.SMALL_ELECTRIC_POLE.get());
+
+            helper.runAfterDelay(5, () -> {
+                helper.assertValueEqual(
+                        requireNetwork(helper, SUBSTATION, "the substation has no network")
+                                .endpointCount(),
+                        1, "machines a substation found nine blocks away");
+                helper.assertValueEqual(
+                        requireNetwork(helper, SMALL, "the small pole has no network")
+                                .endpointCount(),
+                        0, "machines a small pole found nine blocks away");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("substation covers more ground");
         }
     }
 
@@ -985,20 +1226,6 @@ public final class NauvisPowerGameTests {
                     .thenExecuteAfter(5, () -> helper.assertValueEqual(links(helper, NEAR).length, 0,
                             "wires still hanging off a pole whose only neighbour was broken"))
                     .thenSucceed();
-        }
-
-        private static long[] links(GameTestHelper helper, BlockPos pole) {
-            return helper.getBlockEntity(pole, ElectricPoleBlockEntity.class).links();
-        }
-
-        private static void assertWiredTo(GameTestHelper helper, BlockPos from, BlockPos to) {
-            long wanted = helper.absolutePos(to).asLong();
-            for (long link : links(helper, from)) {
-                if (link == wanted) {
-                    return;
-                }
-            }
-            helper.fail("the pole at " + from + " is not wired to the one at " + to);
         }
 
         @Override
@@ -1047,9 +1274,9 @@ public final class NauvisPowerGameTests {
                 AABB bounds = helper.getBlockEntity(NEAR, ElectricPoleBlockEntity.class).wireBounds();
 
                 BlockPos ownHead = helper.absolutePos(
-                        NEAR.above(ElectricPoleBlock.HEIGHT - 1));
+                        NEAR.above(ModBlocks.SMALL_ELECTRIC_POLE.get().height() - 1));
                 BlockPos farHead = helper.absolutePos(
-                        ALSO_NEAR.above(ElectricPoleBlock.HEIGHT - 1));
+                        ALSO_NEAR.above(ModBlocks.SMALL_ELECTRIC_POLE.get().height() - 1));
 
                 helper.assertTrue(bounds.contains(Vec3.atCenterOf(ownHead)),
                         "a pole does not claim its own head, so its wires are culled the moment "

@@ -7,8 +7,10 @@ import java.util.concurrent.CompletableFuture;
 import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.generator.BoilerShape;
 import com.jaguarm.nauvispower.generator.SteamEngineShape;
-import com.jaguarm.nauvispower.grid.PolePart;
-import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
+import com.jaguarm.nauvispower.grid.BigPoleShape;
+import com.jaguarm.nauvispower.grid.MediumPoleShape;
+import com.jaguarm.nauvispower.grid.SmallPoleShape;
+import com.jaguarm.nauvispower.grid.SubstationShape;
 import com.jaguarm.nauvispower.multiblock.MachineShape;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 import com.jaguarm.nauvispower.registry.ModItems;
@@ -72,9 +74,13 @@ public final class NauvisPowerData {
 
         @Override
         protected void addTags(HolderLookup.Provider registries) {
+            // Every tier. A pole you cannot climb is scenery; a pole you can is somewhere to
+            // stand while you wire the next one.
             tag(BlockTags.CLIMBABLE)
                     .add(ModBlocks.SMALL_ELECTRIC_POLE.getKey())
-                    .add(ModBlocks.MEDIUM_ELECTRIC_POLE.getKey());
+                    .add(ModBlocks.MEDIUM_ELECTRIC_POLE.getKey())
+                    .add(ModBlocks.BIG_ELECTRIC_POLE.getKey())
+                    .add(ModBlocks.SUBSTATION.getKey());
         }
     }
 
@@ -97,6 +103,8 @@ public final class NauvisPowerData {
             addBlock(ModBlocks.STEAM_ENGINE, "Steam engine");
             addBlock(ModBlocks.SMALL_ELECTRIC_POLE, "Small electric pole");
             addBlock(ModBlocks.MEDIUM_ELECTRIC_POLE, "Medium electric pole");
+            addBlock(ModBlocks.BIG_ELECTRIC_POLE, "Big electric pole");
+            addBlock(ModBlocks.SUBSTATION, "Substation");
                         // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the
             // only place a timed craft happens; a vanilla bench recipe goes nowhere near it and
@@ -154,12 +162,17 @@ public final class NauvisPowerData {
             add(ModBlocks.BOILER.get(), anchorOnly(ModBlocks.BOILER.get(), BoilerShape.SHAPE));
             add(ModBlocks.STEAM_ENGINE.get(),
                     anchorOnly(ModBlocks.STEAM_ENGINE.get(), SteamEngineShape.SHAPE));
-            // One pole, not four. The other three parts are torn down by the block itself and
-            // must drop nothing, or a pole would be a way to make three more.
-            add(ModBlocks.SMALL_ELECTRIC_POLE.get(), createSinglePropConditionTable(
-                    ModBlocks.SMALL_ELECTRIC_POLE.get(), ElectricPoleBlock.PART, PolePart.FOOT));
-            add(ModBlocks.MEDIUM_ELECTRIC_POLE.get(), createSinglePropConditionTable(
-                    ModBlocks.MEDIUM_ELECTRIC_POLE.get(), ElectricPoleBlock.PART, PolePart.FOOT));
+            // One pole, not four - or twenty-four. The other cells are torn down by the block
+            // itself and must drop nothing, or a big pole would be a way to make twenty-three
+            // more. Same rule as the boiler and the engine, and now the same call.
+            add(ModBlocks.SMALL_ELECTRIC_POLE.get(),
+                    anchorOnly(ModBlocks.SMALL_ELECTRIC_POLE.get(), SmallPoleShape.SHAPE));
+            add(ModBlocks.MEDIUM_ELECTRIC_POLE.get(),
+                    anchorOnly(ModBlocks.MEDIUM_ELECTRIC_POLE.get(), MediumPoleShape.SHAPE));
+            add(ModBlocks.BIG_ELECTRIC_POLE.get(),
+                    anchorOnly(ModBlocks.BIG_ELECTRIC_POLE.get(), BigPoleShape.SHAPE));
+            add(ModBlocks.SUBSTATION.get(),
+                    anchorOnly(ModBlocks.SUBSTATION.get(), SubstationShape.SHAPE));
         }
 
         /**

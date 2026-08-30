@@ -1,0 +1,30 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "logistics",
+  "order": "0004",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:copper_ingot",
+      "count": 5
+    },
+    {
+      "ingredient": "neoprogressivematerials:steel_plate",
+      "count": 5
+    }
+  ],
+  "result": {
+    "id": "nauvis_power:big_electric_pole",
+    "count": 1
+  }
+}

@@ -4,6 +4,7 @@ import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.grid.PowerNetwork;
 import com.jaguarm.nauvispower.grid.PowerNetworkManager;
 import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
+import com.jaguarm.nauvispower.multiblock.Multiblock;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -70,8 +71,8 @@ public class PoleReadout implements IServerDataProvider<BlockAccessor> {
     private static BlockPos footOf(BlockAccessor accessor) {
         BlockState state = accessor.getBlockState();
         BlockPos pos = accessor.getPosition();
-        return state.hasProperty(ElectricPoleBlock.PART)
-                ? pos.below(state.getValue(ElectricPoleBlock.PART).height())
+        return state.getBlock() instanceof ElectricPoleBlock pole
+                ? Multiblock.anchorPos(pole, state, pos)
                 : pos;
     }
 

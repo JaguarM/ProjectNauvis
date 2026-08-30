@@ -15,7 +15,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * <p><b>The boxes are the only description of this cell's shape.</b> The block builds its
  * {@code VoxelShape} from them and the model provider builds the model's elements from them, so
  * what you see and what you can hit are the same numbers rather than two lists that agree today.
- * That is {@code PolePart}'s rule, and this is {@code PolePart} with two more axes.
+ * That rule started on the electric pole, which was a mechanism of its own until it became one of
+ * these; see {@code PoleBoxes} in nauvis_power for the same idea at its smallest.
  *
  * <p>Boxes are in model pixels - sixteen to a block - and relative to <em>this cell</em>, not to
  * the machine. A box may leave {@code 0..16} and hang into a neighbouring block, which is how a

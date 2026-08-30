@@ -325,13 +325,14 @@ non-negotiable #5 is exactly the constraint it does not have.
 **Built, in `nauvis_power/.../grid/`.** `PowerNetwork` is the object; `PowerNetworkManager` owns
 one per level and is driven by a single `LevelTickEvent.Post`.
 
-**The pole itself is four blocks tall**, a true multi-block on one `PolePart` property in the way
-a vanilla door is two: placement refuses when there is no headroom, `setPlacedBy` puts the rest in,
-and one `updateShape` rule — a part whose neighbour above or below is not what it should be turns
-to air — is the entire teardown. Only the foot carries the block entity and only the foot drops the
-item, so breaking any part gives back exactly one pole. A one-block pole read as a fence post; the
-other way to get height, a `VoxelShape` four blocks tall on a single block, has the renderer cull
-the whole thing the moment its one real block leaves the screen.
+**A pole is a true multi-block**, on the same `MachineShape` a boiler is: four blocks for the small
+one, five for the medium, and two-by-two by six — twenty-four blocks — for the big one and the
+substation. Placement refuses unless the whole thing fits, `setPlacedBy` puts the rest in, and one
+`updateShape` rule — a cell whose neighbours are not its machine's other cells turns to air — is the
+entire teardown. Only the foot carries the block entity and only the foot drops the item, so
+breaking any part gives back exactly one pole. A one-block pole read as a fence post; the other way
+to get height, a `VoxelShape` four blocks tall on a single block, has the renderer cull the whole
+thing the moment its one real block leaves the screen.
 
 It is **climbable** (through `minecraft:climbable`, so a datapack can say otherwise) and its
 crossarm has **no collision** — an arm you cannot see, three blocks over your head, that catches you

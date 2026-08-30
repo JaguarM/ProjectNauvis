@@ -16,10 +16,18 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and five gametests pass, `./gradlew build` is clean, and the client boots into a world.
+A hundred and eight gametests pass, `./gradlew build` is clean, and the client boots into a world.
 Milestone 2 is done bar fast-replace; milestone 3 has its research half in, and five of its nine
 items — the steel line, green science and the medium pole, which between them give
-`steel-processing`, `science-pack-2` and `electric-energy-distribution-1` teeth.
+`steel-processing`, `science-pack-2` and `electric-energy-distribution-1` teeth. The big pole came
+with the medium one and the substation came with the big one, because four pole tiers is one piece
+of work rather than four.
+
+**All four poles are climbable multi-blocks on the same `MachineShape` a boiler is.** The pole used
+to have a mechanism of its own — a `PolePart` enum with `Multiblock`'s four rules written out again
+— and the tiers ended it: five blocks tall needs a five-value enum and two-by-two needs two more
+axes, both of which `MachineShape` had all along. `PolePart` is gone, and a pole's `part` property
+is an int like every other machine's.
 
 | | |
 |---|---|
@@ -34,8 +42,10 @@ items — the steel line, green science and the medium pole, which between them 
 | `nauvis_fluids:pipe` / `steam` | a run is one object however long; steam is a real fluid, so pipes and machines meet at the capability |
 | `nauvis_power:boiler` | 3×2, seven blocks; burns fuel, steam out under the chimney |
 | `nauvis_power:steam_engine` | 5×3, seventeen blocks; steam in at the open ends of its spine, 120 FE/t out |
-| `nauvis_power:small_electric_pole` | four blocks, climbable, wires itself to whatever it reaches within 7.5 |
-| `nauvis_power:medium_electric_pole` | the same in steel, reaching 9. Same 5×5 supply area, which is Factorio's |
+| `nauvis_power:small_electric_pole` | 1×1×4, wood. Reaches 7.5, supplies 5×5 |
+| `nauvis_power:medium_electric_pole` | 1×1×5, anvil-grey. Reaches 9, supplies 5×5 |
+| `nauvis_power:big_electric_pole` | 2×2×6, iron. Reaches 30, supplies 4×4. Twenty-four blocks, one item |
+| `nauvis_power:substation` | 2×2×5, deepslate. Reaches 18, supplies 18×18. **No recipe or technology yet** |
 | `nauvis_research:lab` | 3×3, ten blocks, 8 FE/t; eats one of each pack the world's research asks for |
 | `nauvis_research:science_pack_1` | red science — a copper plate and an iron gear wheel |
 | `nauvis_research:science_pack_2` | green science — an inserter and a belt. The gate in front of the rest of milestone 3 |
@@ -88,6 +98,13 @@ breaks that.
 
 What is left, in the order the tree wants them:
 
+- **The substation's recipe and technology.** The block is built and creative-only. Factorio's
+  recipe is five advanced circuits, which is plastic, which is oil — milestone 5 — but it need not
+  wait that long: mark `advanced-circuit` `pending` in `data/mapping.json` and the recipe ships with
+  a `neoforge:registered` condition that regenerates away when the circuit lands. The technology is
+  `electric-energy-distribution-2`, which is not in the tree and whose prerequisites
+  (`advanced-electronics`) are not either, so that is two JSON entries and the generator will say
+  if they do not bootstrap.
 - **`assembling-machine-2`** (`automation-2`). An assembler that crafts faster; a tier is numbers
   on the block the way the long-handed inserter is.
 - **`solar-panel`** (`solar-energy`). 3×3 and half a block high, so it is walked over. A generator
@@ -149,13 +166,25 @@ are Facrafting recipes now at Factorio's prices.
 - and time it. The lab alone is ten circuits, ten gears and four belts by hand. If it drags, the
   lever is a trigger's count in `data/technologies.json`, not the machinery under it.
 
-**The medium pole**, whose whole point is a distance.
+**The four poles**, which nobody has seen and which are the biggest visual change here.
 
+- stand all four in a row. They go 4, 5, 6, 5 blocks tall and 1×1, 1×1, 2×2, 2×2 wide, in wood,
+  anvil-grey, iron and deepslate. **Whether that reads as a ladder is the whole question** — it was
+  decided in four shape files and a texture line, and nothing in this repo can see it;
+- climb a big pole. All four are in `minecraft:climbable` and the legs collide while the ring on
+  top does not, so going up one and standing on the ring is a thing that either works or is
+  maddening;
+- look at a big pole's top from below and from above. The four heads' arms are supposed to meet
+  across the seams as one closed square; if a leg's arm stops short or two of them overlap, that is
+  `PoleBoxes.LEG_HEAD` and it will be obvious;
+- run a wire between a small pole and a big one. The two ends attach at different heights and the
+  big end comes off the middle of a 2×2 footprint rather than off one of its legs, which is new and
+  is drawn rather than tested;
 - put a small pole down, walk eight blocks, put a medium one down, and see the wire appear. Eight
-  is past the small pole's reach and inside the medium one's, so this is the item working;
-- and tell them apart. Same four blocks and the same crossarm, differing only in metal — that is a
-  decision made in `MediumElectricPoleBlock`'s comment and not in a world, and it is the same
-  complaint the three inserters already have.
+  is past the small pole's reach and inside the medium one's, so that is the tier working;
+- and put a substation in the middle of a field of machines. Eighteen by eighteen is most of a
+  chunk, and whether that feels generous or absurd at Minecraft's scale is a judgement no test
+  makes.
 
 **The two chests**, which nobody has seen since they became real chests.
 

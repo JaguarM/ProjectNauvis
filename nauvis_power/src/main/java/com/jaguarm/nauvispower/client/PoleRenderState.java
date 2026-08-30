@@ -18,14 +18,18 @@ public class PoleRenderState extends BlockEntityRenderState {
     /** Only the wires this pole is responsible for drawing - see the renderer. */
     public final List<Wire> wires = new ArrayList<>();
 
-    /** Light where the wires attach, which is three blocks above the block entity. */
+    /** Light where the wires attach, which is the top of this pole. */
     public int headLight;
 
     /**
-     * One wire, as an offset from this pole's own block origin to the far pole's.
+     * One wire: both of its ends, as offsets from this pole's own block origin.
      *
-     * <p>An offset rather than a position because that is what the pose stack is already set up
-     * for: by the time {@code submit} runs, the origin is this block's corner.
+     * <p>Offsets rather than positions because that is what the pose stack is already set up for -
+     * by the time {@code submit} runs, the origin is this block's corner.
+     *
+     * <p><b>Both ends, rather than one end and a direction.</b> Two poles of different tiers are
+     * different heights, and a two-by-two pole's wires leave the middle of its footprint rather
+     * than the middle of its foot block, so neither end can be derived from the other.
      */
-    public record Wire(float dx, float dy, float dz) {}
+    public record Wire(float x0, float y0, float z0, float x1, float y1, float z1) {}
 }

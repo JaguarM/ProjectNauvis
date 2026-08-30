@@ -9,11 +9,13 @@ import com.google.gson.JsonObject;
 import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.generator.BoilerShape;
 import com.jaguarm.nauvispower.generator.SteamEngineShape;
-import com.jaguarm.nauvispower.grid.PolePart;
 import com.jaguarm.nauvispower.multiblock.Boxes;
 import com.jaguarm.nauvispower.multiblock.MachineCell;
 import com.jaguarm.nauvispower.multiblock.MachineShape;
-import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
+import com.jaguarm.nauvispower.grid.BigPoleShape;
+import com.jaguarm.nauvispower.grid.MediumPoleShape;
+import com.jaguarm.nauvispower.grid.SmallPoleShape;
+import com.jaguarm.nauvispower.grid.SubstationShape;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
@@ -239,61 +241,57 @@ public class NauvisPowerModels extends ModelProvider {
      * is a {@code Supplier<JsonElement>}: the model file, written out directly. That is what lets
      * the shape live in exactly one place.
      */
+    /**
+     * The four poles: the same {@link #turnless} generator four times over, in four materials.
+     *
+     * <p>A pole has no facing and every other machine here does, which is the only reason it is
+     * not simply {@code machine()}. The geometry, the models and the item all come off the shape
+     * exactly as a boiler's do - a pole stopped having a mechanism of its own when it became a
+     * {@code MachineShape}, and this is the last place that showed.
+     *
+     * <p>Wood, then three metals darkening upwards. The tiers already differ in height and the top
+     * two in footprint; the material is what tells them apart from the side of a base, where the
+     * height of a pole against nothing is not much of a clue.
+     */
     private void poles(BlockModelGenerators blockModels) {
-        // Material wraps the sprite id; the model file wants the plain identifier. The two tiers
-        // are the same geometry in two metals - see MediumElectricPoleBlock on why the medium one
-        // is not also taller - so telling them apart is entirely this line.
-        pole(blockModels, ModBlocks.SMALL_ELECTRIC_POLE.get(), "small_electric_pole",
+        // Material wraps the sprite id; the model file wants the plain identifier.
+        turnless(blockModels, ModBlocks.SMALL_ELECTRIC_POLE.get(), SmallPoleShape.SHAPE,
                 TextureMapping.getBlockTexture(Blocks.STRIPPED_OAK_LOG).sprite());
-        pole(blockModels, ModBlocks.MEDIUM_ELECTRIC_POLE.get(), "medium_electric_pole",
+        turnless(blockModels, ModBlocks.MEDIUM_ELECTRIC_POLE.get(), MediumPoleShape.SHAPE,
                 TextureMapping.getBlockTexture(Blocks.ANVIL).sprite());
+        turnless(blockModels, ModBlocks.BIG_ELECTRIC_POLE.get(), BigPoleShape.SHAPE,
+                TextureMapping.getBlockTexture(Blocks.IRON_BLOCK).sprite());
+        turnless(blockModels, ModBlocks.SUBSTATION.get(), SubstationShape.SHAPE,
+                TextureMapping.getBlockTexture(Blocks.DEEPSLATE_TILES).sprite());
     }
 
-    private void pole(BlockModelGenerators blockModels, Block block, String name, Identifier texture) {
-        // Keyed by model name, not by part: the two shaft parts are the same post and deserve one
-        // file between them.
+    /**
+     * A machine with no facing: one dispatch over {@code part} and nothing else.
+     *
+     * <p>{@link #machine} dispatches over {@code part} and {@code HORIZONTAL_FACING} together,
+     * which a block without the second property cannot do. Everything under that - the cell
+     * models, the turns, the miniature in the hand - is shared, so this is the dispatch and not a
+     * second generator.
+     */
+    private void turnless(BlockModelGenerators blockModels, Block block, MachineShape shape,
+            Identifier texture) {
         Map<String, Identifier> models = new HashMap<>();
-        for (PolePart part : PolePart.values()) {
-            models.computeIfAbsent(part.modelName(),
-                    key -> poleModel(blockModels, part, name, texture));
+        for (MachineCell cell : shape.cells()) {
+            models.computeIfAbsent(cell.model(),
+                    name -> cellModel(blockModels, block, cell, texture, texture));
         }
 
-        PropertyDispatch.C1<MultiVariant, PolePart> dispatch =
-                PropertyDispatch.initial(ElectricPoleBlock.PART);
-        for (PolePart part : PolePart.values()) {
-            dispatch = dispatch.select(part,
-                    BlockModelGenerators.plainVariant(models.get(part.modelName())));
+        PropertyDispatch.C1<MultiVariant, Integer> dispatch = PropertyDispatch.initial(shape.part());
+        for (int index = 0; index < shape.cellCount(); index++) {
+            MachineCell cell = shape.cell(index);
+            dispatch = dispatch.select(index, BlockModelGenerators
+                    .plainVariant(models.get(cell.model()))
+                    .with(turn(cell.turns())));
         }
         blockModels.blockStateOutput.accept(MultiVariantGenerator.dispatch(block).with(dispatch));
 
-        // The crossarm is the silhouette a player recognises, so the item is the head.
-        blockModels.registerSimpleItemModel(block, models.get(PolePart.HEAD.modelName()));
-    }
-
-    private static Identifier poleModel(BlockModelGenerators blockModels, PolePart part,
-            String name, Identifier texture) {
-        Identifier id = Identifier.fromNamespaceAndPath(NauvisPower.MODID,
-                "block/" + name + "_" + part.modelName());
-        blockModels.modelOutput.accept(id, () -> {
-            JsonObject textures = new JsonObject();
-            textures.addProperty("texture", texture.toString());
-            // Without a particle texture a broken or walked-on block throws up the missing one.
-            textures.addProperty("particle", texture.toString());
-
-            JsonArray elements = new JsonArray();
-            for (float[] box : part.boxes()) {
-                elements.add(element(box));
-            }
-
-            JsonObject model = new JsonObject();
-            // block/block, not block/cube: it carries the display transforms an item needs and
-            // no geometry of its own.
-            model.addProperty("parent", "minecraft:block/block");
-            model.add("textures", textures);
-            model.add("elements", elements);
-            return model;
-        });
-        return id;
+        blockModels.registerSimpleItemModel(block,
+                inventoryModel(blockModels, block, shape, texture, texture));
     }
 
     private static JsonObject element(float[] box) {

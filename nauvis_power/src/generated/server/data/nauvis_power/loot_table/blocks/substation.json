@@ -12,18 +12,18 @@
           "type": "minecraft:item",
           "conditions": [
             {
-              "block": "nauvis_power:medium_electric_pole",
+              "block": "nauvis_power:substation",
               "condition": "minecraft:block_state_property",
               "properties": {
                 "part": "0"
               }
             }
           ],
-          "name": "nauvis_power:medium_electric_pole"
+          "name": "nauvis_power:substation"
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "nauvis_power:blocks/medium_electric_pole"
+  "random_sequence": "nauvis_power:blocks/substation"
 }

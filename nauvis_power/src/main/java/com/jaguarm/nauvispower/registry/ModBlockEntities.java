@@ -35,7 +35,9 @@ public final class ModBlockEntities {
                     () -> new BlockEntityType<>(
                             ElectricPoleBlockEntity::new,
                             ModBlocks.SMALL_ELECTRIC_POLE.get(),
-                            ModBlocks.MEDIUM_ELECTRIC_POLE.get()));
+                            ModBlocks.MEDIUM_ELECTRIC_POLE.get(),
+                            ModBlocks.BIG_ELECTRIC_POLE.get(),
+                            ModBlocks.SUBSTATION.get()));
 
     private ModBlockEntities() {}
 }

@@ -51,8 +51,8 @@ and not eighteen — which is why `MachineShape` takes a set of cells rather tha
 part goes in the middle, so tiled machines stand their obstacles apart and leave lanes.
 `assemblers_tile_walkably` and `power_machines_tile_walkably` walk those lanes.
 
-**Collision and silhouette are allowed to disagree** — `PolePart` gives the crossarm an outline and
-no collision — but for something meant to be walked across, the two agreeing is the point.
+**Collision and silhouette are allowed to disagree** — a pole's crossarm has an outline and no
+collision — but for something meant to be walked across, the two agreeing is the point.
 
 The multiblock mechanism
 ------------------------
@@ -60,10 +60,12 @@ The multiblock mechanism
 `multiblock/` — `MachineCell`, `MachineShape`, `MachineParts`, `Boxes`, `Multiblock` — is copied
 into the subsystem mods and `NeoProgressiveAutomation`, and `tools/check_duplicated.py` holds the
 copies byte-identical (`--sync` pushes the original out; the copies are never edited). It is
-`SmallElectricPoleBlock` with two more axes. Read `MachineShape` and `Multiblock` and you have it.
+one mechanism for every machine *and every pole*. Read `MachineShape` and `Multiblock` and you
+have it.
 
 - one block id, one item, an `IntegerProperty part` on every block, the anchor found by arithmetic
-  rather than a lookup — no block entity on the other cells;
+  rather than a lookup — no block entity on the other cells. A big electric pole is twenty-four
+  blocks and one of them holds anything;
 - one `updateShape` rule is the whole teardown, which is why a shape's cells must be orthogonally
   connected, which the constructor enforces;
 - capabilities are registered against the **block**, not the block entity, so any cell answers —
@@ -157,9 +159,13 @@ other's test passing.
 the one block, and geometry past it is frustum-culled with no error and nothing in the log. The
 wires between poles hit this exactly. See `API-26.2.md`.
 
-**Multi-blocks are vanilla's job.** `SmallElectricPoleBlock` is four blocks on one `PolePart`
-property the way a door is two: refuse placement without headroom, place the rest from
-`setPlacedBy`, and let one `updateShape` rule be the whole teardown.
+**Multi-blocks are vanilla's job**, and there is one of them. A pole is four blocks on one `part`
+property the way a door is two: refuse placement unless the whole thing fits, place the rest from
+`setPlacedBy`, and let one `updateShape` rule be the whole teardown. That *was* a second mechanism
+beside `Multiblock` — a `PolePart` enum with the four rules written out again — and the pole tiers
+ended it: five blocks tall needs a five-value enum and two-by-two needs two more axes, both of
+which `MachineShape` had all along. **Two implementations of one idea survive only while the
+smaller one never has to grow.**
 
 **Transactions.** Spending and receiving happen inside one `Transaction`, so a result that will not
 fit rolls back. `commit = false` turns the same method into the simulation, so "can I?" and "do it"

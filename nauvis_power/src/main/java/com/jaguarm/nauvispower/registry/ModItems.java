@@ -30,6 +30,13 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> MEDIUM_ELECTRIC_POLE =
             ITEMS.registerSimpleBlockItem(ModBlocks.MEDIUM_ELECTRIC_POLE);
 
+    public static final DeferredItem<BlockItem> BIG_ELECTRIC_POLE =
+            ITEMS.registerSimpleBlockItem(ModBlocks.BIG_ELECTRIC_POLE);
+
+    /** No recipe yet - see {@code SubstationBlock}. Creative-only until oil exists. */
+    public static final DeferredItem<BlockItem> SUBSTATION =
+            ITEMS.registerSimpleBlockItem(ModBlocks.SUBSTATION);
+
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
             "nauvis_power",
             () -> CreativeModeTab.builder()
@@ -40,6 +47,8 @@ public final class ModItems {
                         output.accept(STEAM_ENGINE.get());
                         output.accept(SMALL_ELECTRIC_POLE.get());
                         output.accept(MEDIUM_ELECTRIC_POLE.get());
+                        output.accept(BIG_ELECTRIC_POLE.get());
+                        output.accept(SUBSTATION.get());
                     })
                     .build());
 

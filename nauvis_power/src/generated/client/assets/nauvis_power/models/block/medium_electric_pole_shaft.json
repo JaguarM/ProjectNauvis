@@ -4,22 +4,24 @@
     {
       "faces": {
         "down": {
-          "texture": "#texture"
+          "cullface": "down",
+          "texture": "#bottom"
         },
         "east": {
-          "texture": "#texture"
+          "texture": "#side"
         },
         "north": {
-          "texture": "#texture"
+          "texture": "#side"
         },
         "south": {
-          "texture": "#texture"
+          "texture": "#side"
         },
         "up": {
-          "texture": "#texture"
+          "cullface": "up",
+          "texture": "#top"
         },
         "west": {
-          "texture": "#texture"
+          "texture": "#side"
         }
       },
       "from": [
@@ -35,7 +37,9 @@
     }
   ],
   "textures": {
+    "bottom": "minecraft:block/anvil",
     "particle": "minecraft:block/anvil",
-    "texture": "minecraft:block/anvil"
+    "side": "minecraft:block/anvil",
+    "top": "minecraft:block/anvil"
   }
 }

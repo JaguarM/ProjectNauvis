@@ -1,16 +1,16 @@
 {
   "variants": {
-    "part=foot": {
+    "part=0": {
       "model": "nauvis_power:block/small_electric_pole_foot"
     },
-    "part=head": {
+    "part=1": {
+      "model": "nauvis_power:block/small_electric_pole_shaft"
+    },
+    "part=2": {
+      "model": "nauvis_power:block/small_electric_pole_shaft"
+    },
+    "part=3": {
       "model": "nauvis_power:block/small_electric_pole_head"
-    },
-    "part=shaft_lower": {
-      "model": "nauvis_power:block/small_electric_pole_shaft"
-    },
-    "part=shaft_upper": {
-      "model": "nauvis_power:block/small_electric_pole_shaft"
     }
   }
 }

@@ -58,8 +58,13 @@ public class PoleWireRenderer implements BlockEntityRenderer<ElectricPoleBlockEn
     /** Dark copper. A Factorio wire reads as a dark line against the sky, not as a bright one. */
     private static final int COLOR = 0xFF4A2E1E;
 
-    /** Where a wire attaches: the middle of the head block's crossarm. */
-    private static final float ATTACH_Y = ElectricPoleBlock.HEIGHT - 1 + 11.0F / 16.0F;
+    /**
+     * How far up the head block a wire attaches: the middle of the crossarm.
+     *
+     * <p>The arms are at {@code y 10..12} in every tier's head cell, so this is one number and the
+     * <em>block</em> it applies to is the tier's own. See {@code PoleBoxes}.
+     */
+    private static final float ARM_Y = 11.0F / 16.0F;
 
     /** Half-thickness of the ribbon, in blocks. */
     private static final float HALF_WIDTH = 0.02F;
@@ -88,21 +93,50 @@ public class PoleWireRenderer implements BlockEntityRenderer<ElectricPoleBlockEn
         }
 
         BlockPos self = pole.getBlockPos();
-        BlockPos head = self.above(ElectricPoleBlock.HEIGHT - 1);
+        Vec3 here = attachment(level, self);
         // The foot of a pole stands in whatever shadow the machines cast; the wires do not.
-        state.headLight = LightCoordsUtil.getLightCoords(level, head);
+        state.headLight = LightCoordsUtil.getLightCoords(level,
+                BlockPos.containing(here.x, here.y, here.z));
 
-        long here = self.asLong();
+        long key = self.asLong();
         for (long link : pole.links()) {
-            if (here >= link) {
+            if (key >= link) {
                 continue;
             }
-            BlockPos other = BlockPos.of(link);
+            // Each end attaches to its own pole, which is the whole reason this is worked out
+            // here rather than in the drawing: the two ends can be different tiers, so they can be
+            // different heights and - for a two-by-two pole - different distances in from the foot.
+            Vec3 there = attachment(level, BlockPos.of(link));
             state.wires.add(new PoleRenderState.Wire(
-                    other.getX() - self.getX(),
-                    other.getY() - self.getY(),
-                    other.getZ() - self.getZ()));
+                    (float) (here.x - self.getX()), (float) (here.y - self.getY()),
+                    (float) (here.z - self.getZ()),
+                    (float) (there.x - self.getX()), (float) (there.y - self.getY()),
+                    (float) (there.z - self.getZ())));
         }
+    }
+
+    /**
+     * Where a wire meets the pole whose foot is at {@code foot}, in world coordinates.
+     *
+     * <p>The middle of the footprint horizontally, not the middle of the foot block: a big pole is
+     * two tiles across and its wires come off the tower rather than off one of its legs. For a
+     * one-tile pole the two are the same point.
+     *
+     * <p>Falls back to a small pole's head if the block is not one of ours, which can only happen
+     * in the tick between a pole being broken and the client hearing about it.
+     */
+    private static Vec3 attachment(Level level, BlockPos foot) {
+        float width = 1;
+        float depth = 1;
+        int height = 4;
+        if (level.getBlockState(foot).getBlock() instanceof ElectricPoleBlock pole) {
+            width = pole.shape().width();
+            depth = pole.shape().depth();
+            height = pole.height();
+        }
+        return new Vec3(foot.getX() + width / 2.0,
+                foot.getY() + height - 1 + ARM_Y,
+                foot.getZ() + depth / 2.0);
     }
 
     @Override
@@ -122,14 +156,14 @@ public class PoleWireRenderer implements BlockEntityRenderer<ElectricPoleBlockEn
      * over your own base.
      */
     private static void draw(PoseStack.Pose pose, VertexConsumer buffer, PoleRenderState.Wire wire, int light) {
-        float x0 = 0.5F;
-        float z0 = 0.5F;
-        float x1 = wire.dx() + 0.5F;
-        float z1 = wire.dz() + 0.5F;
-        float y0 = ATTACH_Y;
-        float y1 = wire.dy() + ATTACH_Y;
+        float x0 = wire.x0();
+        float y0 = wire.y0();
+        float z0 = wire.z0();
+        float x1 = wire.x1();
+        float y1 = wire.y1();
+        float z1 = wire.z1();
 
-        float span = Mth.sqrt(wire.dx() * wire.dx() + wire.dz() * wire.dz());
+        float span = Mth.sqrt((x1 - x0) * (x1 - x0) + (z1 - z0) * (z1 - z0));
         float dip = span * SAG;
 
         // Perpendicular to the wire, horizontally, so the upright ribbon faces sideways.
