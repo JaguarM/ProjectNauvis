@@ -16,7 +16,7 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and twenty-one gametests pass, `./gradlew build` is clean, and the client boots into a
+A hundred and twenty-two gametests pass, `./gradlew build` is clean, and the client boots into a
 world. **Milestone 2 is closed**: the red tier is in whole — the fast belt and the fast splitter —
 a belt in hand replaces the one it is clicked on, and **belt lines climb**. Milestone 3 has its
 research half in, and five of its nine items — the steel line, green science and the medium pole,
@@ -116,6 +116,8 @@ is an int like every other machine's.
 | `nauvis_research:science_pack_2` | green science — an inserter and a belt. The gate in front of the rest of milestone 3 |
 | `neoprogressivematerials:steel_plate` | five iron plates and thirty-five seconds |
 | `nauvis_research:technology` | 216 technologies, a synced datapack registry, generated. 26 are in the tree |
+| the tree screen | drag to pan, wheel to zoom, a search box, and the hovered node's whole path back to a root lit up. Columns are centred; an arrow turns in a lane of its own |
+| research progress | **kept per technology.** Switching away from one and back finds it where it was left, which is Factorio's rule and was not ours |
 | `/research` | grant, forget, start, stop, list, info, all, reset. Gamemaster only. **Grant and forget cascade** — grant brings the prerequisites, forget takes the dependants |
 | `nauvis_mining:burner_mining_drill` | 2×2, five blocks. Digs down, not across — see below |
 | `nauvis_mining:electric_mining_drill` | 3×3, nine blocks; a half-block deck you walk over |
@@ -230,9 +232,6 @@ steel, and the wall belongs to `nauvis_military`, which does not exist.
 Loose ends — small enough to finish in an afternoon
 ---------------------------------------------------
 
-- **Tree polish, all optional.** No zoom (at 6×11 it fits a window), no search, no highlight of the
-  path to a hovered node, and columns are top-aligned rather than centred. Centring is a drawing
-  decision and belongs in `ResearchScreen`, not in `TechnologyLayout`.
 - **`MachineParts` wants refinement** so the machines read as one family. Yannic has said so, and
   it is one file — but it is duplicated, so edit the original and run `check_duplicated.py --sync`.
 - **The long-handed inserter's model** is a smoker-coloured cube — the third furnace body on a belt
@@ -338,7 +337,8 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
   which is a decision made in `make_chest_textures.py` at 8x on a dark background and not in a
   world at midday.
 
-**The research screen and the tree**, neither of which anyone has looked at.
+**The research screen and the tree.** Most of what follows was rebuilt after the first look at it
+and has not been looked at since.
 
 - open a lab, press **Tech** — it opens the tree, there is no list — and hover a node. Whether the
   tooltip reads as a row of its own, a name over a cost over the items it hands over, is the
@@ -355,6 +355,24 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
 - press **G**. Whether eleven nodes in a column read as a fan or a wall, whether the elbows are
   followable where three converge on `automation_2`, whether the state colours are distinguishable,
   and whether dragging to pan is discoverable. The grid underneath is proven; none of that is;
+- **follow one arrow from column two to column three.** Every elbow used to turn down the middle of
+  the gap, so five parents fanning out to eleven children drew one vertical bar with stubs coming
+  off both sides — the thing a person saw immediately and no test could. Each parent now turns in a
+  lane of its own, eight pixels apart. **Whether five lines eight pixels apart read as five lines is
+  the whole question**, and the lever is `LANE_STEP` in `ResearchScreen`;
+- **hover `automation_2` and look at what lights up.** Its three prerequisites and everything behind
+  them go amber, edges included. Whether that answers "what do I have to do first" at a glance, or
+  whether amber on a green-and-grey tree is one colour too many, is a judgement no test makes;
+- **type in the search box** at the top right. The tree jumps to the first match and dims everything
+  else rather than hiding it. Twenty-eight technologies do not need it; whether it is in the way at
+  twenty-eight is the thing to notice;
+- **roll the wheel.** It zooms about the cursor between 0.4x and 2x, and it no longer scrolls —
+  Factorio's tech tree, and the reason the whole tree fits at a large GUI scale now. Whether losing
+  scroll-to-pan is missed is a judgement for whoever uses it;
+- **start Automation, let it get a few units in, then click something else and click back.**
+  The bar under the node should still be there and the heading should pick up where it stopped. This
+  is the bug the first playtest found; `research_keeps_its_progress` covers the state and **only a
+  person can see the bar**;
 - the corner readout, for a long technology name; and the toast, which should fire once per
   technology and **never on relog** — if it fires on every login the advancement is not being saved.
 

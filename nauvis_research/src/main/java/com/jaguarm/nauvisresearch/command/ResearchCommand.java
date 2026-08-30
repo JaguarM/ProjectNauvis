@@ -318,12 +318,15 @@ public final class ResearchCommand {
         MinecraftServer server = source.getServer();
         ResearchState state = Research.state(server);
         List<ResourceKey<Technology>> done = List.copyOf(state.completed());
-        if (done.isEmpty() && state.current() == null) {
+        if (done.isEmpty() && state.current() == null && state.progress().isEmpty()) {
             source.sendFailure(Component.translatable(key("nothing_researched")));
             return 0;
         }
         done.forEach(state::forget);
         state.setCurrent(null);
+        // Including whatever was set aside part-finished, which survives a switch now and would
+        // otherwise outlive the reset that is supposed to put the world back to nothing.
+        state.clearProgress();
         Research.changedExternally(server);
         source.sendSuccess(() -> Component.translatable(key("reset"), done.size()), true);
         return done.size();

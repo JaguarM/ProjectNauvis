@@ -19,7 +19,7 @@ import net.minecraft.resources.ResourceKey;
  * S2C: the whole research state.
  *
  * <p>The whole of it, every time, rather than a delta. It is a list of finished technology keys,
- * one optional key and one int; the list grows to a couple of hundred entries over a whole
+ * one optional key and two small maps; the list grows to a couple of hundred entries over a whole
  * playthrough and is sent when a unit of research finishes, which is at best once every five
  * seconds. A delta would save a few hundred bytes and cost the property that makes this easy to
  * reason about: <b>a client is either exactly up to date or exactly one message behind.</b>
@@ -27,7 +27,7 @@ import net.minecraft.resources.ResourceKey;
 public record ResearchSyncPayload(
         List<ResourceKey<Technology>> completed,
         Optional<ResourceKey<Technology>> current,
-        int units,
+        Map<ResourceKey<Technology>, Integer> progress,
         Map<Identifier, Integer> made) implements CustomPacketPayload {
 
     public static final Type<ResearchSyncPayload> TYPE =
@@ -47,7 +47,10 @@ public record ResearchSyncPayload(
             StreamCodec.composite(
                     KEY_CODEC.apply(ByteBufCodecs.list()), ResearchSyncPayload::completed,
                     ByteBufCodecs.optional(KEY_CODEC), ResearchSyncPayload::current,
-                    ByteBufCodecs.VAR_INT, ResearchSyncPayload::units,
+                    // Every part-finished technology, not only the current one: progress survives
+                    // a switch now, so the tree has a bar to draw on the ones set aside.
+                    ByteBufCodecs.map(HashMap::new, KEY_CODEC, ByteBufCodecs.VAR_INT),
+                    ResearchSyncPayload::progress,
                     // The tally behind every trigger, so the screen can say 34/50 rather than
                     // leaving a player to guess how close they are. It is one entry per item some
                     // technology watches for - four, today - not one per item in the game.
@@ -59,7 +62,7 @@ public record ResearchSyncPayload(
         return new ResearchSyncPayload(
                 List.copyOf(state.completed()),
                 Optional.ofNullable(state.current()),
-                state.units(),
+                Map.copyOf(state.progress()),
                 Map.copyOf(state.made()));
     }
 

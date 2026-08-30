@@ -33,8 +33,10 @@ public final class ClientResearch {
 
     private static Set<ResourceKey<Technology>> completed = Set.of();
     private static @Nullable ResourceKey<Technology> current;
-    private static int units;
     private static int revision;
+
+    /** Units paid towards every technology part-way through, as of the last sync. */
+    private static java.util.Map<ResourceKey<Technology>, Integer> progress = java.util.Map.of();
 
     /** The trigger tally, as of the last sync. */
     private static java.util.Map<net.minecraft.resources.Identifier, Integer> made = java.util.Map.of();
@@ -45,11 +47,12 @@ public final class ClientResearch {
     private static int cachedRevision = -1;
 
     public static void accept(List<ResourceKey<Technology>> completedKeys,
-            @Nullable ResourceKey<Technology> currentKey, int unitsDone,
+            @Nullable ResourceKey<Technology> currentKey,
+            java.util.Map<ResourceKey<Technology>, Integer> paid,
             java.util.Map<net.minecraft.resources.Identifier, Integer> tally) {
         completed = new LinkedHashSet<>(completedKeys);
         current = currentKey;
-        units = unitsDone;
+        progress = java.util.Map.copyOf(paid);
         made = java.util.Map.copyOf(tally);
         revision++;
         lockedCache = null;
@@ -62,7 +65,7 @@ public final class ClientResearch {
 
     /** Logging out: a stale tree would gate the next world's recipes against this one's research. */
     public static void clear() {
-        accept(List.of(), null, 0, java.util.Map.of());
+        accept(List.of(), null, java.util.Map.of(), java.util.Map.of());
     }
 
     public static Set<ResourceKey<Technology>> completed() {
@@ -77,8 +80,14 @@ public final class ClientResearch {
         return current;
     }
 
+    /** Units done on the current technology, for the heading and the corner readout. */
     public static int units() {
-        return units;
+        return current == null ? 0 : units(current);
+    }
+
+    /** Units done on any technology, including ones the labs were pointed away from. */
+    public static int units(ResourceKey<Technology> technology) {
+        return progress.getOrDefault(technology, 0);
     }
 
     public static int revision() {

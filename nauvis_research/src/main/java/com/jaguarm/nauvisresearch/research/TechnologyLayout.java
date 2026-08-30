@@ -41,6 +41,21 @@ import net.minecraft.resources.ResourceKey;
  * <p><b>Nothing is authored.</b> There are no coordinates in the data files and there must not be:
  * the tree is twenty-five technologies today and Factorio's is two hundred, and hand-placing them
  * is a job that has to be redone every time one is added.
+ *
+ * <h2>Edges get a lane, because elbows that share one are a single line</h2>
+ *
+ * <p>An arrow is drawn as an elbow - out of the parent, across, then into the child - and the
+ * across is a vertical run somewhere in the gap between the two columns. Put every one of them
+ * down the middle of that gap and <b>they land on top of each other</b>: five parents fanning out
+ * to eleven children become one long vertical bar with stubs coming off both sides, which says
+ * nothing about which technology needs which. That is what the tree looked like, and it is not a
+ * drawing bug so much as a missing decision.
+ *
+ * <p>So each <em>parent</em> is given a {@link Edge#lane} - its index among the nodes in its
+ * column that have children at all - and every arrow out of it uses that one lane. Two arrows
+ * share a vertical run exactly when they share a parent, which is when sharing means "these come
+ * from the same place". {@link Edge#lanes} is how many lanes that column needs, so a screen can
+ * spread them across the gap it has without knowing anything about technologies.
  */
 public final class TechnologyLayout {
 
@@ -49,8 +64,16 @@ public final class TechnologyLayout {
     /** One technology's place: {@code column} across, {@code row} down, both zero-based. */
     public record Placed(ResourceKey<Technology> key, Technology technology, int column, int row) {}
 
-    /** One prerequisite arrow, from {@code from} to {@code to}. */
-    public record Edge(ResourceKey<Technology> from, ResourceKey<Technology> to) {}
+    /**
+     * One prerequisite arrow, from {@code from} to {@code to}.
+     *
+     * @param lane  which vertical channel of the gap right of {@code from}'s column this arrow
+     *              turns in, counted from the top. Every arrow out of one parent shares it, and
+     *              no two parents in a column do.
+     * @param lanes how many channels that gap has to hold, so a screen can space them.
+     */
+    public record Edge(ResourceKey<Technology> from, ResourceKey<Technology> to,
+            int lane, int lanes) {}
 
     /** The whole picture, in grid cells. A screen decides what a cell is worth in pixels. */
     public record Layout(List<Placed> nodes, List<Edge> edges, int columns, int rows) {
@@ -127,11 +150,34 @@ public final class TechnologyLayout {
         }
         nodes.sort(Comparator.comparingInt(Placed::column).thenComparingInt(Placed::row));
 
+        // Which nodes are somebody's prerequisite, grouped by the column they sit in. `nodes` is
+        // already sorted by column then row, so each list comes out top to bottom and the lane
+        // numbers run down the gap in the order the parents do - which is what stops arrows
+        // crossing each other for no reason.
+        Map<Integer, List<ResourceKey<Technology>>> parents = new LinkedHashMap<>();
+        for (Placed placed : nodes) {
+            for (ResourceKey<Technology> prerequisite : placed.technology().prerequisites()) {
+                Integer at = column.get(prerequisite);
+                if (byKey.containsKey(prerequisite) && at != null) {
+                    List<ResourceKey<Technology>> lanes =
+                            parents.computeIfAbsent(at, ignored -> new ArrayList<>());
+                    if (!lanes.contains(prerequisite)) {
+                        lanes.add(prerequisite);
+                    }
+                }
+            }
+        }
+        for (List<ResourceKey<Technology>> lanes : parents.values()) {
+            lanes.sort(Comparator.comparingInt(row::get));
+        }
+
         List<Edge> edges = new ArrayList<>();
         for (Placed placed : nodes) {
             for (ResourceKey<Technology> prerequisite : placed.technology().prerequisites()) {
                 if (byKey.containsKey(prerequisite)) {
-                    edges.add(new Edge(prerequisite, placed.key()));
+                    List<ResourceKey<Technology>> lanes = parents.get(column.get(prerequisite));
+                    edges.add(new Edge(prerequisite, placed.key(),
+                            lanes.indexOf(prerequisite), lanes.size()));
                 }
             }
         }

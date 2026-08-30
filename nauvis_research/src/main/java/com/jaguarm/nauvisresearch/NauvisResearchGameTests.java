@@ -102,6 +102,7 @@ public final class NauvisResearchGameTests {
         TEST_TYPES.register("a_trigger_finishes_research", () -> TriggerFinishesResearchTest.CODEC);
         TEST_TYPES.register("a_panel_craft_counts", () -> PanelCraftCountsTest.CODEC);
         TEST_TYPES.register("technology_layout_is_sound", () -> TechnologyLayoutTest.CODEC);
+        TEST_TYPES.register("research_keeps_its_progress", () -> ResearchKeepsItsProgressTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -150,8 +151,9 @@ public final class NauvisResearchGameTests {
         register(event, environment, "a_panel_craft_counts", PanelCraftCountsTest::new, 20);
         register(event, environment, "technology_layout_is_sound", TechnologyLayoutTest::new, 20);
 
-        // Alone in its batch. See above.
+        // Alone in their batch. See above.
         register(event, alone, "research_command_moves_the_tree", ResearchCommandTest::new, 20);
+        register(event, alone, "research_keeps_its_progress", ResearchKeepsItsProgressTest::new, 20);
     }
 
     private interface TestFactory {
@@ -1257,6 +1259,35 @@ public final class NauvisResearchGameTests {
             }
             helper.assertValueEqual(layout.edges().size(), wanted, "prerequisite arrows drawn");
 
+            // Lanes. Two arrows may share a vertical run only when they come from the same
+            // technology - otherwise every elbow leaving a column is drawn on top of every other
+            // one and the fan reads as a single bar, which is exactly what it did.
+            java.util.Map<Integer, java.util.Map<Integer, ResourceKey<Technology>>> lanes =
+                    new java.util.HashMap<>();
+            for (TechnologyLayout.Edge edge : layout.edges()) {
+                TechnologyLayout.Placed from = layout.at(edge.from());
+                helper.assertTrue(edge.lane() >= 0 && edge.lane() < edge.lanes(),
+                        edge.from().identifier() + " turns in lane " + edge.lane() + " of "
+                                + edge.lanes() + ", which is not a lane that exists");
+                ResourceKey<Technology> owner = lanes
+                        .computeIfAbsent(from.column(), ignored -> new java.util.HashMap<>())
+                        .putIfAbsent(edge.lane(), edge.from());
+                helper.assertTrue(owner == null || owner.equals(edge.from()),
+                        edge.from().identifier() + " shares lane " + edge.lane() + " with "
+                                + (owner == null ? "nothing" : owner.identifier())
+                                + " - two unrelated arrows would be drawn as one line");
+            }
+            for (java.util.Map.Entry<Integer, java.util.Map<Integer, ResourceKey<Technology>>> column
+                    : lanes.entrySet()) {
+                for (TechnologyLayout.Edge edge : layout.edges()) {
+                    if (layout.at(edge.from()).column() == column.getKey()) {
+                        helper.assertValueEqual(edge.lanes(), column.getValue().size(),
+                                "the lane count for column " + column.getKey()
+                                        + ", which is what a screen spaces them by");
+                    }
+                }
+            }
+
             TechnologyLayout.Layout again = TechnologyLayout.of(access);
             helper.assertValueEqual(again.nodes(), layout.nodes(),
                     "the layout is not deterministic - it would shuffle between openings");
@@ -1271,6 +1302,83 @@ public final class NauvisResearchGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("the technology layout is sound");
+        }
+    }
+
+    /**
+     * Research put down and picked up again is where it was left.
+     *
+     * <p>This is the bug a playtest found, and it was a decision rather than an accident: units
+     * were one counter beside the current technology and switching zeroed it, which was written
+     * down as Factorio's rule and is not - Factorio keeps a per-technology progress and hands it
+     * back when you return. A player who clicked something else to read its tooltip could throw
+     * away an hour of labs, and nothing said so before or after.
+     *
+     * <p>Alone in its batch, because there is one current research per world and every lab test in
+     * the other batch is pointing it at something of its own.
+     */
+    public static class ResearchKeepsItsProgressTest extends GameTestInstance {
+
+        public static final MapCodec<ResearchKeepsItsProgressTest> CODEC =
+                RecordCodecBuilder.<ResearchKeepsItsProgressTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ResearchKeepsItsProgressTest::info))
+                                .apply(i, ResearchKeepsItsProgressTest::new));
+
+        public ResearchKeepsItsProgressTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            MinecraftServer server = helper.getLevel().getServer();
+            ResearchState state = Research.state(server);
+            ResourceKey<Technology> automation = ModTechnologies.key("automation");
+            ResourceKey<Technology> logistics = ModTechnologies.key("logistics");
+
+            // Both cost ten units of red science and neither is anywhere near that after two, so
+            // nothing here completes and the numbers stay comparable.
+            research(helper, "automation");
+            Research.addUnit(helper.getLevel());
+            Research.addUnit(helper.getLevel());
+            helper.assertValueEqual(state.units(), 2, "units on the research being worked on");
+
+            research(helper, "logistics");
+            helper.assertValueEqual(state.units(), 0, "units on a research just started");
+            helper.assertValueEqual(state.units(automation), 2,
+                    "units kept on the research the labs were pointed away from");
+
+            Research.addUnit(helper.getLevel());
+            helper.assertValueEqual(state.units(logistics), 1, "units on the second research");
+            helper.assertValueEqual(state.units(automation), 2,
+                    "units on the first research, while a second one is being worked on");
+
+            Research.setCurrent(server, automation);
+            helper.assertValueEqual(state.units(), 2, "units picked up where they were left");
+
+            // And finishing one takes it out of the tally rather than leaving it there to be
+            // handed back if the technology is ever forgotten and researched again.
+            for (int i = state.units(); i < technology(helper, "automation").units(); i++) {
+                Research.addUnit(helper.getLevel());
+            }
+            helper.assertTrue(state.isCompleted(automation), "automation finished");
+            helper.assertValueEqual(state.units(automation), 0,
+                    "units left over on a finished technology");
+
+            state.forget(automation);
+            state.forget(logistics);
+            state.setCurrent(null);
+            Research.changedExternally(server);
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("research keeps its progress across a switch");
         }
     }
 }

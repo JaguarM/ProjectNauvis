@@ -114,6 +114,10 @@ public final class NauvisResearchData {
             add("screen.nauvis_research.research.unlocks", "Unlocks:");
             add("screen.nauvis_research.research.no_effect",
                     "No effect yet - this pack has none of what it unlocks");
+            // Said on a technology the labs are not pointed at, because the whole reason units
+            // are kept when you switch away is that you can rely on them still being there.
+            add("screen.nauvis_research.research.part_done", "%s of %s units already done");
+            add("screen.nauvis_research.research.search", "Search");
 
             add("message.nauvis_research.research_complete", "Research complete: %s");
 

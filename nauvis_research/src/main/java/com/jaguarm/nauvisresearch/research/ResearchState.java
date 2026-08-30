@@ -1,5 +1,6 @@
 package com.jaguarm.nauvisresearch.research;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -35,22 +36,39 @@ import net.minecraft.world.level.saveddata.SavedDataType;
  *
  * <h2>Progress lives here, not in the lab</h2>
  *
- * <p>{@link #units} is how many units of the current technology are done, and it is a property of
- * the research rather than of any machine: twelve labs work on one technology together, which is
- * what makes a lab farm mean anything. {@code LabBlockEntity} keeps its own count of the units it
- * has contributed, but that is a readout, not the state.
+ * <p>Units are a property of the research rather than of any machine: twelve labs work on one
+ * technology together, which is what makes a lab farm mean anything. {@code LabBlockEntity} keeps
+ * its own count of the units it has contributed, but that is a readout, not the state.
+ *
+ * <h2>Progress is per technology, and it survives a switch</h2>
+ *
+ * <p>{@link #progress} is keyed on the technology rather than being one counter beside
+ * {@link #current}, and that is the whole of it: <b>switching research keeps what was already
+ * paid</b>. Factorio does the same - a research swapped away from is waiting where you left it
+ * when you come back, and the packs already spent are not spent again. One counter meant a player
+ * who looked at something else for a minute threw away an hour of labs, which is a thing you only
+ * find out after it has happened to you.
+ *
+ * <p>The map holds only technologies part-way through - a completed one drops out of it - so it
+ * stays a handful of entries rather than growing with the tree.
  */
 public class ResearchState extends SavedData {
 
     private static final Codec<ResourceKey<Technology>> KEY_CODEC = ResourceKey.codec(ModTechnologies.REGISTRY);
 
     private record Snapshot(List<ResourceKey<Technology>> completed,
-            Optional<ResourceKey<Technology>> current, int units, Map<Identifier, Integer> made) {}
+            Optional<ResourceKey<Technology>> current, int units,
+            Map<ResourceKey<Technology>, Integer> progress, Map<Identifier, Integer> made) {}
 
     private static final Codec<Snapshot> SNAPSHOT_CODEC = RecordCodecBuilder.create(i -> i.group(
             KEY_CODEC.listOf().optionalFieldOf("completed", List.of()).forGetter(Snapshot::completed),
             KEY_CODEC.optionalFieldOf("current").forGetter(Snapshot::current),
+            // The one counter this used to be. Still written, so a world saved here opens in an
+            // older build with its current research where it left it, and still read, so a world
+            // saved by one arrives here the same way.
             Codec.INT.optionalFieldOf("units", 0).forGetter(Snapshot::units),
+            Codec.unboundedMap(KEY_CODEC, Codec.INT).optionalFieldOf("progress", Map.of())
+                    .forGetter(Snapshot::progress),
             Codec.unboundedMap(Identifier.CODEC, Codec.INT).optionalFieldOf("made", Map.of())
                     .forGetter(Snapshot::made))
             .apply(i, Snapshot::new));
@@ -60,12 +78,16 @@ public class ResearchState extends SavedData {
                 ResearchState state = new ResearchState();
                 state.completed.addAll(snapshot.completed());
                 state.current = snapshot.current().orElse(null);
-                state.units = snapshot.units();
+                state.progress.putAll(snapshot.progress());
+                if (snapshot.units() > 0) {
+                    snapshot.current().ifPresent(key ->
+                            state.progress.putIfAbsent(key, snapshot.units()));
+                }
                 state.made.putAll(snapshot.made());
                 return state;
             },
             state -> new Snapshot(List.copyOf(state.completed), Optional.ofNullable(state.current),
-                    state.units, Map.copyOf(state.made)));
+                    state.units(), Map.copyOf(state.progress), Map.copyOf(state.made)));
 
     public static final SavedDataType<ResearchState> TYPE = new SavedDataType<>(
             Identifier.fromNamespaceAndPath("nauvis_research", "research"),
@@ -76,7 +98,14 @@ public class ResearchState extends SavedData {
     private final Set<ResourceKey<Technology>> completed = new LinkedHashSet<>();
 
     private @Nullable ResourceKey<Technology> current;
-    private int units;
+
+    /**
+     * Units paid towards each technology that is part-way through, the current one included.
+     *
+     * <p>Insertion-ordered, and small: a technology leaves the map the moment it completes, so
+     * this holds the one being worked on plus whatever was set aside half done.
+     */
+    private final Map<ResourceKey<Technology>, Integer> progress = new LinkedHashMap<>();
 
     /**
      * How many of each item the world has ever made, for the technologies that finish on a
@@ -100,9 +129,27 @@ public class ResearchState extends SavedData {
         return current;
     }
 
-    /** Units of the current technology finished so far. Meaningless when nothing is current. */
+    /** Units of the current technology finished so far. Zero when nothing is current. */
     public int units() {
-        return units;
+        return current == null ? 0 : units(current);
+    }
+
+    /** Units paid towards any technology, whether or not it is the one being worked on. */
+    public int units(ResourceKey<Technology> technology) {
+        return progress.getOrDefault(technology, 0);
+    }
+
+    /** Everything part-finished, for the sync that lets the tree draw a bar on all of it. */
+    public Map<ResourceKey<Technology>, Integer> progress() {
+        return java.util.Collections.unmodifiableMap(progress);
+    }
+
+    /** Throws away every part-finished research. {@code /research reset} and the gametests. */
+    public void clearProgress() {
+        if (!progress.isEmpty()) {
+            progress.clear();
+            setDirty();
+        }
     }
 
     /** How many of this item the world has made, for a trigger to compare against. */
@@ -126,9 +173,9 @@ public class ResearchState extends SavedData {
     /**
      * Points the world's labs at a technology, or at nothing.
      *
-     * <p>Progress on the technology being left is <b>lost</b>, which is Factorio's rule too: a
-     * research swapped away from starts again. Keeping it would mean a units-per-technology map
-     * and a second decision about what happens when the tree reloads under it.
+     * <p>Progress on the technology being left is <b>kept</b>, in {@link #progress}, and is
+     * picked up where it stopped when the labs are pointed back at it - Factorio's rule, and the
+     * only one that makes switching research a decision rather than a punishment.
      *
      * @return whether anything changed, so the caller can skip an unnecessary sync.
      */
@@ -137,7 +184,6 @@ public class ResearchState extends SavedData {
             return false;
         }
         current = technology;
-        units = 0;
         setDirty();
         return true;
     }
@@ -152,30 +198,32 @@ public class ResearchState extends SavedData {
         if (current == null) {
             return false;
         }
-        units++;
+        int done = progress.merge(current, 1, Integer::sum);
         setDirty();
-        if (units < total) {
+        if (done < total) {
             return false;
         }
         completed.add(current);
+        progress.remove(current);
         current = null;
-        units = 0;
         return true;
     }
 
     /** For {@code /nauvisresearch} style tooling and the gametests; not a gameplay path. */
     public void complete(ResourceKey<Technology> technology) {
         if (completed.add(technology)) {
+            progress.remove(technology);
             if (technology.equals(current)) {
                 current = null;
-                units = 0;
             }
             setDirty();
         }
     }
 
+    /** Un-researches it, and throws away any part-finished work towards it along with it. */
     public void forget(ResourceKey<Technology> technology) {
-        if (completed.remove(technology)) {
+        boolean removed = completed.remove(technology);
+        if (progress.remove(technology) != null || removed) {
             setDirty();
         }
     }

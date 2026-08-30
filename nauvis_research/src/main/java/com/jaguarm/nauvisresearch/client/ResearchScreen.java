@@ -1,8 +1,13 @@
 package com.jaguarm.nauvisresearch.client;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -14,6 +19,7 @@ import com.jaguarm.nauvisresearch.research.TechnologyLayout;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.Holder;
@@ -38,8 +44,8 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * code with {@code technology_layout_is_sound} on it, and what is left here is the half that is
  * <em>nice or ugly</em> and can only ever be judged by somebody looking.
  *
- * <p>So this file has no idea what a prerequisite is. It is handed cells and arrows and turns them
- * into pixels.
+ * <p>So this file has no idea what a prerequisite is. It is handed cells, edges and lanes and
+ * turns them into pixels.
  *
  * <h2>What a node says without being clicked</h2>
  *
@@ -49,9 +55,32 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * ahead in - hiding what you cannot do yet turns a map into a torch beam. That was exactly the bug
  * in the list this replaces, and it would be no better in a nicer font.
  *
- * <p>Pan by dragging; there is no zoom. At six columns by eleven rows the tree fits a window
- * without one, and a zoom that scaled text and item icons is real work that buys nothing until the
- * tree is several times this size.
+ * <p>A bar under a node is units paid towards it, and it is drawn on <b>every</b> technology that
+ * has any rather than only on the current one, because progress survives a switch - see
+ * {@code ResearchState}. A player who moved the labs somewhere else can see what they left behind
+ * without hunting for it.
+ *
+ * <h2>Reading the wires</h2>
+ *
+ * <p>Three things are here for the same reason, which is that the eye loses an arrow long before
+ * the layout does:
+ *
+ * <ul>
+ *   <li><b>lanes.</b> Every elbow used to turn down the middle of the gap between two columns, so
+ *       every arrow leaving a column drew itself on top of every other one and eleven children
+ *       hanging off five parents came out as a single vertical bar. {@code Edge.lane} says which
+ *       channel of that gap an arrow belongs in, and arrows share one exactly when they share a
+ *       parent;</li>
+ *   <li><b>the hovered path.</b> Point at a node and everything it needs, all the way back to a
+ *       root, lights up - which is the question "what do I have to do first" answered in one
+ *       gesture rather than by following a grey line with a finger;</li>
+ *   <li><b>search.</b> Type and the tree dims to what matches, and jumps to the first of them.
+ *       Twenty-eight technologies fit on a screen; two hundred will not.</li>
+ * </ul>
+ *
+ * <p>Pan by dragging, zoom with the wheel - Factorio's two, and there is nothing else to learn.
+ * Columns are centred against the tallest one rather than hanging from the top, so a column of
+ * three beside a column of eleven reads as a fan rather than as a list that ran out.
  */
 public class ResearchScreen extends Screen {
 
@@ -63,12 +92,22 @@ public class ResearchScreen extends Screen {
     private static final int PADDING = 6;
     private static final int MARGIN = 16;
 
+    /** How far apart two arrows may turn, and how much of the gap stays clear at either end. */
+    private static final int LANE_STEP = 8;
+    private static final int LANE_MARGIN = 5;
+
+    private static final float MIN_ZOOM = 0.4f;
+    private static final float MAX_ZOOM = 2.0f;
+
+    private static final int SEARCH_WIDTH = 96;
+
     private static final int COLOR_FRAME = 0xFF000000;
     private static final int COLOR_BACKGROUND = 0xF0141414;
     private static final int COLOR_CANVAS = 0xFF1A1A1A;
     private static final int COLOR_TEXT = 0xFFFFFFFF;
     private static final int COLOR_EDGE = 0xFF4A4A4A;
     private static final int COLOR_EDGE_DONE = 0xFF6FDF8F;
+    private static final int COLOR_EDGE_PATH = 0xFFFFD24A;
 
     /** Node fills, one per state. These are the five answers the tree gives at a glance. */
     private static final int COLOR_DONE = 0xFF2E5E3E;
@@ -79,6 +118,10 @@ public class ResearchScreen extends Screen {
 
     private static final int COLOR_BORDER_CURRENT = 0xFF6FC3DF;
     private static final int COLOR_BORDER_DONE = 0xFF6FDF8F;
+    private static final int COLOR_BORDER_PATH = 0xFFFFD24A;
+
+    /** Laid over everything the search does not match, rather than hiding it. */
+    private static final int COLOR_DIMMED = 0xC01A1A1A;
 
     private int left;
     private int top;
@@ -88,9 +131,20 @@ public class ResearchScreen extends Screen {
 
     private int scrollX;
     private int scrollY;
+    private float zoom = 1.0f;
     private boolean dragging;
 
+    private @Nullable EditBox search;
+
     private TechnologyLayout.Layout layout = new TechnologyLayout.Layout(List.of(), List.of(), 0, 0);
+
+    /**
+     * How far down each column is pushed to centre it against the tallest one, indexed by column.
+     *
+     * <p>Cached rather than counted per node per frame, and rebuilt in {@link #init} with the
+     * layout it belongs to.
+     */
+    private int[] columnOffset = new int[0];
 
     public ResearchScreen() {
         super(Component.translatable("screen.nauvis_research.research"));
@@ -99,23 +153,54 @@ public class ResearchScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        headerHeight = font.lineHeight + PADDING * 2;
+        headerHeight = Math.max(font.lineHeight, 12) + PADDING * 2;
         left = MARGIN;
         top = MARGIN;
         paneWidth = width - MARGIN * 2;
         paneHeight = height - MARGIN * 2;
 
         layout = TechnologyLayout.of(minecraft.level.registryAccess());
+        columnOffset = centreColumns(layout);
+
+        // Kept across a resize, because the screen is rebuilt on one and a search box that emptied
+        // itself when the window changed would be its own small bug.
+        EditBox previous = search;
+        search = new EditBox(font, left + paneWidth - SEARCH_WIDTH - PADDING, top + PADDING,
+                SEARCH_WIDTH, 12, previous,
+                Component.translatable("screen.nauvis_research.research.search"));
+        search.setHint(Component.translatable("screen.nauvis_research.research.search")
+                .withStyle(ChatFormatting.DARK_GRAY));
+        search.setResponder(text -> lookAtFirstMatch());
+        addRenderableWidget(search);
 
         // Open looking at whatever is being researched. A tree that always opened at the origin
         // would make the one thing you came to check something you have to go and find.
         ResourceKey<Technology> current = ClientResearch.current();
         TechnologyLayout.Placed focus = current == null ? null : layout.at(current);
         if (focus != null) {
-            scrollX = nodeX(focus.column()) - (paneWidth - NODE) / 2;
-            scrollY = nodeY(focus.row()) - (viewHeight() - NODE) / 2;
+            lookAt(focus);
         }
         clampScroll();
+    }
+
+    /**
+     * The vertical offset of each column, so a short column sits level with a tall one's middle.
+     *
+     * <p>Purely a drawing decision, which is why it is here and not in the layout: the grid says
+     * row three of column one, and what that is worth in pixels is this file's business.
+     */
+    private static int[] centreColumns(TechnologyLayout.Layout layout) {
+        int[] rows = new int[Math.max(layout.columns(), 1)];
+        for (TechnologyLayout.Placed placed : layout.nodes()) {
+            if (placed.column() < rows.length) {
+                rows[placed.column()] = Math.max(rows[placed.column()], placed.row() + 1);
+            }
+        }
+        int[] offsets = new int[rows.length];
+        for (int i = 0; i < rows.length; i++) {
+            offsets[i] = (layout.rows() - rows[i]) * ROW_STEP / 2;
+        }
+        return offsets;
     }
 
     private int viewHeight() {
@@ -134,8 +219,25 @@ public class ResearchScreen extends Screen {
         return column * COLUMN_STEP;
     }
 
-    private static int nodeY(int row) {
-        return row * ROW_STEP;
+    private int nodeY(TechnologyLayout.Placed placed) {
+        int offset = placed.column() < columnOffset.length ? columnOffset[placed.column()] : 0;
+        return offset + placed.row() * ROW_STEP;
+    }
+
+    /** Canvas coordinate zero, in screen pixels. Everything drawn hangs off these two. */
+    private int originX() {
+        return left + PADDING - scrollX;
+    }
+
+    private int originY() {
+        return top + headerHeight + PADDING - scrollY;
+    }
+
+    /** Puts a node in the middle of the pane. Used on opening, and by search. */
+    private void lookAt(TechnologyLayout.Placed placed) {
+        scrollX = Math.round(nodeX(placed.column()) * zoom) - (paneWidth - Math.round(NODE * zoom)) / 2;
+        scrollY = Math.round(nodeY(placed) * zoom) - (viewHeight() - Math.round(NODE * zoom)) / 2;
+        clampScroll();
     }
 
     /**
@@ -146,8 +248,8 @@ public class ResearchScreen extends Screen {
      * drift off the left edge and look broken.
      */
     private void clampScroll() {
-        int overflowX = canvasWidth() - paneWidth + PADDING * 2;
-        int overflowY = canvasHeight() - viewHeight() + PADDING * 2;
+        int overflowX = Math.round(canvasWidth() * zoom) - paneWidth + PADDING * 2;
+        int overflowY = Math.round(canvasHeight() * zoom) - viewHeight() + PADDING * 2;
         scrollX = Mth.clamp(scrollX, Math.min(0, overflowX), Math.max(0, overflowX));
         scrollY = Mth.clamp(scrollY, Math.min(0, overflowY), Math.max(0, overflowY));
     }
@@ -156,40 +258,48 @@ public class ResearchScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-
         graphics.fill(left - 1, top - 1, left + paneWidth + 1, top + paneHeight + 1, COLOR_FRAME);
         graphics.fill(left, top, left + paneWidth, top + paneHeight, COLOR_BACKGROUND);
-        graphics.text(font, heading(), left + PADDING, top + PADDING, COLOR_TEXT, false);
+        graphics.text(font, heading(), left + PADDING, top + PADDING + 2, COLOR_TEXT, false);
 
         int canvasTop = top + headerHeight;
         graphics.fill(left + 1, canvasTop, left + paneWidth - 1, top + paneHeight - 1, COLOR_CANVAS);
 
+        TechnologyLayout.Placed hovered = nodeAt(mouseX, mouseY);
+        Set<ResourceKey<Technology>> path = hovered == null ? Set.of() : pathTo(hovered);
+        String query = query();
+
         // Everything below is in canvas coordinates and clipped to the pane, so a node at the edge
-        // is cut off rather than drawn over the header.
+        // is cut off rather than drawn over the header. The scissor is set before the zoom because
+        // it is in screen pixels either way.
         graphics.enableScissor(left + 1, canvasTop, left + paneWidth - 1, top + paneHeight - 1);
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(originX(), originY());
+        graphics.pose().scale(zoom, zoom);
 
-        int originX = left + PADDING - scrollX;
-        int originY = canvasTop + PADDING - scrollY;
-
-        // Edges first, so a node always sits on top of the wires rather than under them.
+        // Edges first, so a node always sits on top of the wires rather than under them, and the
+        // lit path after the rest of them, so it is not half buried under the wires it crosses.
         for (TechnologyLayout.Edge edge : layout.edges()) {
-            renderEdge(graphics, edge, originX, originY);
+            if (!isOnPath(edge, path)) {
+                renderEdge(graphics, edge, path);
+            }
         }
-
-        TechnologyLayout.Placed hovered = null;
-        for (TechnologyLayout.Placed placed : layout.nodes()) {
-            int x = originX + nodeX(placed.column());
-            int y = originY + nodeY(placed.row());
-            boolean over = mouseX >= x && mouseX < x + NODE && mouseY >= y && mouseY < y + NODE
-                    && mouseY >= canvasTop && mouseY < top + paneHeight;
-            renderNode(graphics, placed, x, y, over);
-            if (over) {
-                hovered = placed;
+        for (TechnologyLayout.Edge edge : layout.edges()) {
+            if (isOnPath(edge, path)) {
+                renderEdge(graphics, edge, path);
             }
         }
 
+        for (TechnologyLayout.Placed placed : layout.nodes()) {
+            renderNode(graphics, placed, placed.equals(hovered), path, query);
+        }
+
+        graphics.pose().popMatrix();
         graphics.disableScissor();
+
+        // The widgets - the search box - go on top of the pane rather than under it, which is why
+        // this is last and not first.
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
         if (hovered != null) {
             graphics.setComponentTooltipForNextFrame(font, tooltip(hovered), mouseX, mouseY);
@@ -204,9 +314,13 @@ public class ResearchScreen extends Screen {
      * several diagonals converging on one node are impossible to tell apart, where elbows share
      * their horizontal runs and read as a bus. This tree has a node with three prerequisites and
      * a column of eleven hanging off one parent, so it matters here.
+     *
+     * <p><b>Where the across happens is the lane</b>, and it is the difference between a fan and a
+     * single bar - see {@link TechnologyLayout}. Two arrows out of one parent share their whole
+     * elbow, which is what a fan is; two out of different parents never touch.
      */
     private void renderEdge(GuiGraphicsExtractor graphics, TechnologyLayout.Edge edge,
-            int originX, int originY) {
+            Set<ResourceKey<Technology>> path) {
 
         TechnologyLayout.Placed from = layout.at(edge.from());
         TechnologyLayout.Placed to = layout.at(edge.to());
@@ -214,23 +328,45 @@ public class ResearchScreen extends Screen {
             return;
         }
 
-        int colour = ClientResearch.isCompleted(edge.from()) ? COLOR_EDGE_DONE : COLOR_EDGE;
-        int x0 = originX + nodeX(from.column()) + NODE;
-        int y0 = originY + nodeY(from.row()) + NODE / 2;
-        int x1 = originX + nodeX(to.column());
-        int y1 = originY + nodeY(to.row()) + NODE / 2;
-        int mid = (x0 + x1) / 2;
+        int colour = isOnPath(edge, path) ? COLOR_EDGE_PATH
+                : ClientResearch.isCompleted(edge.from()) ? COLOR_EDGE_DONE
+                : COLOR_EDGE;
+        int x0 = nodeX(from.column()) + NODE;
+        int y0 = nodeY(from) + NODE / 2;
+        int x1 = nodeX(to.column());
+        int y1 = nodeY(to) + NODE / 2;
+        int mid = lane(x0, x1, edge.lane(), edge.lanes());
 
         graphics.fill(x0, y0, mid + 1, y0 + 1, colour);
         graphics.fill(mid, Math.min(y0, y1), mid + 1, Math.max(y0, y1) + 1, colour);
         graphics.fill(mid, y1, x1, y1 + 1, colour);
     }
 
+    /**
+     * Where an arrow turns: the middle of the gap, shifted by its lane.
+     *
+     * <p>The spread is capped at {@link #LANE_STEP} so a column with two parents does not throw
+     * its two arrows to opposite ends of the gap, and squeezed to fit when there are many - a
+     * column of eleven parents gets four pixels each, which is still eleven distinguishable lines
+     * where one channel is one.
+     */
+    private static int lane(int x0, int x1, int index, int count) {
+        int centre = (x0 + x1) / 2;
+        if (count <= 1) {
+            return centre;
+        }
+        int room = COLUMN_STEP - NODE - LANE_MARGIN * 2;
+        int step = Math.max(1, Math.min(LANE_STEP, room / (count - 1)));
+        return centre + Math.round((index - (count - 1) / 2.0f) * step);
+    }
+
     private void renderNode(GuiGraphicsExtractor graphics, TechnologyLayout.Placed placed,
-            int x, int y, boolean hovered) {
+            boolean hovered, Set<ResourceKey<Technology>> path, String query) {
 
         ResourceKey<Technology> key = placed.key();
         Technology technology = placed.technology();
+        int x = nodeX(placed.column());
+        int y = nodeY(placed);
 
         boolean done = ClientResearch.isCompleted(key);
         boolean current = key.equals(ClientResearch.current());
@@ -242,37 +378,44 @@ public class ResearchScreen extends Screen {
                 : technology.isTriggered() ? COLOR_TRIGGER
                 : COLOR_AVAILABLE;
 
-        int border = done ? COLOR_BORDER_DONE
+        int border = hovered || path.contains(key) ? COLOR_BORDER_PATH
+                : done ? COLOR_BORDER_DONE
                 : current ? COLOR_BORDER_CURRENT
-                : hovered ? COLOR_TEXT
                 : COLOR_FRAME;
 
         graphics.fill(x - 1, y - 1, x + NODE + 1, y + NODE + 1, border);
         graphics.fill(x, y, x + NODE, y + NODE, fill);
         graphics.item(new ItemStack(iconOf(technology)), x + (NODE - 16) / 2, y + (NODE - 16) / 2);
 
-        // A bar under whatever is actually moving, so progress is visible without hovering - which
-        // for the triggered technologies is the whole of the early game.
+        // A bar under whatever has been paid for, so progress is visible without hovering - which
+        // for the triggered technologies is the whole of the early game, and for a research that
+        // was switched away from is the only place it is said at all.
         float progress = progressOf(key, technology);
         if (progress > 0.0f) {
             int filled = Math.round((NODE - 2) * Math.clamp(progress, 0.0f, 1.0f));
             graphics.fill(x + 1, y + NODE - 3, x + NODE - 1, y + NODE - 1, COLOR_FRAME);
             graphics.fill(x + 1, y + NODE - 3, x + 1 + filled, y + NODE - 1, COLOR_BORDER_CURRENT);
         }
+
+        // Searching dims rather than hides, for the same reason a locked node is drawn: a tree you
+        // cannot see the shape of is no longer a tree.
+        if (!query.isEmpty() && !matches(placed, query)) {
+            graphics.fill(x - 1, y - 1, x + NODE + 1, y + NODE + 1, COLOR_DIMMED);
+        }
     }
 
-    /** How far along this technology is, or 0 when it is not the one moving. */
+    /** How far along this technology is - units paid, or a trigger's tally. */
     private float progressOf(ResourceKey<Technology> key, Technology technology) {
         if (ClientResearch.isCompleted(key)) {
             return 0.0f;
-        }
-        if (key.equals(ClientResearch.current()) && technology.units() > 0) {
-            return ClientResearch.units() / (float) technology.units();
         }
         if (technology.isTriggered()) {
             Technology.Trigger trigger = technology.trigger().orElseThrow();
             return Math.min(ClientResearch.made(trigger.item()), trigger.count())
                     / (float) trigger.count();
+        }
+        if (technology.units() > 0) {
+            return ClientResearch.units(key) / (float) technology.units();
         }
         return 0.0f;
     }
@@ -315,6 +458,66 @@ public class ResearchScreen extends Screen {
                 technology.title(current), ClientResearch.units(), technology.units());
     }
 
+    // -------------------------------------------------------------------------- path and search
+
+    /** A technology and everything it needs, transitively - what the hover lights up. */
+    private Set<ResourceKey<Technology>> pathTo(TechnologyLayout.Placed placed) {
+        Set<ResourceKey<Technology>> found = new HashSet<>();
+        Deque<ResourceKey<Technology>> frontier = new ArrayDeque<>();
+        found.add(placed.key());
+        frontier.add(placed.key());
+        while (!frontier.isEmpty()) {
+            Technology technology = technologyOf(frontier.removeFirst());
+            if (technology == null) {
+                continue;
+            }
+            for (ResourceKey<Technology> prerequisite : technology.prerequisites()) {
+                if (found.add(prerequisite)) {
+                    frontier.add(prerequisite);
+                }
+            }
+        }
+        return found;
+    }
+
+    private static boolean isOnPath(TechnologyLayout.Edge edge, Set<ResourceKey<Technology>> path) {
+        return path.contains(edge.from()) && path.contains(edge.to());
+    }
+
+    private String query() {
+        return search == null ? "" : search.getValue().trim().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * The id as well as the name, and underscores either way round.
+     *
+     * <p>"steel processing", "steel_processing" and "steel" all find the same node, which matters
+     * because half of what a player remembers is the Factorio id and the other half is the English
+     * the screen shows them.
+     */
+    private boolean matches(TechnologyLayout.Placed placed, String query) {
+        String path = placed.key().identifier().getPath();
+        if (path.contains(query) || path.replace('_', ' ').contains(query)) {
+            return true;
+        }
+        return placed.technology().title(placed.key()).getString()
+                .toLowerCase(Locale.ROOT).contains(query);
+    }
+
+    /** Types a letter, and the tree goes to what you meant rather than waiting to be dragged. */
+    private void lookAtFirstMatch() {
+        String query = query();
+        if (query.isEmpty()) {
+            return;
+        }
+        for (TechnologyLayout.Placed placed : layout.nodes()) {
+            if (matches(placed, query)) {
+                lookAt(placed);
+                return;
+            }
+        }
+    }
+
     // ------------------------------------------------------------------------------- tooltip
 
     private List<Component> tooltip(TechnologyLayout.Placed placed) {
@@ -329,6 +532,14 @@ public class ResearchScreen extends Screen {
             lines.add(cost(technology));
         } else {
             lines.add(waitingFor(placed));
+        }
+
+        // Units already paid for something the labs are not pointed at. Said out loud because the
+        // whole point of keeping it is that a player can rely on it being there.
+        int paid = ClientResearch.units(placed.key());
+        if (paid > 0 && !placed.key().equals(ClientResearch.current())) {
+            lines.add(Component.translatable("screen.nauvis_research.research.part_done",
+                    paid, technology.units()).withStyle(ChatFormatting.AQUA));
         }
 
         // What it hands over. This is the reason to research it, and the one thing a graph of
@@ -416,6 +627,13 @@ public class ResearchScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        // The header is the search box's, and nothing else is a widget, so this is the whole of
+        // the split: above the canvas the screen behaves like an ordinary one.
+        if (event.y() < top + headerHeight) {
+            return super.mouseClicked(event, doubleClick);
+        }
+        setFocused(null);
+
         TechnologyLayout.Placed hit = nodeAt(event.x(), event.y());
         if (hit == null) {
             // Empty canvas: this press begins a pan. Swallowed either way, so a stray click on the
@@ -434,7 +652,9 @@ public class ResearchScreen extends Screen {
             return true;
         }
 
-        // Clicking the current research again stops it, which is the only way to stop.
+        // Clicking the current research again stops it, which is the only way to stop. Whatever it
+        // had paid stays paid - see `ResearchState` - so this is no longer a thing to be careful
+        // about.
         Optional<ResourceKey<Technology>> pick = hit.key().equals(ClientResearch.current())
                 ? Optional.empty()
                 : Optional.of(hit.key());
@@ -459,30 +679,39 @@ public class ResearchScreen extends Screen {
         return super.mouseDragged(event, dx, dy);
     }
 
-    /** Vertical by default, horizontal with shift - the same reflex as any other list. */
+    /**
+     * The wheel zooms, about the cursor, which is Factorio's tech tree and every map ever drawn.
+     *
+     * <p>The arithmetic is one line and it is the only line that matters: whatever the cursor was
+     * over stays under the cursor. A zoom that pulled towards the middle of the pane makes reading
+     * a corner of a wide tree a matter of zoom, drag, zoom, drag.
+     */
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
-        if (minecraft.hasShiftDown()) {
-            scrollX -= (int) (scrollDeltaY * ROW_STEP);
-        } else {
-            scrollY -= (int) (scrollDeltaY * ROW_STEP);
+        float wanted = Mth.clamp(zoom * (float) Math.pow(1.15, scrollDeltaY), MIN_ZOOM, MAX_ZOOM);
+        if (wanted != zoom) {
+            double canvasX = (mouseX - originX()) / zoom;
+            double canvasY = (mouseY - originY()) / zoom;
+            zoom = wanted;
+            scrollX = (int) Math.round(left + PADDING - mouseX + canvasX * zoom);
+            scrollY = (int) Math.round(top + headerHeight + PADDING - mouseY + canvasY * zoom);
+            clampScroll();
         }
-        scrollX -= (int) (scrollDeltaX * COLUMN_STEP);
-        clampScroll();
         return true;
     }
 
     private @Nullable TechnologyLayout.Placed nodeAt(double mouseX, double mouseY) {
         int canvasTop = top + headerHeight;
-        if (mouseY < canvasTop || mouseY >= top + paneHeight) {
+        if (mouseY < canvasTop || mouseY >= top + paneHeight
+                || mouseX < left || mouseX >= left + paneWidth) {
             return null;
         }
-        int originX = left + PADDING - scrollX;
-        int originY = canvasTop + PADDING - scrollY;
+        double canvasX = (mouseX - originX()) / zoom;
+        double canvasY = (mouseY - originY()) / zoom;
         for (TechnologyLayout.Placed placed : layout.nodes()) {
-            int x = originX + nodeX(placed.column());
-            int y = originY + nodeY(placed.row());
-            if (mouseX >= x && mouseX < x + NODE && mouseY >= y && mouseY < y + NODE) {
+            int x = nodeX(placed.column());
+            int y = nodeY(placed);
+            if (canvasX >= x && canvasX < x + NODE && canvasY >= y && canvasY < y + NODE) {
                 return placed;
             }
         }

@@ -229,6 +229,23 @@ Data, recipes and registries
 Screens and config
 ------------------
 
+- **Every elbow that turns down the middle of the gap between two columns is the same line.** The
+  technology tree drew each arrow as out-across-in with the across at the midpoint, which is what
+  vanilla's advancement screen does — and vanilla's is a *tree*, where one parent owns a column's
+  worth of children. A graph has several parents per column, and all of their verticals landed on
+  the same x: five parents fanning out to eleven children came out as one vertical bar with stubs
+  off both sides, saying nothing about which technology needed which. Nothing was wrong with the
+  layout, every test passed, and a person saw it in a second. **When several sources route through
+  one channel, the channel is part of the layout** — `TechnologyLayout.Edge` carries a lane, and
+  `technology_layout_is_sound` fails if two parents in a column share one.
+
+- **A comment that says "which is Factorio's rule too" is a claim, and this one was false.**
+  Research progress was thrown away on switching, with a paragraph explaining that Factorio does the
+  same and that keeping it would cost a per-technology map. Factorio keeps it; the map is six lines;
+  and the paragraph is why nobody questioned it for as long as it stood. **Identity claims about the
+  game being copied are checkable facts** — non-negotiable #1 — and one written into a doc comment
+  reads as settled long after anybody remembers checking it.
+
 - **A Jade provider with no config translation is a crash, not a blank line.** Jade's settings
   screen asserts on a provider with no name, from `ScreenEvent.Init` — so a missing
   `config.jade.plugin_<modid>.<uid>` key crashes the moment any screen opens.
