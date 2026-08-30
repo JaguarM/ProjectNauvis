@@ -27,10 +27,14 @@ Belts
   taking things off is what inserters are for. `belt_does_not_load_a_chest` pins it.
 - **Crouching stops a belt carrying you**, which Factorio does not do. It is in for the Minecraft
   reflex — without it, placing a machine beside a working belt means being carried off mid-click.
-- **A dropped item entity is carried erratically.** `ItemEntity.tick` only calls `move` — and so
-  only reaches `stepOn` — when the item is airborne, has horizontal momentum, or `(tickCount +
-  getId()) % 4 == 0`, so something *resting* on a belt is pushed on a fraction of ticks at a phase
-  that depends on its entity id. A player is carried properly; a thrown item is not.
+- **A dropped item entity is carried erratically, and sometimes stalls outright.** Measured over
+  six runs of the same setup it travelled between 0.5 and 6.4 blocks in the same time, and one run
+  in six it stopped on a flat belt and stayed there. `stepOn` is only reached while `onGround` is
+  true, and an item bounces every time it lands — `ItemEntity.tick` inverts and halves its downward
+  speed — so it spends much of its life just off the belt. `BeltBlock.hold` cancels that bounce,
+  which helps and does not cure it. A player is carried properly; a thrown item is not, and
+  **anything asserting how far one travelled will be flaky** — see `belt_slope_risers_are_climbable`
+  for the shape this has to be tested in instead.
 - **And so nothing tests that a belt carries anything at all.** `belt_carries_what_stands_on_it`
   asserted a distance, which for a resting item is not a fact about the belt — it failed one run in
   five, and was deleted rather than weakened. **A belt that stopped carrying the player would pass
@@ -56,10 +60,11 @@ Belts
   height of a seam comes from the two blocks sharing it rather than from either one's shape; they
   simply glide over a belt with no ramp drawn under them. Build the turn and the climb as two
   blocks and it looks right.
-- **A ramp's collision is four steps and its model is a smooth 45 degrees.** They are meant to
-  disagree here: each step is a quarter block, well under the 0.6 step height, so a slope is walked
-  up rather than jumped - vanilla's rail slope is a plain 8-pixel box and does have to be jumped.
-  Standing on one puts you within a quarter block of the drawn surface.
+- **A ramp's collision is sixteen steps and its model is a smooth 45 degrees.** They are meant to
+  disagree here, and the step count is set by physics rather than by looks: a riser has to be
+  smaller than one tick of the slowest belt's lift, because an item, a minecart or an orb has a step
+  height of *zero* and is carried up a slope only by `BeltBlock.stepOn` lifting it. One pixel is
+  under a transport belt's 1.5 a tick with room to spare, and it hugs the drawn ramp within a pixel.
 - **A ramp reaches out of its own block at both ends**, and is meant to. Up into the block above,
   which is where the surface has to be to meet the belt at the top of the climb - vanilla's raised
   rail does the same - and, because a rotated box's ends tilt with it, a third of a block *along*

@@ -37,8 +37,20 @@ what the square box closes, and at the high end the underside reaches into the b
 the climb, which is left alone because it lies inside that belt or along the top of it. **The slab
 is a tenth of a pixel narrower than its block**, and that is the whole of the z-fighting fix - it is
 the piece doing the overlapping, so it is the piece that gives way, and the flat joints stay exactly
-as wide as the belts they meet. The collision is four steps of a quarter block, so a slope is
-*walked* up - vanilla's rail slope is an 8-pixel box you have to jump.
+as wide as the belts they meet. The collision is sixteen steps of a pixel, and that count is
+physics rather than looks - see below.
+
+**Carrying things up a slope took three fixes, and reading Create and Immersive Engineering is what
+found them.** A player walks up a slope without noticing, which is exactly why it looked finished:
+`maxUpStep` is 0.6 for anything alive and **zero** on `Entity`, so an item, a minecart or an orb
+climbs nothing on its own. They are lifted by `stepOn` instead - to the height of the ramp under
+their *leading edge* one step further on, and no higher, which is IE's "fix the entity to the
+highest point under it" and is what stops something jammed at the top of a slope walking up into
+the sky. Every riser then has to be under one tick of that lift, which is what sets sixteen steps.
+And a ramp needs `collisionExtendsVertically`, or the top quarter of every slope asks the *air above
+it* to do the carrying; plus `entityInside` alongside `stepOn`, because an item arriving off a flat
+belt is still supported by that flat belt while its nose is against the ramp - a circle that leaves
+it wedged at the seam, which both mods break the same way.
 
 **And it turned up a bug that had nothing to do with slopes.** A belt that is turned changes a block
 state and nothing else; the server said so by hand and the client, which keeps its own copy of every
@@ -246,9 +258,13 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
   about rather than looked at, and the joint at the top is closed by nothing at all, on the argument
   that the ramp already overhangs far enough. If there is a wedge of daylight at either end, that is
   `beltRamp` in `NauvisLogisticsModels`;
-- walk up it. Four steps of a quarter block under a smooth ramp: whether that feels like walking up
-  a slope or like walking up stairs is a judgement no test makes. Then ride it - stand still and let
+- walk up it. Sixteen steps of a pixel under a smooth ramp: whether that feels like walking up a
+  slope or like walking up stairs is a judgement no test makes. Then ride it - stand still and let
   it carry you up;
+- **drop items on it and watch them go up.** This is the case that was broken and the one nothing
+  can test properly: a dropped item is carried at a rate that wanders and stalls about one run in
+  six, on the flat as much as on a slope (`GAPS.md`). Whether that reads as a belt or as a fault is
+  a judgement for eyes. Try a minecart on one too;
 - watch items go up and come down. They cross a ramp about 41% faster than flat ground, which is
   deliberate and written down in `GAPS.md`. **Whether it reads as a speed-up or as a glitch** is the
   thing to decide; the tread's texture is stretched by the same amount so that the two agree;

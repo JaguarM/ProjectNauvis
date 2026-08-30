@@ -48,6 +48,7 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -125,6 +126,7 @@ public final class NauvisLogisticsBeltGameTests {
         TEST_TYPES.register("belt_descends_a_step", () -> DescendsAStepTest.CODEC);
         TEST_TYPES.register("belt_slope_carries_at_its_height", () -> SlopeCarriesAtHeightTest.CODEC);
         TEST_TYPES.register("belt_slope_beats_a_bend", () -> SlopeBeatsABendTest.CODEC);
+        TEST_TYPES.register("belt_slope_risers_are_climbable", () -> SlopeRisersTest.CODEC);
         TEST_TYPES.register("inserter_loads_a_belt", () -> InserterLoadsABeltTest.CODEC);
         TEST_TYPES.register("inserter_takes_from_a_belt", () -> InserterTakesFromABeltTest.CODEC);
         TEST_TYPES.register("inserter_fills_only_the_far_lane", () -> OnlyTheFarLaneTest.CODEC);
@@ -186,6 +188,7 @@ public final class NauvisLogisticsBeltGameTests {
         register(event, environment, "belt_slope_carries_at_its_height",
                 SlopeCarriesAtHeightTest::new, 60);
         register(event, environment, "belt_slope_beats_a_bend", SlopeBeatsABendTest::new, 60);
+        register(event, environment, "belt_slope_risers_are_climbable", SlopeRisersTest::new, 60);
         register(event, environment, "inserter_loads_a_belt", InserterLoadsABeltTest::new, 200);
         register(event, environment, "inserter_takes_from_a_belt", InserterTakesFromABeltTest::new, 200);
         register(event, environment, "inserter_fills_only_the_far_lane", OnlyTheFarLaneTest::new, 60);
@@ -1551,6 +1554,96 @@ public final class NauvisLogisticsBeltGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("level beats a step, and a slope beats a bend");
+        }
+    }
+
+    /**
+     * A slope is shallow enough at every point for a belt to lift something up it.
+     *
+     * <p><b>This is the arithmetic behind the one thing a slope gets wrong invisibly.</b> A player
+     * or a mob walks up anything under {@code maxUpStep}, which is 0.6 for them - but on
+     * {@code Entity} that method returns <em>zero</em>, and an item, a minecart or an experience orb
+     * therefore climbs nothing at all on its own. Everything of that kind is lifted by
+     * {@code BeltBlock.stepOn}, and a lift can only be as big as the belt's own speed without
+     * shoving things along faster than the belt runs. So <b>every riser in the stair under a ramp
+     * has to be smaller than one tick of the slowest belt</b>, or that belt's cargo stops dead
+     * against it - which it did, with quarter-block steps.
+     *
+     * <p>Asserted against the shape rather than by watching an item climb, and that is deliberate.
+     * A dropped item is carried at a rate that wanders and sometimes stalls outright - see
+     * {@code docs/GAPS.md} - so a test that watched one failed about one run in six while the thing
+     * it was meant to be testing worked perfectly. That is the same trap
+     * {@code belt_carries_what_stands_on_it} fell into and was deleted for. The shape is the claim,
+     * the shape is exact, and it is what a future edit would break.
+     */
+    public static class SlopeRisersTest extends GameTestInstance {
+
+        public static final MapCodec<SlopeRisersTest> CODEC =
+                RecordCodecBuilder.<SlopeRisersTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SlopeRisersTest::info))
+                                .apply(i, SlopeRisersTest::new));
+
+        public SlopeRisersTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos ramp = TAIL.east();
+            place(helper, TAIL, Direction.EAST);
+            place(helper, ramp, Direction.EAST);
+            place(helper, TAIL.east(2).above(), Direction.EAST);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                helper.assertBlockProperty(ramp, BeltBlock.SHAPE, BeltShape.UP);
+
+                BlockPos at = helper.absolutePos(ramp);
+                BlockState state = helper.getLevel().getBlockState(at);
+                VoxelShape shape = state.getCollisionShape(helper.getLevel(), at);
+
+                // What one tick of the slowest belt can lift something by.
+                double lift = TransportBeltBlock.SPEED / (double) Belts.UNITS_PER_BLOCK;
+                double previous = -1.0;
+                double highest = 0.0;
+                for (int sample = 0; sample < 64; sample++) {
+                    double along = (sample + 0.5) / 64.0;
+                    // max(Y, b, c) takes the other two axes in cycle order, which for Y is z then x.
+                    double top = shape.max(Direction.Axis.Y, 0.5, along);
+                    helper.assertTrue(top > 0.0,
+                            "a ramp should be solid the whole way along, and is not at " + along);
+                    if (previous >= 0.0) {
+                        helper.assertTrue(top - previous <= lift + 1.0E-9, String.format(
+                                "a riser of %.3f at %.2f along the ramp, and a belt lifts %.3f in a "
+                                + "tick - anything with no step height of its own stops there",
+                                top - previous, along, lift));
+                    }
+                    previous = top;
+                    highest = Math.max(highest, top);
+                }
+
+                // And because it does reach past its own block, the block has to say so, or the
+                // game asks the air above the ramp to do the carrying over the top of every slope.
+                helper.assertTrue(highest > 1.0, "a ramp's stair should reach above its own block");
+                Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+                helper.assertTrue(state.collisionExtendsVertically(helper.getLevel(), at, player),
+                        "a ramp should declare that its collision reaches above its block");
+
+                BlockPos flat = helper.absolutePos(TAIL);
+                helper.assertTrue(!helper.getLevel().getBlockState(flat)
+                                .collisionExtendsVertically(helper.getLevel(), flat, player),
+                        "a flat belt should not, being half a block like any slab");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a slope's risers are small enough to be lifted over");
         }
     }
 

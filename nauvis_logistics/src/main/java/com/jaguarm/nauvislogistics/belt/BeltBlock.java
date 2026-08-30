@@ -18,6 +18,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.InsideBlockEffectApplier;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -33,6 +35,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -107,14 +110,19 @@ public abstract class BeltBlock extends BaseEntityBlock {
     /**
      * How many steps a ramp is approximated in.
      *
-     * <p>Four, so each is a quarter block: 0.25 up at a time, comfortably under vanilla's 0.6 step
-     * height, which is what makes a slope something you walk up rather than jump. Vanilla's rail
-     * slope is a single 8-pixel box and you do have to jump it.
+     * <p>Sixteen, so each is one pixel - and the number is not about how it looks. <b>It is set by
+     * the slowest belt.</b> A player walks up anything under vanilla's 0.6 step height, but an item,
+     * a minecart and an experience orb have a step height of <em>zero</em>: {@code maxUpStep}
+     * returns 0 on {@code Entity} and only {@code LivingEntity} overrides it. Nothing carries those
+     * up a slope except {@link #stepOn} lifting them, and a lift can only be as big as the belt's
+     * own speed without shoving things along faster than the belt runs. A transport belt moves 1.5
+     * pixels a tick, so a riser has to be under that or the slowest belt's cargo stops dead against
+     * it - which it did.
      *
-     * <p>More steps would hug the drawn ramp more closely and cost more boxes in a shape that is
-     * asked for on every collision test along a belt line. Four is where that trade sits.
+     * <p>They sit on the pixel grid, so the shape is cheap despite the count, and they hug the drawn
+     * ramp within a pixel, which is closer than the quarter-block steps this started with.
      */
-    private static final int RAMP_STEPS = 4;
+    private static final int RAMP_STEPS = 16;
 
     /** The stair under a ramp, by the horizontal direction the ramp climbs towards. */
     private static final Map<Direction, VoxelShape> RAMPS = Direction.Plane.HORIZONTAL.stream()
@@ -151,6 +159,25 @@ public abstract class BeltBlock extends BaseEntityBlock {
             case EAST -> Block.box(near, 0, 0, far, top, 16);
             default -> throw new IllegalArgumentException("a belt climbs towards a horizontal side, not " + high);
         };
+    }
+
+    /**
+     * A ramp's stair reaches above its own block, and this is what makes the game notice.
+     *
+     * <p>Without it a belt stops carrying anything over the top quarter of every slope, and nothing
+     * about that looks like a bug: {@code stepOn} is only ever called for
+     * {@code Entity.getOnPosLegacy}, which is the supporting block <em>or</em> the block a fifth of
+     * a block under the entity's feet - and standing on a step that reaches past the block it
+     * belongs to, that is the air above the ramp. So the belt asked the air to carry the player and
+     * the air declined.
+     *
+     * <p>This is the switch that makes {@code getOnPosLegacy} keep the supporting block instead, and
+     * it is there for fences and walls, which are tall for the same reason.
+     */
+    @Override
+    public boolean collisionExtendsVertically(BlockState state, BlockGetter level, BlockPos pos,
+            Entity collidingEntity) {
+        return state.getValue(SHAPE).isSlope();
     }
 
     /** Which way a belt in this state climbs, or null if it is flat. */
@@ -556,11 +583,59 @@ public abstract class BeltBlock extends BaseEntityBlock {
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
         super.stepOn(level, pos, state, entity);
+        carry(pos, state, entity, true);
+    }
+
+    /**
+     * A slope reaches whatever is touching it, not only what is standing on it.
+     *
+     * <p><b>This is what gets an item onto a ramp at all</b>, and the reason it is needed is a
+     * circle. {@link #stepOn} is only called for the block an entity is <em>supported</em> by, and
+     * something arriving off a flat belt is still supported by that flat belt while its nose is
+     * against the ramp's first step. So the ramp never gets asked to lift it, and it cannot become
+     * the supporting block until it has been lifted. An item measured coming up to a slope stopped
+     * dead at the seam and stayed there for as long as anyone watched.
+     *
+     * <p>Being <em>inside</em> the block has no such condition - the box only has to overlap, which
+     * it does the moment the item's nose crosses the line - so the lift can start before the ramp is
+     * carrying anything. Create and Immersive Engineering both drive their conveyors from here for
+     * the same reason.
+     *
+     * <p>Only the lift, never the push along the belt: whichever belt is actually underneath is
+     * already pushing, and doing it twice at a seam would carry things over it at double speed. And
+     * only when {@code stepOn} is not about to do the same job for this same block, which is the one
+     * case where the two hooks overlap.
+     */
+    @Override
+    protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity,
+            InsideBlockEffectApplier effects, boolean precise) {
+        super.entityInside(state, level, pos, entity, effects, precise);
+        if (!state.getValue(SHAPE).isSlope()) {
+            // A flat belt is carried from stepOn, which is the hook that knows what is standing on
+            // it rather than what is passing through it.
+            return;
+        }
+        if (entity.onGround() && pos.equals(entity.getOnPosLegacy())) {
+            return;
+        }
+        carry(pos, state, entity, false);
+    }
+
+    /**
+     * Moves whatever is on this belt: along it, and up it if it slopes.
+     *
+     * @param push whether to carry it along the belt as well as lift it. See {@link #entityInside}.
+     */
+    private void carry(BlockPos pos, BlockState state, Entity entity, boolean push) {
         if (entity.isPassenger() || entity.isShiftKeyDown()) {
             return;
         }
         Direction travel = state.getValue(FACING);
         double step = speed() / (double) Belts.UNITS_PER_BLOCK;
+        double lift = lift(pos, state, entity, travel, step);
+        if (lift == 0.0 && !push) {
+            return;
+        }
 
         // move rather than a nudge to the velocity: a velocity decays against friction, so the
         // speed something is actually carried at would be some fraction of the belt's rather than
@@ -572,17 +647,86 @@ public abstract class BeltBlock extends BaseEntityBlock {
         // entity that is told it is falling while it stands on a belt loses its footing for a
         // tick: the next tick's stepOn does not run, because that hook only fires for something on
         // the ground, so the belt would carry it in stutters. For a player it is worse - fall
-        // damage and step sounds are both worked out from this.
+        // damage and step sounds are both worked out from this. A lift clears it just the same.
         boolean standing = entity.onGround();
-        entity.move(MoverType.SELF, new Vec3(travel.getStepX() * step, 0.0, travel.getStepZ() * step));
+        double along = push ? step : 0.0;
+        entity.move(MoverType.SELF,
+                new Vec3(travel.getStepX() * along, lift, travel.getStepZ() * along));
         entity.setOnGround(standing);
+
+        hold(entity);
     }
 
-    // A slope needs nothing here, which is worth saying out loud because it looks like it should.
-    // The push stays horizontal and `Entity.move` climbs the stair for us - every step of a ramp is
-    // a quarter block and the step height is 0.6 - so a belt carries you up a slope by the same
-    // line that carries you along a flat one. Going down, the push walks off the step and gravity
-    // does the rest, which is walking down stairs and looks like it.
+    /**
+     * How far a slope lifts what is standing on it this tick.
+     *
+     * <p><b>A push along a slope is not enough on its own.</b> A player or a mob walks up the stair
+     * under a ramp because {@code maxUpStep} is 0.6 for them; on {@code Entity} it is <em>zero</em>,
+     * so an item, a minecart, a boat or an experience orb is pushed straight into the first riser
+     * and stays there. Which is most of what a belt carries.
+     *
+     * <p>So the belt lifts them itself, and the rule is <b>to the height of the ramp under the
+     * leading edge of the thing, one step further on</b>. Three parts, and each is load-bearing:
+     *
+     * <ul>
+     *   <li><b>the leading edge</b>, not the middle, because a box resting on a rising ramp rests on
+     *       its front bottom corner, and it is that corner a riser stops. Measuring from the middle
+     *       asks for a lift half the box's width too small, which is exactly small enough to leave
+     *       an item wedged against the step in front of it - Immersive Engineering's conveyor does
+     *       the same and calls it fixing the entity to the highest point under it;</li>
+     *   <li><b>one step further on</b>, because a lift only to where the surface already is is no
+     *       lift at all - the thing is standing there;</li>
+     *   <li><b>and no higher</b>, which is what makes it safe. Something jammed against a wall at
+     *       the top of a slope stops rising the moment it reaches the surface, where a fixed nudge
+     *       every tick would quietly walk it up into the sky.</li>
+     * </ul>
+     *
+     * <p>Only climbing. Going down needs nothing - there is no riser in the way, and gravity is
+     * already pointing where the belt is going.
+     */
+    private static double lift(BlockPos pos, BlockState state, Entity entity, Direction travel,
+            double step) {
+        if (state.getValue(SHAPE) != BeltShape.UP) {
+            return 0.0;
+        }
+        AABB box = entity.getBoundingBox();
+        // How far across this block the front of the entity is, from the edge it came in at.
+        double leading = switch (travel) {
+            case EAST -> box.maxX - pos.getX();
+            case WEST -> pos.getX() + 1 - box.minX;
+            case SOUTH -> box.maxZ - pos.getZ();
+            default -> pos.getZ() + 1 - box.minZ;
+        };
+        double surface = pos.getY() + Belts.HEIGHT + Math.clamp(leading + step, 0.0, 1.0);
+        return Math.clamp(surface - entity.getY(), 0.0, step);
+    }
+
+    /**
+     * Holds what a belt is carrying down onto it, and forgives it the drop.
+     *
+     * <p><b>A dropped item bounces.</b> {@code ItemEntity.tick} inverts and halves its downward
+     * speed every time it lands, which is the little hop a dropped item does on the floor - and
+     * while it is in the air {@code onGround} is false, so {@code applyEffectsFromBlocks} never
+     * reaches {@link #stepOn}. On the flat that only costs a stutter. On a slope it costs the ticks
+     * that would have lifted it.
+     *
+     * <p>Only what is not alive. A player or a mob leaving the ground is jumping, and a belt has no
+     * business cancelling that; nothing else on a belt has a reason to rise on its own.
+     *
+     * <p>And the fall distance goes, which both Create and Immersive Engineering do on their belts
+     * for the same reason: what a belt sets down, it set down gently, and a long descent should not
+     * end in damage at the bottom.
+     */
+    private static void hold(Entity entity) {
+        if (entity instanceof LivingEntity) {
+            return;
+        }
+        entity.resetFallDistance();
+        Vec3 speed = entity.getDeltaMovement();
+        if (speed.y > 0.0) {
+            entity.setDeltaMovement(speed.x, 0.0, speed.z);
+        }
+    }
 
     // Nothing wakes a belt from a neighbour, and nothing needs to. A run is awake exactly while it
     // has something on it: an inserter putting an item on wakes it through the capability, and a

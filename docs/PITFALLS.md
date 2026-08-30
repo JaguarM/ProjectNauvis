@@ -106,6 +106,24 @@ Blocks and multi-blocks
 Waking, ticking and belts
 -------------------------
 
+- **`maxUpStep` is zero on `Entity`, and only `LivingEntity` raises it.** So a slope that a player
+  and every mob walks up without noticing stops an item, a minecart, a boat and an experience orb
+  dead against its first riser — which is most of what a belt carries. Anything relying on entities
+  climbing has to either lift them itself or keep every step under what it can lift them by in a
+  tick. **Testing it with a player proves nothing about the case that breaks.**
+- **`stepOn` is called for the block an entity is *supported by*, and `entityInside` for a block it
+  merely overlaps — a slope needs both.** An item arriving off a flat belt is still supported by
+  that flat belt while its nose is against the ramp, so the ramp is never asked to lift it, and it
+  cannot become the supporting block until it has been lifted: a circle, and the item sits at the
+  seam forever. Create and Immersive Engineering both drive their conveyors from `entityInside` for
+  this reason. Where both hooks can fire for one block, only one may move the entity, or it travels
+  at double speed over the seam.
+- **A block whose collision reaches above its own block must say `collisionExtendsVertically`**, or
+  it stops carrying at the top. `Entity.getOnPosLegacy` — which is what `stepOn` is dispatched on —
+  otherwise answers with the block a fifth of a block under the entity's feet, and for something
+  standing on the tall part of a ramp that is the *air above it*. The belt asked the air to do the
+  carrying and the air declined. It is the switch fences and walls use.
+
 - **The wake signal has a radius of exactly one block, and nothing says so.**
   `updateNeighbourForOutputSignal` walks the six positions touching the block entity that changed.
   Every machine here happened to have its work land next door, so "a `setChanged` reaches whoever
