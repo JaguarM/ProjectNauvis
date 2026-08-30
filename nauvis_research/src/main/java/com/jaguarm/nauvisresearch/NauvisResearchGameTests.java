@@ -1201,6 +1201,13 @@ public final class NauvisResearchGameTests {
      *   <li><b>every technology is placed exactly once</b> - a tree that quietly omits a node is
      *       the failure a player would never report, because they cannot miss what they cannot
      *       see;</li>
+     *   <li><b>every arrow drawn is a real prerequisite</b>, and <b>every prerequisite is drawn,
+     *       implied by another, or a science pack</b>. The tree deliberately leaves two kinds of
+     *       arrow out - see {@code TechnologyLayout} - and the point of saying so here is that
+     *       nothing else may go missing quietly;</li>
+     *   <li><b>two arrows share a lane only when their runs cannot touch.</b> A lane is where an
+     *       elbow turns, and two that overlap in one are drawn as a single line - which is what
+     *       the third gap of this tree looked like before lanes existed;</li>
      *   <li><b>the same tree lays out the same way twice.</b> A layout that shuffled between
      *       openings would be unusable however good it looked, and nothing about a single frame
      *       would reveal it.</li>
@@ -1247,44 +1254,68 @@ public final class NauvisResearchGameTests {
                                 + "the diagram is lying about what comes first");
             }
 
-            // Every prerequisite that exists is drawn. An edge silently dropped is a technology
+            // Every arrow drawn is a real prerequisite. The reverse of the rule below, and the
+            // one that would matter most: an arrow the data does not support is the screen making
+            // something up about what a technology costs.
+            for (TechnologyLayout.Edge edge : layout.edges()) {
+                helper.assertTrue(
+                        layout.at(edge.to()).technology().prerequisites().contains(edge.from()),
+                        edge.to().identifier() + " is drawn as needing "
+                                + edge.from().identifier() + ", which is not a prerequisite of it");
+            }
+
+            // And every prerequisite is either drawn, implied by another one, or a science pack.
+            // Two of those are deliberate - see `TechnologyLayout` - and the point of checking is
+            // that nothing else may quietly go missing. An arrow silently dropped is a technology
             // whose real cost is invisible, which is the one thing a player opens this to learn.
-            int wanted = 0;
+            java.util.Set<ResourceKey<Technology>> gates =
+                    TechnologyLayout.gates(ModTechnologies.all(access));
+            java.util.Set<String> drawn = new java.util.HashSet<>();
+            for (TechnologyLayout.Edge edge : layout.edges()) {
+                drawn.add(edge.from() + " -> " + edge.to());
+            }
             for (TechnologyLayout.Placed placed : layout.nodes()) {
                 for (ResourceKey<Technology> prerequisite : placed.technology().prerequisites()) {
-                    if (layout.at(prerequisite) != null) {
-                        wanted++;
+                    if (layout.at(prerequisite) == null || gates.contains(prerequisite)
+                            || drawn.contains(prerequisite + " -> " + placed.key())) {
+                        continue;
                     }
+                    helper.assertTrue(implied(layout, placed.key(), prerequisite),
+                            placed.key().identifier() + " needs " + prerequisite.identifier()
+                                    + ", which is not drawn, not a science pack and not implied by "
+                                    + "anything else it needs - the arrow has gone missing");
                 }
             }
-            helper.assertValueEqual(layout.edges().size(), wanted, "prerequisite arrows drawn");
 
-            // Lanes. Two arrows may share a vertical run only when they come from the same
-            // technology - otherwise every elbow leaving a column is drawn on top of every other
-            // one and the fan reads as a single bar, which is exactly what it did.
-            java.util.Map<Integer, java.util.Map<Integer, ResourceKey<Technology>>> lanes =
-                    new java.util.HashMap<>();
+            // Lanes. Two arrows may share a vertical run only when their runs cannot touch: same
+            // parent, or spans that do not overlap. Otherwise elbows leaving a column are drawn on
+            // top of each other and a fan reads as a single bar, which is exactly what it did.
+            java.util.Map<ResourceKey<Technology>, int[]> spans = new java.util.HashMap<>();
             for (TechnologyLayout.Edge edge : layout.edges()) {
-                TechnologyLayout.Placed from = layout.at(edge.from());
                 helper.assertTrue(edge.lane() >= 0 && edge.lane() < edge.lanes(),
                         edge.from().identifier() + " turns in lane " + edge.lane() + " of "
                                 + edge.lanes() + ", which is not a lane that exists");
-                ResourceKey<Technology> owner = lanes
-                        .computeIfAbsent(from.column(), ignored -> new java.util.HashMap<>())
-                        .putIfAbsent(edge.lane(), edge.from());
-                helper.assertTrue(owner == null || owner.equals(edge.from()),
-                        edge.from().identifier() + " shares lane " + edge.lane() + " with "
-                                + (owner == null ? "nothing" : owner.identifier())
-                                + " - two unrelated arrows would be drawn as one line");
+                TechnologyLayout.Placed from = layout.at(edge.from());
+                TechnologyLayout.Placed to = layout.at(edge.to());
+                int[] span = spans.computeIfAbsent(edge.from(),
+                        ignored -> new int[] {from.row(), from.row(), from.column(), edge.lane()});
+                span[0] = Math.min(span[0], to.row());
+                span[1] = Math.max(span[1], to.row());
+                helper.assertValueEqual(span[3], edge.lane(),
+                        "one lane for every arrow out of " + edge.from().identifier());
             }
-            for (java.util.Map.Entry<Integer, java.util.Map<Integer, ResourceKey<Technology>>> column
-                    : lanes.entrySet()) {
-                for (TechnologyLayout.Edge edge : layout.edges()) {
-                    if (layout.at(edge.from()).column() == column.getKey()) {
-                        helper.assertValueEqual(edge.lanes(), column.getValue().size(),
-                                "the lane count for column " + column.getKey()
-                                        + ", which is what a screen spaces them by");
+            for (java.util.Map.Entry<ResourceKey<Technology>, int[]> one : spans.entrySet()) {
+                for (java.util.Map.Entry<ResourceKey<Technology>, int[]> two : spans.entrySet()) {
+                    int[] a = one.getValue();
+                    int[] b = two.getValue();
+                    if (one.getKey().equals(two.getKey()) || a[2] != b[2] || a[3] != b[3]) {
+                        continue;
                     }
+                    helper.assertTrue(a[1] < b[0] || b[1] < a[0],
+                            one.getKey().identifier() + " and " + two.getKey().identifier()
+                                    + " share lane " + a[3] + " and overlap between rows "
+                                    + Math.max(a[0], b[0]) + " and " + Math.min(a[1], b[1])
+                                    + " - the two would be drawn as one line");
                 }
             }
 
@@ -1292,6 +1323,26 @@ public final class NauvisResearchGameTests {
             helper.assertValueEqual(again.nodes(), layout.nodes(),
                     "the layout is not deterministic - it would shuffle between openings");
             helper.succeed();
+        }
+
+        /** Whether {@code prerequisite} is reached from {@code key} through drawn arrows. */
+        private static boolean implied(TechnologyLayout.Layout layout,
+                ResourceKey<Technology> key, ResourceKey<Technology> prerequisite) {
+            java.util.Set<ResourceKey<Technology>> seen = new java.util.HashSet<>(Set.of(key));
+            java.util.Deque<ResourceKey<Technology>> frontier =
+                    new java.util.ArrayDeque<>(List.of(key));
+            while (!frontier.isEmpty()) {
+                ResourceKey<Technology> at = frontier.removeFirst();
+                for (TechnologyLayout.Edge edge : layout.edges()) {
+                    if (edge.to().equals(at) && seen.add(edge.from())) {
+                        if (edge.from().equals(prerequisite)) {
+                            return true;
+                        }
+                        frontier.add(edge.from());
+                    }
+                }
+            }
+            return false;
         }
 
         @Override

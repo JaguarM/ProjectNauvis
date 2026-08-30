@@ -67,10 +67,9 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  *
  * <ul>
  *   <li><b>lanes.</b> Every elbow used to turn down the middle of the gap between two columns, so
- *       every arrow leaving a column drew itself on top of every other one and eleven children
- *       hanging off five parents came out as a single vertical bar. {@code Edge.lane} says which
- *       channel of that gap an arrow belongs in, and arrows share one exactly when they share a
- *       parent;</li>
+ *       every arrow leaving a column drew itself on top of every other one. {@code Edge.lane} says
+ *       which channel of that gap an arrow belongs in; the layout hands them out so that two
+ *       arrows share a channel only when their runs cannot touch;</li>
  *   <li><b>the hovered path.</b> Point at a node and everything it needs, all the way back to a
  *       root, lights up - which is the question "what do I have to do first" answered in one
  *       gesture rather than by following a grey line with a finger;</li>
@@ -78,9 +77,14 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  *       Twenty-eight technologies fit on a screen; two hundred will not.</li>
  * </ul>
  *
+ * <p><b>The packs a technology costs are drawn above its node</b>, and that is not decoration: the
+ * tree does not draw an arrow out of a science pack any more - see {@link TechnologyLayout} - so
+ * this strip is where "everything past here needs green science" is said. Two pips is red and
+ * green; three will be blue.
+ *
  * <p>Pan by dragging, zoom with the wheel - Factorio's two, and there is nothing else to learn.
- * Columns are centred against the tallest one rather than hanging from the top, so a column of
- * three beside a column of eleven reads as a fan rather than as a list that ran out.
+ * Rows come out of the layout already placed against what feeds them, so there is no centring
+ * here; a column of two sits where its arrows point rather than at the top.
  */
 public class ResearchScreen extends Screen {
 
@@ -123,6 +127,10 @@ public class ResearchScreen extends Screen {
     /** Laid over everything the search does not match, rather than hiding it. */
     private static final int COLOR_DIMMED = 0xC01A1A1A;
 
+    /** A pack pip is half an item, and the strip of them sits in the gap above a node. */
+    private static final int PIP = 8;
+    private static final int PIPS = 3;
+
     private int left;
     private int top;
     private int paneWidth;
@@ -138,14 +146,6 @@ public class ResearchScreen extends Screen {
 
     private TechnologyLayout.Layout layout = new TechnologyLayout.Layout(List.of(), List.of(), 0, 0);
 
-    /**
-     * How far down each column is pushed to centre it against the tallest one, indexed by column.
-     *
-     * <p>Cached rather than counted per node per frame, and rebuilt in {@link #init} with the
-     * layout it belongs to.
-     */
-    private int[] columnOffset = new int[0];
-
     public ResearchScreen() {
         super(Component.translatable("screen.nauvis_research.research"));
     }
@@ -160,7 +160,6 @@ public class ResearchScreen extends Screen {
         paneHeight = height - MARGIN * 2;
 
         layout = TechnologyLayout.of(minecraft.level.registryAccess());
-        columnOffset = centreColumns(layout);
 
         // Kept across a resize, because the screen is rebuilt on one and a search box that emptied
         // itself when the window changed would be its own small bug.
@@ -183,26 +182,6 @@ public class ResearchScreen extends Screen {
         clampScroll();
     }
 
-    /**
-     * The vertical offset of each column, so a short column sits level with a tall one's middle.
-     *
-     * <p>Purely a drawing decision, which is why it is here and not in the layout: the grid says
-     * row three of column one, and what that is worth in pixels is this file's business.
-     */
-    private static int[] centreColumns(TechnologyLayout.Layout layout) {
-        int[] rows = new int[Math.max(layout.columns(), 1)];
-        for (TechnologyLayout.Placed placed : layout.nodes()) {
-            if (placed.column() < rows.length) {
-                rows[placed.column()] = Math.max(rows[placed.column()], placed.row() + 1);
-            }
-        }
-        int[] offsets = new int[rows.length];
-        for (int i = 0; i < rows.length; i++) {
-            offsets[i] = (layout.rows() - rows[i]) * ROW_STEP / 2;
-        }
-        return offsets;
-    }
-
     private int viewHeight() {
         return paneHeight - headerHeight;
     }
@@ -212,16 +191,16 @@ public class ResearchScreen extends Screen {
     }
 
     private int canvasHeight() {
-        return Math.max(0, (layout.rows() - 1) * ROW_STEP + NODE);
+        return Math.max(0, (layout.rows() - 1) * ROW_STEP + NODE + PIP);
     }
 
     private static int nodeX(int column) {
         return column * COLUMN_STEP;
     }
 
+    /** The pip strip lives in the row gap above a node, so the top row needs room for its own. */
     private int nodeY(TechnologyLayout.Placed placed) {
-        int offset = placed.column() < columnOffset.length ? columnOffset[placed.column()] : 0;
-        return offset + placed.row() * ROW_STEP;
+        return PIP + placed.row() * ROW_STEP;
     }
 
     /** Canvas coordinate zero, in screen pixels. Everything drawn hangs off these two. */
@@ -317,7 +296,8 @@ public class ResearchScreen extends Screen {
      *
      * <p><b>Where the across happens is the lane</b>, and it is the difference between a fan and a
      * single bar - see {@link TechnologyLayout}. Two arrows out of one parent share their whole
-     * elbow, which is what a fan is; two out of different parents never touch.
+     * elbow, which is what a fan is; two out of different parents share a channel only where
+     * their runs cannot overlap.
      */
     private void renderEdge(GuiGraphicsExtractor graphics, TechnologyLayout.Edge edge,
             Set<ResourceKey<Technology>> path) {
@@ -386,6 +366,7 @@ public class ResearchScreen extends Screen {
         graphics.fill(x - 1, y - 1, x + NODE + 1, y + NODE + 1, border);
         graphics.fill(x, y, x + NODE, y + NODE, fill);
         graphics.item(new ItemStack(iconOf(technology)), x + (NODE - 16) / 2, y + (NODE - 16) / 2);
+        renderPacks(graphics, technology, x, y);
 
         // A bar under whatever has been paid for, so progress is visible without hovering - which
         // for the triggered technologies is the whole of the early game, and for a research that
@@ -400,7 +381,33 @@ public class ResearchScreen extends Screen {
         // Searching dims rather than hides, for the same reason a locked node is drawn: a tree you
         // cannot see the shape of is no longer a tree.
         if (!query.isEmpty() && !matches(placed, query)) {
-            graphics.fill(x - 1, y - 1, x + NODE + 1, y + NODE + 1, COLOR_DIMMED);
+            graphics.fill(x - 1, y - PIP, x + NODE + 1, y + NODE + 1, COLOR_DIMMED);
+        }
+    }
+
+    /**
+     * The science packs this technology costs, above its node at half size.
+     *
+     * <p>This is what replaced seventeen arrows. A pack is a gate rather than a parent - the tree
+     * draws no arrow out of one - so without these there would be nothing on the face of a node to
+     * say it needs green science, and the tooltip is not a glance.
+     */
+    private void renderPacks(GuiGraphicsExtractor graphics, Technology technology, int x, int y) {
+        int at = x;
+        for (Identifier pack : technology.packs()) {
+            if (at >= x + PIPS * PIP) {
+                return;
+            }
+            Item item = BuiltInRegistries.ITEM.getOptional(pack).orElse(null);
+            if (item == null) {
+                continue;
+            }
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(at, y - PIP);
+            graphics.pose().scale(0.5f, 0.5f);
+            graphics.item(new ItemStack(item), 0, 0);
+            graphics.pose().popMatrix();
+            at += PIP;
         }
     }
 

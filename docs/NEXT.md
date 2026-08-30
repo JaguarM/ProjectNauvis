@@ -116,7 +116,8 @@ is an int like every other machine's.
 | `nauvis_research:science_pack_2` | green science — an inserter and a belt. The gate in front of the rest of milestone 3 |
 | `neoprogressivematerials:steel_plate` | five iron plates and thirty-five seconds |
 | `nauvis_research:technology` | 216 technologies, a synced datapack registry, generated. 26 are in the tree |
-| the tree screen | drag to pan, wheel to zoom, a search box, and the hovered node's whole path back to a root lit up. Columns are centred; an arrow turns in a lane of its own |
+| the tree screen | drag to pan, wheel to zoom, a search box, and the hovered node's whole path back to a root lit up — including the part of it no arrow is drawn for |
+| the tree's arrows | **eighteen, not thirty-five.** An implied prerequisite is not drawn, and a science pack is a gate rather than a parent: the packs a technology costs are pips above its node, which is Factorio's own answer. Rows are placed against what feeds them, and two arrows share a lane only where their runs cannot touch |
 | research progress | **kept per technology.** Switching away from one and back finds it where it was left, which is Factorio's rule and was not ours |
 | `/research` | grant, forget, start, stop, list, info, all, reset. Gamemaster only. **Grant and forget cascade** — grant brings the prerequisites, forget takes the dependants |
 | `nauvis_mining:burner_mining_drill` | 2×2, five blocks; mines the 2×2 it stands on. Digs down, not across — see below |
@@ -370,11 +371,20 @@ and has not been looked at since.
 - press **G**. Whether eleven nodes in a column read as a fan or a wall, whether the elbows are
   followable where three converge on `automation_2`, whether the state colours are distinguishable,
   and whether dragging to pan is discoverable. The grid underneath is proven; none of that is;
-- **follow one arrow from column two to column three.** Every elbow used to turn down the middle of
-  the gap, so five parents fanning out to eleven children drew one vertical bar with stubs coming
-  off both sides — the thing a person saw immediately and no test could. Each parent now turns in a
-  lane of its own, eight pixels apart. **Whether five lines eight pixels apart read as five lines is
-  the whole question**, and the lever is `LANE_STEP` in `ResearchScreen`;
+- **look at the gap between the third and fourth columns**, which is where the tangle was: several
+  full-height verticals side by side with no way to tell which parent fed which child. It is four
+  bundles in two lanes now — one long fan out of `steel_processing` and three short hops sharing the
+  other lane. **Whether that reads as followable is the whole question.** The levers are `LANE_STEP`
+  in `ResearchScreen` and, if it is still too busy, one more gate rule in `TechnologyLayout`;
+- **the seven nodes with no arrows at all**, which is what the gate rule costs. `electric_mining_drill`,
+  `repair_pack`, `radar`, `fast_inserter`, `gun_turret`, `stone_wall` and `science_pack_2` needed only
+  red science, and red science is a gate. **Whether a node floating with no wire into it reads as
+  "needs nothing but the pack above it" or as a bug is the judgement to make** — the pips above the
+  node and the hovered path are what is supposed to answer it, and if they do not, the honest fix is
+  to draw gate arrows dimmed rather than not at all;
+- **the pack pips**, two six-pixel icons above each node. Whether red and green are distinguishable
+  at that size, and whether the strip reads as belonging to the node under it rather than the one
+  above it, is a thing no test sees;
 - **hover `automation_2` and look at what lights up.** Its three prerequisites and everything behind
   them go amber, edges included. Whether that answers "what do I have to do first" at a glance, or
   whether amber on a green-and-grey tree is one colour too many, is a judgement no test makes;

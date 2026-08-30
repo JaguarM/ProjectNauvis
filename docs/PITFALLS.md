@@ -237,7 +237,19 @@ Screens and config
   off both sides, saying nothing about which technology needed which. Nothing was wrong with the
   layout, every test passed, and a person saw it in a second. **When several sources route through
   one channel, the channel is part of the layout** — `TechnologyLayout.Edge` carries a lane, and
-  `technology_layout_is_sound` fails if two parents in a column share one.
+  `technology_layout_is_sound` fails if two arrows share one where their runs could overlap.
+
+- **The obvious fix for a tangled graph is a better ordering, and it was worth nothing here.**
+  Told the tech tree needed the ordering step of a layered layout — barycentre sweeps both
+  directions, dummy nodes, keep the pass that crosses least — the tempting move is to write it and
+  declare the tangle fixed. Measured first instead: the shipped single-sweep ordering already sat at
+  twenty-two crossings, and sixty randomised restarts with adjacent transposition never beat it. No
+  ordering could, because two technologies were each a prerequisite of most of the next column.
+  **What fixed it was drawing seventeen fewer arrows** — a transitive reduction, and treating a
+  science pack as a gate on the node rather than a parent with a wire — which took crossings from
+  twenty-two to one. The ordering machinery is in anyway, for a tree of two hundred; it just was not
+  the bug. **Measure the objective before implementing the fix for it**, and prefer removing the
+  thing being drawn to arranging it better.
 
 - **A comment that says "which is Factorio's rule too" is a claim, and this one was false.**
   Research progress was thrown away on switching, with a paragraph explaining that Factorio does the
