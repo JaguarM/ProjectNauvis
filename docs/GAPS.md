@@ -42,6 +42,27 @@ Belts
   so a bus is upgraded by walking *along* it. Turning and replacing are one gesture on purpose.
 - **A replacement is one belt per click.** Factorio has an upgrade planner that does a whole line at
   once; here you walk the line with a belt in hand, which is the same gesture laying one takes.
+- **Items cross a ramp faster than they cross flat ground**, by the diagonal of a square: about 41%.
+  A run measures itself in 64ths of a *block* and every block is worth 64 of them, which is what
+  makes `frontEdge` and `blockAt` arithmetic rather than a scan and what lets a lane's positions add
+  exactly for ever. A ramp is 16 root 2 pixels long and would be 90.5 units - not a whole number,
+  and the exactness is the property the whole lane model is built on. Factorio has no slopes, so
+  non-negotiable #1 has nothing to say about which number is right here; this is the one that costs
+  nothing. The tread's texture is stretched over the ramp by the same 41%, so what you see and what
+  the items do agree.
+- **A slope that also turns is carried but not drawn.** A belt hands to the first belt straight
+  ahead of it, level or one step either way - so a line can change level and change direction in the
+  same block, and there is no shape for that. Items still cross at the right height, because the
+  height of a seam comes from the two blocks sharing it rather than from either one's shape; they
+  simply glide over a belt with no ramp drawn under them. Build the turn and the climb as two
+  blocks and it looks right.
+- **A ramp's collision is four steps and its model is a smooth 45 degrees.** They are meant to
+  disagree here: each step is a quarter block, well under the 0.6 step height, so a slope is walked
+  up rather than jumped - vanilla's rail slope is a plain 8-pixel box and does have to be jumped.
+  Standing on one puts you within a quarter block of the drawn surface.
+- **A ramp reaches half a block into the block above it**, which is where the belt at the top of the
+  climb is and why the two meet with no gap. It also means a solid block placed directly above a
+  ramp will clip it. Vanilla's raised rail has the same overhang for the same reason.
 - **Client and server runs can differ at a chunk edge**, because a client only has the belts in its
   loaded chunks. It costs a belt at the very edge of the loaded world appearing to back up when it
   is not; a chunk arriving re-seeds that block's items from the block entity.

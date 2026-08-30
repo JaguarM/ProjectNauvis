@@ -81,6 +81,20 @@ public final class BeltRun extends SnapshotJournal<Integer> {
     /** Each block's direction of travel, read once so the tick never touches a block state. */
     private final Direction[] facings;
 
+    /**
+     * How far each block's surface climbs across itself, in blocks, in the direction of travel.
+     *
+     * <p>+1 on a belt drawn climbing, -1 on one drawn descending, 0 flat - {@link BeltShape#rise}.
+     * Read once with the facings and for the same reason, and safe to hold for the life of the run
+     * because a run is rebuilt whenever any of its belts changes shape: {@code BeltBlockEntity}
+     * catches that, on both sides, from {@code setBlockState}.
+     *
+     * <p>It is only consulted at the two ends of the run. Everywhere inside it, the height of the
+     * seam between two blocks is decided by the blocks themselves - see {@link #exitHeight} - which
+     * cannot disagree with itself the way two neighbouring shapes could.
+     */
+    private final int[] rises;
+
     private final Long2IntOpenHashMap indexByBlock = new Long2IntOpenHashMap();
 
     private final BeltLane[] lanes = {new BeltLane(), new BeltLane()};
@@ -114,13 +128,14 @@ public final class BeltRun extends SnapshotJournal<Integer> {
     private final BitSet arriving = new BitSet();
 
     BeltRun(Level level, BeltLines lines, BeltBlock block, List<BlockPos> blocks, Direction[] facings,
-            boolean loops) {
+            int[] rises, boolean loops) {
         this.level = level;
         this.lines = lines;
         this.block = block;
         this.speed = block.speed();
         this.blocks = List.copyOf(blocks);
         this.facings = facings;
+        this.rises = rises;
         this.loops = loops;
         indexByBlock.defaultReturnValue(-1);
         for (int i = 0; i < this.blocks.size(); i++) {
@@ -199,8 +214,9 @@ public final class BeltRun extends SnapshotJournal<Integer> {
      * Where an item at {@code position} is in the world, in level coordinates.
      *
      * <p>Within a block an item goes from the edge it came in at, through the middle, to the edge
-     * it leaves by. On a straight belt that is a straight line; on a corner it is the corner,
-     * which is why a run that turns needs nothing else to make its items turn.
+     * it leaves by. On a straight belt that is a straight line; on a corner it is the corner, which
+     * is why a run that turns needs nothing else to make its items turn; and on a slope it is the
+     * same line lifted, which is why a run that climbs needs nothing else either.
      */
     public Vec3 pointAt(double position, int lane) {
         int index = blockAt((int) position);
@@ -212,21 +228,67 @@ public final class BeltRun extends SnapshotJournal<Integer> {
         double progress = 1.0 - (position - frontEdge(index)) / Belts.UNITS_PER_BLOCK;
         progress = Math.clamp(progress, 0.0, 1.0);
 
-        Vec3 middle = new Vec3(pos.getX() + 0.5, pos.getY() + Belts.HEIGHT, pos.getZ() + 0.5);
+        double entryY = entryHeight(index);
+        double exitY = exitHeight(index);
+        Vec3 middle = new Vec3(pos.getX() + 0.5, (entryY + exitY) / 2.0, pos.getZ() + 0.5);
         Direction travel;
         Vec3 point;
         if (progress < 0.5) {
             travel = in.getOpposite();
-            Vec3 entry = middle.add(in.getStepX() * 0.5, 0, in.getStepZ() * 0.5);
+            Vec3 entry = new Vec3(middle.x + in.getStepX() * 0.5, entryY, middle.z + in.getStepZ() * 0.5);
             point = entry.lerp(middle, progress * 2.0);
         } else {
             travel = out;
-            Vec3 exit = middle.add(out.getStepX() * 0.5, 0, out.getStepZ() * 0.5);
+            Vec3 exit = new Vec3(middle.x + out.getStepX() * 0.5, exitY, middle.z + out.getStepZ() * 0.5);
             point = middle.lerp(exit, (progress - 0.5) * 2.0);
         }
 
         Direction side = Belts.sideOf(travel, lane);
         return point.add(side.getStepX() * Belts.LANE_OFFSET, 0, side.getStepZ() * Belts.LANE_OFFSET);
+    }
+
+    /**
+     * How high the surface is at the seam a block's items arrive over, and the one they leave by.
+     *
+     * <p><b>Inside the run it is decided by the two blocks sharing the seam, not by either one's
+     * shape</b> - the higher of the two, plus the belt's own half block. That is what makes the
+     * line continuous by construction: two neighbours cannot disagree about a number they both read
+     * off the same pair of coordinates, where two independently-derived shapes could, and an item
+     * would step through the gap between them.
+     *
+     * <p>It also comes out right for both ways a line changes level, which is the whole reason a
+     * ramp belongs to the lower block: climbing, the seam ahead is the high one and the ramp lifts
+     * items to it; descending, the seam behind is the high one and the ramp lets them down. The
+     * arithmetic is the same either way round.
+     *
+     * <p>Only the two ends of the run have no neighbour to ask, and there the block's own shape
+     * answers - a run that begins or ends mid-slope, which is a merge at the top of a climb or a
+     * split at the bottom of one.
+     */
+    private double entryHeight(int index) {
+        int y = blocks.get(index).getY();
+        if (index > 0) {
+            return seam(y, blocks.get(index - 1).getY());
+        }
+        if (loops) {
+            return seam(y, blocks.get(blocks.size() - 1).getY());
+        }
+        return y + Belts.HEIGHT + (rises[index] < 0 ? 1 : 0);
+    }
+
+    private double exitHeight(int index) {
+        int y = blocks.get(index).getY();
+        if (index < blocks.size() - 1) {
+            return seam(y, blocks.get(index + 1).getY());
+        }
+        if (loops) {
+            return seam(y, blocks.get(0).getY());
+        }
+        return y + Belts.HEIGHT + (rises[index] > 0 ? 1 : 0);
+    }
+
+    private static double seam(int y, int neighbour) {
+        return Math.max(y, neighbour) + Belts.HEIGHT;
     }
 
     /**
@@ -247,9 +309,18 @@ public final class BeltRun extends SnapshotJournal<Integer> {
         return facings[0].getOpposite();
     }
 
+    /**
+     * Which side of {@code from} the block {@code to} lies on, on the flat.
+     *
+     * <p><b>The height difference is deliberately thrown away.</b> Two belts joined across a step
+     * are a block apart horizontally and a block apart vertically, and asking for the nearest of
+     * the six directions to that would answer UP or DOWN - which is not a side a belt has, and
+     * which the caller would then quietly turn into a zero-length step rather than an error. What
+     * an item crosses is still the north, south, east or west edge of a tile; it is simply higher
+     * on one side than the other, and that part is {@link #entryHeight}'s business.
+     */
     private static Direction directionBetween(BlockPos from, BlockPos to) {
-        return Direction.getApproximateNearest(
-                to.getX() - from.getX(), to.getY() - from.getY(), to.getZ() - from.getZ());
+        return Direction.getApproximateNearest(to.getX() - from.getX(), 0, to.getZ() - from.getZ());
     }
 
     // --- the tick ------------------------------------------------------------------------------

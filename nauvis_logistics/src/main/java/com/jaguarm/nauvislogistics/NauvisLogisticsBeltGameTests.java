@@ -121,6 +121,10 @@ public final class NauvisLogisticsBeltGameTests {
         TEST_TYPES.register("belt_is_replaced_by_another_tier", () -> ReplacedByAnotherTierTest.CODEC);
         TEST_TYPES.register("belt_is_replaced_by_a_slower_belt", () -> ReplacedByASlowerBeltTest.CODEC);
         TEST_TYPES.register("belt_tiers_meet_as_two_runs", () -> TiersMeetTest.CODEC);
+        TEST_TYPES.register("belt_climbs_a_step", () -> ClimbsAStepTest.CODEC);
+        TEST_TYPES.register("belt_descends_a_step", () -> DescendsAStepTest.CODEC);
+        TEST_TYPES.register("belt_slope_carries_at_its_height", () -> SlopeCarriesAtHeightTest.CODEC);
+        TEST_TYPES.register("belt_slope_beats_a_bend", () -> SlopeBeatsABendTest.CODEC);
         TEST_TYPES.register("inserter_loads_a_belt", () -> InserterLoadsABeltTest.CODEC);
         TEST_TYPES.register("inserter_takes_from_a_belt", () -> InserterTakesFromABeltTest.CODEC);
         TEST_TYPES.register("inserter_fills_only_the_far_lane", () -> OnlyTheFarLaneTest.CODEC);
@@ -177,6 +181,11 @@ public final class NauvisLogisticsBeltGameTests {
         register(event, environment, "belt_is_replaced_by_a_slower_belt",
                 ReplacedByASlowerBeltTest::new, 60);
         register(event, environment, "belt_tiers_meet_as_two_runs", TiersMeetTest::new, 200);
+        register(event, environment, "belt_climbs_a_step", ClimbsAStepTest::new, 200);
+        register(event, environment, "belt_descends_a_step", DescendsAStepTest::new, 200);
+        register(event, environment, "belt_slope_carries_at_its_height",
+                SlopeCarriesAtHeightTest::new, 60);
+        register(event, environment, "belt_slope_beats_a_bend", SlopeBeatsABendTest::new, 60);
         register(event, environment, "inserter_loads_a_belt", InserterLoadsABeltTest::new, 200);
         register(event, environment, "inserter_takes_from_a_belt", InserterTakesFromABeltTest::new, 200);
         register(event, environment, "inserter_fills_only_the_far_lane", OnlyTheFarLaneTest::new, 60);
@@ -1298,6 +1307,250 @@ public final class NauvisLogisticsBeltGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("two belt tiers meet as two runs");
+        }
+    }
+
+    /**
+     * A line that climbs a step, built the way a player builds one: the top belt last.
+     *
+     * <p>The order is the test. Placing the belt above turns the belt below it into a ramp, and
+     * that is a <em>block state</em> change on a belt whose block entity is not touched - so the
+     * run it belongs to was built before it, from the shape it had then. Nothing but
+     * {@code BeltBlockEntity.setBlockState} notices, and if it did not, the line would carry items
+     * along a ramp it did not know was a ramp.
+     */
+    public static class ClimbsAStepTest extends GameTestInstance {
+
+        public static final MapCodec<ClimbsAStepTest> CODEC =
+                RecordCodecBuilder.<ClimbsAStepTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ClimbsAStepTest::info))
+                                .apply(i, ClimbsAStepTest::new));
+
+        public ClimbsAStepTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos ramp = TAIL.east();
+            BlockPos top = TAIL.east(2).above();
+
+            place(helper, TAIL, Direction.EAST);
+            place(helper, ramp, Direction.EAST);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                // Flat while there is nothing above to climb to, and two belts of one run.
+                helper.assertBlockProperty(ramp, BeltBlock.SHAPE, BeltShape.STRAIGHT);
+                helper.assertValueEqual(runAt(helper, TAIL).blocks().size(), 2, "belts before the climb");
+
+                place(helper, top, Direction.EAST);
+                place(helper, top.east(), Direction.EAST);
+
+                helper.runAfterDelay(SETTLED, () -> {
+                    helper.assertBlockProperty(ramp, BeltBlock.SHAPE, BeltShape.UP);
+                    helper.assertBlockProperty(top, BeltBlock.SHAPE, BeltShape.STRAIGHT);
+
+                    BeltRun run = runAt(helper, TAIL);
+                    helper.assertValueEqual(run.blocks().size(), 4, "belts in the climbing line");
+                    helper.assertTrue(run == runAt(helper, top),
+                            "a line that changes level should still be one run");
+
+                    put(belt(helper, TAIL, Direction.NORTH), Items.IRON_INGOT, 1);
+                    helper.runAfterDelay(60, () -> {
+                        helper.assertValueEqual(runAt(helper, TAIL).itemCount(), 1,
+                                "items still on the line after climbing it");
+                        helper.assertValueEqual(
+                                runAt(helper, TAIL).lane(Belts.RIGHT).lead(), 0,
+                                "sixty-fourths the leading item is short of the top of the climb");
+                        helper.succeed();
+                    });
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a belt line climbs a step");
+        }
+    }
+
+    /**
+     * And down the other side, where the ramp is the block being descended <em>into</em>.
+     *
+     * <p>A ramp always belongs to the lower of the two blocks - vanilla's rule for rails - so a
+     * line going down puts it one step ahead of the belt that feeds it rather than under it. The
+     * shape is {@link BeltShape#DOWN} and the two are the same ramp travelled opposite ways, which
+     * is why there are two shapes and not eight.
+     */
+    public static class DescendsAStepTest extends GameTestInstance {
+
+        public static final MapCodec<DescendsAStepTest> CODEC =
+                RecordCodecBuilder.<DescendsAStepTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(DescendsAStepTest::info))
+                                .apply(i, DescendsAStepTest::new));
+
+        public DescendsAStepTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos high = TAIL.above();
+            BlockPos ramp = TAIL.east();
+
+            place(helper, high, Direction.EAST);
+            place(helper, ramp, Direction.EAST);
+            place(helper, ramp.east(), Direction.EAST);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                helper.assertBlockProperty(ramp, BeltBlock.SHAPE, BeltShape.DOWN);
+                helper.assertBlockProperty(high, BeltBlock.SHAPE, BeltShape.STRAIGHT);
+
+                BeltRun run = runAt(helper, high);
+                helper.assertValueEqual(run.blocks().size(), 3, "belts in the descending line");
+
+                put(belt(helper, high, Direction.NORTH), Items.COPPER_INGOT, 1);
+                helper.runAfterDelay(60, () -> {
+                    helper.assertValueEqual(runAt(helper, high).itemCount(), 1,
+                            "items still on the line after going down it");
+                    helper.succeed();
+                });
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a belt line goes down a step");
+        }
+    }
+
+    /**
+     * An item on a ramp is drawn at the height of the ramp.
+     *
+     * <p>The one thing about a slope that only arithmetic can check. {@code BeltRun.pointAt} lifts
+     * an item between the seam it came in over and the seam it leaves by, and those come from the
+     * two blocks sharing each seam rather than from either one's shape - so the claim worth pinning
+     * is that the middle of a ramp is half a step up from the belt behind it, and that the seam
+     * between the ramp and the belt at the top of the climb is the same height for both of them.
+     */
+    public static class SlopeCarriesAtHeightTest extends GameTestInstance {
+
+        public static final MapCodec<SlopeCarriesAtHeightTest> CODEC =
+                RecordCodecBuilder.<SlopeCarriesAtHeightTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SlopeCarriesAtHeightTest::info))
+                                .apply(i, SlopeCarriesAtHeightTest::new));
+
+        public SlopeCarriesAtHeightTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos ramp = TAIL.east();
+            BlockPos top = TAIL.east(2).above();
+
+            place(helper, TAIL, Direction.EAST);
+            place(helper, ramp, Direction.EAST);
+            place(helper, top, Direction.EAST);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                BeltRun run = runAt(helper, TAIL);
+                double ground = helper.absolutePos(TAIL).getY() + Belts.HEIGHT;
+
+                helper.assertValueEqual(middleHeight(helper, run, TAIL), ground,
+                        "the height of an item over the flat belt");
+                // Half a step up: in at the bottom of the ramp, out at the top of it.
+                helper.assertValueEqual(middleHeight(helper, run, ramp), ground + 0.5,
+                        "the height of an item over the middle of the ramp");
+                helper.assertValueEqual(middleHeight(helper, run, top), ground + 1.0,
+                        "the height of an item over the belt at the top of the climb");
+                helper.succeed();
+            });
+        }
+
+        /** How high an item is carried over the middle of one block of a run. */
+        private static double middleHeight(GameTestHelper helper, BeltRun run, BlockPos block) {
+            int index = run.indexOf(helper.absolutePos(block));
+            helper.assertTrue(index >= 0, "expected " + block + " to be part of the run");
+            return run.pointAt(run.frontEdge(index) + Belts.UNITS_PER_BLOCK / 2.0, Belts.LEFT).y;
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a slope carries items at the height it is drawn");
+        }
+    }
+
+    /**
+     * Level wins over a step, and a slope wins over a bend.
+     *
+     * <p>Two orderings, and both are decisions rather than accidents. A belt that could hand to
+     * something straight ahead or to something a step up hands to the one straight ahead, which is
+     * vanilla's rail probe and what stops a line grabbing the floor above it. And a belt that both
+     * climbs and has something side-loading into it is drawn climbing, because the drawing has to
+     * agree with where its items actually go.
+     */
+    public static class SlopeBeatsABendTest extends GameTestInstance {
+
+        public static final MapCodec<SlopeBeatsABendTest> CODEC =
+                RecordCodecBuilder.<SlopeBeatsABendTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SlopeBeatsABendTest::info))
+                                .apply(i, SlopeBeatsABendTest::new));
+
+        public SlopeBeatsABendTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            BlockPos ramp = TAIL.east();
+
+            // A ramp with a belt joining it from the north: a side-load onto a climb.
+            place(helper, ramp, Direction.EAST);
+            place(helper, TAIL.east(2).above(), Direction.EAST);
+            place(helper, ramp.north(), Direction.SOUTH);
+
+            // And, well clear of it, a belt with a belt both straight ahead and a step up.
+            BlockPos fork = TAIL.south(4);
+            place(helper, fork, Direction.EAST);
+            place(helper, fork.east(), Direction.EAST);
+            place(helper, fork.east().above(), Direction.EAST);
+
+            helper.runAfterDelay(SETTLED, () -> {
+                helper.assertBlockProperty(ramp, BeltBlock.SHAPE, BeltShape.UP);
+
+                helper.assertBlockProperty(fork, BeltBlock.SHAPE, BeltShape.STRAIGHT);
+                helper.assertTrue(runAt(helper, fork) == runAt(helper, fork.east()),
+                        "a belt with somewhere level to go should go there rather than up a step");
+                helper.assertTrue(runAt(helper, fork) != runAt(helper, fork.east().above()),
+                        "the belt a step up should be a line of its own");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("level beats a step, and a slope beats a bend");
         }
     }
 

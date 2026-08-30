@@ -1,5 +1,6 @@
 package com.jaguarm.nauvislogistics.client;
 
+import com.jaguarm.nauvislogistics.belt.BeltBlock;
 import com.jaguarm.nauvislogistics.belt.BeltBlockEntity;
 import com.jaguarm.nauvislogistics.belt.BeltLane;
 import com.jaguarm.nauvislogistics.belt.BeltRun;
@@ -131,9 +132,18 @@ public class BeltRenderer implements BlockEntityRenderer<BeltBlockEntity, BeltRe
      *
      * <p>Nothing like the pole's problem - a belt never draws into the next block but one - but
      * the default box is exactly one block and an item straddling a boundary would pop.
+     *
+     * <p><b>A whole block taller on a slope.</b> A ramp lifts what is standing on it by a block
+     * between one edge of its own tile and the other, so the item at the top of a climb is drawn
+     * above the block drawing it. Geometry outside this box is frustum-culled with no error and
+     * nothing in the log - see {@code docs/PITFALLS.md} - so a belt line up a hill would lose the
+     * items on its ramps at certain camera angles and nowhere else.
      */
     @Override
     public AABB getRenderBoundingBox(BeltBlockEntity belt) {
-        return new AABB(belt.getBlockPos()).inflate(0.5);
+        AABB box = new AABB(belt.getBlockPos()).inflate(0.5);
+        return belt.getBlockState().getValue(BeltBlock.SHAPE).isSlope()
+                ? box.expandTowards(0.0, 1.0, 0.0)
+                : box;
     }
 }

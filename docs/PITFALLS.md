@@ -70,6 +70,17 @@ Blocks and multi-blocks
   back has to go through the same route a chunk load uses, because **a block entity built by
   `setBlock` does not run `onLoad` until the next `tickBlockEntities`** - so it is not in any graph
   yet, and anything handed to it directly would be handed to nothing.
+- **A block state change is the one edit no lifecycle hook reports, and on a client nothing
+  reports it at all.** `onLoad`, `setRemoved` and `onChunkUnloaded` cover a block entity arriving
+  and leaving; `onPlace` and `affectNeighborsAfterRemoval` are server-only. A belt that is *turned*
+  is none of those - the block entity is never touched - so the server said so by hand and the
+  client was never told, and since the client keeps its own copy of every belt run and draws from
+  it, a turned belt went on carrying items along its old line on every client until the chunk was
+  reloaded. Nothing logged, and every gametest passed, because a gametest is a server.
+  **`BlockEntity#setBlockState` is the hook**: `LevelChunk.setBlockState` calls it on both sides
+  whenever the state changes and the block entity survives. Generally: *if a subsystem is derived
+  from block states and simulated on both sides, every property it reads needs a hook that fires on
+  both sides.*
 - **A block put down by anything but a player never runs `getStateForPlacement`.** A command, a
   structure, another mod or `GameTestHelper.setBlock` write the state you hand them, so a block
   that works out its look from its neighbours is drawn wrong and stays wrong — nothing changes

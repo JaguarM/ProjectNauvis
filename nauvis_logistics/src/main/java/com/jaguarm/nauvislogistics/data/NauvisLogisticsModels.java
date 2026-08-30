@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import com.jaguarm.nauvislogistics.NauvisLogistics;
 import com.jaguarm.nauvislogistics.belt.BeltBlock;
 import com.jaguarm.nauvislogistics.belt.BeltShape;
+import com.jaguarm.nauvislogistics.belt.Belts;
 import com.jaguarm.nauvislogistics.belt.SplitterShape;
 import com.jaguarm.nauvislogistics.multiblock.Boxes;
 import com.jaguarm.nauvislogistics.multiblock.MachineCell;
@@ -64,11 +65,15 @@ public class NauvisLogisticsModels extends ModelProvider {
         Identifier straight = beltModel(blockModels, block, textures, "", "_top");
         Identifier left = beltModel(blockModels, block, textures, "_left", "_top_left");
         Identifier right = beltModel(blockModels, block, textures, "_right", "_top_right");
+        Identifier up = beltRamp(blockModels, block, textures, "_up", true);
+        Identifier down = beltRamp(blockModels, block, textures, "_down", false);
 
         PropertyDispatch.C1<MultiVariant, BeltShape> bend = PropertyDispatch.initial(BeltBlock.SHAPE)
                 .select(BeltShape.STRAIGHT, BlockModelGenerators.plainVariant(straight))
                 .select(BeltShape.FROM_LEFT, BlockModelGenerators.plainVariant(left))
-                .select(BeltShape.FROM_RIGHT, BlockModelGenerators.plainVariant(right));
+                .select(BeltShape.FROM_RIGHT, BlockModelGenerators.plainVariant(right))
+                .select(BeltShape.UP, BlockModelGenerators.plainVariant(up))
+                .select(BeltShape.DOWN, BlockModelGenerators.plainVariant(down));
 
         blockModels.blockStateOutput.accept(
                 MultiVariantGenerator.dispatch(block)
@@ -76,6 +81,134 @@ public class NauvisLogisticsModels extends ModelProvider {
                         .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
 
         blockModels.registerSimpleItemModel(block, straight);
+    }
+
+    /**
+     * Half the diagonal of a block, which is how long a ramp across one is.
+     *
+     * <p>A slope rises a whole block over a whole block, so its surface is the tile's diagonal:
+     * {@code 16 * sqrt(2)}, a little over 22 pixels, against the 16 a flat belt is. That is also
+     * why an item crosses a ramp faster than it crosses a flat belt - see {@code docs/GAPS.md}.
+     */
+    private static final float RAMP_REACH = (float) (8.0 * Math.sqrt(2.0));
+
+    /** How tall a belt is drawn, in pixels: {@link Belts#HEIGHT} in the units a model speaks. */
+    private static final float BELT_PIXELS = (float) (Belts.HEIGHT * 16.0);
+
+    /**
+     * A sloped belt: one rotated slab, and one square box to end it with.
+     *
+     * <p><b>Vanilla's raised rail is a plane with no thickness</b> - {@code template_rail_raised_ne}
+     * is a single element whose Y extent is zero - which is why it can be rotated 45 degrees and
+     * still meet a flat rail cleanly. A belt is half a block thick, and a rotated box's end faces
+     * tilt with it: butt one against the upright end of a flat belt and the joint is a wedge-shaped
+     * hole, wide at one corner and closed at the other.
+     *
+     * <p>So the ramp is two elements. The rotated slab is sized to the block's <em>diagonal</em>
+     * rather than its side - {@code rescale} would do that too, but it stretches the thickness with
+     * it and an 8-pixel belt would come out 11 - and its top surface therefore runs corner to
+     * corner, from half a block up at the low edge to half a block up in the block above at the
+     * high edge, which is exactly where the flat belts at either end are.
+     *
+     * <p>The second element is the adapter: a plain, unrotated half-slab filling the low half of the
+     * tile. It squares off the low joint against the flat belt in front of it. <b>The high joint
+     * needs nothing</b>, and that falls out of the geometry rather than being lucky: the slab's
+     * underside overhangs the high edge by the same amount it is thick, so it already covers the
+     * face of the belt at the top of the climb.
+     *
+     * @param rises whether the ramp climbs the way the belt faces, which is the whole of the
+     *              difference between {@link BeltShape#UP} and {@link BeltShape#DOWN}
+     */
+    private static Identifier beltRamp(BlockModelGenerators blockModels, Block block, String base,
+            String suffix, boolean rises) {
+        Identifier id = ModelLocationUtils.getModelLocation(block, suffix);
+        blockModels.modelOutput.accept(id, () -> {
+            JsonArray elements = new JsonArray();
+
+            // The slab, laid flat and pivoted about the midpoint of the surface it will become.
+            // Modelled facing north, like every other belt model, so `up` climbs towards -Z.
+            JsonObject ramp = beltElement(
+                    new float[] {0, 16 - BELT_PIXELS, 8 - RAMP_REACH, 16, 16, 8 + RAMP_REACH},
+                    false, true);
+            JsonObject rotation = new JsonObject();
+            rotation.add("origin", vector(8, 16, 8));
+            rotation.addProperty("axis", "x");
+            rotation.addProperty("angle", rises ? 45 : -45);
+            ramp.add("rotation", rotation);
+            elements.add(ramp);
+
+            // The adapter, in the low half of the tile: the half the belt in front of it joins.
+            float near = rises ? 8 : 0;
+            elements.add(beltElement(new float[] {0, 0, near, 16, BELT_PIXELS, near + 8}, true, false));
+
+            return beltModel(elements, base);
+        });
+        return id;
+    }
+
+    /**
+     * One box of a belt model, textured the way a slab is: tread on top, tin down the sides.
+     *
+     * @param stretch whether to spell the top and bottom UVs out rather than letting Minecraft
+     *                derive them from the box. Required for the ramp and only for the ramp: a
+     *                derived UV is the element's own x and z extents, and the ramp is longer than
+     *                its block, so the tread would be sampled from past the edge of its own texture
+     *                and come back wrapped. {@code tools/check_models.py} fails the build on it.
+     */
+    private static JsonObject beltElement(float[] box, boolean cull, boolean stretch) {
+        JsonObject element = new JsonObject();
+        element.add("from", vector(box[0], box[1], box[2]));
+        element.add("to", vector(box[3], box[4], box[5]));
+
+        JsonObject faces = new JsonObject();
+        for (Direction direction : Direction.values()) {
+            JsonObject face = new JsonObject();
+            face.addProperty("texture", switch (direction) {
+                case UP -> "#top";
+                case DOWN -> "#bottom";
+                default -> "#side";
+            });
+            if (direction.getAxis() != Direction.Axis.Y) {
+                // The lower half of the side texture, which is the half a half-height belt shows -
+                // vanilla's slab model crops to exactly these rows and the trim band lines up with
+                // the flat belt next to it because of it.
+                face.add("uv", uv(0, 8, 16, 16));
+            } else if (stretch) {
+                // One tread over the whole ramp. It is a block and a bit long, so the pattern runs
+                // slower up a slope than along the flat - which is the same stretch the items on it
+                // get, and so reads as one thing rather than two.
+                face.add("uv", uv(0, 0, 16, 16));
+            }
+            if (cull && direction == Direction.DOWN) {
+                face.addProperty("cullface", direction.getSerializedName());
+            }
+            faces.add(direction.getSerializedName(), face);
+        }
+        element.add("faces", faces);
+        return element;
+    }
+
+    private static JsonObject beltModel(JsonArray elements, String base) {
+        JsonObject textures = new JsonObject();
+        textures.addProperty("top", NauvisLogistics.MODID + ":block/" + base + "_top");
+        textures.addProperty("side", NauvisLogistics.MODID + ":block/" + base + "_side");
+        textures.addProperty("bottom", NauvisLogistics.MODID + ":block/" + base + "_bottom");
+        textures.addProperty("particle", NauvisLogistics.MODID + ":block/" + base + "_side");
+
+        JsonObject model = new JsonObject();
+        model.addProperty("parent", "minecraft:block/block");
+        model.add("textures", textures);
+        model.add("elements", elements);
+        return model;
+    }
+
+    private static JsonArray uv(float u1, float v1, float u2, float v2) {
+        JsonArray array = new JsonArray();
+        array.add(u1);
+        array.add(v1);
+        array.add(u2);
+        array.add(v2);
+        return array;
     }
 
     /** One belt model: a bottom slab, with the given top. */

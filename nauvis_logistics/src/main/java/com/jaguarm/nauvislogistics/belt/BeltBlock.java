@@ -1,6 +1,11 @@
 package com.jaguarm.nauvislogistics.belt;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -30,6 +35,7 @@ import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
@@ -61,6 +67,22 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * be walked across is the whole point.
  *
  * <p>And it carries you. See {@link #stepOn}.
+ *
+ * <h2>It climbs, the way a rail does</h2>
+ *
+ * <p>A belt hands to the first belt of its own kind directly ahead of it, one <em>above</em> that,
+ * or one <em>below</em> - {@link #successorOf}, which is vanilla's {@code RailState.getRail} probe
+ * with the nouns changed. So a line changes level by being built that way, with no item for it and
+ * nothing to place but belts.
+ *
+ * <p>The block that gets the ramp is always the <em>low</em> one, which is also vanilla's rule: a
+ * belt whose next belt is one along and one up is drawn climbing, and the belt on top of the step
+ * is flat. See {@link BeltShape}.
+ *
+ * <p><b>The collision is a stair and the model is a ramp</b>, which is the one place in this pack
+ * where the two are meant to disagree. Four steps of a quarter block, so every step up is 0.25 and
+ * a slope is walked rather than jumped - vanilla's rail slope is a plain 8-pixel box you have to
+ * jump, and a belt you cannot walk up would not be a belt. See {@link #RAMP_STEPS}.
  */
 public abstract class BeltBlock extends BaseEntityBlock {
 
@@ -81,6 +103,64 @@ public abstract class BeltBlock extends BaseEntityBlock {
 
     /** Half a block, and the same box for collision and outline. */
     private static final VoxelShape BOX = Block.box(0, 0, 0, 16, Belts.HEIGHT * 16, 16);
+
+    /**
+     * How many steps a ramp is approximated in.
+     *
+     * <p>Four, so each is a quarter block: 0.25 up at a time, comfortably under vanilla's 0.6 step
+     * height, which is what makes a slope something you walk up rather than jump. Vanilla's rail
+     * slope is a single 8-pixel box and you do have to jump it.
+     *
+     * <p>More steps would hug the drawn ramp more closely and cost more boxes in a shape that is
+     * asked for on every collision test along a belt line. Four is where that trade sits.
+     */
+    private static final int RAMP_STEPS = 4;
+
+    /** The stair under a ramp, by the horizontal direction the ramp climbs towards. */
+    private static final Map<Direction, VoxelShape> RAMPS = Direction.Plane.HORIZONTAL.stream()
+            .collect(Collectors.toUnmodifiableMap(high -> high, BeltBlock::ramp));
+
+    /**
+     * The stepped stair standing in for a ramp that climbs towards {@code high}.
+     *
+     * <p>Each step's top is the height of the drawn surface at the step's <em>near</em> edge, which
+     * puts the first step flush with the flat belt it is joined to and every later one a little
+     * under the ramp rather than poking through it. The top step reaches 20 pixels - past the block
+     * it belongs to, the way a fence post does - so the last stride onto the belt at the top of the
+     * climb is another quarter block rather than a lurch.
+     */
+    private static VoxelShape ramp(Direction high) {
+        VoxelShape shape = Shapes.empty();
+        for (int step = 0; step < RAMP_STEPS; step++) {
+            // Measured from the low edge, so `near` is where this step starts climbing.
+            double near = 16.0 * step / RAMP_STEPS;
+            double far = 16.0 * (step + 1) / RAMP_STEPS;
+            double top = Belts.HEIGHT * 16 + near;
+            shape = Shapes.or(shape, slice(high, near, far, top));
+        }
+        return shape;
+    }
+
+    /** One step of a ramp: a box from {@code near} to {@code far} along the climb, {@code top} tall. */
+    private static VoxelShape slice(Direction high, double near, double far, double top) {
+        return switch (high) {
+            // `near` is measured from the low edge, which is the face opposite `high`.
+            case NORTH -> Block.box(0, 0, 16 - far, 16, top, 16 - near);
+            case SOUTH -> Block.box(0, 0, near, 16, top, far);
+            case WEST -> Block.box(16 - far, 0, 0, 16 - near, top, 16);
+            case EAST -> Block.box(near, 0, 0, far, top, 16);
+            default -> throw new IllegalArgumentException("a belt climbs towards a horizontal side, not " + high);
+        };
+    }
+
+    /** Which way a belt in this state climbs, or null if it is flat. */
+    public static @Nullable Direction climbsTowards(BlockState state) {
+        return switch (state.getValue(SHAPE)) {
+            case UP -> state.getValue(FACING);
+            case DOWN -> state.getValue(FACING).getOpposite();
+            default -> null;
+        };
+    }
 
     protected BeltBlock(Properties properties) {
         super(properties);
@@ -107,6 +187,73 @@ public abstract class BeltBlock extends BaseEntityBlock {
     }
 
     /**
+     * The belt this one hands to, or null if it hands to nothing.
+     *
+     * <p><b>Three places, in this order: straight ahead, one above that, one below it.</b> That is
+     * vanilla's rail probe - {@code RailState.getRail} - and copying it is the point: a Minecraft
+     * player already knows that a line of rails climbs by being built one block up, and a belt that
+     * behaved differently would be a second thing to learn for no gain.
+     *
+     * <p>Level wins over diagonal, so a line that could go either way goes straight on; and a belt
+     * facing back at this one is never a successor, because two belts cannot each hand to the other.
+     *
+     * <p>Same block, not just any belt: a run has one speed, so a tier change is a hand-off between
+     * two runs rather than a continuation of one. See {@link BeltLines}.
+     *
+     * <p><b>This is the rule, and {@link BeltLines} asks it a second way.</b> The two are not
+     * shared because they have different information - this one reads a {@code LevelReader} in the
+     * middle of a block update, that one walks the set of belts it already knows are loaded - but
+     * the *positions and their order* are shared, through {@link #successorCandidate}, because
+     * getting those out of step is what would draw a belt climbing in a direction nothing travels.
+     */
+    public static @Nullable BlockPos successorOf(LevelReader level, BlockPos pos, BlockState state) {
+        Direction travel = state.getValue(FACING);
+        for (int step = 0; step < SUCCESSOR_CANDIDATES; step++) {
+            BlockPos target = successorCandidate(pos, travel, step);
+            BlockState ahead = level.getBlockState(target);
+            if (!ahead.is(state.getBlock())) {
+                continue;
+            }
+            return ahead.getValue(FACING) == travel.getOpposite() ? null : target;
+        }
+        return null;
+    }
+
+    /** How many places {@link #successorOf} looks, and so how many {@link BeltLines} must look. */
+    public static final int SUCCESSOR_CANDIDATES = 3;
+
+    /**
+     * The {@code step}th place a belt at {@code pos} travelling {@code travel} might hand to.
+     *
+     * <p>Level, then up, then down. The order is the rule and both readers of it walk this method
+     * rather than writing the three positions out again.
+     */
+    public static BlockPos successorCandidate(BlockPos pos, Direction travel, int step) {
+        BlockPos ahead = pos.relative(travel);
+        return switch (step) {
+            case 0 -> ahead;
+            case 1 -> ahead.above();
+            default -> ahead.below();
+        };
+    }
+
+    /**
+     * Every place a belt could sit and feed the belt at {@code pos}, or be fed by it.
+     *
+     * <p>Twelve rather than four, now that a line can change level: each of the four sides at this
+     * belt's own height, one above and one below. Only ever walked when the graph is rebuilt, which
+     * is a placement or a break rather than a tick.
+     */
+    public static void forEachNeighbour(BlockPos pos, Consumer<BlockPos> visitor) {
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            BlockPos beside = pos.relative(side);
+            visitor.accept(beside);
+            visitor.accept(beside.above());
+            visitor.accept(beside.below());
+        }
+    }
+
+    /**
      * Re-reads the bend when anything beside this belt changes.
      *
      * <p>All four sides every time, not just the one that changed, because a bend is a fact about
@@ -122,11 +269,28 @@ public abstract class BeltBlock extends BaseEntityBlock {
     }
 
     /**
-     * Which way this belt bends, given what is around it.
+     * Which way this belt bends or climbs, given what is around it.
+     *
+     * <h2>A slope first, and a bend only if it is not one</h2>
+     *
+     * <p>Because the drawing has to agree with where items actually go. A belt whose successor is
+     * one block up is climbing however many belts are beside it, and drawing it as a corner would
+     * put a bend under a line that is going over a step. The bend logic is what is left when the
+     * belt is level with both ends.
+     *
+     * <p>It climbs {@link BeltShape#UP} when it hands to the block one along and one up, and
+     * {@link BeltShape#DOWN} when the belt one <em>behind</em> and one up hands to it - a ramp
+     * always belonging to the lower of the two blocks, which is vanilla's rule for rails.
+     *
+     * <h2>Then the bend</h2>
      *
      * <p>One feeder, arriving from a side, is a corner. None, one from directly behind, or more
      * than one, is a straight - two feeders being a side-load, which Factorio draws as a straight
      * belt something joins rather than as a bend.
+     *
+     * <p>Only feeders level with this belt count towards a bend, because a corner that also
+     * changed level is not a shape this block can be in. The run still carries items through it;
+     * see {@code docs/GAPS.md}.
      *
      * <p>The test for a feeder is the same one {@link BeltLines} builds runs with, and it has to
      * stay that way or a belt will be drawn bending in a direction nothing travels. It is written
@@ -135,6 +299,15 @@ public abstract class BeltBlock extends BaseEntityBlock {
      */
     public static BlockState withShape(BlockState state, LevelReader level, BlockPos pos) {
         Direction travel = state.getValue(FACING);
+
+        BlockPos successor = successorOf(level, pos, state);
+        if (successor != null && successor.equals(pos.relative(travel).above())) {
+            return state.setValue(SHAPE, BeltShape.UP);
+        }
+        if (descends(level, pos, state)) {
+            return state.setValue(SHAPE, BeltShape.DOWN);
+        }
+
         Direction from = null;
         for (Direction side : Direction.Plane.HORIZONTAL) {
             if (!feeds(level, pos.relative(side), side.getOpposite(), state)) {
@@ -157,6 +330,23 @@ public abstract class BeltBlock extends BaseEntityBlock {
     }
 
     /**
+     * Whether this belt is the bottom of a step something is coming down.
+     *
+     * <p>Asked of the belt behind and above rather than answered here, because "does that belt hand
+     * to me" is {@link #successorOf}'s question and there must be one answer to it. A belt that
+     * merely sits above and behind is not enough: if it can reach something level with itself it
+     * will, and then this is an ordinary belt with nothing feeding it.
+     */
+    private static boolean descends(LevelReader level, BlockPos pos, BlockState state) {
+        BlockPos above = pos.relative(state.getValue(FACING).getOpposite()).above();
+        BlockState feeder = level.getBlockState(above);
+        if (!feeder.is(state.getBlock())) {
+            return false;
+        }
+        return pos.equals(successorOf(level, above, feeder));
+    }
+
+    /**
      * Re-reads the bend on this belt and on every belt beside it.
      *
      * <p>Called when a belt joins the graph, which covers the two ways a belt can arrive already
@@ -166,13 +356,13 @@ public abstract class BeltBlock extends BaseEntityBlock {
      * looks like a mistake.
      *
      * <p>Its neighbours as well as itself, because the two halves of a corner learn about each
-     * other at different moments and only one of them gets a notification.
+     * other at different moments and only one of them gets a notification. All twelve of them since
+     * a line can climb - a belt one along and one up is as much a neighbour as one beside it, and
+     * it is the half of a new slope that gets no notification at all.
      */
     public static void refreshShapes(ServerLevel level, BlockPos pos) {
         refresh(level, pos);
-        for (Direction side : Direction.Plane.HORIZONTAL) {
-            refresh(level, pos.relative(side));
-        }
+        forEachNeighbour(pos, neighbour -> refresh(level, neighbour));
     }
 
     private static void refresh(ServerLevel level, BlockPos pos) {
@@ -221,8 +411,9 @@ public abstract class BeltBlock extends BaseEntityBlock {
      * <h2>Two implementations of the one rule</h2>
      *
      * <p><b>The same belt is a state change</b>, which keeps the block entity and so keeps what is
-     * standing on it for free. Only {@link BeltLines#beltTurned} has to be told, because nothing
-     * else notices: no block entity was removed, so neither hook that maintains the graph fired.
+     * standing on it for free. The graph still has to be told, because no block entity was removed
+     * and so neither hook that maintains it fired - {@link BeltBlockEntity#setBlockState} is what
+     * catches that, on both sides.
      *
      * <p><b>A different belt is a new block</b>, which is a different job - see {@link #replace}.
      */
@@ -248,11 +439,14 @@ public abstract class BeltBlock extends BaseEntityBlock {
         }
         server.setBlock(pos, withShape(state.setValue(FACING, placed), server, pos), Block.UPDATE_ALL);
 
-        // The lines through it are different lines now, and nothing else will say so: the block
-        // entity was never removed, so neither of the hooks that maintain the graph has fired.
-        BeltLines.of(server).beltTurned(pos);
-        // The belts either side may have stopped being corners, or started. setBlock tells them
-        // through updateShape, but only about the block that changed - so say it plainly.
+        // Nothing tells the graph by hand any more. The block entity survives a state change and
+        // hears about it from `setBlockState`, which fires on both sides - the server saying it
+        // here and the client never hearing it at all is what used to leave a turned belt drawn
+        // along its old line until the chunk reloaded. See BeltBlockEntity.
+        //
+        // The belts either side may have stopped being corners, or started, or become the low end
+        // of a slope. setBlock tells them through updateShape, but only about the block that
+        // changed - so say it plainly.
         refreshShapes(server, pos);
 
         SoundType sound = state.getSoundType(server, pos, player);
@@ -323,9 +517,17 @@ public abstract class BeltBlock extends BaseEntityBlock {
 
     // No getTicker override, deliberately. The run ticks; see BeltRun.
 
+    /**
+     * A half slab flat, a four-step stair on a slope.
+     *
+     * <p>One shape for collision and outline, as before. On a ramp the two genuinely disagree - the
+     * model is a smooth 45 degrees and this is four steps under it - and that is the trade for a
+     * slope you can walk up: see {@link #RAMP_STEPS}.
+     */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return BOX;
+        Direction high = climbsTowards(state);
+        return high == null ? BOX : RAMPS.get(high);
     }
 
     /**
@@ -375,6 +577,12 @@ public abstract class BeltBlock extends BaseEntityBlock {
         entity.move(MoverType.SELF, new Vec3(travel.getStepX() * step, 0.0, travel.getStepZ() * step));
         entity.setOnGround(standing);
     }
+
+    // A slope needs nothing here, which is worth saying out loud because it looks like it should.
+    // The push stays horizontal and `Entity.move` climbs the stair for us - every step of a ramp is
+    // a quarter block and the step height is 0.6 - so a belt carries you up a slope by the same
+    // line that carries you along a flat one. Going down, the push walks off the step and gravity
+    // does the rest, which is walking down stairs and looks like it.
 
     // Nothing wakes a belt from a neighbour, and nothing needs to. A run is awake exactly while it
     // has something on it: an inserter putting an item on wakes it through the capability, and a

@@ -121,6 +121,33 @@ public class BeltBlockEntity extends BlockEntity {
         }
     }
 
+    /**
+     * A belt's own state changed under it - it was turned, or it started or stopped climbing.
+     *
+     * <p><b>This is the only hook for that which fires on both sides</b>, and it is the reason the
+     * client's copy of a line stays right. {@code LevelChunk.setBlockState} calls it whenever a
+     * block state changes and the block entity survives, which is exactly the case no other
+     * lifecycle hook covers: nothing is placed, nothing is removed, and the lines through this
+     * block are different lines afterwards. The server used to say so by hand and the client was
+     * never told at all, so a turned belt left every client drawing items along the old line until
+     * the chunk was reloaded.
+     *
+     * <p>Only facing and shape, because they are the whole of what a run is built from. The world
+     * already holds the new state by the time this runs, so a rebuild reads what it should.
+     */
+    @Override
+    public void setBlockState(BlockState state) {
+        BlockState old = getBlockState();
+        super.setBlockState(state);
+        if (level == null || old == state || !old.is(state.getBlock())) {
+            return;
+        }
+        if (old.getValue(BeltBlock.FACING) != state.getValue(BeltBlock.FACING)
+                || old.getValue(BeltBlock.SHAPE) != state.getValue(BeltBlock.SHAPE)) {
+            BeltLines.of(level).beltTurned(worldPosition);
+        }
+    }
+
     @Override
     public void setRemoved() {
         leave();

@@ -16,12 +16,31 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and thirteen gametests pass, `./gradlew build` is clean, and the client boots into a
-world. **Milestone 2 is closed**: the fast belt is in and a faster belt in hand replaces the one it
-is clicked on. Milestone 3 has its research half in, and five of its nine items — the steel line,
+A hundred and seventeen gametests pass, `./gradlew build` is clean, and the client boots into a
+world. **Milestone 2 is closed**: the fast belt is in, a belt in hand replaces the one it is clicked
+on, and **belt lines climb**. Milestone 3 has its research half in, and five of its nine items — the steel line,
 green science and the medium pole, which between them give `steel-processing`, `science-pack-2` and
 `electric-energy-distribution-1` teeth. The big pole came with the medium one and the substation
 came with the big one, because four pole tiers is one piece of work rather than four.
+
+**Belt lines change level the way rails do.** A belt hands to the first belt of its own tier
+straight ahead, one above, or one below - vanilla's `RailState` probe, with level winning over
+either - so a line goes up a hill by being built up a hill, and there is no item for it. The ramp
+belongs to the lower of the two blocks, again as vanilla does it, and `BeltShape` gained two values
+rather than eight: `up` rises the way the belt faces, `down` against it.
+
+The model is a 45-degree slab plus a squared-off adapter at its low end. **Vanilla's raised rail is
+a plane with no thickness**, which is how it gets away with a bare rotation; a belt is half a block
+thick, and a rotated box's ends tilt with it, so the joint against a flat belt would be a wedge of
+open air. The adapter is what closes it. The high joint needs nothing, because a slab that thick
+already overhangs the block it climbs into. The collision is four steps of a quarter block, so a
+slope is *walked* up - vanilla's rail slope is an 8-pixel box you have to jump.
+
+**And it turned up a bug that had nothing to do with slopes.** A belt that is turned changes a block
+state and nothing else; the server said so by hand and the client, which keeps its own copy of every
+run and draws from it, was never told at all - so a turned belt went on carrying items along its old
+line on every client until the chunk reloaded. `BlockEntity.setBlockState` is the hook that fires on
+both sides. See `PITFALLS.md`.
 
 **A belt tier turned out to cost a file and a palette**, which is what the three decisions behind
 the belt were for: speed is a constant on a subclass rather than a field, so a tier is a class; the
@@ -40,6 +59,7 @@ is an int like every other machine's.
 |---|---|
 | `nauvis_machines:assembling_machine_1` | 3×3, ten blocks; recipe selector, six slots, timed craft, screen, 10 FE/t |
 | `nauvis_logistics:transport_belt` | half a block, walked over; a run is one object however long, two lanes, visible items, carries you |
+| a belt line | climbs and descends a step at a time, like rails. The ramp is drawn in the lower block; four quarter-block stairs under a 45° slab, so you walk up it |
 | `nauvis_logistics:fast_transport_belt` | the same at 3.75 tiles a second, in red. Five gears and a belt, behind `logistics-2` |
 | a belt in hand | **puts that belt there, pointing the way you face** — another tier swaps the block, keeps the load and pays for it. Factorio's fast-replace, either way up |
 | `nauvis_logistics:splitter` | 2×1 and directional; 50/50 per lane, overflows to the open side, sleeps when empty |
@@ -213,6 +233,29 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
 - and put a substation in the middle of a field of machines. Eighteen by eighteen is most of a
   chunk, and whether that feels generous or absurd at Minecraft's scale is a judgement no test
   makes.
+
+**Slopes**, which are brand new and which nothing in this repo can see at all.
+
+- build a belt line up a three-block hill and look at it from the side. **Whether the ramps read as
+  one continuous belt, or as three slabs at an angle with gaps between them, is the whole
+  question** - the joint at the bottom of each ramp is closed by an adapter box that was reasoned
+  about rather than looked at, and the joint at the top is closed by nothing at all, on the argument
+  that the ramp already overhangs far enough. If there is a wedge of daylight at either end, that is
+  `beltRamp` in `NauvisLogisticsModels`;
+- walk up it. Four steps of a quarter block under a smooth ramp: whether that feels like walking up
+  a slope or like walking up stairs is a judgement no test makes. Then ride it - stand still and let
+  it carry you up;
+- watch items go up and come down. They cross a ramp about 41% faster than flat ground, which is
+  deliberate and written down in `GAPS.md`. **Whether it reads as a speed-up or as a glitch** is the
+  thing to decide; the tread's texture is stretched by the same amount so that the two agree;
+- look at the tread on a ramp. It is one belt texture over a block-and-a-bit, so the chevrons are
+  longer than on the flat, and the animation runs at the same pixels a tick;
+- put a corner at the top of a climb and a corner at the bottom. A block that both turns and changes
+  level is carried correctly and drawn flat - see `GAPS.md` - so the question is whether that is
+  invisible in practice or obvious;
+- and turn a belt in the middle of a working line **on a client**, which is the bug this work found.
+  The items should follow the new line immediately. Before, they carried on along the old one until
+  the chunk reloaded.
 
 **The red belt and fast-replace**, which are new and which nothing in this repo can judge.
 

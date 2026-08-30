@@ -89,7 +89,8 @@ Read `nauvis_logistics/.../belt/` in this order and the whole thing falls out:
 | `BeltRun.java` | one line: its blocks, its two lanes, its tick, how it hands to the next line, and — `announceArrivals` — how anything beside it hears an item turn up |
 | `BeltLines.java` | every run in a level, and how lines are cut and joined |
 | `BeltAccess.java` | how everything else meets a belt, and why giving and taking are two rules |
-| `BeltShape.java` | how a corner knows it is one, and why there are two rather than eight |
+| `BeltShape.java` | how a corner knows it is one, how a slope does, and why there are two of each rather than eight |
+| `BeltBlock.successorOf` | the three places a belt hands to - level, a step up, a step down - which is vanilla's rail probe |
 | `BeltBlock.stepOn` | why standing on a belt carries you, and why that is not `entityInside` |
 | `BeltBlock.useItemOn` | a belt in hand puts **that** belt on the block you click, facing the way you are — Factorio's fast-replace |
 | `client/BeltRenderer.java` | the items you can see |
@@ -112,7 +113,15 @@ Four things are load-bearing for anything built on top:
   that moves things and never pushes them into the consumer has to announce, because nothing else
   will.*
 - A closed ring of belts is one run that wraps, and a block state change does not touch the graph —
-  turning a belt leaves its block entity alone, so `BeltLines.beltTurned` is a third way in.
+  turning a belt, or its becoming a ramp, leaves its block entity alone. `BeltBlockEntity`
+  overrides **`setBlockState`** to catch that, which is the only hook for it that fires on both
+  sides; `BeltLines.beltTurned` is the third way in.
+- **A line changes level by being built that way**, the way rails do: a belt hands to the first belt
+  of its own tier straight ahead, one above, or one below, level winning over either. The ramp is
+  always drawn in the *lower* of the two blocks. What the simulation needs from a slope is one
+  number — how far the surface climbs across a block — and even that is only consulted at the ends
+  of a run: **the height of a seam between two blocks comes from the two blocks, not from either
+  one's shape**, so two neighbours cannot disagree about it and an item cannot step through the gap.
 - **A tier is a class, and a run is keyed on the block.** Speed is a constant on a `BeltBlock`
   subclass rather than a field, because `createBlockStateDefinition` runs before any field of a
   subclass exists; `BeltLines` follows a line only through belts of the same block, so two tiers are

@@ -1,5 +1,9 @@
 {
   "variants": {
+    "facing=east,shape=down": {
+      "model": "nauvis_logistics:block/fast_transport_belt_down",
+      "y": 90
+    },
     "facing=east,shape=left": {
       "model": "nauvis_logistics:block/fast_transport_belt_left",
       "y": 90
@@ -12,6 +16,13 @@
       "model": "nauvis_logistics:block/fast_transport_belt",
       "y": 90
     },
+    "facing=east,shape=up": {
+      "model": "nauvis_logistics:block/fast_transport_belt_up",
+      "y": 90
+    },
+    "facing=north,shape=down": {
+      "model": "nauvis_logistics:block/fast_transport_belt_down"
+    },
     "facing=north,shape=left": {
       "model": "nauvis_logistics:block/fast_transport_belt_left"
     },
@@ -20,6 +31,13 @@
     },
     "facing=north,shape=straight": {
       "model": "nauvis_logistics:block/fast_transport_belt"
+    },
+    "facing=north,shape=up": {
+      "model": "nauvis_logistics:block/fast_transport_belt_up"
+    },
+    "facing=south,shape=down": {
+      "model": "nauvis_logistics:block/fast_transport_belt_down",
+      "y": 180
     },
     "facing=south,shape=left": {
       "model": "nauvis_logistics:block/fast_transport_belt_left",
@@ -33,6 +51,14 @@
       "model": "nauvis_logistics:block/fast_transport_belt",
       "y": 180
     },
+    "facing=south,shape=up": {
+      "model": "nauvis_logistics:block/fast_transport_belt_up",
+      "y": 180
+    },
+    "facing=west,shape=down": {
+      "model": "nauvis_logistics:block/fast_transport_belt_down",
+      "y": 270
+    },
     "facing=west,shape=left": {
       "model": "nauvis_logistics:block/fast_transport_belt_left",
       "y": 270
@@ -43,6 +69,10 @@
     },
     "facing=west,shape=straight": {
       "model": "nauvis_logistics:block/fast_transport_belt",
+      "y": 270
+    },
+    "facing=west,shape=up": {
+      "model": "nauvis_logistics:block/fast_transport_belt_up",
       "y": 270
     }
   }

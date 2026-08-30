@@ -143,13 +143,17 @@ public final class BeltLines {
     }
 
     /**
-     * A belt is still there but points somewhere else.
+     * A belt is still there but points somewhere else, or climbs where it used to lie flat.
      *
-     * <p>Nothing else notices. Turning a belt only changes a block state, so its block entity is
-     * never removed and never reloaded, and neither {@link #beltPlaced} nor {@link #beltRemoved}
-     * ever hears about it - while the lines through it are now entirely different lines. The items
-     * on them are put back where they were standing, block by block, exactly as they are when a
-     * line is cut.
+     * <p>Nothing else notices. Changing a belt's state leaves its block entity in place, so neither
+     * {@link #beltPlaced} nor {@link #beltRemoved} ever hears about it - while the lines through it
+     * are now entirely different lines, or the same line at a different height. The items on them
+     * are put back where they were standing, block by block, exactly as they are when a line is cut.
+     *
+     * <p>It is called from {@link BeltBlockEntity#setBlockState}, which is the one hook that fires
+     * on <b>both</b> sides. That matters: the client keeps its own copy of every run and draws from
+     * it, so a client that never heard about a turn would go on drawing items along a line that no
+     * longer exists.
      */
     public void beltTurned(BlockPos pos) {
         if (belts.contains(pos.asLong())) {
@@ -193,8 +197,12 @@ public final class BeltLines {
      * Rebuilds every line the block at {@code around} can have changed.
      *
      * <p>Only a belt's own neighbours can gain or lose a feeder, so only the lines through those
-     * five positions can be different afterwards. They are taken apart, their items lifted off by
-     * block, the lines rebuilt from what is there now, and the items put back where they stood.
+     * thirteen positions can be different afterwards. They are taken apart, their items lifted off
+     * by block, the lines rebuilt from what is there now, and the items put back where they stood.
+     *
+     * <p>Thirteen rather than five because a line can climb: a belt one along and one up is as much
+     * a neighbour as one beside it. {@link BeltBlock#forEachNeighbour} is where that set is written
+     * down, so this and the drawing agree about what counts as next to what.
      *
      * <p>The order runs are rebuilt in is fixed - by packed position - so that a client doing this
      * from the same block states arrives at exactly the same answer. That is what lets a player
@@ -205,9 +213,7 @@ public final class BeltLines {
         List<BeltRun.Parked> parked = new ArrayList<>();
 
         take(around, pending, parked);
-        for (Direction side : Direction.Plane.HORIZONTAL) {
-            take(around.relative(side), pending, parked);
-        }
+        BeltBlock.forEachNeighbour(around, neighbour -> take(neighbour, pending, parked));
 
         while (true) {
             long next = Long.MAX_VALUE;
@@ -291,11 +297,13 @@ public final class BeltLines {
         }
 
         Direction[] facings = new Direction[members.size()];
+        int[] rises = new int[members.size()];
         for (int i = 0; i < members.size(); i++) {
             facings[i] = facing(members.get(i));
+            rises[i] = shape(members.get(i)).rise();
         }
 
-        BeltRun run = new BeltRun(level, this, block, members, facings, loops);
+        BeltRun run = new BeltRun(level, this, block, members, facings, rises, loops);
         for (BlockPos member : members) {
             runByBelt.put(member.asLong(), run);
         }
@@ -344,54 +352,72 @@ public final class BeltLines {
         return level.getBlockState(pos).getValue(BeltBlock.FACING);
     }
 
+    private BeltShape shape(BlockPos pos) {
+        return level.getBlockState(pos).getValue(BeltBlock.SHAPE);
+    }
+
     /**
-     * The belt this one hands to: the block it faces, if that is a belt of the same tier which is
-     * not facing straight back at it.
+     * The belt this one hands to: straight ahead, one above that, or one below - the first of the
+     * three that holds a belt of the same tier not facing straight back at it.
+     *
+     * <p>Three places rather than one because a belt line climbs the way a rail line does, and the
+     * order matters: level wins, so a line that could go either straight on or up a step goes
+     * straight on. {@link BeltBlock#successorCandidate} is where the three and their order are
+     * written down, and this walks it rather than repeating it - the drawing asks the same question
+     * of a {@code LevelReader} and the two must not drift.
      *
      * <p>Same tier, because a run has one speed. A fast belt after a yellow one is a second run
      * that the first hands off into, which is what Factorio does with its transport lines.
      */
     private @Nullable BlockPos successor(BlockPos pos, BeltBlock block) {
         Direction out = facing(pos);
-        BlockPos next = pos.relative(out);
-        if (beltAt(next) != block) {
-            return null;
+        for (int step = 0; step < BeltBlock.SUCCESSOR_CANDIDATES; step++) {
+            BlockPos next = BeltBlock.successorCandidate(pos, out, step);
+            if (beltAt(next) != block) {
+                continue;
+            }
+            return facing(next) == out.getOpposite() ? null : next;
         }
-        return facing(next) == out.getOpposite() ? null : next;
+        return null;
     }
 
     /** How many belts hand to this one. Two or more, and it is the start of a line of its own. */
     private int feederCount(BlockPos pos, BeltBlock block) {
-        int count = 0;
-        for (Direction side : Direction.Plane.HORIZONTAL) {
-            if (feeds(pos.relative(side), pos, side.getOpposite(), block)) {
-                count++;
+        int[] count = {0};
+        BeltBlock.forEachNeighbour(pos, neighbour -> {
+            if (feeds(neighbour, pos, block)) {
+                count[0]++;
             }
-        }
-        return count;
+        });
+        return count[0];
     }
 
     private @Nullable BlockPos soleFeeder(BlockPos pos, BeltBlock block) {
-        BlockPos found = null;
-        for (Direction side : Direction.Plane.HORIZONTAL) {
-            BlockPos neighbour = pos.relative(side);
-            if (!feeds(neighbour, pos, side.getOpposite(), block)) {
-                continue;
+        BlockPos[] found = {null};
+        boolean[] several = {false};
+        BeltBlock.forEachNeighbour(pos, neighbour -> {
+            if (!feeds(neighbour, pos, block)) {
+                return;
             }
-            if (found != null) {
-                return null;
+            if (found[0] != null) {
+                several[0] = true;
             }
-            found = neighbour;
-        }
-        return found;
+            found[0] = neighbour;
+        });
+        return several[0] ? null : found[0];
     }
 
-    /** Whether the belt at {@code from} hands to {@code to}, which lies {@code towards} of it. */
-    private boolean feeds(BlockPos from, BlockPos to, Direction towards, BeltBlock block) {
-        if (beltAt(from) != block) {
-            return false;
-        }
-        return facing(from) == towards && facing(to) != towards.getOpposite();
+    /**
+     * Whether the belt at {@code from} hands to {@code to}.
+     *
+     * <p>Asked as "is {@code to} what {@code from} hands to" rather than worked out from the
+     * direction between them, which is what it used to be. A belt has exactly one successor and
+     * {@link #successor} is the only thing that decides it, so a feeder is anything whose successor
+     * is this belt - and the graph cannot disagree with itself about which of two ways a diagonal
+     * link points.
+     */
+    private boolean feeds(BlockPos from, BlockPos to, BeltBlock block) {
+        return beltAt(from) == block && to.equals(successor(from, block));
     }
 
     // --- the two things a client has to be told ---------------------------------------------------
