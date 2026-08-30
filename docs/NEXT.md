@@ -16,7 +16,7 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and twenty-two gametests pass, `./gradlew build` is clean, and the client boots into a
+A hundred and twenty-three gametests pass, `./gradlew build` is clean, and the client boots into a
 world. **Milestone 2 is closed**: the red tier is in whole — the fast belt and the fast splitter —
 a belt in hand replaces the one it is clicked on, and **belt lines climb**. Milestone 3 has its
 research half in, and five of its nine items — the steel line, green science and the medium pole,
@@ -280,13 +280,20 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
   is drawn rather than tested;
 - put a small pole down, walk eight blocks, put a medium one down, and see the wire appear. Eight
   is past the small pole's reach and inside the medium one's, so that is the tier working;
-- **put a burner drill and an electric one down and look at each.** The blue outline should sit
-  exactly on the machine — 2×2 and 3×3 — from any block of it, and from any angle. That the area
-  *is* the machine is the whole idea, and whether it reads that way, or reads as an outline that
-  failed to appear, is a judgement no test makes;
 - and put a substation in the middle of a field of machines. Eighteen by eighteen is most of a
   chunk, and whether that feels generous or absurd at Minecraft's scale is a judgement no test
   makes.
+
+**The drills**, whose dig area is now the machine itself.
+
+- put a burner drill and an electric one down and look at each. The blue outline should sit
+  exactly on the machine — 2×2 and 3×3 — and appear from any block of it rather than only from the
+  one holding the block entity. **That the area *is* the machine is the whole idea**, and whether
+  it reads that way or reads as an outline that failed to appear is a judgement no test makes;
+- put a range module in an electric drill and watch the outline grow by a ring. That is the only
+  thing left that the outline tells you and the machine does not;
+- and let one run dry mid-area. It works its own footprint first and rings outward from there, so
+  what it leaves behind should look like a tidy square rather than a strip.
 
 **Slopes**, which are brand new and which nothing in this repo can see at all.
 
