@@ -119,8 +119,8 @@ is an int like every other machine's.
 | the tree screen | drag to pan, wheel to zoom, a search box, and the hovered node's whole path back to a root lit up. Columns are centred; an arrow turns in a lane of its own |
 | research progress | **kept per technology.** Switching away from one and back finds it where it was left, which is Factorio's rule and was not ours |
 | `/research` | grant, forget, start, stop, list, info, all, reset. Gamemaster only. **Grant and forget cascade** — grant brings the prerequisites, forget takes the dependants |
-| `nauvis_mining:burner_mining_drill` | 2×2, five blocks. Digs down, not across — see below |
-| `nauvis_mining:electric_mining_drill` | 3×3, nine blocks; a half-block deck you walk over |
+| `nauvis_mining:burner_mining_drill` | 2×2, five blocks; mines the 2×2 it stands on. Digs down, not across — see below |
+| `nauvis_mining:electric_mining_drill` | 3×3, nine blocks, mining its own 3×3; a half-block deck you walk over |
 
 Power numbers keep Factorio's ratios rather than its units: one engine runs twelve assemblers, one
 boiler runs twenty-four. None of that is identity; ids, ingredients and craft times are.
@@ -145,10 +145,14 @@ untouched in its own repo and stays released; nothing here changes it.
 
 What a Factorio drill does that this one does not:
 
-- **It sits on an ore patch and eats it.** Ours digs *downwards* beneath itself, one block at a
-  time, in a spiral — a quarry rather than a drill. Factorio's covers a fixed area at ground
-  level and takes the resource out of the tiles under it, leaving the terrain alone. Crumbling
-  Ore is already the pack's answer to a patch that runs out, so the two want designing together.
+- **It sits on an ore patch and eats it.** Ours digs *downwards*, one block at a time — a quarry
+  rather than a drill. Factorio's takes the resource out of the tiles under it and leaves the
+  terrain alone. Crumbling Ore is already the pack's answer to a patch that runs out, so the two
+  want designing together. **The area is right now, and only the direction is wrong**: a drill
+  covers exactly the ground it stands on, 2×2 under a burner and 3×3 under an electric, which is
+  what Factorio's cover and what makes a mining field something you lay out by placing drills.
+  `DigArea` is where that lives and the hover outline reads it, so whatever replaces the downward
+  digging inherits both.
 - **It has no dig modes.** Ours has three on a button — ore only, clear and fill, clear — and a
   fill slot to pay for the middle one. Both are answers to being a quarry and both go when the
   digging does, rather than being separate jobs. **The shovel slot is already gone**, which is the
@@ -276,6 +280,10 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
   is drawn rather than tested;
 - put a small pole down, walk eight blocks, put a medium one down, and see the wire appear. Eight
   is past the small pole's reach and inside the medium one's, so that is the tier working;
+- **put a burner drill and an electric one down and look at each.** The blue outline should sit
+  exactly on the machine — 2×2 and 3×3 — from any block of it, and from any angle. That the area
+  *is* the machine is the whole idea, and whether it reads that way, or reads as an outline that
+  failed to appear, is a judgement no test makes;
 - and put a substation in the middle of a field of machines. Eighteen by eighteen is most of a
   chunk, and whether that feels generous or absurd at Minecraft's scale is a judgement no test
   makes.

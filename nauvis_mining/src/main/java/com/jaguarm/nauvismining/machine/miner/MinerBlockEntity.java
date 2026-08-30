@@ -10,7 +10,6 @@ import com.jaguarm.nauvismining.NauvisMining;
 import com.jaguarm.nauvismining.machine.MachineTier;
 import com.jaguarm.nauvismining.machine.ModuleItem;
 import com.jaguarm.nauvismining.machine.ModuleType;
-import com.jaguarm.nauvismining.machine.Spiral;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.phys.AABB;
 import com.jaguarm.nauvismining.registry.ModBlockEntities;
@@ -69,8 +68,9 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
- * The miner digs a square spiral of columns centred on itself, each column running from
- * the block directly beneath the machine down to the configured floor.
+ * The miner digs the columns under its own footprint — two by two for a burner drill, three by
+ * three for an electric one — each running from the block directly beneath the machine down to
+ * the configured floor. Range modules grow that outward a ring at a time. See {@link DigArea}.
  *
  * <p>It needs solid fuel and a pickaxe, and — unless disabled in the config — one
  * cobblestone per block mined, which it uses to backfill the hole. The pickaxe takes
@@ -120,8 +120,13 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
     /** How often the miner scans its neighbours to push output. */
     private static final int PUSH_INTERVAL_TICKS = 20;
 
-    /** Last range pushed to clients, so an unchanged range costs no packets. */
-    private int lastSyncedRange = -1;
+    /** Last ring count pushed to clients, so an unchanged area costs no packets. */
+    private int lastSyncedRings = -1;
+
+    /** See {@link #digArea()}. Rebuilt when the state or the ring count stops matching. */
+    private @Nullable DigArea cachedArea;
+    private @Nullable BlockState cachedAreaState;
+    private int cachedAreaRings = -1;
 
     /**
      * Who placed this machine. The miner acts through a fake player carrying this identity,
@@ -514,18 +519,21 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
     }
 
     /**
-     * Walks down the current column, then outward along the spiral, until it finds a
+     * Walks down the current column, then outward through the area, until it finds a
      * block this miner can actually break. Returns null when the whole area is done.
      */
     private BlockPos findNextTarget(ServerLevel level) {
         int floor = Math.max(Config.MINE_FLOOR.get(), level.getMinY());
-        int totalColumns = Spiral.columnsForRadius(range());
+        DigArea area = digArea();
+        int totalColumns = area.columns();
         int budget = SCAN_BUDGET_PER_TICK;
         scanBudgetExhausted = false;
 
         while (columnIndex <= totalColumns) {
-            Spiral.Offset offset = Spiral.offset(columnIndex);
-            BlockPos column = worldPosition.offset(offset.x(), 0, offset.z());
+            DigArea.Column column = area.column(columnIndex);
+            if (column == null) {
+                break;
+            }
 
             while (currentY >= floor) {
                 // A filtered miner skips everything that is not an ore, so it can walk
@@ -535,7 +543,7 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
                     scanBudgetExhausted = true;
                     return null;
                 }
-                BlockPos candidate = new BlockPos(column.getX(), currentY, column.getZ());
+                BlockPos candidate = new BlockPos(column.x(), currentY, column.z());
                 if (toolFor(level.getBlockState(candidate), candidate) != ToolChoice.NONE
                         && level.mayInteract(fakePlayer(level), candidate)) {
                     return candidate;
@@ -888,10 +896,42 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
         return digMode.fills() && Config.REQUIRE_COBBLE_BACKFILL.get();
     }
 
-    /** Radius in blocks: the configured base, widened by range modules. */
-    public int range() {
-        int bonus = moduleCount(ModuleType.RANGE) * ModuleType.RANGE.bonusRadius();
-        return Config.INITIAL_RANGE.get() + bonus * Config.UPGRADE_RANGE.get();
+    /**
+     * How many rings beyond the machine's own footprint this drill works.
+     *
+     * <p>Zero by default, and that is the whole of the change of heart: the area used to be a
+     * radius out of the config with the machine's size playing no part, so a burner drill and an
+     * electric one covered the same single column. A drill covers what it stands on, the way
+     * Factorio's does, and the config and the range modules only widen it.
+     */
+    public int extraRings() {
+        int modules = moduleCount(ModuleType.RANGE) * ModuleType.RANGE.bonusRadius();
+        return Config.EXTRA_RINGS.get() + modules * Config.RING_PER_MODULE.get();
+    }
+
+    /**
+     * The columns this drill works, in world coordinates.
+     *
+     * <p>Cached, because {@code findNextTarget} asks for it every tick a drill is running and
+     * building one walks the machine's cells. Two things can change the answer and both are
+     * compared rather than listened for: the block state, which carries the facing and which is an
+     * interned singleton so {@code !=} is the whole check, and the ring count, which a module
+     * changes. A Factorio base is thousands of machines and this is the sort of per-tick rubbish
+     * that only shows up once there are.
+     */
+    public DigArea digArea() {
+        BlockState state = getBlockState();
+        int rings = extraRings();
+        if (cachedArea == null || cachedAreaState != state || cachedAreaRings != rings) {
+            cachedArea = DigArea.of(
+                    ((MinerBlock) state.getBlock()).shape(),
+                    worldPosition,
+                    state.getValue(MinerBlock.FACING),
+                    rings);
+            cachedAreaState = state;
+            cachedAreaRings = rings;
+        }
+        return cachedArea;
     }
 
     /** Compounded module factor, e.g. 0.8^n for n speed modules. */
@@ -1068,7 +1108,7 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
                 case 3 -> requiredTicks;
                 case 4 -> status.ordinal();
                 case 5 -> tier.moduleSlots();
-                case 6 -> range();
+                case 6 -> extraRings();
                 case 7 -> tier.isElectric() ? 1 : 0;
                 case 8 -> energy.getAmountAsInt();
                 case 9 -> energy.getCapacityAsInt();
@@ -1117,17 +1157,17 @@ public class MinerBlockEntity extends BlockEntity implements WorldlyContainer, M
     }
 
     private void syncRangeToClients(ServerLevel level) {
-        int current = range();
-        if (current == lastSyncedRange) {
+        int current = extraRings();
+        if (current == lastSyncedRings) {
             return;
         }
         // A wider area is new ground to cover, so a drill that had finished goes back to
         // work. Only on a genuine change, and not on the first tick after loading, where
-        // lastSyncedRange starts unset and would otherwise restart every drill in the world.
-        if (lastSyncedRange >= 0 && current > lastSyncedRange) {
+        // lastSyncedRings starts unset and would otherwise restart every drill in the world.
+        if (lastSyncedRings >= 0 && current > lastSyncedRings) {
             restartScan();
         }
-        lastSyncedRange = current;
+        lastSyncedRings = current;
         BlockState state = getBlockState();
         level.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_CLIENTS);
     }

@@ -1,8 +1,11 @@
 package com.jaguarm.nauvismining;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.jaguarm.nauvismining.machine.MachineTier;
+import com.jaguarm.nauvismining.machine.miner.DigArea;
 import com.jaguarm.nauvismining.machine.miner.MinerBlock;
 import com.jaguarm.nauvismining.machine.miner.MinerBlockEntity;
 import com.jaguarm.nauvismining.multiblock.MachineShape;
@@ -75,6 +78,7 @@ public final class NauvisMiningGameTests {
         TEST_TYPES.register("drill_breaks_as_one", () -> DrillBreaksAsOneTest.CODEC);
         TEST_TYPES.register("drill_field_is_walkable", () -> DrillFieldIsWalkableTest.CODEC);
         TEST_TYPES.register("drill_takes_no_shovel", () -> NoShovelSlotTest.CODEC);
+        TEST_TYPES.register("drill_mines_its_own_footprint", () -> DigAreaIsTheFootprintTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -92,6 +96,7 @@ public final class NauvisMiningGameTests {
         register(event, environment, "drill_breaks_as_one", DrillBreaksAsOneTest::new);
         register(event, environment, "drill_field_is_walkable", DrillFieldIsWalkableTest::new);
         register(event, environment, "drill_takes_no_shovel", NoShovelSlotTest::new);
+        register(event, environment, "drill_mines_its_own_footprint", DigAreaIsTheFootprintTest::new);
     }
 
     private interface TestFactory {
@@ -383,6 +388,100 @@ public final class NauvisMiningGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a drill has no shovel slot");
+        }
+    }
+
+    /**
+     * A drill mines the ground it stands on: two by two under a burner, three by three under an
+     * electric, and not one column more.
+     *
+     * <p>The first half is the claim a player can see. The second half is the one they cannot: the
+     * area hands out columns by index, ring by ring, and <b>an off-by-one in that arithmetic loses
+     * or repeats a column silently</b> - a drill would leave a strip of ore standing, or walk the
+     * same ground twice, and both look like a drill that is simply working. So every index of an
+     * area is walked and the set of columns it produces is compared with the rectangle it claims
+     * to be, at zero rings and again at two, where all four sides and the corners are in play.
+     */
+    public static class DigAreaIsTheFootprintTest extends GameTestInstance {
+
+        public static final MapCodec<DigAreaIsTheFootprintTest> CODEC =
+                RecordCodecBuilder.<DigAreaIsTheFootprintTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(DigAreaIsTheFootprintTest::info))
+                                .apply(i, DigAreaIsTheFootprintTest::new));
+
+        public DigAreaIsTheFootprintTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            checkFootprint(helper, MachineTier.BURNER, 2);
+            checkFootprint(helper, MachineTier.ELECTRIC, 3);
+            helper.succeed();
+        }
+
+        /** Places a drill and holds its area to the square the machine occupies. */
+        private static void checkFootprint(GameTestHelper helper, MachineTier tier, int side) {
+            // Two apart, so the burner's area cannot reach the electric one's blocks.
+            BlockPos at = tier == MachineTier.BURNER ? DRILL : DRILL.offset(6, 0, 0);
+            place(helper, at, tier);
+
+            MinerBlock block = ModBlocks.DRILLS.get(tier).get();
+            DigArea area = DigArea.of(block.shape(), helper.absolutePos(at), Direction.NORTH, 0);
+
+            helper.assertValueEqual(area.footprintWidth(), side, tier + " drill area width");
+            helper.assertValueEqual(area.footprintDepth(), side, tier + " drill area depth");
+            helper.assertValueEqual(area.columns(), side * side, tier + " drill area columns");
+
+            // The columns are the machine's own, block for block.
+            Set<BlockPos> machine = new HashSet<>();
+            for (int part = 0; part < block.shape().cellCount(); part++) {
+                BlockPos cell = block.shape().cellPos(helper.absolutePos(at), part, Direction.NORTH);
+                machine.add(new BlockPos(cell.getX(), 0, cell.getZ()));
+            }
+            for (DigArea.Column column : walk(helper, area)) {
+                helper.assertTrue(machine.contains(new BlockPos(column.x(), 0, column.z())),
+                        tier + " drill digs " + column + ", which is not a block of the machine");
+            }
+
+            // And the arithmetic, out where the rings are.
+            DigArea wide = DigArea.of(block.shape(), helper.absolutePos(at), Direction.NORTH, 2);
+            helper.assertValueEqual(wide.columns(), (side + 4) * (side + 4),
+                    tier + " drill columns at two rings");
+            Set<BlockPos> seen = new HashSet<>();
+            for (DigArea.Column column : walk(helper, wide)) {
+                helper.assertTrue(seen.add(new BlockPos(column.x(), 0, column.z())),
+                        "column " + column + " is handed out twice");
+                helper.assertTrue(
+                        column.x() >= wide.outerMinX() && column.x() <= wide.outerMaxX()
+                                && column.z() >= wide.outerMinZ() && column.z() <= wide.outerMaxZ(),
+                        "column " + column + " is outside the area it came from");
+            }
+            helper.assertValueEqual(seen.size(), wide.columns(),
+                    tier + " drill columns actually handed out");
+        }
+
+        /** Every column of an area, by the same 1-based index the machine walks. */
+        private static List<DigArea.Column> walk(GameTestHelper helper, DigArea area) {
+            List<DigArea.Column> columns = new java.util.ArrayList<>();
+            for (int index = 1; index <= area.columns(); index++) {
+                DigArea.Column column = area.column(index);
+                helper.assertTrue(column != null, "no column at index " + index);
+                columns.add(column);
+            }
+            helper.assertTrue(area.column(area.columns() + 1) == null,
+                    "the area handed out a column past its own end");
+            return columns;
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a drill mines the ground it stands on");
         }
     }
 }

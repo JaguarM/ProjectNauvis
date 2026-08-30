@@ -138,9 +138,12 @@ public class MinerMenu extends AbstractContainerMenu {
         return data.get(5);
     }
 
-    /** The machine's dig radius, synced so the client can draw the preview. */
-    public int range() {
-        return Math.max(1, data.get(6));
+    /**
+     * How many rings past its own footprint the machine works, synced so the client can draw the
+     * preview. Zero is the ordinary answer: a drill covers what it stands on.
+     */
+    public int extraRings() {
+        return Math.max(0, data.get(6));
     }
 
     public BlockPos machinePos() {

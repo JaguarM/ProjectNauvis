@@ -88,9 +88,10 @@ Mining
 ------
 
 - **The drills are quarries, not Factorio drills.** `nauvis_mining` is a fork of Neo Progressive
-  Automation and carries its behaviour: a drill digs *downwards* beneath itself in a spiral, has
-  three dig modes on a button, wants a pickaxe and fill material, and pushes what it finds into
-  any container beside it. Factorio's sits on an ore patch, takes the resource out of the tiles it
+  Automation and carries its behaviour: a drill digs *downwards*, has three dig modes on a button,
+  wants a pickaxe and fill material, and pushes what it finds into any container beside it. What is
+  no longer wrong is the area — it covers the ground it stands on, 2×2 or 3×3, rather than a radius
+  out of the config with the machine's own size playing no part. Factorio's sits on an ore patch, takes the resource out of the tiles it
   covers, needs nothing but fuel or power, and drops onto one output tile in front. The fork
   bought the ids; the behaviour is `NEXT.md`'s job 1 — all of it except the pickaxe, below.
 - **A block that insists on a shovel for its drops is skipped.** The shovel slot is gone — a
