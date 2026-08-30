@@ -16,7 +16,7 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and eight gametests pass, `./gradlew build` is clean, and the client boots into a world.
+A hundred and nine gametests pass, `./gradlew build` is clean, and the client boots into a world.
 Milestone 2 is done bar fast-replace; milestone 3 has its research half in, and five of its nine
 items — the steel line, green science and the medium pole, which between them give
 `steel-processing`, `science-pack-2` and `electric-energy-distribution-1` teeth. The big pole came
@@ -51,6 +51,7 @@ is an int like every other machine's.
 | `nauvis_research:science_pack_2` | green science — an inserter and a belt. The gate in front of the rest of milestone 3 |
 | `neoprogressivematerials:steel_plate` | five iron plates and thirty-five seconds |
 | `nauvis_research:technology` | 216 technologies, a synced datapack registry, generated. 25 are in the tree |
+| `/research` | grant, forget, start, stop, list, info, all, reset. Gamemaster only. **Grant and forget cascade** — grant brings the prerequisites, forget takes the dependants |
 | `neoprogressiveautomation:burner_drill` | 2×2, five blocks |
 | `neoprogressiveautomation:electric_drill` | 3×3, nine blocks; a half-block deck you walk over |
 
@@ -67,16 +68,38 @@ goes only when the pack can already do that job, which the build enforces.
 The jobs
 --------
 
-### 1. Fast-replace by tier — the rest of milestone 2
+### 1. The fast transport belt, and fast-replace — the rest of milestone 2
 
-A belt in hand already points the belt you click on the way you are facing, which is half of
-Factorio's belt-laying gesture. The other half is that a *faster* belt replaces a slower one, and it
-cannot be written until there is a second tier to hold. It is `BeltBlock.useItemOn`, and what
-changes is: swap the *block* rather than a property — which remakes the block entity, so
-`beltPlaced`/`beltRemoved` fire and `beltTurned` is not wanted on that path; carry the items across
-the block entity being remade, which will not happen for free; hand the old belt back and pay for
-the new one unless the player is in creative; and refuse to *downgrade*, or a stray click wrecks a
-bus. The run needs no thought — a run never spans two tiers, so the line splits and rejoins itself.
+**This is the next job, and it was wrongly listed as blocked.** It said fast-replace "cannot be
+written until there is a second tier to hold". The second tier is **five iron gear wheels and one
+transport belt** — no oil, no plastic, nothing the pack does not already make. Of the 214 mapped
+items, 65 are reachable with no oil anywhere in their tree; this is the one that closes a milestone.
+
+Three things make it the cheap one:
+
+- **the art is already drawn.** `make_belt_textures.py` has the red palette written out
+  (`A="#8d2a20", B="#d9483a"`) and `--all` renders it. `frame_schedule` derives the tread animation
+  from the speed in `data/mapping.json`, so 3.75 tiles a second needs no thought at all. Registering
+  the tier is one entry in `REGISTERED`;
+- **the block is numbers.** `BeltBlockEntity` holds no behaviour — the run does the work — so one
+  block entity type already covers every tier there will ever be, and says so;
+- **it retires a `GAPS.md` entry** rather than adding one: *two belt tiers meeting is two runs, not
+  one — correct, but there is only one tier, so it has never been looked at.*
+
+Then fast-replace, which is `BeltBlock.useItemOn`: swap the *block* rather than a property — which
+remakes the block entity, so `beltPlaced`/`beltRemoved` fire and `beltTurned` is not wanted on that
+path; carry the items across the block entity being remade, which will not happen for free; hand the
+old belt back and pay for the new one unless the player is in creative; and refuse to *downgrade*,
+or a stray click wrecks a bus. The run needs no thought — a run never spans two tiers, so the line
+splits and rejoins itself.
+
+**One thing to look up rather than remember.** The fast belt is behind `logistics-2`, which is not
+in the tree. Its prerequisites (`logistics`, `science-pack-2`) both are, so the graph is clean — but
+a research cost is identity under non-negotiable #1, `data/technologies.json` is hand-maintained and
+`reference/` carries recipes only. Its unit count, time and packs have to come from Factorio, not
+from memory.
+
+`fast-splitter` is the same shape and can follow; it is ten circuits, ten gears and a splitter.
 
 **There is no underground belt and there will not be a `pipe-to-ground`.** Factorio needs both
 because it is flat; this pack is the same game with a Y axis, so a belt crosses another by changing
@@ -120,6 +143,16 @@ an accumulator is five batteries — so the whole branch is behind oil processin
 milestone 5. The accumulator also wants `PowerNetwork`'s third case; see `GAPS.md`. Nothing is
 gained by shipping recipes for them before the fluids exist.
 
+**Oil blocks less than it looks like.** Sixty-five mapped items have no oil anywhere in their tree,
+and the ones with a technology already waiting for them are: `fast-inserter`, `assembling-machine-2`,
+`solar-panel`, `steel-furnace`, `radar`, `repair-pack` and `iron-stick`, plus the whole of
+`nauvis_military`, which has no mod yet. Of those, **the solar panel is the only one that adds a
+mechanic rather than a tier** — and it needs no accumulator to be worth building, because solar plus
+a boiler for the night is what Factorio itself does before accumulators exist. The steel furnace is
+the one to leave: it is oil-free but it forces a decision that comes before the block, which is
+whether this pack has a smelting machine of its own at all — `stone-furnace` stands in as
+`minecraft:furnace` today.
+
 ### 3. More removals follow the items
 
 The conflict half of `data/removals.json` is already waiting: the moment a mod ships a recipe for
@@ -131,8 +164,6 @@ steel, and the wall belongs to `nauvis_military`, which does not exist.
 Loose ends — small enough to finish in an afternoon
 ---------------------------------------------------
 
-- **`/research` command.** `ResearchState.forget` already exists and is used only by gametests. A
-  command to grant, forget and list would make the whole tree testable by hand.
 - **"No effect yet" on a research row.** 128 of the 216 technologies unlock nothing here. The row
   can say so; it is true, cheap, and the only mitigation for the one real trap in the tree.
 - **Tree polish, all optional.** No zoom (at 6×11 it fits a window), no search, no highlight of the
@@ -165,6 +196,10 @@ are Facrafting recipes now at Factorio's prices.
   hand-mine, hand-craft a lab and a boiler, research Automation, *then* automate anything;
 - and time it. The lab alone is ten circuits, ten gears and four belts by hand. If it drags, the
   lever is a trigger's count in `data/technologies.json`, not the machinery under it.
+
+**`/research`, first**, because it is what makes everything below reachable without playing
+forwards to it. `/research grant nauvis_research:solar_energy` puts the tree where you need it;
+`/research all` opens everything the pack can currently reach; `/research reset` puts it back.
 
 **The four poles**, which nobody has seen and which are the biggest visual change here.
 

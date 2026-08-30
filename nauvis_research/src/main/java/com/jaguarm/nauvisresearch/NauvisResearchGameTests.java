@@ -1,6 +1,7 @@
 package com.jaguarm.nauvisresearch;
 
 import java.util.List;
+import java.util.Set;
 
 import com.jaguarm.nauvisresearch.lab.LabBlock;
 import com.jaguarm.nauvisresearch.lab.LabBlockEntity;
@@ -97,6 +98,7 @@ public final class NauvisResearchGameTests {
         TEST_TYPES.register("lab_ignores_the_wrong_packs", () -> LabIgnoresTheWrongPacksTest.CODEC);
         TEST_TYPES.register("the_crafting_gate_is_installed", () -> CraftingGateIsInstalledTest.CODEC);
         TEST_TYPES.register("research_gates_the_early_machines", () -> ResearchGatesTheEarlyMachinesTest.CODEC);
+        TEST_TYPES.register("research_command_moves_the_tree", () -> ResearchCommandTest.CODEC);
         TEST_TYPES.register("a_trigger_finishes_research", () -> TriggerFinishesResearchTest.CODEC);
         TEST_TYPES.register("a_panel_craft_counts", () -> PanelCraftCountsTest.CODEC);
         TEST_TYPES.register("technology_layout_is_sound", () -> TechnologyLayoutTest.CODEC);
@@ -111,6 +113,25 @@ public final class NauvisResearchGameTests {
     static void registerTests(RegisterGameTestsEvent event) {
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(
                 Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "default"),
+                new TestEnvironmentDefinition.AllOf(List.of()));
+
+        /*
+         * A second environment, which is a second *batch*, which is the only way a test here can
+         * have the world's research to itself.
+         *
+         * <p>Padding separates blocks and nothing separates world state - one `ResearchState` is
+         * shared by every test in a run, and the tests in one batch run at the same time. Every
+         * other test here copes by naming technologies no other test names. `/research grant`
+         * cannot: it completes the prerequisites too, and every costed technology's chain runs
+         * back through `steam-power` and `automation`, which four other tests are researching.
+         * Completing one clears the current research, and `lab_researches` failed saying a lab
+         * had done no work, mentioning commands nowhere.
+         *
+         * <p>Batches run one after another, so a test alone in one cannot overlap anything. It
+         * still puts the tree back afterwards, for whatever batch comes next.
+         */
+        Holder<TestEnvironmentDefinition<?>> alone = event.registerEnvironment(
+                Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "alone"),
                 new TestEnvironmentDefinition.AllOf(List.of()));
 
         register(event, environment, "lab_is_ten_blocks", LabIsTenBlocksTest::new, 20);
@@ -128,6 +149,9 @@ public final class NauvisResearchGameTests {
         register(event, environment, "a_trigger_finishes_research", TriggerFinishesResearchTest::new, 20);
         register(event, environment, "a_panel_craft_counts", PanelCraftCountsTest::new, 20);
         register(event, environment, "technology_layout_is_sound", TechnologyLayoutTest::new, 20);
+
+        // Alone in its batch. See above.
+        register(event, alone, "research_command_moves_the_tree", ResearchCommandTest::new, 20);
     }
 
     private interface TestFactory {
@@ -674,7 +698,7 @@ public final class NauvisResearchGameTests {
 
             int before = Research.revision();
             Research.state(server).complete(steel);
-            Research.changedForTest(server);
+            Research.changedExternally(server);
 
             helper.assertTrue(Research.isUnlocked(server, steelPlate),
                     "steel plate is still locked after researching steel processing");
@@ -762,6 +786,100 @@ public final class NauvisResearchGameTests {
      * having done no work rather than anything about research. Logistics is nobody's current
      * research here. See {@link #research}.
      */
+    /**
+     * {@code /research} grants and forgets whole chains, and the tree it leaves is consistent.
+     *
+     * <p>Run through the dispatcher rather than by calling the command's methods, because half of
+     * what could be wrong is not in those methods: a command that never registered, an argument
+     * that will not parse a datapack registry key, a permission check that keeps the server's own
+     * source out. All three would leave every method here passing.
+     *
+     * <p>The claim worth asserting is the cascade. {@code grant automation-2} has to bring
+     * {@code steel-processing}, {@code science-pack-2}, {@code automation} and their prerequisites
+     * with it, and forgetting one of those has to take {@code automation-2} back out - a tree that
+     * says a technology is researched while its prerequisite is not is a state nothing else in the
+     * pack produces, so producing it here would make every odd screen afterwards have two causes.
+     *
+     * <p>Like every research test it names technologies no other test names, and puts the world
+     * back afterwards: one {@code SavedData} is shared by every test in the run. See PITFALLS.md.
+     */
+    public static class ResearchCommandTest extends GameTestInstance {
+
+        public static final MapCodec<ResearchCommandTest> CODEC =
+                RecordCodecBuilder.<ResearchCommandTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ResearchCommandTest::info))
+                                .apply(i, ResearchCommandTest::new));
+
+        public ResearchCommandTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            MinecraftServer server = helper.getLevel().getServer();
+            ResearchState state = Research.state(server);
+
+            ResourceKey<Technology> target = ModTechnologies.key("automation_2");
+            ResourceKey<Technology> steel = ModTechnologies.key("steel_processing");
+            ResourceKey<Technology> green = ModTechnologies.key("science_pack_2");
+
+            // **Snapshotted, not just cleared.** One SavedData is shared by every test in the
+            // run, and `grant` cascades - granting automation-2 completes automation, which is
+            // the technology lab_researches points a lab at. Forgetting only the three named
+            // below left that one researched and failed a test that mentions research nowhere.
+            // Putting the tree back exactly is the only cleanup that survives a command whose
+            // whole point is that it moves more than you named. See PITFALLS.md.
+            Set<ResourceKey<Technology>> before = Set.copyOf(state.completed());
+
+            List<ResourceKey<Technology>> mine = List.of(target, steel, green);
+            mine.forEach(state::forget);
+            Research.changedExternally(server);
+
+            run(server, "research grant " + target.identifier());
+
+            helper.assertTrue(state.isCompleted(target), "automation-2 after granting it");
+            helper.assertTrue(state.isCompleted(steel),
+                    "steel processing - grant is supposed to bring the prerequisites");
+            helper.assertTrue(state.isCompleted(green),
+                    "green science - grant is supposed to bring the prerequisites");
+
+            run(server, "research forget " + steel.identifier());
+
+            helper.assertFalse(state.isCompleted(steel), "steel processing after forgetting it");
+            helper.assertFalse(state.isCompleted(target),
+                    "automation-2 still researched after its prerequisite was forgotten - forget "
+                            + "is supposed to take the dependants with it");
+            // Green science does not depend on steel, so it stays. A forget that took the whole
+            // tree would pass every assertion above.
+            helper.assertTrue(state.isCompleted(green),
+                    "green science, which does not depend on steel processing, went with it");
+
+            for (ResourceKey<Technology> key : List.copyOf(state.completed())) {
+                if (!before.contains(key)) {
+                    state.forget(key);
+                }
+            }
+            before.forEach(state::complete);
+            Research.changedExternally(server);
+            helper.succeed();
+        }
+
+        /** Through the dispatcher, from the server's own source, which is a gamemaster. */
+        private static void run(MinecraftServer server, String command) {
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command);
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("research command moves the tree");
+        }
+    }
+
     public static class CraftingGateIsInstalledTest extends GameTestInstance {
 
         public static final MapCodec<CraftingGateIsInstalledTest> CODEC =
@@ -781,7 +899,7 @@ public final class NauvisResearchGameTests {
             ResourceKey<Recipe<?>> belt = recipe("nauvis_logistics", "transport_belt");
 
             Research.state(server).forget(logistics);
-            Research.changedForTest(server);
+            Research.changedExternally(server);
 
             Player player = helper.makeMockServerPlayer(GameType.SURVIVAL);
 
@@ -801,13 +919,13 @@ public final class NauvisResearchGameTests {
                     "a belt, which no technology unlocks, is locked");
 
             Research.state(server).complete(logistics);
-            Research.changedForTest(server);
+            Research.changedExternally(server);
             helper.assertTrue(RecipeLocks.isUnlocked(player, splitter),
                     "the splitter is still locked after researching Logistics");
 
             // Put it back: research is per-world and this world is shared with every other test.
             Research.state(server).forget(logistics);
-            Research.changedForTest(server);
+            Research.changedExternally(server);
             helper.succeed();
         }
 
@@ -855,7 +973,7 @@ public final class NauvisResearchGameTests {
             ResourceKey<Recipe<?>> drill = recipe("neoprogressiveautomation", "electric_drill");
 
             Research.state(server).forget(drillTech);
-            Research.changedForTest(server);
+            Research.changedExternally(server);
 
             helper.assertFalse(Research.isUnlocked(server, drill),
                     "the electric drill is craftable with nothing researched");
@@ -874,12 +992,12 @@ public final class NauvisResearchGameTests {
             }
 
             Research.state(server).complete(drillTech);
-            Research.changedForTest(server);
+            Research.changedExternally(server);
             helper.assertTrue(Research.isUnlocked(server, drill),
                     "the electric drill is still locked after researching it");
 
             Research.state(server).forget(drillTech);
-            Research.changedForTest(server);
+            Research.changedExternally(server);
             helper.succeed();
         }
 
@@ -933,7 +1051,7 @@ public final class NauvisResearchGameTests {
             ResearchState state = Research.state(server);
             state.forget(steam);
             state.recordMade(trigger.item(), -state.made(trigger.item()));
-            Research.changedForTest(server);
+            Research.changedExternally(server);
 
             helper.assertFalse(Research.isUnlocked(server, boiler),
                     "the boiler is craftable before steam power");
@@ -1044,7 +1162,7 @@ public final class NauvisResearchGameTests {
                 // Put it back: research is per-world and this world is shared with every other
                 // test in the run.
                 state.recordMade(trigger.item(), before - state.made(trigger.item()));
-                Research.changedForTest(server);
+                Research.changedExternally(server);
             }
             helper.succeed();
         }

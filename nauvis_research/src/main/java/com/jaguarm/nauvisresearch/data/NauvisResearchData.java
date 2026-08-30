@@ -115,6 +115,45 @@ public final class NauvisResearchData {
 
             add("message.nauvis_research.research_complete", "Research complete: %s");
 
+            // /research. A testing command, so the strings say what happened and how much of it -
+            // grant and forget both cascade, and a cascade that did more than you expected has to
+            // say so at the time rather than in a screen you look at afterwards.
+            add("commands.nauvis_research.research.unknown", "No technology called %s");
+            add("commands.nauvis_research.research.counts",
+                    "Research: %s done, %s in progress, %s available, %s locked");
+            add("commands.nauvis_research.research.names", "%s");
+            add("commands.nauvis_research.research.none", "(none)");
+            add("commands.nauvis_research.research.state.done", "researched");
+            add("commands.nauvis_research.research.state.current", "in progress");
+            add("commands.nauvis_research.research.state.available", "available");
+            add("commands.nauvis_research.research.state.locked", "locked");
+            add("commands.nauvis_research.research.info.name", "%s (%s)");
+            add("commands.nauvis_research.research.info.state", "State: %s");
+            add("commands.nauvis_research.research.info.cost", "Cost: %s x %ss of %s");
+            add("commands.nauvis_research.research.info.no_packs", "no packs");
+            add("commands.nauvis_research.research.info.trigger", "Trigger: make %s x %s (%s so far)");
+            // Not an error and not a caveat: most of the tree is in this state and will be until
+            // the science packs above red exist. A lab pointed at one would sit still for ever.
+            add("commands.nauvis_research.research.info.unbuildable",
+                    "Not researchable: a science pack it wants is not a registered item");
+            add("commands.nauvis_research.research.info.prerequisites", "Needs: %s");
+            add("commands.nauvis_research.research.info.unlocks", "Unlocks: %s");
+            add("commands.nauvis_research.research.info.none", "nothing");
+            add("commands.nauvis_research.research.granted", "Researched %s and what it needed (%s technologies)");
+            add("commands.nauvis_research.research.already", "%s and everything it needs are already researched");
+            add("commands.nauvis_research.research.forgot", "Forgot %s and what depends on it (%s technologies)");
+            add("commands.nauvis_research.research.not_researched", "%s is not researched");
+            add("commands.nauvis_research.research.started", "Now researching %s");
+            add("commands.nauvis_research.research.cannot_start",
+                    "%s cannot be researched now - it is done, its prerequisites are not, or it "
+                            + "finishes on a trigger rather than in a lab");
+            add("commands.nauvis_research.research.stopped", "Stopped researching");
+            add("commands.nauvis_research.research.nothing", "Nothing is being researched");
+            add("commands.nauvis_research.research.all", "Researched everything reachable (%s technologies)");
+            add("commands.nauvis_research.research.nothing_available", "Nothing is available to research");
+            add("commands.nauvis_research.research.reset", "Forgot every technology (%s)");
+            add("commands.nauvis_research.research.nothing_researched", "Nothing is researched");
+
             // The key, and the category it lives under in the controls screen.
             add("key.nauvis_research.open_research", "Open technology screen");
 

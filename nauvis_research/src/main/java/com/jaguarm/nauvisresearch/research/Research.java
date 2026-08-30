@@ -225,10 +225,14 @@ public final class Research {
     }
 
     /**
-     * The {@link #changed} half of a completion, for a gametest that finished a technology by
-     * writing the state directly rather than by running a lab for ten minutes.
+     * The {@link #changed} half of a change somebody made by writing the state directly.
+     *
+     * <p>Two callers, and they want the same thing: a gametest that finished a technology rather
+     * than running a lab for ten minutes, and {@code /research}, which is a gametest a person
+     * runs. Both move {@link ResearchState} through its own methods and then have to say so, or
+     * every client goes on drawing the tree it last heard about.
      */
-    public static void changedForTest(MinecraftServer server) {
+    public static void changedExternally(MinecraftServer server) {
         changed(server);
     }
 

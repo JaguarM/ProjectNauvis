@@ -116,6 +116,15 @@ Gametests
   `lab_researches` was researching `automation`. The red test said *a lab had done no work* and
   mentioned research nowhere. Padding separates blocks and nothing separates world state — so every
   test that touches research resets what it uses and names a technology no other test names.
+- **Naming technologies nobody else names stops working the moment something cascades.** The rule
+  above holds for a test that completes one technology. `/research grant` completes the
+  prerequisites too, and every costed technology's chain runs back through `steam-power` and
+  `automation`, which four other tests are researching — so `lab_researches` failed saying a lab
+  had done no work, mentioning commands nowhere, exactly as it had before. **A second
+  `TestEnvironmentDefinition` is a second batch, and batches run one after another**, so a test
+  that must own the world's state goes in one of its own. `nauvis_research:alone` holds one test.
+  Restoring the tree afterwards is still needed, for whatever batch runs next; snapshot the
+  completed set and put it back, because a test cannot clean up what it did not know it changed.
 - **`GameTestHelper.spawnItem(Item, BlockPos)` spawns at the block's corner, not its middle**, so an
   item over a one-block-wide thing hangs half off it. Use the `(float, float, float)` overload.
 - **`GameTestServer` force-enables every datapack, including ones shipped switched off.** Vanilla

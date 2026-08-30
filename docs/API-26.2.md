@@ -41,6 +41,8 @@ Confirmed renames and signature changes
 | `Level.isClientSide` (field) | private — `level.isClientSide()` |
 | `Blocks.YELLOW_TERRACOTTA` and every other dyed block | **gone.** They are `ColorCollection`s: `Blocks.DYED_TERRACOTTA.pick(DyeColor.YELLOW)`. Same for wool, concrete, glass and the rest |
 | `new ChunkPos(BlockPos)` | **gone.** `ChunkPos` is a record of two ints: `new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4)` |
+| `Commands` permission levels | **`requires(source -> source.hasPermission(2))` is gone.** It is `requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))` — the `LEVEL_*` constants are `PermissionCheck` objects rather than ints, and `CommandSourceStack` has no `hasPermission`. `LEVEL_GAMEMASTERS` is what `/time` and `/gamemode` use |
+| Datapack registry command arguments | `ResourceKeyArgument.key(REGISTRY)` parses and suggests one, for a synced datapack registry as well as a built-in; `ResourceKeyArgument.getRegistryKey` gets it back out. It parses **any** identifier, so a key nothing registered reaches the command and has to be rejected there |
 | `TextureMapping#put(TextureSlot, ResourceLocation)` | takes a **`Material`** — `net.minecraft.client.resources.model.sprite.Material`, not the `resources.model` one. `TextureMapping.getBlockTexture` returns one; for a texture of your own that no block is named after, `new Material(Identifier.fromNamespaceAndPath(modid, "block/<name>"))` |
 
 Other confirmed details:
