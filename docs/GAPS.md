@@ -37,10 +37,10 @@ Belts
   every test in this repo.** Stand on one during a playtest; it is the only instrument there is.
 - **A belt does not turn you as it carries you.** An entity on a corner is pushed the way that block
   faces, so a bend is two straight shoves rather than an arc. Items do curve.
-- **A belt upgraded in place keeps its facing, and Factorio's would take the one in your hand.**
-  Deliberate: turning and upgrading are the same button here, and a red belt run along a line with
-  a corner in it would silently straighten the corner. Downgrading is refused for the same reason.
-- **An upgrade is one belt per click.** Factorio has an upgrade planner that does a whole line at
+- **A belt in hand re-points the belt it replaces**, which is Factorio's fast-replace and is worth
+  knowing before you walk a line with one: upgrading a corner points it wherever you were looking,
+  so a bus is upgraded by walking *along* it. Turning and replacing are one gesture on purpose.
+- **A replacement is one belt per click.** Factorio has an upgrade planner that does a whole line at
   once; here you walk the line with a belt in hand, which is the same gesture laying one takes.
 - **Client and server runs can differ at a chunk edge**, because a client only has the belts in its
   loaded chunks. It costs a belt at the very edge of the loaded world appearing to back up when it

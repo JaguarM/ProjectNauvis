@@ -202,26 +202,29 @@ public abstract class BeltBlock extends BaseEntityBlock {
     }
 
     /**
-     * A belt in hand turns the belt you click on, a quarter at a time.
+     * <b>A belt in hand puts that belt here, pointing the way you are facing.</b>
      *
-     * <p>Laying a line means getting a lot of belts pointing the right way, and the alternative is
-     * breaking one and putting it back - which drops what was on it and, halfway along a line,
-     * cuts the line in two to do it. Turning is what Factorio gives you and it is what the belt in
-     * your hand is already for.
+     * <p>One rule, and it is Factorio's fast-replace. Whatever belt is in your hand becomes the
+     * belt under the cursor - a faster one, a slower one, or the same one turned - and it points
+     * the way a belt you had placed there would have pointed. So laying a line, fixing a line and
+     * upgrading a line are the same gesture, and running a belt along a row you have already built
+     * rewrites the lot to face the way you are walking.
+     *
+     * <p>The alternative for any of those is breaking a belt and putting it back, which drops what
+     * was on it and, halfway along a line, cuts the line in two to do it.
      *
      * <p><b>Crouch to place instead.</b> That needs no code: vanilla skips a block's own use when
      * the player is crouching with something in hand, and falls through to putting the block down
      * - see {@code ServerPlayerGameMode.useItemOn}. So the two things you want to do with a belt in
      * your hand are the two things the same button already does.
      *
-     * <p><b>It points the way a belt you placed there would have pointed</b> - the way you are
-     * facing - rather than turning by a quarter each click. So laying a line and fixing a line are
-     * the same action with the same result, and running a belt in hand along a row you have already
-     * built rewrites the lot to face the way you are walking, which is how a belt gets laid.
+     * <h2>Two implementations of the one rule</h2>
      *
-     * <p><b>A faster belt replaces instead of turning</b> - see {@link #upgrade}. That is the other
-     * half of the same gesture: running a red belt along a yellow line upgrades the lot, exactly as
-     * running a yellow one along it re-points the lot.
+     * <p><b>The same belt is a state change</b>, which keeps the block entity and so keeps what is
+     * standing on it for free. Only {@link BeltLines#beltTurned} has to be told, because nothing
+     * else notices: no block entity was removed, so neither hook that maintains the graph fired.
+     *
+     * <p><b>A different belt is a new block</b>, which is a different job - see {@link #replace}.
      */
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
@@ -233,13 +236,14 @@ public abstract class BeltBlock extends BaseEntityBlock {
             return InteractionResult.SUCCESS;
         }
 
-        if (held.speed() > speed()) {
-            return upgrade(server, state, pos, player, stack, held);
+        Direction placed = player.getDirection();
+        if (held != state.getBlock()) {
+            return replace(server, state, pos, player, stack, held, placed);
         }
 
-        Direction placed = player.getDirection();
         if (placed == state.getValue(FACING)) {
-            // Already pointing that way. Saying so costs a graph rebuild and a sound.
+            // The same belt, already pointing that way: this click asks for nothing. Saying so
+            // costs a graph rebuild and a sound.
             return InteractionResult.SUCCESS;
         }
         server.setBlock(pos, withShape(state.setValue(FACING, placed), server, pos), Block.UPDATE_ALL);
@@ -258,20 +262,24 @@ public abstract class BeltBlock extends BaseEntityBlock {
     }
 
     /**
-     * Replaces this belt with a faster one, keeping the line and everything standing on it.
+     * Puts a belt of another tier here, keeping the line and everything standing on it.
      *
      * <p>Factorio's fast-replace, and the reason a bus is ever upgraded rather than rebuilt: you
-     * run a red belt along a yellow line and the line becomes red under you, still pointing the way
-     * it pointed, still carrying what it was carrying. Doing it by breaking and re-placing costs a
-     * dropped item for every belt and cuts the line in two while you do it.
+     * run a red belt along a yellow line and the line becomes red under you, still carrying what it
+     * was carrying, pointing where you are walking. Doing the same by breaking and re-placing costs
+     * a dropped item for every belt and cuts the line in two while you do it.
      *
-     * <h2>Five things it has to get right</h2>
+     * <p><b>Either way up.</b> A slower belt replaces a faster one exactly as readily, which is
+     * Factorio's rule: a belt in hand is a belt you are placing, and refusing half of that would
+     * make the gesture something you have to think about.
+     *
+     * <h2>Three things it has to get right</h2>
      *
      * <p><b>The block is swapped, not a property set.</b> Speed is a fact about the block - see the
-     * class note - so an upgrade is a different block, which destroys the block entity and builds
-     * another. That is what {@link BeltLines#beltRemoved} and {@link BeltLines#beltPlaced} are for
-     * and they fire on their own, so {@code beltTurned} is wrong on this path: it is for the case
-     * where the block entity <em>survives</em> and nothing else would notice.
+     * class note - so another tier is another block, which destroys the block entity and builds a
+     * new one. {@link BeltLines#beltRemoved} and {@link BeltLines#beltPlaced} fire on their own for
+     * that, so {@code beltTurned} is wrong here: it exists for the case where the block entity
+     * <em>survives</em> and nothing else would notice.
      *
      * <p><b>The load is carried across by hand.</b> Nothing does it for free, and the default is
      * worse than nothing: replacing the block runs {@code preRemoveSideEffects}, which spills what
@@ -279,37 +287,27 @@ public abstract class BeltBlock extends BaseEntityBlock {
      * the new one after - see {@link BeltBlockEntity#takeCargo}. The rest of the line is untouched,
      * because every item on it is pinned to the block it is standing on.
      *
-     * <p><b>The facing is kept, and this is the one place the belt-in-hand rule does not apply.</b>
-     * Turning takes the way the player is looking, because pointing a belt is what that gesture is
-     * for. Upgrading must not: a player walking a red belt along a line is saying <em>faster</em>,
-     * not <em>this way</em>, and a line with a corner in it would be silently straightened - which
-     * breaks it where it is least visible. The bend is re-read rather than copied, because the belt
-     * behind this one is a different block now and so is no longer a feeder.
-     *
      * <p><b>It is paid for.</b> One belt off the stack, the old one back in the player's hands,
      * unless they are in creative - the same trade breaking and re-placing would have made.
      *
-     * <p><b>And it never downgrades.</b> A slower belt in hand falls through to turning, which
-     * leaves the line's speed alone. Factorio allows the downgrade; here a bus is a thing a player
-     * walks along with a belt in hand, and one stray click that quietly halves a main line is worth
-     * more than the convenience.
+     * <p>The bend is worked out afresh rather than copied over, because the belts either side of
+     * this one may be a different block now and a run only follows one tier: a belt of another tier
+     * feeds this one at a seam, and a seam is not drawn as a corner.
      */
-    private InteractionResult upgrade(ServerLevel level, BlockState state, BlockPos pos, Player player,
-            ItemStack stack, BeltBlock faster) {
+    private InteractionResult replace(ServerLevel level, BlockState state, BlockPos pos, Player player,
+            ItemStack stack, BeltBlock tier, Direction facing) {
         List<BeltBlockEntity.Cargo> carried = level.getBlockEntity(pos) instanceof BeltBlockEntity belt
                 ? belt.takeCargo()
                 : List.of();
 
-        BlockState upgraded = faster.defaultBlockState().setValue(FACING, state.getValue(FACING));
-        level.setBlock(pos, withShape(upgraded, level, pos), Block.UPDATE_ALL);
+        BlockState placed = tier.defaultBlockState().setValue(FACING, facing);
+        level.setBlock(pos, withShape(placed, level, pos), Block.UPDATE_ALL);
 
         if (level.getBlockEntity(pos) instanceof BeltBlockEntity fresh) {
             fresh.giveCargo(carried);
         }
 
-        // As after a turn: the belts either side may have stopped being corners, or started, and
-        // a tier boundary is never a corner - the two belts are different blocks, so neither
-        // feeds the other in the sense a bend is drawn from.
+        // As after a turn: the belts either side may have stopped being corners, or started.
         refreshShapes(level, pos);
 
         if (!player.hasInfiniteMaterials()) {
@@ -317,7 +315,7 @@ public abstract class BeltBlock extends BaseEntityBlock {
             player.getInventory().placeItemBackInInventory(new ItemStack(state.getBlock()));
         }
 
-        SoundType sound = upgraded.getSoundType(level, pos, player);
+        SoundType sound = placed.getSoundType(level, pos, player);
         level.playSound(null, pos, sound.getPlaceSound(), SoundSource.BLOCKS,
                 sound.getVolume() * 0.6F, sound.getPitch());
         return InteractionResult.SUCCESS;

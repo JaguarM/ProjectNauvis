@@ -230,11 +230,12 @@ hand off at the seam without a line of code saying so, and speed is a constant o
 tier is a class, a palette and an entry in `data/mapping.json`. One block entity type covers every
 tier there will ever be.
 
-**And a faster belt in hand replaces the belt it is clicked on**, which is how Factorio upgrades a
-bus and the last piece of milestone 2. The block is swapped rather than a property set — so the run
-is rebuilt by the hooks that already maintain the graph — the facing is kept where a same-tier click
-would take the player's, what was standing on the belt comes across rather than falling on the
-floor, the old belt is handed back, and a *slower* belt in hand never downgrades one.
+**And a belt in hand puts that belt there, pointing the way you are facing**, whichever tier it is —
+Factorio's fast-replace, and the last piece of milestone 2. One rule with two implementations: the
+same belt is a state change, which keeps the block entity and so keeps its load for free, while
+another tier is a new block, which the graph hooks already handle. What does not come free is the
+load, which is lifted before the swap because replacing a block spills it, and the payment — one
+belt off the stack, the old one handed back.
 
 **No `underground-belt`, and no `pipe-to-ground` in milestone 4.** Factorio needs them because it
 is flat: two belts that must cross have nowhere to go but under. This pack is the same game with a

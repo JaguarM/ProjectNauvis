@@ -41,7 +41,7 @@ is an int like every other machine's.
 | `nauvis_machines:assembling_machine_1` | 3×3, ten blocks; recipe selector, six slots, timed craft, screen, 10 FE/t |
 | `nauvis_logistics:transport_belt` | half a block, walked over; a run is one object however long, two lanes, visible items, carries you |
 | `nauvis_logistics:fast_transport_belt` | the same at 3.75 tiles a second, in red. Five gears and a belt, behind `logistics-2` |
-| a belt in hand | points the belt you click. A **faster** one replaces it instead, keeping the facing and the load, and pays for it |
+| a belt in hand | **puts that belt there, pointing the way you face** — another tier swaps the block, keeps the load and pays for it. Factorio's fast-replace, either way up |
 | `nauvis_logistics:splitter` | 2×1 and directional; 50/50 per lane, overflows to the open side, sleeps when empty |
 | `nauvis_logistics:burner_inserter` | takes behind, gives in front, 30-tick swing, fuel slot. Fuels itself off the belt it unloads |
 | `nauvis_logistics:inserter` | the same on 2 FE/t and a 24-tick swing. No slot, so no screen |
@@ -216,11 +216,13 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
 
 **The red belt and fast-replace**, which are new and which nothing in this repo can judge.
 
-- lay a yellow line, then walk it with red belts in hand and click each one. **Whether that reads as
-  upgrading a line rather than as breaking it** is the whole question — the belt under you changes
-  colour, keeps its direction and keeps what was on it, and you get the yellow one back;
-- click a belt that is turning a corner. The corner must survive, which is why an upgrade keeps the
-  facing where a turn takes yours;
+- lay a yellow line, then walk *along* it with red belts in hand and click each one. **Whether that
+  reads as upgrading a line rather than as breaking it** is the whole question — the belt under you
+  changes colour, points where you are walking and keeps what was on it, and you get the yellow one
+  back;
+- click a belt that is turning a corner, from the side. It will point where you are looking, because
+  a belt in hand places a belt — so upgrading a corner is done from along the line, not across it.
+  **Whether that reads as Factorio or as a trap is the thing to judge**;
 - run a yellow line into a red one and watch the join. The two are two runs and items cross at the
   seam; whether the tread's change of pace reads as intended or as a stutter is a thing to look at;
 - stand on a red belt. It carries at twice the speed, and half a block is still half a block;

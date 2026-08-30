@@ -64,7 +64,7 @@ Blocks and multi-blocks
   with it and decide about each one.**
 - **Replacing one block with another empties the old block entity onto the floor.**
   `LevelChunk.setBlockState` calls `preRemoveSideEffects` whenever the block itself changes, so an
-  in-place upgrade - a belt swapped for a faster one - drops what the belt was carrying as items,
+  in-place replacement - a belt swapped for another tier - drops what the belt was carrying as items,
   which reads as correct because nothing is *lost*. It is still wrong: the load ends up on the
   ground instead of on the belt. Take it off before the swap and give it back after. And the giving
   back has to go through the same route a chunk load uses, because **a block entity built by

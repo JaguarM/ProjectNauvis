@@ -118,9 +118,8 @@ public final class NauvisLogisticsBeltGameTests {
         TEST_TYPES.register("belt_bends_the_way_it_carries", () -> BendsTheWayItCarriesTest.CODEC);
         TEST_TYPES.register("belt_turns_when_clicked_with_a_belt", () -> TurnsWhenClickedTest.CODEC);
         TEST_TYPES.register("fast_belt_moves_at_its_declared_speed", () -> FastBeltSpeedTest.CODEC);
-        TEST_TYPES.register("belt_upgrades_when_clicked_with_a_faster_belt",
-                () -> UpgradesWhenClickedTest.CODEC);
-        TEST_TYPES.register("belt_is_not_downgraded_by_a_slower_belt", () -> NotDowngradedTest.CODEC);
+        TEST_TYPES.register("belt_is_replaced_by_another_tier", () -> ReplacedByAnotherTierTest.CODEC);
+        TEST_TYPES.register("belt_is_replaced_by_a_slower_belt", () -> ReplacedByASlowerBeltTest.CODEC);
         TEST_TYPES.register("belt_tiers_meet_as_two_runs", () -> TiersMeetTest.CODEC);
         TEST_TYPES.register("inserter_loads_a_belt", () -> InserterLoadsABeltTest.CODEC);
         TEST_TYPES.register("inserter_takes_from_a_belt", () -> InserterTakesFromABeltTest.CODEC);
@@ -173,10 +172,10 @@ public final class NauvisLogisticsBeltGameTests {
                 TurnsWhenClickedTest::new, 60);
         register(event, environment, "fast_belt_moves_at_its_declared_speed",
                 FastBeltSpeedTest::new, 200);
-        register(event, environment, "belt_upgrades_when_clicked_with_a_faster_belt",
-                UpgradesWhenClickedTest::new, 60);
-        register(event, environment, "belt_is_not_downgraded_by_a_slower_belt",
-                NotDowngradedTest::new, 60);
+        register(event, environment, "belt_is_replaced_by_another_tier",
+                ReplacedByAnotherTierTest::new, 60);
+        register(event, environment, "belt_is_replaced_by_a_slower_belt",
+                ReplacedByASlowerBeltTest::new, 60);
         register(event, environment, "belt_tiers_meet_as_two_runs", TiersMeetTest::new, 200);
         register(event, environment, "inserter_loads_a_belt", InserterLoadsABeltTest::new, 200);
         register(event, environment, "inserter_takes_from_a_belt", InserterTakesFromABeltTest::new, 200);
@@ -1115,22 +1114,22 @@ public final class NauvisLogisticsBeltGameTests {
     }
 
     /**
-     * Fast-replace: a faster belt in hand upgrades the belt it is clicked on.
+     * Fast-replace: a belt of another tier in hand becomes the belt you clicked on.
      *
      * <p>Four claims, and all four are things that would go wrong quietly. The block is swapped
-     * rather than a property set; the facing is <em>kept</em>, unlike the turn this same button
-     * does with a belt of the same tier, so a line with a corner in it is not silently
-     * straightened; what was standing on the belt is still standing on it afterwards rather than
-     * on the floor; and it is paid for, one belt off the stack and the old one back.
+     * rather than a property set; it points the way the player is facing, exactly as it would have
+     * done if they had placed it on bare ground; what was standing on the belt is still standing on
+     * it afterwards rather than on the floor; and it is paid for, one belt off the stack and the
+     * old one back.
      */
-    public static class UpgradesWhenClickedTest extends GameTestInstance {
+    public static class ReplacedByAnotherTierTest extends GameTestInstance {
 
-        public static final MapCodec<UpgradesWhenClickedTest> CODEC =
-                RecordCodecBuilder.<UpgradesWhenClickedTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(UpgradesWhenClickedTest::info))
-                                .apply(i, UpgradesWhenClickedTest::new));
+        public static final MapCodec<ReplacedByAnotherTierTest> CODEC =
+                RecordCodecBuilder.<ReplacedByAnotherTierTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ReplacedByAnotherTierTest::info))
+                                .apply(i, ReplacedByAnotherTierTest::new));
 
-        public UpgradesWhenClickedTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+        public ReplacedByAnotherTierTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
             super(info);
         }
 
@@ -1141,16 +1140,17 @@ public final class NauvisLogisticsBeltGameTests {
             helper.runAfterDelay(SETTLED, () -> {
                 helper.assertValueEqual(runAt(helper, TAIL).blocks().size(), 3, "belts in the line");
                 // On the head of the line, which has nothing beyond it, so the item stays where it
-                // is put and this test is about the upgrade rather than about timing.
+                // is put and this test is about the replacement rather than about timing.
                 put(belt(helper, head, Direction.NORTH), Items.IRON_INGOT, 1);
 
-                // Clicked by a player looking south. A belt of the same tier would have turned it
-                // to face south; this one must not.
+                // Clicked by a player looking south, so it ends up facing south - a belt in hand
+                // places a belt, and the tier is the only thing that makes this path different
+                // from turning one.
                 ItemStack held = new ItemStack(ModItems.FAST_TRANSPORT_BELT.get(), 2);
                 Player player = click(helper, head, held, Direction.SOUTH);
 
                 helper.assertBlockPresent(ModBlocks.FAST_TRANSPORT_BELT.get(), head);
-                helper.assertBlockProperty(head, BeltBlock.FACING, Direction.EAST);
+                helper.assertBlockProperty(head, BeltBlock.FACING, Direction.SOUTH);
                 helper.assertValueEqual(held.getCount(), 1, "fast belts left in hand");
                 helper.assertValueEqual(carrying(player, ModItems.TRANSPORT_BELT.get()), 1,
                         "belts handed back for the one replaced");
@@ -1159,11 +1159,11 @@ public final class NauvisLogisticsBeltGameTests {
                 // placement costs - see SETTLED.
                 helper.runAfterDelay(SETTLED, () -> {
                     helper.assertValueEqual(runAt(helper, TAIL).blocks().size(), 2,
-                            "belts left on the slow line behind the upgrade");
-                    BeltRun upgraded = runAt(helper, head);
-                    helper.assertValueEqual(upgraded.blocks().size(), 1, "belts in the upgraded run");
-                    helper.assertValueEqual(upgraded.itemCount(), 1,
-                            "items still standing where they stood before the upgrade");
+                            "belts left on the slow line behind the replacement");
+                    BeltRun replaced = runAt(helper, head);
+                    helper.assertValueEqual(replaced.blocks().size(), 1, "belts in the new run");
+                    helper.assertValueEqual(replaced.itemCount(), 1,
+                            "items still standing where they stood before the replacement");
                     // The one failure this whole path exists to avoid: replacing the block runs
                     // preRemoveSideEffects, which spills what is standing on a belt.
                     helper.assertItemEntityNotPresent(Items.IRON_INGOT, head, 2.0);
@@ -1179,26 +1179,26 @@ public final class NauvisLogisticsBeltGameTests {
 
         @Override
         protected MutableComponent typeDescription() {
-            return Component.literal("a faster belt in hand upgrades a belt");
+            return Component.literal("a belt of another tier in hand replaces a belt");
         }
     }
 
     /**
-     * And a slower belt in hand never downgrades one.
+     * And it goes down as readily as up.
      *
-     * <p>Factorio allows the downgrade; this pack does not, because a bus is a thing a player walks
-     * along with a belt in hand and one stray click that quietly halves a main line costs more than
-     * the convenience. What a slower belt still does is point the belt, which is the ordinary
-     * belt-in-hand rule and leaves the line's speed alone.
+     * <p>Factorio's rule, and the reason to have it is that the alternative is a gesture with a
+     * condition on it: a belt in hand is a belt you are placing, whichever belt it is. A downgrade
+     * is the same code path as an upgrade, so what this pins is the decision rather than the
+     * mechanism.
      */
-    public static class NotDowngradedTest extends GameTestInstance {
+    public static class ReplacedByASlowerBeltTest extends GameTestInstance {
 
-        public static final MapCodec<NotDowngradedTest> CODEC =
-                RecordCodecBuilder.<NotDowngradedTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(NotDowngradedTest::info))
-                                .apply(i, NotDowngradedTest::new));
+        public static final MapCodec<ReplacedByASlowerBeltTest> CODEC =
+                RecordCodecBuilder.<ReplacedByASlowerBeltTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ReplacedByASlowerBeltTest::info))
+                                .apply(i, ReplacedByASlowerBeltTest::new));
 
-        public NotDowngradedTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+        public ReplacedByASlowerBeltTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
             super(info);
         }
 
@@ -1209,16 +1209,23 @@ public final class NauvisLogisticsBeltGameTests {
                 ItemStack held = new ItemStack(ModItems.TRANSPORT_BELT.get(), 2);
                 Player player = click(helper, TAIL.east(), held, Direction.EAST);
 
-                helper.assertBlockPresent(ModBlocks.FAST_TRANSPORT_BELT.get(), TAIL.east());
-                helper.assertValueEqual(held.getCount(), 2, "belts left in hand");
-                helper.assertValueEqual(carrying(player, ModItems.FAST_TRANSPORT_BELT.get()), 0,
-                        "fast belts handed back");
+                helper.assertBlockPresent(ModBlocks.TRANSPORT_BELT.get(), TAIL.east());
+                helper.assertBlockProperty(TAIL.east(), BeltBlock.FACING, Direction.EAST);
+                helper.assertValueEqual(held.getCount(), 1, "belts left in hand");
+                helper.assertValueEqual(carrying(player, ModItems.FAST_TRANSPORT_BELT.get()), 1,
+                        "fast belts handed back for the one replaced");
 
-                // It still points it, which is the whole of what a slower belt in hand does here.
-                click(helper, TAIL.east(), belt(), Direction.SOUTH);
-                helper.assertBlockPresent(ModBlocks.FAST_TRANSPORT_BELT.get(), TAIL.east());
-                helper.assertBlockProperty(TAIL.east(), BeltBlock.FACING, Direction.SOUTH);
-                helper.succeed();
+                helper.runAfterDelay(SETTLED, () -> {
+                    // One yellow belt between two red ones is three runs, because a run follows
+                    // one tier.
+                    helper.assertValueEqual(runAt(helper, TAIL).blocks().size(), 1,
+                            "belts in the fast run behind");
+                    helper.assertValueEqual(runAt(helper, TAIL.east()).blocks().size(), 1,
+                            "belts in the slow one put in the middle of it");
+                    helper.assertValueEqual(runAt(helper, TAIL.east(2)).blocks().size(), 1,
+                            "belts in the fast run beyond");
+                    helper.succeed();
+                });
             });
         }
 
@@ -1229,7 +1236,7 @@ public final class NauvisLogisticsBeltGameTests {
 
         @Override
         protected MutableComponent typeDescription() {
-            return Component.literal("a slower belt in hand does not downgrade a belt");
+            return Component.literal("a slower belt in hand replaces a belt too");
         }
     }
 
