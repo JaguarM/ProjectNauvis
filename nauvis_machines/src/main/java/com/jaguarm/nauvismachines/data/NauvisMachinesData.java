@@ -91,6 +91,11 @@ public final class NauvisMachinesData {
             add("screen.nauvis_machines.assembler.unknown", "Making something this client has not been told about");
             add("screen.nauvis_machines.assembler.no_power", "No power - run a wire to it");
             add("screen.nauvis_machines.assembler.wants", "Wants %s x %s");
+            // Jade. The plugin key is not optional decoration: Jade's settings screen asserts on
+            // a plugin with no name, and it does it from ScreenEvent.Init - so a missing key is a
+            // crash the moment any screen opens, not a blank line in a menu. This mod registers no
+            // readout of its own, only the multiblock redirect, and the key is cheap either way.
+            add("config.jade.plugin_nauvis_machines", "Project Nauvis: Machines");
         }
     }
 

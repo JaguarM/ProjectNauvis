@@ -42,9 +42,21 @@ repositories {
     }
 
     mavenCentral()
+
+    // Jade, for the look-at readout. See docs/PLAN.md - its plugin classes only load when it is
+    // present, so this stays a compile-only dependency.
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+    }
 }
 
 dependencies {
+    // compileOnly, never implementation: the @WailaPlugin class is only loaded when Jade is
+    // there, so this mod still runs standalone without it. Every other subsystem mod already
+    // carries this; the assembler joined them when its Jade plugin was written.
+    compileOnly "maven.modrinth:jade:${jade_version}"
+
     // The one compile-time dependency in the pack, and a deliberate one. An assembler runs
     // Facrafting's timed recipes: it reads FacraftRecipe's ingredients and craft_ticks, and
     // pays for a craft through CraftPlanner. That is Java, not a recipe condition, so the

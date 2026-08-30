@@ -1,6 +1,8 @@
 {
   "block.nauvis_machines.assembling_machine_1": "Assembling machine 1",
+  "config.jade.plugin_nauvis_machines": "Project Nauvis: Machines",
   "itemGroup.nauvis_machines": "Project Nauvis: Machines",
+  "pack.nauvis_machines.crafting_table": "Nauvis Machines: bench recipes (skips research)",
   "screen.nauvis_machines.assembler.idle": "Idle - pick a recipe on the right",
   "screen.nauvis_machines.assembler.making": "Making %s",
   "screen.nauvis_machines.assembler.no_power": "No power - run a wire to it",

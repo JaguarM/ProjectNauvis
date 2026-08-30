@@ -30,5 +30,9 @@ public class NauvisLogisticsJadePlugin implements IWailaPlugin {
     @Override
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(BeltReadout.Client.INSTANCE, BeltBlock.class);
+
+        // A splitter is two blocks with one block entity, so what it says depends on which half
+        // you point at unless Jade is sent to the anchor. See MultiblockRedirect.
+        registration.addRayTraceCallback(new MultiblockRedirect(registration));
     }
 }

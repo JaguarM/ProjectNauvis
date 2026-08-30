@@ -51,5 +51,10 @@ public class NauvisPowerJadePlugin implements IWailaPlugin {
         registration.registerBlockComponent(BoilerReadout.Client.INSTANCE, BoilerBlock.class);
         registration.registerBlockComponent(SteamEngineReadout.Client.INSTANCE, SteamEngineBlock.class);
         registration.registerBlockComponent(PoleReadout.Client.INSTANCE, ElectricPoleBlock.class);
+
+        // Every one of these machines is several blocks with one block entity between them, and
+        // without this the readouts above - and Jade's own energy bar - appear on whichever block
+        // happens to hold it. See MultiblockRedirect.
+        registration.addRayTraceCallback(new MultiblockRedirect(registration));
     }
 }
