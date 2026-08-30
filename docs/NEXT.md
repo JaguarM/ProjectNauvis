@@ -147,11 +147,11 @@ What a Factorio drill does that this one does not:
   time, in a spiral — a quarry rather than a drill. Factorio's covers a fixed area at ground
   level and takes the resource out of the tiles under it, leaving the terrain alone. Crumbling
   Ore is already the pack's answer to a patch that runs out, so the two want designing together.
-- **It has no dig modes and needs no tools.** Ours has three modes on a button — ore only, clear
-  and fill, clear — plus a pickaxe and fill material to do them, both answers to being a quarry.
-  A Factorio drill needs fuel or power and nothing else. **The shovel slot is already gone**, which
-  is the shape the rest of this takes: the slot went, the well it sat in is painted out of the
-  panel, and blocks that insisted on one are skipped rather than reported.
+- **It has no dig modes.** Ours has three on a button — ore only, clear and fill, clear — and a
+  fill slot to pay for the middle one. Both are answers to being a quarry and both go when the
+  digging does, rather than being separate jobs. **The shovel slot is already gone**, which is the
+  shape this takes: the slot went, the well it sat in is painted out of the panel, and blocks that
+  insisted on one are skipped rather than reported.
 - **It outputs to the front, onto a belt.** Ours pushes into any container beside it. Factorio's
   has one output tile it drops onto — which is what makes a drill-and-belt line a thing you lay
   out rather than a chest you place.
@@ -161,8 +161,15 @@ What a Factorio drill does that this one does not:
   is the entity's. **The three module items in `nauvis_mining` are the first thing to resolve**,
   because they are ids in a namespace that is now the pack's.
 
-None of that is a small change, and none of it is urgent: the drills work, their tests pass, and
-their recipes and footprints are already Factorio-correct. Do it as one designed piece rather
+**The pickaxe slot is not on this list, and that is a decision rather than an oversight.** A
+Factorio drill carries no tools; ours wants a pickaxe and will keep wanting one, because Yannic
+likes it — a drill you have to hand a tool to reads as a Minecraft machine, and the pack is
+Factorio in Minecraft rather than Factorio ported to it. Going 1:1 is what makes the *balance*
+easy to reason about, which is why ids, ingredients, craft times and footprints are held to it;
+a mechanic that is more fun here than there may stay. Do not put this back on the list.
+
+None of the rest is a small change, and none of it is urgent: the drills work, their tests pass,
+and their recipes and footprints are already Factorio-correct. Do it as one designed piece rather
 than four.
 
 ### 2. The rest of the milestone 3 items
