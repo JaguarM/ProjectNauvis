@@ -3,6 +3,7 @@ package com.jaguarm.nauvismachines;
 import java.util.List;
 
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlock;
+import com.jaguarm.nauvismachines.machine.assembler.AssemblingMachine2Block;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlockEntity;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerMenu;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
@@ -80,7 +81,12 @@ public final class NauvisMachinesGameTests {
      * Factorio's craft time for an assembling machine 1: 0.5s, which is ten ticks. Written out
      * here so the test asserts the number rather than waiting long enough not to care.
      */
-    private static final int CRAFT_TICKS = 10;
+    /**
+     * How long the test recipe takes in the first machine: a ten-tick recipe - Factorio's half a
+     * second, from the generated file - at crafting speed 0.5. Twenty, not ten. The recipe's time
+     * is the recipe's and the machine's speed is the machine's, and both are Factorio's numbers.
+     */
+    private static final int CRAFT_TICKS = 20;
 
     /**
      * Test types are a registry like any other, and the codec is what a datapack would use to
@@ -94,6 +100,7 @@ public final class NauvisMachinesGameTests {
         TEST_TYPES.register("assembler_places", () -> AssemblerPlacesTest.CODEC);
         TEST_TYPES.register("assembler_holds_items", () -> AssemblerHoldsItemsTest.CODEC);
         TEST_TYPES.register("assembler_crafts", () -> AssemblerCraftsTest.CODEC);
+        TEST_TYPES.register("assembling_machine_2_is_faster", () -> AssemblingMachine2IsFasterTest.CODEC);
         TEST_TYPES.register("assembler_sleeps", () -> AssemblerSleepsTest.CODEC);
         TEST_TYPES.register("assembler_stalls_when_full", () -> AssemblerStallsWhenFullTest.CODEC);
         TEST_TYPES.register("assembler_spills_when_broken", () -> AssemblerSpillsWhenBrokenTest.CODEC);
@@ -125,6 +132,7 @@ public final class NauvisMachinesGameTests {
         register(event, environment, "assembler_places", AssemblerPlacesTest::new, 20);
         register(event, environment, "assembler_holds_items", AssemblerHoldsItemsTest::new, 20);
         register(event, environment, "assembler_crafts", AssemblerCraftsTest::new, 100);
+        register(event, environment, "assembling_machine_2_is_faster", AssemblingMachine2IsFasterTest::new, 100);
         register(event, environment, "assembler_sleeps", AssemblerSleepsTest::new, 60);
         register(event, environment, "assembler_stalls_when_full", AssemblerStallsWhenFullTest::new, 100);
         register(event, environment, "assembler_spills_when_broken", AssemblerSpillsWhenBrokenTest::new, 60);
@@ -177,7 +185,10 @@ public final class NauvisMachinesGameTests {
      * entirely.
      */
     private static void placeMachine(GameTestHelper helper, BlockPos anchor) {
-        AssemblerBlock block = ModBlocks.ASSEMBLING_MACHINE_1.get();
+        placeMachine(helper, anchor, ModBlocks.ASSEMBLING_MACHINE_1.get());
+    }
+
+    private static void placeMachine(GameTestHelper helper, BlockPos anchor, AssemblerBlock block) {
         Multiblock.place(block, helper.getLevel(), helper.absolutePos(anchor),
                 block.defaultBlockState());
     }
@@ -1030,6 +1041,72 @@ public final class NauvisMachinesGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("assemblers tile walkably");
+        }
+    }
+
+    /**
+     * The second machine is a tier: the same recipe, half again as fast, twice the draw.
+     *
+     * <p>Factorio's crafting speeds are 0.5 and 0.75, so the ten-tick test recipe takes twenty
+     * ticks in the first machine and thirteen in the second. Checked on the tick each should land
+     * on, and checked <em>not</em> to have landed a tick early in the first, so a speed that
+     * silently became 1.0 - which is what the assembler was before it had a tier - fails here.
+     */
+    public static class AssemblingMachine2IsFasterTest extends GameTestInstance {
+
+        public static final MapCodec<AssemblingMachine2IsFasterTest> CODEC =
+                RecordCodecBuilder.<AssemblingMachine2IsFasterTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AssemblingMachine2IsFasterTest::info))
+                                .apply(i, AssemblingMachine2IsFasterTest::new));
+
+        private static final BlockPos SECOND = MACHINE.offset(4, 0, 0);
+
+        public AssemblingMachine2IsFasterTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            Item product = ModItems.ASSEMBLING_MACHINE_1.get();
+            AssemblerBlockEntity first = machineMaking(helper, product);
+            feedOneCraft(helper, first.automationView());
+
+            placeMachine(helper, SECOND, ModBlocks.ASSEMBLING_MACHINE_2.get());
+            AssemblerBlockEntity second = helper.getBlockEntity(SECOND, AssemblerBlockEntity.class);
+            second.setRecipe(AssemblerBlockEntity.recipeProducing(helper.getLevel(), product));
+            charge(second);
+            feedOneCraft(helper, second.automationView());
+
+            helper.assertValueEqual(second.craftingSpeed(), AssemblingMachine2Block.CRAFTING_SPEED,
+                    "the second machine's crafting speed");
+            helper.assertValueEqual(second.energyPerTick(), 2 * first.energyPerTick(),
+                    "the second machine's draw against the first's");
+
+            int secondTicks = Math.round(10 / AssemblingMachine2Block.CRAFTING_SPEED);
+            helper.startSequence()
+                    .thenExecuteAfter(secondTicks, () -> {
+                        helper.assertValueEqual(
+                                second.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 1,
+                                "what the second machine had made after " + secondTicks + " ticks");
+                        helper.assertValueEqual(
+                                first.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 0,
+                                "what the first machine had made after " + secondTicks
+                                        + " ticks - it is half speed and should still be working");
+                    })
+                    .thenExecuteAfter(CRAFT_TICKS - secondTicks, () -> helper.assertValueEqual(
+                            first.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 1,
+                            "what the first machine had made after " + CRAFT_TICKS + " ticks"))
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("assembling machine 2 is faster");
         }
     }
 }

@@ -24,6 +24,9 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> ASSEMBLING_MACHINE_1 =
             ITEMS.registerSimpleBlockItem(ModBlocks.ASSEMBLING_MACHINE_1);
 
+    public static final DeferredItem<BlockItem> ASSEMBLING_MACHINE_2 =
+            ITEMS.registerSimpleBlockItem(ModBlocks.ASSEMBLING_MACHINE_2);
+
     /**
      * Its own tab, rather than one shared with the pack mod. A subsystem mod has to be usable
      * on its own, and a tab that only exists when another mod is installed is not that.
@@ -33,7 +36,10 @@ public final class ModItems {
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.nauvis_machines"))
                     .icon(() -> new ItemStack(ASSEMBLING_MACHINE_1.get()))
-                    .displayItems((parameters, output) -> output.accept(ASSEMBLING_MACHINE_1.get()))
+                    .displayItems((parameters, output) -> {
+                        output.accept(ASSEMBLING_MACHINE_1.get());
+                        output.accept(ASSEMBLING_MACHINE_2.get());
+                    })
                     .build());
 
     /** Every block this mod registers, for the loot table provider to walk. */

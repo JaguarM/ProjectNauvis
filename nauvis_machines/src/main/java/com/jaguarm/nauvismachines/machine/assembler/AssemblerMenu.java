@@ -40,13 +40,18 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
     public static final int DATA_PROGRESS = 0;
     public static final int DATA_CRAFT_TICKS = 1;
 
-    /**
-     * FE in the buffer. The capacity is not sent: it is a compile-time constant in this same mod,
-     * so the client already has it and a data slot would only be a second copy to disagree with.
-     */
+    /** FE in the buffer. */
     public static final int DATA_ENERGY = 2;
 
-    public static final int DATA_COUNT = 3;
+    /**
+     * What a tick of crafting costs and how much the buffer holds, which differ by tier. Sent
+     * rather than read off a constant, because the client's menu knows the machine's position and
+     * not its block, and a bar drawn against the wrong tier's capacity would read as always full.
+     */
+    public static final int DATA_ENERGY_PER_TICK = 3;
+    public static final int DATA_ENERGY_CAPACITY = 4;
+
+    public static final int DATA_COUNT = 5;
 
     /**
      * Where the screen expects to find things. Shared, so the two cannot drift apart.
@@ -144,12 +149,17 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
 
     /** 0 to 1 across the buffer. */
     public float charge() {
-        return Math.clamp(energy() / (float) AssemblerBlockEntity.ENERGY_CAPACITY, 0.0f, 1.0f);
+        int capacity = data.get(DATA_ENERGY_CAPACITY);
+        if (capacity <= 0) {
+            capacity = AssemblerBlockEntity.ENERGY_CAPACITY;  // not synced yet: the first tier's
+        }
+        return Math.clamp(energy() / (float) capacity, 0.0f, 1.0f);
     }
 
     /** Whether the machine has enough in the buffer to advance a craft by one tick. */
     public boolean hasPower() {
-        return energy() >= AssemblerBlockEntity.ENERGY_PER_TICK;
+        int perTick = data.get(DATA_ENERGY_PER_TICK);
+        return energy() >= (perTick <= 0 ? AssemblerBlockEntity.ENERGY_PER_TICK : perTick);
     }
 
     // ------------------------------------------------------------------ RecipeSelector

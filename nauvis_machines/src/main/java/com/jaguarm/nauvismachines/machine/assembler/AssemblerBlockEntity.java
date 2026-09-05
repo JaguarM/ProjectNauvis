@@ -92,14 +92,16 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
     public static final int SLOT_COUNT = INPUT_SLOTS + 1;
 
     /**
-     * FE burnt per tick of a craft.
+     * FE burnt per tick of a craft by the first machine.
      *
      * <p>Factorio's assembling machine 1 draws 75 kW where a steam engine makes 900, so one
      * engine runs twelve of them and one boiler runs twenty-four. Those ratios are the number
      * worth keeping; the FE it is expressed in is not, and neither figure is identity, so both
-     * are tunable. The engine's ENERGY_PER_TICK is the other half of the pair.
+     * are tunable. The engine's ENERGY_PER_TICK is the other half of the pair. The tiers each say
+     * their own - see {@link AssemblerBlock#energyPerTick()} - and this is the first tier's, kept
+     * as the number every other machine's cost is quoted against.
      */
-    public static final int ENERGY_PER_TICK = 10;
+    public static final int ENERGY_PER_TICK = AssemblingMachine1Block.ENERGY_PER_TICK;
 
     /**
      * Five seconds of work. Enough to carry on through a gap in supply, small enough that an
@@ -107,13 +109,27 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
      */
     public static final int ENERGY_CAPACITY = ENERGY_PER_TICK * 100;
 
+    /** How many ticks of a buffer every tier carries: five seconds of its own draw. */
+    private static final int BUFFER_TICKS = 100;
+
+    /**
+     * The tier's numbers, read off the block this entity was made for.
+     *
+     * <p>Factorio's crafting speed: the first machine works at 0.5, so a half-second recipe takes
+     * a second in it; the second at 0.75. The recipe's craft time stays the recipe's - it is what
+     * a player crafting by hand pays - and what a machine makes of it is the machine's. Both are
+     * identity, and both are on the block rather than here so that a tier is a class.
+     */
+    private final float craftingSpeed;
+    private final int energyPerTick;
+
     private final AssemblerInventory inventory = new AssemblerInventory(SLOT_COUNT, this::onInventoryChanged);
 
     /** Unrestricted, because the machine spends from it. What the grid sees is {@link #gridView}. */
-    private final MachinePower energy = new MachinePower(ENERGY_CAPACITY, this::onPowerChanged);
+    private final MachinePower energy;
 
     /** Insert only: a machine is not a battery, and a grid must not be able to drain one. */
-    private final EnergyHandler gridView = new PowerAccess(energy);
+    private final EnergyHandler gridView;
 
     /** What hoppers, inserters and pipes see. Never the raw inventory - see {@link MachineAccess}. */
     private final ResourceHandler<ItemResource> automationView = new MachineAccess(inventory, INPUT_SLOTS);
@@ -144,6 +160,8 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
                 case AssemblerMenu.DATA_PROGRESS -> progress;
                 case AssemblerMenu.DATA_CRAFT_TICKS -> craftTicks;
                 case AssemblerMenu.DATA_ENERGY -> energy.getAmountAsInt();
+                case AssemblerMenu.DATA_ENERGY_PER_TICK -> energyPerTick;
+                case AssemblerMenu.DATA_ENERGY_CAPACITY -> energyCapacity();
                 default -> 0;
             };
         }
@@ -161,6 +179,40 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
     public AssemblerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ASSEMBLER.get(), pos, state);
+        // The block is the tier. A block entity built for a state that is not one of ours - a
+        // structure with the wrong block, a test's bare setBlock - gets the first machine's numbers
+        // rather than a crash.
+        AssemblerBlock tier = state.getBlock() instanceof AssemblerBlock block ? block : null;
+        craftingSpeed = tier == null ? AssemblingMachine1Block.CRAFTING_SPEED : tier.craftingSpeed();
+        energyPerTick = tier == null ? AssemblingMachine1Block.ENERGY_PER_TICK : tier.energyPerTick();
+        energy = new MachinePower(energyPerTick * BUFFER_TICKS, this::onPowerChanged);
+        gridView = new PowerAccess(energy);
+    }
+
+    /** Factorio's crafting speed for this machine's tier. */
+    public float craftingSpeed() {
+        return craftingSpeed;
+    }
+
+    /** FE this tier spends per tick of a craft. */
+    public int energyPerTick() {
+        return energyPerTick;
+    }
+
+    /** The buffer this tier carries: five seconds of its own draw. */
+    public int energyCapacity() {
+        return energyPerTick * BUFFER_TICKS;
+    }
+
+    /**
+     * How many ticks a recipe takes in a machine of this speed.
+     *
+     * <p>Factorio's rule: the recipe's time over the machine's crafting speed. Ten ticks at 0.5 is
+     * twenty; at 0.75 it is thirteen and a third, and a craft cannot take a third of a tick, so it
+     * is rounded to the nearest and never below one.
+     */
+    public static int craftTicksFor(FacraftRecipe recipe, float craftingSpeed) {
+        return Math.max(1, Math.round(recipe.craftTicks() / craftingSpeed));
     }
 
     public AssemblerInventory inventory() {
@@ -225,7 +277,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
 
-        craftTicks = recipe.craftTicks();
+        craftTicks = craftTicksFor(recipe, craftingSpeed);
 
         // The ingredients are checked once, as a craft starts. Counting down is the cheap part;
         // simulating a whole craft every tick for every machine in a base is not.
@@ -233,7 +285,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
 
-        if (energy.getAmountAsInt() < ENERGY_PER_TICK) {
+        if (energy.getAmountAsInt() < energyPerTick) {
             // Out of power, holding the craft where it stands. Nothing here can wake it - the
             // grid can, and MachinePower is what tells us it has. PLAN.md's brownout, where a
             // machine that cannot refill runs slower rather than stopping, is the later shape.
@@ -243,7 +295,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
         if (progress < craftTicks) {
             progress++;
-            energy.set(energy.getAmountAsInt() - ENERGY_PER_TICK);
+            energy.set(energy.getAmountAsInt() - energyPerTick);
         }
 
         if (progress >= craftTicks) {
@@ -370,7 +422,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("block.nauvis_machines.assembling_machine_1");
+        return getBlockState().getBlock().getName();
     }
 
     @Override

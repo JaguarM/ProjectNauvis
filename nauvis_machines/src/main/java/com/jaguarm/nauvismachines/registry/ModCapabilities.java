@@ -56,8 +56,12 @@ public final class ModCapabilities {
     private static <T, C extends @Nullable Object> void assembler(RegisterCapabilitiesEvent event,
             BlockCapability<T, C> capability,
             Function<AssemblerBlockEntity, T> view) {
-        AssemblerBlock block = ModBlocks.ASSEMBLING_MACHINE_1.get();
+        // Every tier. The anchor is found through the state's own block, so one provider
+        // serves them all.
         event.registerBlock(capability, (level, pos, state, blockEntity, context) -> {
+            if (!(state.getBlock() instanceof AssemblerBlock block)) {
+                return null;
+            }
             BlockPos anchor = Multiblock.anchorPos(block, state, pos);
             // Never getBlockEntity on an unloaded chunk - asking loads it, and a machine at the
             // edge of the loaded world would drag its neighbour in. See docs/PITFALLS.md.
@@ -67,6 +71,6 @@ public final class ModCapabilities {
             return level.getBlockEntity(anchor) instanceof AssemblerBlockEntity assembler
                     ? view.apply(assembler)
                     : null;
-        }, block);
+        }, ModBlocks.ASSEMBLING_MACHINE_1.get(), ModBlocks.ASSEMBLING_MACHINE_2.get());
     }
 }

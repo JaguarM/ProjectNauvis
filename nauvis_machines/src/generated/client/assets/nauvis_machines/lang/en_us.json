@@ -1,5 +1,6 @@
 {
   "block.nauvis_machines.assembling_machine_1": "Assembling machine 1",
+  "block.nauvis_machines.assembling_machine_2": "Assembling machine 2",
   "config.jade.plugin_nauvis_machines": "Project Nauvis: Machines",
   "itemGroup.nauvis_machines": "Project Nauvis: Machines",
   "pack.nauvis_machines.crafting_table": "Nauvis Machines: bench recipes (skips research)",

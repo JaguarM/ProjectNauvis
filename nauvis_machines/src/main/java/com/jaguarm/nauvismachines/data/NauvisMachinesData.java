@@ -103,6 +103,7 @@ public final class NauvisMachinesData {
             // same whichever subset of the pack is installed.
             add("tab.facrafting.group.production", "Production");
             addBlock(ModBlocks.ASSEMBLING_MACHINE_1, "Assembling machine 1");
+            addBlock(ModBlocks.ASSEMBLING_MACHINE_2, "Assembling machine 2");
 
             // The screen. Its recipe list is Facrafting's panel, so there is very little here.
             // "skips research" is not a caveat, it is the point of the pack and has to be on the
@@ -143,6 +144,8 @@ public final class NauvisMachinesData {
         @Override
         protected void generate() {
             add(ModBlocks.ASSEMBLING_MACHINE_1.get(), anchorOnly(ModBlocks.ASSEMBLING_MACHINE_1.get(),
+                    AssemblerShape.SHAPE));
+            add(ModBlocks.ASSEMBLING_MACHINE_2.get(), anchorOnly(ModBlocks.ASSEMBLING_MACHINE_2.get(),
                     AssemblerShape.SHAPE));
         }
 

@@ -22,7 +22,8 @@ public final class ModBlockEntities {
                     "assembler",
                     () -> new BlockEntityType<>(
                             AssemblerBlockEntity::new,
-                            ModBlocks.ASSEMBLING_MACHINE_1.get()));
+                            ModBlocks.ASSEMBLING_MACHINE_1.get(),
+                            ModBlocks.ASSEMBLING_MACHINE_2.get()));
 
     private ModBlockEntities() {}
 }

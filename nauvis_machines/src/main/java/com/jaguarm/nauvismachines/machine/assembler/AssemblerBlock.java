@@ -57,9 +57,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * breaking any of the ten takes the machine down, and a hopper against any of the ten reaches the
  * same inventory - see {@code ModCapabilities}.
  */
-public class AssemblerBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
-
-    public static final MapCodec<AssemblerBlock> CODEC = simpleCodec(AssemblerBlock::new);
+public abstract class AssemblerBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
     public AssemblerBlock(Properties properties) {
         super(properties);
@@ -76,10 +74,18 @@ public class AssemblerBlock extends BaseEntityBlock implements Multiblock.Machin
     // is decided by the inserters around it, so the shape is only ever asked for its north frame
     // and the blockstate is a tenth the size it would otherwise be.
 
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    /**
+     * Factorio's {@code crafting_speed}: how many recipe-seconds this machine gets through in a
+     * second. A recipe's craft time is the recipe's; what a machine makes of it is the machine's.
+     *
+     * <p>A constant on the subclass rather than a field, because {@code createBlockStateDefinition}
+     * runs inside {@code Block}'s constructor before any field of a subclass exists - see
+     * {@code docs/PITFALLS.md}. A tier is a class, exactly as a belt tier is.
+     */
+    public abstract float craftingSpeed();
+
+    /** FE spent per tick of a craft, at the pack's ratio of 120 FE/t to Factorio's 900 kW engine. */
+    public abstract int energyPerTick();
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {

@@ -69,19 +69,19 @@ public class NauvisMachinesModels extends ModelProvider {
 
     @Override
     protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {
-        assembler(blockModels);
+        // A machine body, and machinery on top of it. Two mappings, so the gearbox reads as a
+        // moving part rather than as more casing. The first machine is furnace-grey; the second
+        // is Factorio's blue, which is how a player tells the tiers apart across a base.
+        Identifier metalTop = TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite();
+        assembler(blockModels, ModBlocks.ASSEMBLING_MACHINE_1.get(), new Textures(
+                TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_side").sprite(), metalTop, metalTop));
+        assembler(blockModels, ModBlocks.ASSEMBLING_MACHINE_2.get(), new Textures(
+                Identifier.withDefaultNamespace("block/light_blue_terracotta"), metalTop, metalTop));
     }
 
-    private void assembler(BlockModelGenerators blockModels) {
-        Block block = ModBlocks.ASSEMBLING_MACHINE_1.get();
+    private void assembler(BlockModelGenerators blockModels, Block block, Textures casing) {
         MachineShape shape = AssemblerShape.SHAPE;
 
-        // A machine body, and machinery on top of it. Two mappings, so the gearbox reads as a
-        // moving part rather than as more casing.
-        Textures casing = new Textures(
-                TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_side").sprite(),
-                TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite(),
-                TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite());
         Textures machinery = new Textures(
                 TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite(),
                 TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite(),
