@@ -33,7 +33,7 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> BIG_ELECTRIC_POLE =
             ITEMS.registerSimpleBlockItem(ModBlocks.BIG_ELECTRIC_POLE);
 
-    /** No recipe yet - see {@code SubstationBlock}. Creative-only until oil exists. */
+    /** Its recipe waits on the advanced circuit existing - see {@code SubstationBlock}. */
     public static final DeferredItem<BlockItem> SUBSTATION =
             ITEMS.registerSimpleBlockItem(ModBlocks.SUBSTATION);
 

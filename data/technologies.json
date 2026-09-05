@@ -730,5 +730,127 @@
       "oil-refinery",
       "solid-fuel-from-petroleum-gas"
     ]
+  },
+  {
+    "id": "plastics",
+    "prerequisites": [
+      "oil-processing"
+    ],
+    "cost": {
+      "count": 200,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "plastic-bar"
+    ]
+  },
+  {
+    "id": "advanced-circuit",
+    "prerequisites": [
+      "plastics"
+    ],
+    "cost": {
+      "count": 200,
+      "time_seconds": 15,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "advanced-circuit"
+    ]
+  },
+  {
+    "id": "sulfur-processing",
+    "prerequisites": [
+      "oil-processing"
+    ],
+    "cost": {
+      "count": 150,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "sulfur",
+      "sulfuric-acid"
+    ]
+  },
+  {
+    "id": "science-pack-3",
+    "prerequisites": [
+      "advanced-circuit",
+      "sulfur-processing"
+    ],
+    "cost": {
+      "count": 75,
+      "time_seconds": 10,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "science-pack-3"
+    ]
+  },
+  {
+    "id": "electric-energy-distribution-2",
+    "prerequisites": [
+      "science-pack-3",
+      "electric-energy-distribution-1"
+    ],
+    "cost": {
+      "count": 100,
+      "time_seconds": 45,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "substation"
+    ]
   }
 ]

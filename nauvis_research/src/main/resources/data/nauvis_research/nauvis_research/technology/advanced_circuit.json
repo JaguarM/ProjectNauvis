@@ -1,0 +1,16 @@
+{
+  "name": "Advanced circuit",
+  "order": "0033",
+  "prerequisites": [
+    "nauvis_research:plastics"
+  ],
+  "units": 200,
+  "ticks_per_unit": 300,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "neoprogressivematerials:advanced_circuit"
+  ]
+}

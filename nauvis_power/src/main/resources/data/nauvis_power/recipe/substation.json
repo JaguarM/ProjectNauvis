@@ -1,0 +1,38 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    },
+    {
+      "type": "neoforge:registered",
+      "value": "neoprogressivematerials:advanced_circuit"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "logistics",
+  "order": "0056",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:advanced_circuit",
+      "count": 5
+    },
+    {
+      "ingredient": "minecraft:copper_ingot",
+      "count": 5
+    },
+    {
+      "ingredient": "neoprogressivematerials:steel_plate",
+      "count": 10
+    }
+  ],
+  "result": {
+    "id": "nauvis_power:substation",
+    "count": 1
+  }
+}

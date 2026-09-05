@@ -58,6 +58,7 @@
       "name": "Advanced circuit",
       "owner": "neoprogressivematerials",
       "item": "neoprogressivematerials:advanced_circuit",
+      "pending": true,
       "craft": {
         "time": 6,
         "yield": 1

@@ -232,13 +232,14 @@ breaks that.
 
 What is left, in the order the tree wants them:
 
-- **The substation's recipe and technology.** The block is built and creative-only. Factorio's
-  recipe is five advanced circuits, which is plastic, which is oil — milestone 5 — but it need not
-  wait that long: mark `advanced-circuit` `pending` in `data/mapping.json` and the recipe ships with
-  a `neoforge:registered` condition that regenerates away when the circuit lands. The technology is
-  `electric-energy-distribution-2`, which is not in the tree and whose prerequisites
-  (`advanced-electronics`) are not either, so that is two JSON entries and the generator will say
-  if they do not bootstrap.
+- ~~The substation's recipe and technology~~ **done.** `advanced-circuit` is `pending` in the
+  mapping, so the substation's recipe ships with a `neoforge:registered` condition that regenerates
+  away when Neo Progressive Materials registers the circuit. Its technology turned out to be five
+  entries rather than two, because Factorio 2.0 puts the substation behind blue science:
+  `plastics`, `advanced-circuit` (2.0's name for advanced electronics), `sulfur-processing`,
+  `science-pack-3` and `electric-energy-distribution-2` are all in the tree at Wube's costs, all
+  hanging off `oil-processing`. None of them can be researched until blue science exists, which is
+  the honest state.
 - **`assembling-machine-2`** (`automation-2`). An assembler that crafts faster; a tier is numbers
   on the block the way the long-handed inserter is.
 - **`solar-panel`** (`solar-energy`). 3×3 and half a block high, so it is walked over. A generator

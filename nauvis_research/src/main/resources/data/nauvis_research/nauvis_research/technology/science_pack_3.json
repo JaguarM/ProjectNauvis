@@ -1,0 +1,17 @@
+{
+  "name": "Science pack 3",
+  "order": "0035",
+  "prerequisites": [
+    "nauvis_research:advanced_circuit",
+    "nauvis_research:sulfur_processing"
+  ],
+  "units": 75,
+  "ticks_per_unit": 200,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis_research:science_pack_3"
+  ]
+}
