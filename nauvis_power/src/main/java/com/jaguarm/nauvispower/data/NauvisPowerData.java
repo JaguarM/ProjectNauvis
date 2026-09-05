@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 
 import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.generator.BoilerShape;
+import com.jaguarm.nauvispower.generator.SolarPanelShape;
 import com.jaguarm.nauvispower.generator.SteamEngineShape;
 import com.jaguarm.nauvispower.grid.BigPoleShape;
 import com.jaguarm.nauvispower.grid.MediumPoleShape;
@@ -112,6 +113,7 @@ public final class NauvisPowerData {
             addBlock(ModBlocks.MEDIUM_ELECTRIC_POLE, "Medium electric pole");
             addBlock(ModBlocks.BIG_ELECTRIC_POLE, "Big electric pole");
             addBlock(ModBlocks.SUBSTATION, "Substation");
+            addBlock(ModBlocks.SOLAR_PANEL, "Solar panel");
                         // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the
             // only place a timed craft happens; a vanilla bench recipe goes nowhere near it and
@@ -136,6 +138,7 @@ public final class NauvisPowerData {
             add("config.jade.plugin_nauvis_power.boiler", "Boiler");
             add("config.jade.plugin_nauvis_power.steam_engine", "Steam engine");
             add("config.jade.plugin_nauvis_power.electric_pole", "Electric network");
+            add("config.jade.plugin_nauvis_power.solar_panel", "Solar panel");
 
             // What Jade says about the block you are looking at. Present only when Jade is - the
             // strings are harmless without it, and a missing translation is worse than a spare one.
@@ -149,6 +152,10 @@ public final class NauvisPowerData {
             add("jade.nauvis_power.engine.running", "Making %s FE/t");
             add("jade.nauvis_power.engine.full", "Full - nothing is drawing the power off");
             add("jade.nauvis_power.engine.no_steam", "No steam");
+            add("jade.nauvis_power.solar.making", "Making %s FE/t");
+            add("jade.nauvis_power.solar.full", "Full - nothing is drawing the power off");
+            add("jade.nauvis_power.solar.night", "Dark - waiting for the sun");
+            add("jade.nauvis_power.solar.no_sky", "Under a roof - it needs open sky");
             add("nauvis_power.electric_pole.status", "Network: %s poles, %s machines - live");
             add("nauvis_power.electric_pole.status_idle", "Network: %s poles, %s machines - idle");
             add("nauvis_power.electric_pole.detached", "Not part of a network");
@@ -180,6 +187,8 @@ public final class NauvisPowerData {
                     anchorOnly(ModBlocks.BIG_ELECTRIC_POLE.get(), BigPoleShape.SHAPE));
             add(ModBlocks.SUBSTATION.get(),
                     anchorOnly(ModBlocks.SUBSTATION.get(), SubstationShape.SHAPE));
+            add(ModBlocks.SOLAR_PANEL.get(),
+                    anchorOnly(ModBlocks.SOLAR_PANEL.get(), SolarPanelShape.SHAPE));
         }
 
         /**

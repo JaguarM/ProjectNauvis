@@ -13,6 +13,17 @@ Power and fluids
   about members and machines the moment they appear, but "a generator elsewhere filled up" is a fact
   about a handler in another mod that owes us no signal.
 - **No brownout.** PLAN.md wants a machine whose buffer cannot refill to run *slower*; ours stops.
+- **A dark or roofed solar panel looks up every ten seconds.** The sun has no event, so a panel
+  with nothing to make schedules one tick two hundred ticks out rather than waiting for a signal
+  that will never come. It is the one bounded poll in `nauvis_power`, and it is the reason a panel
+  starts making power within ten seconds of dawn rather than on the tick.
+- **A solar panel loses output in rain, and Factorio's does not.** The panel reads the sky's
+  darkening, which weather is part of. A panel that ignored the rain over it would read as broken
+  in Minecraft, so this is a divergence the pack keeps; it is worth a third of the output while it
+  rains.
+- **No accumulator yet**, so solar power is daytime power. Factorio's answer to the night is the
+  accumulator, which is behind sulfur and the battery - oil, again - and wants `PowerNetwork`'s
+  third case above. Solar plus a boiler for the night is what Factorio itself does before then.
 - **No pipeline length limit.** Factorio caps a segment at 320 pipes and its tooltip says `6/320`;
   ours says `6 pipes`. Adding the cap is a real gameplay change — refusal to connect, not a number.
 - **A long-handed inserter with power and nothing to do costs one look a second**, because the wake

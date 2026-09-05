@@ -1,0 +1,31 @@
+{
+  "variants": {
+    "part=0": {
+      "model": "nauvis_power:block/solar_panel_panel"
+    },
+    "part=1": {
+      "model": "nauvis_power:block/solar_panel_panel"
+    },
+    "part=2": {
+      "model": "nauvis_power:block/solar_panel_panel"
+    },
+    "part=3": {
+      "model": "nauvis_power:block/solar_panel_panel"
+    },
+    "part=4": {
+      "model": "nauvis_power:block/solar_panel_panel"
+    },
+    "part=5": {
+      "model": "nauvis_power:block/solar_panel_panel"
+    },
+    "part=6": {
+      "model": "nauvis_power:block/solar_panel_panel"
+    },
+    "part=7": {
+      "model": "nauvis_power:block/solar_panel_panel"
+    },
+    "part=8": {
+      "model": "nauvis_power:block/solar_panel_panel"
+    }
+  }
+}

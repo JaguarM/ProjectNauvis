@@ -7,6 +7,7 @@ import org.jspecify.annotations.Nullable;
 import com.jaguarm.nauvispower.generator.BoilerBlock;
 import com.jaguarm.nauvispower.generator.BoilerBlockEntity;
 import com.jaguarm.nauvispower.generator.BoilerShape;
+import com.jaguarm.nauvispower.generator.SolarPanelBlockEntity;
 import com.jaguarm.nauvispower.generator.BoilerMenu;
 import com.jaguarm.nauvispower.generator.SteamEngineBlock;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
@@ -118,6 +119,9 @@ public final class NauvisPowerGameTests {
         TEST_TYPES.register("steam_engines_chain", () -> SteamEnginesChainTest.CODEC);
         TEST_TYPES.register("steam_engine_ignores_its_sides", () -> SteamEngineIgnoresSidesTest.CODEC);
         TEST_TYPES.register("steam_engine_connects_on_two_faces", () -> SteamEngineFacesTest.CODEC);
+        TEST_TYPES.register("solar_panel_makes_power_by_day", () -> SolarPanelMakesPowerByDayTest.CODEC);
+        TEST_TYPES.register("solar_panel_follows_the_sky", () -> SolarPanelFollowsTheSkyTest.CODEC);
+        TEST_TYPES.register("solar_panel_needs_the_sky", () -> SolarPanelNeedsTheSkyTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -162,6 +166,24 @@ public final class NauvisPowerGameTests {
         register(event, environment, "steam_engines_chain", SteamEnginesChainTest::new, 200);
         register(event, environment, "steam_engine_ignores_its_sides", SteamEngineIgnoresSidesTest::new, 100);
         register(event, environment, "steam_engine_connects_on_two_faces", SteamEngineFacesTest::new, 60);
+
+        registerSunlit(event, environment, "solar_panel_makes_power_by_day",
+                SolarPanelMakesPowerByDayTest::new, 100);
+        register(event, environment, "solar_panel_follows_the_sky", SolarPanelFollowsTheSkyTest::new, 20);
+        registerSunlit(event, environment, "solar_panel_needs_the_sky", SolarPanelNeedsTheSkyTest::new, 100);
+    }
+
+    /**
+     * With the sky open above it. {@code TestData}'s {@code skyAccess} clears the column over the
+     * structure, and a solar panel with no sky is one of the things being tested for, not a thing
+     * to leave to chance.
+     */
+    private static void registerSunlit(RegisterGameTestsEvent event,
+            Holder<TestEnvironmentDefinition<?>> environment, String name, TestFactory factory, int maxTicks) {
+        event.registerTest(
+                Identifier.fromNamespaceAndPath(NauvisPower.MODID, name),
+                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true,
+                        Rotation.NONE, false, 1, 1, true, PADDING)));
     }
 
     private interface TestFactory {
@@ -1829,6 +1851,170 @@ public final class NauvisPowerGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("power machines tile walkably");
+        }
+    }
+
+    /**
+     * The gametest world stands at noon, and stays there whatever its world clock is set to.
+     *
+     * <p>Tried the other way first: {@code server.clockManager().moveToTimeMarker(clock, MIDNIGHT)}
+     * moved the clock and the sky's darkening stayed at zero, so a panel made its full peak at
+     * "midnight". So the day test asserts the noon it is given, and the night is tested on the
+     * formula rather than the world - see {@link SolarPanelFollowsTheSkyTest}.
+     */
+    private static void assertNoon(GameTestHelper helper) {
+        helper.assertValueEqual(helper.getLevel().getSkyDarken(), 0,
+                "the gametest world's sky darkening - this test assumes it stands at noon");
+    }
+
+    private static SolarPanelBlockEntity placePanel(GameTestHelper helper, BlockPos anchor) {
+        place(helper, anchor, ModBlocks.SOLAR_PANEL.get());
+        return helper.getBlockEntity(anchor, SolarPanelBlockEntity.class);
+    }
+
+    /**
+     * A panel under the noon sun makes its peak, every tick.
+     *
+     * <p>Factorio's 60 kW at the pack's ratio is eight a tick, and the rate is asserted as a
+     * difference over twenty ticks rather than as a total, because the tick a fresh panel wakes on
+     * is not a fact worth pinning. Eight a tick for twenty ticks is a hundred and sixty exactly.
+     */
+    public static class SolarPanelMakesPowerByDayTest extends GameTestInstance {
+
+        public static final MapCodec<SolarPanelMakesPowerByDayTest> CODEC =
+                RecordCodecBuilder.<SolarPanelMakesPowerByDayTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SolarPanelMakesPowerByDayTest::info))
+                                .apply(i, SolarPanelMakesPowerByDayTest::new));
+
+        public SolarPanelMakesPowerByDayTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            assertNoon(helper);
+            SolarPanelBlockEntity panel = placePanel(helper, BOILER);
+            int[] seen = new int[1];
+
+            helper.startSequence()
+                    .thenExecuteAfter(30, () -> {
+                        helper.assertTrue(panel.seesSky(helper.getLevel()), "the test has no sky over it");
+                        helper.assertValueEqual(panel.lastOutput(), SolarPanelBlockEntity.PEAK,
+                                "what a panel makes a tick at noon");
+                        seen[0] = panel.energyStored();
+                        helper.assertTrue(seen[0] > 0, "a panel at noon stored nothing");
+                    })
+                    .thenExecuteAfter(20, () -> {
+                        helper.assertValueEqual(panel.energyStored() - seen[0], 20 * SolarPanelBlockEntity.PEAK,
+                                "energy made over twenty ticks of noon");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("solar panel makes power by day");
+        }
+    }
+
+    /**
+     * What a panel makes follows the sky: the peak at noon, nothing at midnight, part way in rain,
+     * and nothing at all under a roof.
+     *
+     * <p>On the formula rather than the world, because the gametest world's sky cannot be darkened
+     * - see {@link #assertNoon}. The numbers are Factorio's 60 kW at the pack's ratio, scaled by
+     * {@code Level.getSkyDarken()}, which runs 0 at noon to 11 at midnight and sits around 4 in
+     * rain.
+     */
+    public static class SolarPanelFollowsTheSkyTest extends GameTestInstance {
+
+        public static final MapCodec<SolarPanelFollowsTheSkyTest> CODEC =
+                RecordCodecBuilder.<SolarPanelFollowsTheSkyTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SolarPanelFollowsTheSkyTest::info))
+                                .apply(i, SolarPanelFollowsTheSkyTest::new));
+
+        public SolarPanelFollowsTheSkyTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            int full = SolarPanelBlockEntity.FULL_DARK;
+            helper.assertValueEqual(SolarPanelBlockEntity.elevenths(0, true),
+                    SolarPanelBlockEntity.PEAK * full, "a panel at noon, in elevenths of the peak");
+            helper.assertValueEqual(SolarPanelBlockEntity.elevenths(full, true), 0, "a panel at midnight");
+            helper.assertValueEqual(SolarPanelBlockEntity.elevenths(4, true),
+                    SolarPanelBlockEntity.PEAK * (full - 4), "a panel in the rain - about two thirds");
+            helper.assertValueEqual(SolarPanelBlockEntity.elevenths(0, false), 0, "a panel under a roof at noon");
+            helper.assertValueEqual(SolarPanelBlockEntity.elevenths(99, true), 0,
+                    "a darkening past full dark, which the game never gives but a mod might");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("solar panel follows the sky");
+        }
+    }
+
+    /**
+     * A panel under a roof makes nothing at noon.
+     *
+     * <p>The one thing Minecraft can say about solar power that Factorio cannot. One block over
+     * the middle is enough, because the middle is where the panel looks.
+     */
+    public static class SolarPanelNeedsTheSkyTest extends GameTestInstance {
+
+        public static final MapCodec<SolarPanelNeedsTheSkyTest> CODEC =
+                RecordCodecBuilder.<SolarPanelNeedsTheSkyTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SolarPanelNeedsTheSkyTest::info))
+                                .apply(i, SolarPanelNeedsTheSkyTest::new));
+
+        public SolarPanelNeedsTheSkyTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            assertNoon(helper);
+            helper.setBlock(BOILER.above(3), Blocks.STONE);
+
+            // The roof first, and a moment for the light to know about it: sky light is the light
+            // engine's, and it settles a tick or two after the block goes in. A panel placed on the
+            // same tick as its roof made one tick of noon before the shade arrived.
+            helper.startSequence()
+                    .thenExecuteAfter(5, () -> placePanel(helper, BOILER))
+                    .thenExecuteAfter(30, () -> {
+                        SolarPanelBlockEntity panel = helper.getBlockEntity(BOILER, SolarPanelBlockEntity.class);
+                        helper.assertFalse(panel.seesSky(helper.getLevel()), "a roofed panel thinks it sees the sky");
+                        helper.assertValueEqual(panel.energyStored(), 0, "energy a roofed panel made at noon");
+                        helper.assertValueEqual(panel.lastOutput(), 0, "what a roofed panel makes a tick");
+                        // Asleep but for the long look-up - non-negotiable #5 for a machine whose work
+                        // has no event to arrive on.
+                        helper.assertTrue(isScheduled(helper, BOILER, ModBlocks.SOLAR_PANEL.get()),
+                                "a roofed panel has no tick coming, so the roof coming off would never reach it");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("solar panel needs the sky");
         }
     }
 }

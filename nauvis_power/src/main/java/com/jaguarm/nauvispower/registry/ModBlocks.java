@@ -2,6 +2,7 @@ package com.jaguarm.nauvispower.registry;
 
 import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.generator.BoilerBlock;
+import com.jaguarm.nauvispower.generator.SolarPanelBlock;
 import com.jaguarm.nauvispower.generator.SteamEngineBlock;
 import com.jaguarm.nauvispower.grid.BigElectricPoleBlock;
 import com.jaguarm.nauvispower.grid.MediumElectricPoleBlock;
@@ -95,6 +96,21 @@ public final class ModBlocks {
                     .sound(SoundType.METAL)
                     .pushReaction(PushReaction.BLOCK)
                     .noOcclusion());
+
+    /**
+     * Three by three and half a block high, so a field of them is a floor. {@code noOcclusion}
+     * because a half block is not a full cube, and a full cube's shadowing would darken the
+     * ground beside it.
+     */
+    public static final DeferredBlock<SolarPanelBlock> SOLAR_PANEL = BLOCKS.registerBlock(
+            "solar_panel",
+            SolarPanelBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.COLOR_BLUE)
+                    .strength(2.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()
+                    .requiresCorrectToolForDrops());
 
     private ModBlocks() {}
 }

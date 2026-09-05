@@ -5,6 +5,7 @@
     "nauvis_power:small_electric_pole",
     "nauvis_power:medium_electric_pole",
     "nauvis_power:big_electric_pole",
-    "nauvis_power:substation"
+    "nauvis_power:substation",
+    "nauvis_power:solar_panel"
   ]
 }

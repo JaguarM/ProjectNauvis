@@ -16,7 +16,7 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and thirty-five gametests pass, `./gradlew build` is clean, and the client boots into a
+A hundred and thirty-nine gametests pass, `./gradlew build` is clean, and the client boots into a
 world. **Milestone 2 is closed**: the red tier is in whole — the fast belt and the fast splitter —
 a belt in hand replaces the one it is clicked on, and **belt lines climb**. Milestone 3 has its
 research half in, and five of its nine items — the steel line, green science and the medium pole,
@@ -47,6 +47,21 @@ fires it, research listens, and neither names the other, which is the only way t
 may share a fact. A pumpjack's first cycle on a well unlocks the refinery and the chemical plant,
 neither of which exists yet. The two tallies — crafted and mined — are kept apart on purpose,
 because `nauvis_fluids:crude_oil` is both the well and the creative item that places one.
+
+**Assemblers have Factorio's crafting speeds, and there are two of them.** The first machine
+worked at speed 1.0 - a recipe's time was the craft's time - and Factorio's works at **0.5**: a
+half-second recipe takes a second in it. That is machine identity in the sense a footprint is,
+and it is fixed. `AssemblerBlock` is abstract now with a speed and a draw per subclass, exactly as
+a belt tier is a class; `assembling_machine_2` is 0.75 and 20 FE/t behind `automation-2`, in
+Factorio's blue, sharing the block entity, the screen and the shape. Every recipe in a machine
+takes twice as long as it did, which is the correct number and is worth knowing before the
+playtest reads as "the assembler got slow".
+
+**The solar panel is in**: 3×3 and half a block high, so a field of them is a floor. Eight FE a
+tick at noon - Factorio's 60 kW at the pack's ratio - scaled by the sky's darkening, so it ramps
+at dawn and dusk, loses a third in rain, and makes nothing at night or under a roof. The one bounded
+poll in the pack: a dark or roofed panel looks up once every ten seconds, because the sun has no
+event. Behind `solar-energy`.
 
 **Every block the pack registers is pickaxe work now.** Each machine mod ships a
 `BlockTagsProvider` putting all its blocks in `mineable/pickaxe`, and `every_machine_takes_a_pickaxe`
@@ -124,7 +139,8 @@ is an int like every other machine's.
 
 | | |
 |---|---|
-| `nauvis_machines:assembling_machine_1` | 3×3, ten blocks; recipe selector, six slots, timed craft, screen, 10 FE/t |
+| `nauvis_machines:assembling_machine_1` | 3×3, ten blocks; recipe selector, six slots, timed craft at **crafting speed 0.5**, screen, 10 FE/t |
+| `nauvis_machines:assembling_machine_2` | the same at speed 0.75 and 20 FE/t, in blue. Behind `automation-2` |
 | `nauvis_logistics:transport_belt` | half a block, walked over; a run is one object however long, two lanes, visible items, carries you |
 | a belt line | climbs and descends a step at a time, like rails. The ramp is drawn in the lower block; four quarter-block stairs under a 45° slab, so you walk up it |
 | `nauvis_logistics:fast_transport_belt` | the same at 3.75 tiles a second, in red. Five gears and a belt, behind `logistics-2` |
@@ -144,7 +160,8 @@ is an int like every other machine's.
 | `nauvis_power:small_electric_pole` | 1×1×4, wood. Reaches 7.5, supplies 5×5 |
 | `nauvis_power:medium_electric_pole` | 1×1×5, anvil-grey. Reaches 9, supplies 5×5 |
 | `nauvis_power:big_electric_pole` | 2×2×6, iron. Reaches 30, supplies 4×4. Twenty-four blocks, one item |
-| `nauvis_power:substation` | 2×2×5, deepslate. Reaches 18, supplies 18×18. **No recipe or technology yet** |
+| `nauvis_power:substation` | 2×2×5, deepslate. Reaches 18, supplies 18×18. Recipe and technology in, both waiting on the advanced circuit |
+| `nauvis_power:solar_panel` | 3×3, half a block, walked over; 8 FE/t at noon scaled by the sky, nothing at night or under a roof |
 | `nauvis_research:lab` | 3×3, ten blocks, 8 FE/t; eats one of each pack the world's research asks for |
 | `nauvis_research:science_pack_1` | red science — a copper plate and an iron gear wheel |
 | `nauvis_research:science_pack_2` | green science — an inserter and a belt. The gate in front of the rest of milestone 3 |
@@ -240,10 +257,8 @@ What is left, in the order the tree wants them:
   `science-pack-3` and `electric-energy-distribution-2` are all in the tree at Wube's costs, all
   hanging off `oil-processing`. None of them can be researched until blue science exists, which is
   the honest state.
-- **`assembling-machine-2`** (`automation-2`). An assembler that crafts faster; a tier is numbers
-  on the block the way the long-handed inserter is.
-- **`solar-panel`** (`solar-energy`). 3×3 and half a block high, so it is walked over. A generator
-  like the steam engine as far as `PowerNetwork` is concerned — the new part is daylight.
+- ~~`assembling-machine-2`~~ **done**, and it brought Factorio's crafting speeds with it — see above.
+- ~~`solar-panel`~~ **done** — see above.
 - **`steel-furnace`** (`advanced-material-processing`). The biggest of the four, because the pack
   has no furnace machine at all: `stone-furnace` stands in as `minecraft:furnace`. A steel furnace
   that is only a faster vanilla furnace is a different job from one that is a machine of ours, and
@@ -377,6 +392,20 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
   refinery and the chemical plant unlocked — with no lab involved. The tooltip on the node says
   *Mine 1 x Crude oil - 0 done* until then, which is Factorio's own wording for a `mine-entity`
   trigger, and **whether "mine" reads right for pumping oil is a judgement no test makes**.
+
+**The two new machines**, which nobody has seen.
+
+- put an assembling machine 1 and a 2 side by side and set both to gears. The second should
+  finish noticeably sooner and its bar should fill faster; the first now takes a full second per
+  gear where it took half, which is Factorio's number and **whether it reads as right or as a
+  regression is the thing to judge**. The blue livery is `light_blue_terracotta` on the sides and
+  is the only thing telling the tiers apart across a base;
+- lay a solar field at noon, and hover a panel: *Making 8 FE/t*. Wait for dusk and watch the number
+  fall, then *Dark - waiting for the sun*. Put a block over the middle of one: *Under a roof*. Then
+  stand on the field and walk across it - half a block, so it should be a floor, and **whether nine
+  framed panels read as a solar field or as a blue slab is a judgement no test makes**;
+- and check a panel picks up again at dawn without being touched. It looks up every ten seconds
+  while dark, so it should be making power within ten seconds of the sky brightening.
 
 **The hover readout on every machine**, which is new and which no test can see.
 

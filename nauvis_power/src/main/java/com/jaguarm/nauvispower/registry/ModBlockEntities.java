@@ -2,6 +2,7 @@ package com.jaguarm.nauvispower.registry;
 
 import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.generator.BoilerBlockEntity;
+import com.jaguarm.nauvispower.generator.SolarPanelBlockEntity;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
 import com.jaguarm.nauvispower.grid.ElectricPoleBlockEntity;
 
@@ -38,6 +39,10 @@ public final class ModBlockEntities {
                             ModBlocks.MEDIUM_ELECTRIC_POLE.get(),
                             ModBlocks.BIG_ELECTRIC_POLE.get(),
                             ModBlocks.SUBSTATION.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SolarPanelBlockEntity>> SOLAR_PANEL =
+            BLOCK_ENTITIES.register("solar_panel",
+                    () -> new BlockEntityType<>(SolarPanelBlockEntity::new, ModBlocks.SOLAR_PANEL.get()));
 
     private ModBlockEntities() {}
 }

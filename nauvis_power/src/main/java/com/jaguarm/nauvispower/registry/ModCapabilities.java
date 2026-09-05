@@ -7,6 +7,8 @@ import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.generator.BoilerBlock;
 import com.jaguarm.nauvispower.generator.BoilerBlockEntity;
 import com.jaguarm.nauvispower.generator.BoilerShape;
+import com.jaguarm.nauvispower.generator.SolarPanelBlock;
+import com.jaguarm.nauvispower.generator.SolarPanelBlockEntity;
 import com.jaguarm.nauvispower.generator.SteamEngineBlock;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
 import com.jaguarm.nauvispower.generator.SteamEngineShape;
@@ -76,6 +78,12 @@ public final class ModCapabilities {
                 BoilerBlockEntity.class, (be, side) -> be.fuelAccess());
         anywhere(event, Capabilities.Energy.BLOCK, engine,
                 SteamEngineBlockEntity.class, (be, side) -> be.cableView());
+
+        // A generator like the engine as far as the grid is concerned: extract-only, from any of
+        // its nine blocks.
+        SolarPanelBlock panel = ModBlocks.SOLAR_PANEL.get();
+        anywhere(event, Capabilities.Energy.BLOCK, panel,
+                SolarPanelBlockEntity.class, (be, side) -> be.cableView());
 
         atPort(event, boiler, BoilerShape.STEAM, BoilerBlockEntity.class,
                 BoilerBlockEntity::steamAccess);

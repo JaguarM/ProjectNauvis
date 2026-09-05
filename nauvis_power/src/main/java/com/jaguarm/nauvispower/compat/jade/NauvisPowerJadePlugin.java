@@ -1,6 +1,7 @@
 package com.jaguarm.nauvispower.compat.jade;
 
 import com.jaguarm.nauvispower.generator.BoilerBlock;
+import com.jaguarm.nauvispower.generator.SolarPanelBlock;
 import com.jaguarm.nauvispower.generator.SteamEngineBlock;
 import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
 
@@ -44,6 +45,7 @@ public class NauvisPowerJadePlugin implements IWailaPlugin {
         registration.registerBlockDataProvider(BoilerReadout.INSTANCE, BoilerBlock.class);
         registration.registerBlockDataProvider(SteamEngineReadout.INSTANCE, SteamEngineBlock.class);
         registration.registerBlockDataProvider(PoleReadout.INSTANCE, ElectricPoleBlock.class);
+        registration.registerBlockDataProvider(SolarPanelReadout.INSTANCE, SolarPanelBlock.class);
     }
 
     @Override
@@ -51,6 +53,7 @@ public class NauvisPowerJadePlugin implements IWailaPlugin {
         registration.registerBlockComponent(BoilerReadout.Client.INSTANCE, BoilerBlock.class);
         registration.registerBlockComponent(SteamEngineReadout.Client.INSTANCE, SteamEngineBlock.class);
         registration.registerBlockComponent(PoleReadout.Client.INSTANCE, ElectricPoleBlock.class);
+        registration.registerBlockComponent(SolarPanelReadout.Client.INSTANCE, SolarPanelBlock.class);
 
         // Every one of these machines is several blocks with one block entity between them, and
         // without this the readouts above - and Jade's own energy bar - appear on whichever block

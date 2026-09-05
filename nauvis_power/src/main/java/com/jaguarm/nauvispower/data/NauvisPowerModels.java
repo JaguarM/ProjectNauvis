@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 
 import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.generator.BoilerShape;
+import com.jaguarm.nauvispower.generator.SolarPanelShape;
 import com.jaguarm.nauvispower.generator.SteamEngineShape;
 import com.jaguarm.nauvispower.multiblock.Boxes;
 import com.jaguarm.nauvispower.multiblock.MachineCell;
@@ -60,6 +61,11 @@ public class NauvisPowerModels extends ModelProvider {
                 TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite());
 
         poles(blockModels);
+
+        // Iron frames under blue glass. A panel has no facing, so it takes the poles' generator.
+        turnless(blockModels, ModBlocks.SOLAR_PANEL.get(), SolarPanelShape.SHAPE,
+                TextureMapping.getBlockTexture(Blocks.IRON_BLOCK).sprite(),
+                Identifier.withDefaultNamespace("block/blue_terracotta"));
     }
 
     /**
@@ -275,10 +281,16 @@ public class NauvisPowerModels extends ModelProvider {
      */
     private void turnless(BlockModelGenerators blockModels, Block block, MachineShape shape,
             Identifier texture) {
+        turnless(blockModels, block, shape, texture, texture);
+    }
+
+    /** The same, with a different texture on top - a panel is a frame with glass in it. */
+    private void turnless(BlockModelGenerators blockModels, Block block, MachineShape shape,
+            Identifier side, Identifier top) {
         Map<String, Identifier> models = new HashMap<>();
         for (MachineCell cell : shape.cells()) {
             models.computeIfAbsent(cell.model(),
-                    name -> cellModel(blockModels, block, cell, texture, texture));
+                    name -> cellModel(blockModels, block, cell, side, top));
         }
 
         PropertyDispatch.C1<MultiVariant, Integer> dispatch = PropertyDispatch.initial(shape.part());
@@ -291,7 +303,7 @@ public class NauvisPowerModels extends ModelProvider {
         blockModels.blockStateOutput.accept(MultiVariantGenerator.dispatch(block).with(dispatch));
 
         blockModels.registerSimpleItemModel(block,
-                inventoryModel(blockModels, block, shape, texture, texture));
+                inventoryModel(blockModels, block, shape, side, top));
     }
 
     private static JsonObject element(float[] box) {

@@ -404,6 +404,24 @@ Other confirmed details, second batch
   player is allowed and `getHorizontalDirection()` then answers north, which is how a gametest
   asks a block what it would place as.
 
+Time is a world clock, and the gametest world's sky ignores it
+--------------------------------------------------------------
+
+`Level.getDayTime()` and `ServerLevel.setDayTime()` are gone. Time lives on **world clocks**:
+`server.clockManager()` is a `ServerClockManager` with `moveToTimeMarker(Holder<WorldClock>,
+ResourceKey<ClockTimeMarker>)`, `setTotalTicks`, `addTicks` and `getTotalTicks`; the overworld's
+clock is `level.dimensionTypeRegistration().value().defaultClock()`, and the markers are
+`ClockTimeMarkers.NOON`, `MIDNIGHT`, `DAY`, `NIGHT`. `/time set noon` is the marker form.
+
+What a machine reads is `Level.getSkyDarken()`, an int from 0 at noon to 11 at midnight - rain
+included - recomputed every server tick from the dimension's `SKY_LIGHT_LEVEL` environment
+attribute. **In a `GameTestServer` world it stays at 0 whatever the clock is moved to**: a panel
+placed at "midnight" made its full noon output. Test the formula, not the world.
+
+`LevelReader.canSeeSky(BlockPos)` is the light engine's answer and **lags a tick or two behind
+`setBlock`**: a roof placed on the same tick as the thing under it shades nothing until the light
+settles. Place the roof, wait a few ticks, then place the thing.
+
 Datagen is two runs, and they delete each other's work
 ------------------------------------------------------
 
