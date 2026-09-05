@@ -264,6 +264,16 @@ Screens and config
   the clever parts stopped mattering. The gate rule went with it: a science pack is worth an arrow
   again once a view holds a dozen nodes instead of the tree.
 
+- **A view's depth is a longest path, and a walk of N steps does not find it.** The research
+  screen shows descendants two deep, placing each by the longest path from the selection so that a
+  technology which is both a child and a grandchild sits in the grandchild's column, where its
+  other arrow can reach it. The walk that found them stopped at two steps, so a technology reached
+  in two steps one way and three another was placed at two - beside the very thing it needs, and
+  an arrow cannot run within a column. Factorio's tree had no such diamond until oil processing
+  brought five technologies with it, and `technology_layout_is_sound` failed the same day. The
+  depths are relaxed to true longest paths now, and a node the relaxation pushes past the view's
+  reach is left out rather than drawn where the picture would lie. **A bound on a search is not a
+  bound on the answer**; compute the answer, then apply the bound.
 - **A comment that says "which is Factorio's rule too" is a claim, and this one was false.**
   Research progress was thrown away on switching, with a paragraph explaining that Factorio does the
   same and that keeping it would cost a per-technology map. Factorio keeps it; the map is six lines;

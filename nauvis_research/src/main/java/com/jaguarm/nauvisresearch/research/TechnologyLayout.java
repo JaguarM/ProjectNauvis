@@ -298,6 +298,15 @@ public final class TechnologyLayout {
      * <p>Longest rather than shortest so that a technology which is both a child and a grandchild
      * sits in the grandchild column, where its other arrow can reach it from the left. Shortest
      * would put it beside its own prerequisite.
+     *
+     * <p>And longest means longest, not the last step that happened to reach it. Factorio's tree
+     * has diamonds wider than the view: oil processing leads to sulfur processing and then to the
+     * chemical science pack in two steps, and to plastics, the advanced circuit and <em>then</em>
+     * the chemical science pack in three. A walk of two steps finds the pack at two and puts it
+     * beside the circuit it needs, and an arrow cannot run within a column - so the depths are
+     * relaxed to true longest paths afterwards, and anything that ends up past the view's reach is
+     * left out rather than drawn somewhere the picture would lie about. {@code
+     * technology_layout_is_sound} is what found this, the day those technologies were added.
      */
     private static Map<ResourceKey<Technology>, Integer> descendants(
             ResourceKey<Technology> selected,
@@ -319,6 +328,25 @@ public final class TechnologyLayout {
             }
             frontier = next;
         }
+
+        // Relax to the longest path through what was found. A DAG, so this settles; the bound is
+        // there for a tree that is not one, which the generator refuses anyway.
+        for (int pass = 0; pass <= depth.size(); pass++) {
+            boolean changed = false;
+            for (ResourceKey<Technology> parent : List.copyOf(depth.keySet())) {
+                int below = depth.get(parent) + 1;
+                for (ResourceKey<Technology> child : children.getOrDefault(parent, List.of())) {
+                    if (depth.containsKey(child) && depth.get(child) < below) {
+                        depth.put(child, below);
+                        changed = true;
+                    }
+                }
+            }
+            if (!changed) {
+                break;
+            }
+        }
+        depth.values().removeIf(steps -> steps > DESCENDANT_DEPTH);
         return depth;
     }
 
