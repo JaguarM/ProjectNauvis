@@ -95,12 +95,26 @@ public final class Multiblock {
      */
     public static @Nullable BlockState getStateForPlacement(MachineBlock block,
             BlockState base, BlockPlaceContext context) {
+        return getStateForPlacement(block, base, context, block.shape().placement());
+    }
+
+    /**
+     * The same, with a chosen cell landing on the clicked block instead of the shape's usual one.
+     *
+     * <p>For a machine that snaps to something in the world. A pumpjack has to stand centred over
+     * an oil well, and a player who clicks the block beside the well meant the well: the block
+     * works out which of its cells the click should become so that the centre lands where it must,
+     * and hands that cell in here. Everything about fitting is unchanged - only which cell is
+     * pinned to the cursor.
+     */
+    public static @Nullable BlockState getStateForPlacement(MachineBlock block,
+            BlockState base, BlockPlaceContext context, int partAtClick) {
         MachineShape shape = block.shape();
         Level level = context.getLevel();
         Direction facing = block.facing(base);
 
-        BlockState placed = base.setValue(shape.part(), shape.placement());
-        BlockPos anchor = shape.anchorPos(context.getClickedPos(), shape.placement(), facing);
+        BlockState placed = base.setValue(shape.part(), partAtClick);
+        BlockPos anchor = shape.anchorPos(context.getClickedPos(), partAtClick, facing);
 
         for (int index = 0; index < shape.cellCount(); index++) {
             BlockPos pos = shape.cellPos(anchor, index, facing);

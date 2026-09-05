@@ -27,7 +27,21 @@
     "light-oil-cracking": null,
     "solid-fuel-from-heavy-oil": null,
     "solid-fuel-from-light-oil": null,
-    "solid-fuel-from-petroleum-gas": null
+    "solid-fuel-from-petroleum-gas": null,
+    "fill-water-barrel": "water-barrel",
+    "empty-water-barrel": null,
+    "fill-crude-oil-barrel": "crude-oil-barrel",
+    "empty-crude-oil-barrel": null,
+    "fill-heavy-oil-barrel": "heavy-oil-barrel",
+    "empty-heavy-oil-barrel": null,
+    "fill-light-oil-barrel": "light-oil-barrel",
+    "empty-light-oil-barrel": null,
+    "fill-lubricant-barrel": "lubricant-barrel",
+    "empty-lubricant-barrel": null,
+    "fill-petroleum-gas-barrel": "petroleum-gas-barrel",
+    "empty-petroleum-gas-barrel": null,
+    "fill-sulfuric-acid-barrel": "sulfuric-acid-barrel",
+    "empty-sulfuric-acid-barrel": null
   },
   "items": {
     "accumulator": {

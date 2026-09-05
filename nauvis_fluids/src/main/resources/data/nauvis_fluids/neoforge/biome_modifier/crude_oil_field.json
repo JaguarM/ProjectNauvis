@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": "nauvis_fluids:crude_oil_field",
+  "step": "top_layer_modification"
+}

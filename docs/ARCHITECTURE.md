@@ -187,6 +187,29 @@ ended it: five blocks tall needs a five-value enum and two-by-two needs two more
 which `MachineShape` had all along. **Two implementations of one idea survive only while the
 smaller one never has to grow.**
 
+**A resource is a block that holds a number.** Factorio's oil is a resource entity, not a fluid,
+and the oil well copies that: `nauvis_fluids:crude_oil` is ordinary unbreakable ground with a block
+entity holding Factorio's resource amount, and nothing about fluids in the world had to be written
+to make it unmovable — a solid block is not bucketed, does not flow and is not picked up. The fluid
+of the same name exists only in tanks and pipes. Ore patches, when the drills become Factorio's
+drills, want the same shape: a block that is the ground and knows how much is under it.
+
+**A resource's starting value is a function of where it is**, seed and position, worked out the
+first time anything asks. Worldgen then only places blocks — a block entity in a proto-chunk is a
+thing to avoid having opinions about — and a resource placed by hand in creative is exactly as rich
+as a generated one there would have been. `CrudeOilField.initialAmount` is the pattern.
+
+**A machine that must stand on something snaps to it.** `Multiblock.getStateForPlacement` takes the
+cell that lands on the click, and `PumpjackBlock.snapPart` chooses it so the centre lands over the
+well nearest the click. The client's outline renderer asks the same method the same question, so
+the footprint drawn is the footprint placed and there is no second copy of the rule.
+
+**An x-ray is a block entity renderer with the depth test off.** The wells light up while a pumpjack
+is in hand because every well has a block entity, so every loaded well has a renderer visited for
+it — no scan. `shouldRenderOffScreen` is what makes it see through hills, because the per-section
+pass never visits a section the visibility graph has culled; and the lines are a pipeline of our
+own with `CompareOp.ALWAYS_PASS`, since every vanilla line pipeline tests depth. See `API-26.2.md`.
+
 **Transactions.** Spending and receiving happen inside one `Transaction`, so a result that will not
 fit rolls back. `commit = false` turns the same method into the simulation, so "can I?" and "do it"
 cannot drift apart.

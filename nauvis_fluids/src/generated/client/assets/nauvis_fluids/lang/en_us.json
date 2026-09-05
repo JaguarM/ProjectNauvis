@@ -1,13 +1,26 @@
 {
+  "block.nauvis_fluids.crude_oil": "Crude oil",
   "block.nauvis_fluids.pipe": "Pipe",
+  "block.nauvis_fluids.pumpjack": "Pumpjack",
   "config.jade.plugin_nauvis_fluids": "Project Nauvis: Fluids",
+  "config.jade.plugin_nauvis_fluids.crude_oil": "Oil well",
   "config.jade.plugin_nauvis_fluids.pipe": "Pipe",
+  "config.jade.plugin_nauvis_fluids.pumpjack": "Pumpjack",
+  "fluid.nauvis_fluids.crude_oil": "Crude oil",
   "fluid.nauvis_fluids.steam": "Steam",
   "itemGroup.nauvis_fluids": "Project Nauvis: Fluids",
+  "jade.nauvis_fluids.crude_oil.floor": "At its floor - pumps at this rate for ever",
+  "jade.nauvis_fluids.crude_oil.yield": "Yield: %s%%",
   "jade.nauvis_fluids.pipe.contents": "%s: %s of %s",
   "jade.nauvis_fluids.pipe.empty": "Empty",
   "jade.nauvis_fluids.pipe.extent": "Pipeline extent: %s pipes",
   "jade.nauvis_fluids.pipe.flowing": "Working",
+  "jade.nauvis_fluids.pumpjack.full": "Full - nothing is drawing the oil off",
+  "jade.nauvis_fluids.pumpjack.no_power": "No power",
+  "jade.nauvis_fluids.pumpjack.no_well": "Not on an oil well",
+  "jade.nauvis_fluids.pumpjack.pumping": "Pumping",
+  "jade.nauvis_fluids.pumpjack.stored": "Crude oil: %s / %s",
   "pack.nauvis_fluids.crafting_table": "Nauvis Fluids: bench recipes (skips research)",
-  "tab.facrafting.group.logistics": "Logistics"
+  "tab.facrafting.group.logistics": "Logistics",
+  "tab.facrafting.group.production": "Production"
 }

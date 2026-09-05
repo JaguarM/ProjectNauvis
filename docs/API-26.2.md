@@ -337,6 +337,73 @@ conditions, which is what `minecraft:default` is.
 
 `TestFunctionLoader` is an abstract class, not a functional interface — it cannot be a lambda.
 
+Worldgen: a Feature, and where its JSON goes
+--------------------------------------------
+
+A feature is a class and three JSON files. `Feature<FC extends FeatureConfiguration>` takes its
+config codec in the constructor and overrides `place(FeaturePlaceContext<FC>)`, which offers
+`level()` (a `WorldGenLevel`), `origin()`, `random()`, `config()` and `chunkGenerator()`. Register
+it with a `DeferredRegister<Feature<?>>` on `Registries.FEATURE`; `NoneFeatureConfiguration.CODEC`
+is a `MapCodec.unitCodec`, so `"config": {}` is the whole configuration.
+
+- `data/<ns>/worldgen/configured_feature/<name>.json` — `{"type": "<ns>:<feature>", "config": {}}`
+- `data/<ns>/worldgen/placed_feature/<name>.json` — `feature` plus a `placement` list. Vanilla's
+  modifiers are `minecraft:rarity_filter` (`chance`), `in_square`, `heightmap` (`WORLD_SURFACE_WG`
+  etc.), `count`, `height_range`, `biome`. Read `data/minecraft/worldgen/placed_feature/` in the
+  client jar for the shapes.
+- `data/<ns>/neoforge/biome_modifier/<name>.json` — `{"type": "neoforge:add_features", "biomes":
+  "#minecraft:is_overworld", "features": "<ns>:<placed>", "step": "top_layer_modification"}`. The
+  steps are `GenerationStep.Decoration`'s names; `top_layer_modification` runs after trees and
+  grass, `underground_ores` before.
+
+`WorldGenLevel.getHeight(Heightmap.Types, x, z)` primes a missing heightmap on demand, so a `_WG`
+type works on a live `ServerLevel` too — with an `Unprimed heightmap` error logged in a dev run.
+`MOTION_BLOCKING` is kept live and available to worldgen, and stops at leaves and water, which is
+what a feature that wants the earth under a tree has to walk down through.
+
+`Mth.getSeed(Vec3i)` is the per-position hash for a deterministic `RandomSource.create(seed ^ ...)`.
+
+Rendering through walls: a pipeline of your own
+------------------------------------------------
+
+Every vanilla line pipeline tests depth — `RenderPipelines.LINES`, `LINES_TRANSLUCENT`,
+`SECONDARY_BLOCK_OUTLINE` all carry a `DepthStencilState` with `GREATER_THAN_OR_EQUAL` — so an
+outline that must show through terrain needs one built from the snippet:
+
+```java
+RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
+        .withLocation(Identifier.fromNamespaceAndPath(MODID, "pipeline/xray"))
+        .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
+        .build();
+```
+
+registered in **`RegisterRenderPipelinesEvent`** (mod bus) so it is compiled with vanilla's, then
+wrapped as `RenderType.create(name, RenderSetup.builder(pipeline).setLayeringTransform(
+VIEW_OFFSET_Z_LAYERING).setOutputTarget(ITEM_ENTITY_TARGET).createRenderSetup())` — the same setup
+`RenderTypes.LINES` uses. `DepthStencilState` and `CompareOp` are `com.mojang.blaze3d.pipeline` and
+`.platform`; `withLocation(String)` puts the id in the `minecraft` namespace, so use the
+`Identifier` overload.
+
+`SubmitNodeCollector.submitShapeOutline(poseStack, VoxelShape, RenderType, int argb, float width,
+boolean afterTerrain)` draws a box outline from a renderer's `submit`, in the block's own frame.
+`nauvis_fluids/.../client/CrudeOilRenderer.java` is the worked example, including the
+`shouldRenderOffScreen` that a see-through outline also needs — a culled chunk section's block
+entities are not visited by the per-section pass, hill or no hill.
+
+Other confirmed details, second batch
+-------------------------------------
+
+- **`BaseEntityBlock` no longer forces `RenderShape.INVISIBLE`.** In 26.2 it is `codec()`,
+  `triggerEvent`, `getMenuProvider` and `createTickerHelper` and nothing about rendering, so a
+  block entity block renders its model with no override. Every machine here relies on it.
+- `Block.getLootTable()` is `Optional<ResourceKey<LootTable>>`; `noLootTable()` makes it empty,
+  and `BlockLootSubProvider` skips such a block rather than demanding a table for it.
+- `BlockState.getDestroySpeed(BlockGetter, BlockPos)` returns the `strength` you gave; `-1` is
+  unbreakable. `getPistonPushReaction()` reads the `pushReaction` property.
+- `BlockPlaceContext(Level, @Nullable Player, InteractionHand, ItemStack, BlockHitResult)` — a null
+  player is allowed and `getHorizontalDirection()` then answers north, which is how a gametest
+  asks a block what it would place as.
+
 Datagen is two runs, and they delete each other's work
 ------------------------------------------------------
 

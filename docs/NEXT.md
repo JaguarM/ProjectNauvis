@@ -16,13 +16,29 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and twenty-three gametests pass, `./gradlew build` is clean, and the client boots into a
+A hundred and thirty gametests pass, `./gradlew build` is clean, and the client boots into a
 world. **Milestone 2 is closed**: the red tier is in whole — the fast belt and the fast splitter —
 a belt in hand replaces the one it is clicked on, and **belt lines climb**. Milestone 3 has its
 research half in, and five of its nine items — the steel line, green science and the medium pole,
 which between them give `steel-processing`, `science-pack-2` and `electric-energy-distribution-1`
 teeth. The big pole came with the medium one and the substation came with the big one, because four
 pole tiers is one piece of work rather than four.
+
+**Oil starts.** Milestone 4's first two pieces are in, and they are Factorio's to the number: the
+oil well and the pumpjack. An oil well is `nauvis_fluids:crude_oil`, a *block of ground* rather
+than a fluid — Factorio's `crude-oil` is a resource entity, not a puddle — unbreakable, unpushable,
+dropless, placed by worldgen in fields of three to eight wells four blocks apart and never within
+two hundred blocks of the origin. It holds one number, Factorio's resource amount: 300000 is 100%
+yield, each pumpjack cycle takes ten off it, and it stops at 60000 or a fifth of what it started
+with, whichever is more — **Factorio's oil is not finite, it decays to a floor and pumps for ever
+at it.** The pumpjack is 3×3, must stand centred over a well, spends 12 FE/t (90 kW at the pack's
+ratio), and banks ten units times the yield once a second into a thousand-unit tank that a pipe
+draws from at one corner. `nauvis_fluids:crude_oil` the *fluid* is what flows; the block never
+contains it. Two quality-of-life things Yannic asked for: **holding a pumpjack outlines every well
+in render distance through the terrain** — Factorio's map colour, no map — and **placement snaps**:
+click any of the nine blocks over a well and the machine lands centred on it, with the footprint
+drawn before you click. `oil-gathering` unlocks it, behind `fluid-handling` and `engine`, which
+came in with it at Factorio 2.0's costs. See `GAPS.md` for what the worldgen approximates.
 
 **Belt lines change level the way rails do.** A belt hands to the first belt of its own tier
 straight ahead, one above, or one below - vanilla's `RailState` probe, with level winning over
@@ -104,7 +120,9 @@ is an int like every other machine's.
 | `nauvis_logistics:long_handed_inserter` | the same arm reaching two blocks. 3 FE/t, 17-tick swing, the only block that does not sleep perfectly |
 | `nauvis_logistics:iron_chest` | 36 slots on vanilla's four-row screen. A `ChestBlock`, so it has vanilla's lid and opens like one |
 | `nauvis_logistics:steel_chest` | the same again at 54 slots and six rows, in lighter metal. Neither pairs |
-| `nauvis_fluids:pipe` / `steam` | a run is one object however long; steam is a real fluid, so pipes and machines meet at the capability |
+| `nauvis_fluids:pipe` / `steam` / `crude_oil` | a run is one object however long; steam and crude oil are real fluids, so pipes and machines meet at the capability |
+| `nauvis_fluids:crude_oil` (block) | an oil well: unbreakable ground with a number in it. 300000 is 100%, 10 off a cycle, floors at 60000 or a fifth of its start. Fields of 3–8, four apart, none within 200 of the origin |
+| `nauvis_fluids:pumpjack` | 3×3, ten blocks, centred on a well or nowhere; 12 FE/t; 10 × yield a second into a 1000 tank; oil leaves the north-east corner's north face and turns with the machine. Snaps to the well, x-rays every well while in hand |
 | `nauvis_power:boiler` | 3×2, seven blocks; burns fuel, steam out under the chimney |
 | `nauvis_power:steam_engine` | 5×3, seventeen blocks; steam in at the open ends of its spine, 120 FE/t out |
 | `nauvis_power:small_electric_pole` | 1×1×4, wood. Reaches 7.5, supplies 5×5 |
@@ -230,7 +248,33 @@ the one to leave: it is oil-free but it forces a decision that comes before the 
 whether this pack has a smelting machine of its own at all — `stone-furnace` stands in as
 `minecraft:furnace` today.
 
-### 3. More removals follow the items
+### 3. Oil, the rest of it
+
+The well and the pumpjack are in (above). What is left of milestone 4, in the order the tree wants
+it:
+
+- **`oil-processing` is a triggered technology in Factorio 2.0** — `mine-entity: crude-oil, 1`, so
+  it completes the moment a pumpjack draws its first oil, with no lab and no packs. The generator
+  only knows `craft-item` triggers, so the technology is not in `data/technologies.json` yet: it
+  needs a second trigger type through `gen_technologies.py` and `nauvis_research`, and the pumpjack
+  reporting its first cycle. It unlocks the refinery, the chemical plant, `basic-oil-processing` and
+  `solid-fuel-from-petroleum-gas`, and everything after it — plastics, sulfur, flammables — hangs
+  off it.
+- **The refinery, which is the hard part.** Three outputs that block each other — heavy, light,
+  petroleum — into separate tanks, and a full tank stalls the machine. That is the puzzle Factorio's
+  oil *is*, and it needs real capacity and back-pressure, not barrels. `FluidNetwork` already
+  carries any fluid, one per run; what it lacks is a tank block and a machine with several fluid
+  ports. The `storage-tank` is 3×3 and mapped.
+- **The oil recipes have no source.** `reference/factorio/recipes.json` carries crude, heavy, light
+  and petroleum as raw inputs with null recipes, and `data/mapping.json` maps the processing recipes
+  to null. Non-negotiable #2 says recipes are generated, so the refinery's and the chemical plant's
+  recipes need a second data source — Wube's `recipe.lua` — and a fluid-aware `gen_recipes.py`.
+  That is the real gap; the machines are the usual work.
+- **The x-ray stands in for a map.** Factorio finds oil for you on the map view; here a well is a
+  dark block a tree hides, and a pumpjack in hand outlines wells within render distance. Whether
+  that is enough to find a field four hundred blocks out is a playtest question — see below.
+
+### 4. More removals follow the items
 
 The conflict half of `data/removals.json` is already waiting: the moment a mod ships a recipe for
 `minecraft:redstone_lamp`, `cobblestone_wall`, `rail` or `iron_door`, the build fails until
@@ -288,6 +332,35 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
 - and put a substation in the middle of a field of machines. Eighteen by eighteen is most of a
   chunk, and whether that feels generous or absurd at Minecraft's scale is a judgement no test
   makes.
+
+**Oil**, which is brand new and which nothing in this repo can see.
+
+- **find a field.** `/locate` cannot; fly out past two hundred blocks with a pumpjack in hand and
+  look for magenta outlines through the ground. Whether the x-ray reaches far enough to find a
+  field at Factorio's density — one per twelve hundred chunks, so the nearest is typically three or
+  four hundred blocks out — or whether that is a trek nobody will make without a map, is the whole
+  question. The chance is one line in `placed_feature/crude_oil_field.json`;
+- **look at a field.** Three to eight black-topped blocks four apart on levelled pads, the grass and
+  trees cleared over each. Whether the pads read as a field or as a scar is a judgement no test
+  makes; `levelAround` in `CrudeOilFieldFeature` is the lever, and on flat ground it does nothing;
+- **hover a well.** Jade should say `Yield: 143%` or thereabouts — between 90 and 200 near the start,
+  climbing with distance. Place a well in creative and hover it: it should read a plausible yield,
+  because a well works out its own richness from where it is;
+- **hold a pumpjack over a field and walk about.** The nearest well's 3×3 footprint should appear in
+  blue as you aim near it and move from well to well as you aim, and go when you look away. Click
+  one block off a well: the machine should land centred on it anyway, outlet on the far side.
+  **Whether the footprint reads as a placement ghost or as a stray box is the thing to judge**;
+- **look at the pumpjack.** Ten blocks, walkable but for the pump in the middle, a wellhead on the
+  outlet corner. Whether a nodding donkey inside one block reads as a pumpjack at all is a judgement
+  for eyes, and it is boxes in `PumpjackShape`;
+- **pipe it and power it.** A pipe at the outlet corner should reach into the machine; one on a
+  flank should not. With a pole in range Jade's energy bar fills, the status says *Pumping*, and the
+  pipe's readout shows crude oil arriving at ten a second. Nothing consumes it yet, so the run fills
+  and the machine says *Full*, which is not a fault;
+- and **check the tag question.** The pumpjack and the pipe are in `mineable/pickaxe` now, through
+  a tag provider in `nauvis_fluids`. **The boiler, the engine, the assembler and the drills require
+  the correct tool for drops and are in no `mineable/` tag at all** — if a boiler mined with a
+  pickaxe drops nothing, that is why, and every machine mod wants the same three-line provider.
 
 **The hover readout on every machine**, which is new and which no test can see.
 

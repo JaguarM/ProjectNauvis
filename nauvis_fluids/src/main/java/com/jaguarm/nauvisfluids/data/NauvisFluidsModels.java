@@ -1,22 +1,36 @@
 package com.jaguarm.nauvisfluids.data;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
-import com.jaguarm.nauvisfluids.pipe.PipeBlock;
+import com.jaguarm.nauvisfluids.multiblock.Boxes;
+import com.jaguarm.nauvisfluids.multiblock.MachineCell;
+import com.jaguarm.nauvisfluids.multiblock.MachineShape;
+import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.ItemModelGenerators;
+import net.minecraft.client.data.models.MultiVariant;
 import net.minecraft.client.data.models.ModelProvider;
 import net.minecraft.client.data.models.blockstates.MultiPartGenerator;
+import net.minecraft.client.data.models.blockstates.MultiVariantGenerator;
+import net.minecraft.client.data.models.blockstates.PropertyDispatch;
 import net.minecraft.client.data.models.model.ModelInstance;
+import net.minecraft.client.data.models.model.ModelLocationUtils;
+import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.client.data.models.model.TextureMapping;
+import net.minecraft.client.data.models.model.TextureSlot;
 import net.minecraft.client.renderer.block.dispatch.VariantMutator;
+import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -32,6 +46,10 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
  * connected face. That is not decoration - the connections are real, and a run that has not joined
  * the boiler you thought it had joined is a thing you can see rather than a thing you have to work
  * out from a tooltip.
+ *
+ * <p>The oil well is a cube of earth with a black top: dirt on its sides so it sits in the ground
+ * it replaced, and the puddle on top. The pumpjack is a machine on the shared shell, generated
+ * from its shape the way the boiler and the engine are.
  */
 public class NauvisFluidsModels extends ModelProvider {
 
@@ -41,6 +59,35 @@ public class NauvisFluidsModels extends ModelProvider {
 
     @Override
     protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {
+        pipe(blockModels);
+        crudeOil(blockModels);
+
+        // Dark metal, with an anvil's top for the decks: a pumpjack is heavy iron standing in oil.
+        machine(blockModels, ModBlocks.PUMPJACK.get(), PumpjackShape.SHAPE,
+                TextureMapping.getBlockTexture(Blocks.POLISHED_BLACKSTONE).sprite(),
+                TextureMapping.getBlockTexture(Blocks.ANVIL, "_top").sprite());
+    }
+
+    /**
+     * An oil well: the ground with oil on it.
+     *
+     * <p>Black concrete on top, dirt below and round the sides, so a well sits in a field as a dark
+     * puddle rather than as a cube of something. The dyed blocks are {@code ColorCollection}s in
+     * 26.2 and their textures are still {@code block/<colour>_<block>}, so the top is named directly.
+     */
+    private static void crudeOil(BlockModelGenerators blockModels) {
+        Block well = ModBlocks.CRUDE_OIL.get();
+        TextureMapping textures = new TextureMapping()
+                .put(TextureSlot.TOP, new Material(Identifier.withDefaultNamespace("block/black_concrete")))
+                .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(Blocks.DIRT))
+                .put(TextureSlot.BOTTOM, TextureMapping.getBlockTexture(Blocks.DIRT));
+        Identifier model = ModelTemplates.CUBE_BOTTOM_TOP.create(well, textures, blockModels.modelOutput);
+        blockModels.blockStateOutput.accept(
+                BlockModelGenerators.createSimpleBlock(well, BlockModelGenerators.plainVariant(model)));
+        blockModels.registerSimpleItemModel(well, model);
+    }
+
+    private static void pipe(BlockModelGenerators blockModels) {
         Identifier texture = TextureMapping.getBlockTexture(Blocks.IRON_BLOCK).sprite();
 
         Identifier core = pipeModel(blockModels, "pipe_core", texture,
@@ -136,6 +183,147 @@ public class NauvisFluidsModels extends ModelProvider {
         }
         element.add("faces", faces);
         return element;
+    }
+
+    // --- machines, generated from their shapes exactly as nauvis_power generates its own ---------
+
+    /**
+     * Every cell of a machine, plus the miniature that goes in the player's hand.
+     *
+     * <p>The same generator {@code nauvis_power} has, duplicated rather than shared for the reason
+     * non-negotiable #3 gives. One dispatch over both {@code part} and the facing, with the two
+     * rotations <em>added</em> by hand: a {@code VariantMutator} sets {@code y} rather than adding
+     * to it, so chaining the facing after the cell's turn overwrote it in three directions of four.
+     * See {@code docs/PITFALLS.md}; {@code tools/check_models.py} checks the sum against the shape.
+     */
+    private static void machine(BlockModelGenerators blockModels, Block block, MachineShape shape,
+            Identifier side, Identifier top) {
+        Map<String, Identifier> models = new HashMap<>();
+        for (MachineCell cell : shape.cells()) {
+            models.computeIfAbsent(cell.model(),
+                    name -> cellModel(blockModels, block, cell, side, top));
+        }
+
+        PropertyDispatch.C2<MultiVariant, Integer, Direction> dispatch =
+                PropertyDispatch.initial(shape.part(), BlockStateProperties.HORIZONTAL_FACING);
+        for (int index = 0; index < shape.cellCount(); index++) {
+            MachineCell cell = shape.cell(index);
+            for (Direction facing : Direction.Plane.HORIZONTAL) {
+                dispatch = dispatch.select(index, facing, BlockModelGenerators
+                        .plainVariant(models.get(cell.model()))
+                        .with(turn(cell.turns() + Boxes.quarterTurns(facing))));
+            }
+        }
+        blockModels.blockStateOutput.accept(MultiVariantGenerator.dispatch(block).with(dispatch));
+
+        blockModels.registerSimpleItemModel(block,
+                inventoryModel(blockModels, block, shape, side, top));
+    }
+
+    /** The blockstate rotation matching {@link MachineCell#turns()}, which turns the boxes. */
+    private static VariantMutator turn(int turns) {
+        return switch (Math.floorMod(turns, 4)) {
+            case 1 -> BlockModelGenerators.Y_ROT_90;
+            case 2 -> BlockModelGenerators.Y_ROT_180;
+            case 3 -> BlockModelGenerators.Y_ROT_270;
+            default -> BlockModelGenerators.NOP;
+        };
+    }
+
+    private static Identifier cellModel(BlockModelGenerators blockModels, Block block,
+            MachineCell cell, Identifier side, Identifier top) {
+        Identifier id = ModelLocationUtils.getModelLocation(block, "_" + cell.model());
+        blockModels.modelOutput.accept(id, () -> {
+            JsonArray elements = new JsonArray();
+            for (float[] box : cell.boxes()) {
+                elements.add(machineElement(box, true));
+            }
+            return machineModel(elements, side, top);
+        });
+        return id;
+    }
+
+    /**
+     * The whole machine in one block, for the item in your hand: every cell turned by its own
+     * {@code turns}, moved to where it sits, and the lot scaled until the longest side is one block.
+     */
+    private static Identifier inventoryModel(BlockModelGenerators blockModels, Block block,
+            MachineShape shape, Identifier side, Identifier top) {
+        Identifier id = ModelLocationUtils.getModelLocation(block, "_inventory");
+        blockModels.modelOutput.accept(id, () -> {
+            int longest = Math.max(shape.width(), Math.max(shape.height(), shape.depth()));
+            float scale = 1.0F / longest;
+            float shiftX = (16.0F - 16.0F * shape.width() / longest) / 2.0F;
+            float shiftZ = (16.0F - 16.0F * shape.depth() / longest) / 2.0F;
+
+            JsonArray elements = new JsonArray();
+            for (MachineCell cell : shape.cells()) {
+                for (float[] box : Boxes.rotate(cell.boxes(), cell.turns())) {
+                    elements.add(machineElement(new float[] {
+                        shiftX + scale * (box[0] + 16 * cell.x()),
+                        scale * (box[1] + 16 * cell.y()),
+                        shiftZ + scale * (box[2] + 16 * cell.z()),
+                        shiftX + scale * (box[3] + 16 * cell.x()),
+                        scale * (box[4] + 16 * cell.y()),
+                        shiftZ + scale * (box[5] + 16 * cell.z()),
+                    }, false));
+                }
+            }
+            return machineModel(elements, side, top);
+        });
+        return id;
+    }
+
+    private static JsonObject machineModel(JsonArray elements, Identifier side, Identifier top) {
+        JsonObject textures = new JsonObject();
+        textures.addProperty("side", side.toString());
+        textures.addProperty("top", top.toString());
+        textures.addProperty("bottom", side.toString());
+        textures.addProperty("particle", side.toString());
+
+        JsonObject model = new JsonObject();
+        model.addProperty("parent", "minecraft:block/block");
+        model.add("textures", textures);
+        model.add("elements", elements);
+        return model;
+    }
+
+    /**
+     * One box of a machine, with the shell's three texture slots on its six faces. {@code cullface}
+     * only where a face lies on a block boundary, and only for a block model - see the same method
+     * in {@code nauvis_power} for why.
+     */
+    private static JsonObject machineElement(float[] box, boolean cull) {
+        JsonObject element = new JsonObject();
+        element.add("from", vector(box[0], box[1], box[2]));
+        element.add("to", vector(box[3], box[4], box[5]));
+
+        JsonObject faces = new JsonObject();
+        for (Direction direction : Direction.values()) {
+            JsonObject face = new JsonObject();
+            face.addProperty("texture", switch (direction) {
+                case UP -> "#top";
+                case DOWN -> "#bottom";
+                default -> "#side";
+            });
+            if (cull && onBoundary(box, direction)) {
+                face.addProperty("cullface", direction.getSerializedName());
+            }
+            faces.add(direction.getSerializedName(), face);
+        }
+        element.add("faces", faces);
+        return element;
+    }
+
+    private static boolean onBoundary(float[] box, Direction direction) {
+        return switch (direction) {
+            case DOWN -> box[1] == 0;
+            case UP -> box[4] == 16;
+            case NORTH -> box[2] == 0;
+            case SOUTH -> box[5] == 16;
+            case WEST -> box[0] == 0;
+            case EAST -> box[3] == 16;
+        };
     }
 
     private static JsonArray vector(float x, float y, float z) {

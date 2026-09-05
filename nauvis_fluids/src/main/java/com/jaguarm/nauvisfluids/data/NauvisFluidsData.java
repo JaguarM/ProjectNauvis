@@ -5,22 +5,32 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
+import com.jaguarm.nauvisfluids.multiblock.MachineShape;
+import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
 import com.jaguarm.nauvisfluids.registry.ModItems;
 
+import net.minecraft.advancements.predicates.StatePropertiesPredicate;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.data.loot.LootTableProvider;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
-/** Models, language and loot. Recipes come from tools/gen_recipes.py, never from here. */
+/** Models, language, loot and tags. Recipes come from tools/gen_recipes.py, never from here. */
 @EventBusSubscriber(modid = NauvisFluids.MODID)
 public final class NauvisFluidsData {
 
@@ -40,6 +50,29 @@ public final class NauvisFluidsData {
                         Set.of(),
                         List.of(new LootTableProvider.SubProviderEntry(BlockLoot::new, LootContextParamSets.BLOCK)),
                         lookup));
+        event.createProvider(BlockTagsData::new);
+    }
+
+    /**
+     * Which tool mines what.
+     *
+     * <p>The pipe and the pumpjack both require the correct tool for their drops, and the tool
+     * that is correct is decided by this tag and nothing else - a block that requires a tool and
+     * is in no {@code mineable/} tag has no correct tool, and never drops. The oil well is not
+     * here: it is unbreakable, and has no drops to protect.
+     */
+    private static class BlockTagsData extends BlockTagsProvider {
+
+        BlockTagsData(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
+            super(output, lookup, NauvisFluids.MODID);
+        }
+
+        @Override
+        protected void addTags(HolderLookup.Provider registries) {
+            tag(BlockTags.MINEABLE_WITH_PICKAXE)
+                    .add(ModBlocks.PIPE.getKey())
+                    .add(ModBlocks.PUMPJACK.getKey());
+        }
     }
 
     private static class Lang extends LanguageProvider {
@@ -56,16 +89,22 @@ public final class NauvisFluidsData {
             // each mod ships the keys for the groups it actually uses - so the strip reads the
             // same whichever subset of the pack is installed.
             add("tab.facrafting.group.logistics", "Logistics");
+            add("tab.facrafting.group.production", "Production");
             addBlock(ModBlocks.PIPE, "Pipe");
+            addBlock(ModBlocks.CRUDE_OIL, "Crude oil");
+            addBlock(ModBlocks.PUMPJACK, "Pumpjack");
 
-            // Steam is never in the world, but Jade and any tank screen will name it.
+            // Never in the world, but Jade and any tank screen will name them.
             add("fluid.nauvis_fluids.steam", "Steam");
+            add("fluid.nauvis_fluids.crude_oil", "Crude oil");
 
             // Jade's settings screen lists every provider and asserts if one has no name, and
             // that assert fires from ScreenEvent.Init - a missing key here is not a blank line in
             // a config menu, it is a crash the moment any screen opens.
             add("config.jade.plugin_nauvis_fluids", "Project Nauvis: Fluids");
             add("config.jade.plugin_nauvis_fluids.pipe", "Pipe");
+            add("config.jade.plugin_nauvis_fluids.crude_oil", "Oil well");
+            add("config.jade.plugin_nauvis_fluids.pumpjack", "Pumpjack");
 
             // Factorio's pipe tooltip, as near as is honest. It says "Pipeline extent: 6/320";
             // the 320 is its cap on one fluid segment and this pack has none, so ours stops at
@@ -74,7 +113,19 @@ public final class NauvisFluidsData {
             add("jade.nauvis_fluids.pipe.empty", "Empty");
             add("jade.nauvis_fluids.pipe.extent", "Pipeline extent: %s pipes");
             add("jade.nauvis_fluids.pipe.flowing", "Working");
-                        // "skips research" is not a caveat, it is the point of the pack and has to be on the
+
+            // Factorio's oil well tooltip is one line, and this is it.
+            add("jade.nauvis_fluids.crude_oil.yield", "Yield: %s%%");
+            add("jade.nauvis_fluids.crude_oil.floor", "At its floor - pumps at this rate for ever");
+
+            // Factorio's pumpjack window: contents, yield, and the status line.
+            add("jade.nauvis_fluids.pumpjack.stored", "Crude oil: %s / %s");
+            add("jade.nauvis_fluids.pumpjack.pumping", "Pumping");
+            add("jade.nauvis_fluids.pumpjack.full", "Full - nothing is drawing the oil off");
+            add("jade.nauvis_fluids.pumpjack.no_power", "No power");
+            add("jade.nauvis_fluids.pumpjack.no_well", "Not on an oil well");
+
+            // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the
             // only place a timed craft happens; a vanilla bench recipe goes nowhere near it and
             // there is no hook that would let it. A player who turns this on has turned the tech
@@ -93,6 +144,26 @@ public final class NauvisFluidsData {
         @Override
         protected void generate() {
             dropSelf(ModBlocks.PIPE.get());
+            // One pumpjack, not ten. The other cells are torn down by the block itself, with
+            // drops enabled - that is what hands the player their machine back whichever cell
+            // they hit - so only the anchor may carry a drop.
+            add(ModBlocks.PUMPJACK.get(), anchorOnly(ModBlocks.PUMPJACK.get(), PumpjackShape.SHAPE));
+            // The oil well has no table at all: noLootTable() in its properties, so it is skipped
+            // here and drops nothing if anything ever manages to break it.
+        }
+
+        /**
+         * Vanilla's {@code createSinglePropConditionTable}, for a property that is a number.
+         * The same method {@code nauvis_power} has for its boiler.
+         */
+        private LootTable.Builder anchorOnly(Block block, MachineShape shape) {
+            return LootTable.lootTable().withPool(applyExplosionCondition(block,
+                    LootPool.lootPool()
+                            .setRolls(ConstantValue.exactly(1.0F))
+                            .add(LootItem.lootTableItem(block).when(
+                                    LootItemBlockStatePropertyCondition.hasBlockStateProperties(block)
+                                            .setProperties(StatePropertiesPredicate.Builder.properties()
+                                                    .hasProperty(shape.part(), shape.anchor()))))));
         }
 
         @Override

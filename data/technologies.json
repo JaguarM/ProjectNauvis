@@ -626,5 +626,92 @@
     "unlock_recipes": [
       "stone-wall"
     ]
+  },
+  {
+    "id": "engine",
+    "prerequisites": [
+      "steel-processing",
+      "science-pack-2"
+    ],
+    "cost": {
+      "count": 100,
+      "time_seconds": 15,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "engine-unit"
+    ]
+  },
+  {
+    "id": "fluid-handling",
+    "prerequisites": [
+      "automation-2",
+      "engine"
+    ],
+    "cost": {
+      "count": 50,
+      "time_seconds": 15,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "storage-tank",
+      "pump",
+      "empty-barrel",
+      "fill-water-barrel",
+      "empty-water-barrel",
+      "fill-crude-oil-barrel",
+      "empty-crude-oil-barrel",
+      "fill-heavy-oil-barrel",
+      "empty-heavy-oil-barrel",
+      "fill-light-oil-barrel",
+      "empty-light-oil-barrel",
+      "fill-lubricant-barrel",
+      "empty-lubricant-barrel",
+      "fill-petroleum-gas-barrel",
+      "empty-petroleum-gas-barrel",
+      "fill-sulfuric-acid-barrel",
+      "empty-sulfuric-acid-barrel"
+    ]
+  },
+  {
+    "id": "oil-gathering",
+    "prerequisites": [
+      "fluid-handling"
+    ],
+    "cost": {
+      "count": 100,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "pumpjack"
+    ]
   }
 ]

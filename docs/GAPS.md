@@ -20,6 +20,40 @@ Power and fluids
   Two things would remove it and neither exists: a hook that fires when the block entity at a
   watched position changes, or a reason to believe every source a long arm reaches is one of ours.
 
+Oil
+---
+
+- **An oil well is not finite, and that is Factorio's rule, not a softening of it.** A well is pumped
+  down ten a cycle to a floor — 60000, or a fifth of what it started with, whichever is more — and
+  pumps at that rate for ever. Two a second from a well that began at 100%. A player who runs their
+  only field dry would have no way to plastic, and Factorio never lets that happen. The readout
+  says *At its floor* so the falling number is not mistaken for a countdown to nothing.
+- **Where fields go is an approximation of Factorio's autoplace, and how rich they are is half
+  Wube's numbers.** The prototype states `additional_richness = 220000` and a distance factor of
+  `max((1300 + d) / 2600, 1)`, and both are used as written. The density term on top — the spread
+  between 90% and 200% at the edge of the starting area — is this pack's, chosen to match what a
+  Factorio player finds there, because the real one lives in a noise program this pack has no copy
+  of. Fields per chunk is a rarity of 1200, which is Factorio's 1.8 per square kilometre; wells per
+  field, three to eight; spacing, a 4-block grid. All of that is placement behaviour, and none of it
+  is identity — the yield percentages and what a pumpjack does with them are.
+- **Distance is measured from the world origin, not the world spawn.** Factorio measures from the
+  starting position, which is its origin. Minecraft's spawn is near 0,0 and can move; a rule that
+  read the spawn would make new chunks richer or poorer after `/setworldspawn`.
+- **There is no map, so there is an x-ray.** Factorio's map view is how oil is found. Holding a
+  pumpjack outlines every well within render distance through the terrain; further than that,
+  nothing. Whether that finds a field at Factorio's density is the open playtest question.
+- **No mining productivity, no pollution, no modules.** The pumpjack has two module slots and
+  10/min of pollution in Factorio, and mining productivity research raises its output. All three
+  are mechanics this pack does not have yet; the machine is the plain 90 kW one.
+- **No brownout, again.** A pumpjack short of 12 FE stops; Factorio's runs slower.
+- **The tank is one number and the pipe run is one tank**, as for steam. Factorio 2.0's flow
+  model — segments, throughput falling with length — is not modelled, and a pipeline here carries
+  whatever is put in at once.
+- **Crude oil goes nowhere yet.** No refinery, no storage tank, no barrelling. A pumpjack fills the
+  pipe run it is attached to and stops, and says *Full*, which is correct and not a fault.
+- **`oil-processing` is not in the tree.** In Factorio 2.0 it is finished by pumping crude oil once
+  — a `mine-entity` trigger — and the generator only knows `craft-item`. See `NEXT.md`.
+
 Belts
 -----
 

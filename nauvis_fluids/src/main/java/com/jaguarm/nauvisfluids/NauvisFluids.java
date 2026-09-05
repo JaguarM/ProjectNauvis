@@ -1,7 +1,8 @@
 package com.jaguarm.nauvisfluids;
 
-import com.jaguarm.nauvisfluids.registry.ModBlocks;
 import com.jaguarm.nauvisfluids.registry.ModBlockEntities;
+import com.jaguarm.nauvisfluids.registry.ModBlocks;
+import com.jaguarm.nauvisfluids.registry.ModFeatures;
 import com.jaguarm.nauvisfluids.registry.ModFluids;
 import com.jaguarm.nauvisfluids.registry.ModItems;
 
@@ -10,17 +11,18 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 
 /**
- * Barrels, then pipes, oil, chemistry and nuclear.
+ * Pipes, oil, chemistry and nuclear.
  *
- * <p>Almost none of that exists yet, and this mod is here three milestones early for one reason:
- * the boiler and the steam engine are both paid for in pipes, so milestone 1's power needs one
- * item out of a mod whose real work is milestone 4. Registering the pipe now, with the right id
- * and the right recipe, costs nothing and keeps non-negotiable #1 honest - the alternative was to
- * invent a stand-in ingredient and have to break it later.
+ * <p>This mod is here three milestones early for one reason: the boiler and the steam engine are
+ * both paid for in pipes, so milestone 1's power needs one item out of a mod whose real work is
+ * milestone 4. Registering the pipe with the right id and the right recipe cost nothing and kept
+ * non-negotiable #1 honest.
  *
- * <p>The pipe carries steam. PLAN.md's shortcut for milestone 4 is barrels-as-items and no pipe
- * network at all; steam brought one forward, because a boiler and a steam engine that can only be
- * built touching each other is not the arrangement this pack is copying.
+ * <p>The pipe carries steam, and now crude oil. Oil starts here: oil wells in the ground, placed by
+ * worldgen in fields and never moved, and the pumpjack that stands over one and draws from it at
+ * Factorio's rate. PLAN.md's shortcut for the rest of milestone 4 is barrels as items; the pipe
+ * network that steam brought forward means oil can already flow, and what barrels still defer is
+ * the refinery and its tanks.
  */
 @Mod(NauvisFluids.MODID)
 public class NauvisFluids {
@@ -34,6 +36,7 @@ public class NauvisFluids {
         ModFluids.FLUIDS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModItems.TABS.register(modEventBus);
+        ModFeatures.FEATURES.register(modEventBus);
         modEventBus.addListener(ModPacks::addPackFinders);
         NauvisFluidsGameTests.register(modEventBus);
     }

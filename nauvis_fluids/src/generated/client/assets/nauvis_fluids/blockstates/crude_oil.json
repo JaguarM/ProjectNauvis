@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "nauvis_fluids:block/crude_oil"
+    }
+  }
+}

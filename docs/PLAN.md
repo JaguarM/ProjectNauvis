@@ -263,12 +263,24 @@ its unlocks are identity, they live in world saves, and generating the whole gra
 own data costs no more than generating a tenth of it. Most of them unlock items no mod registers
 yet, and simply do nothing until one does. What is left of this milestone is the items.
 
-### 4 — Oil, in barrels · 11 new
+### 4 — Oil · 11 new
 
 `pumpjack`, `oil-refinery`, `chemical-plant`, `empty-barrel`, `storage-tank`,
 `plastic-bar`, `advanced-circuit`, `engine-unit`, `science-pack-3`, `electric-mining-drill`.
-No pipe network yet — oil moves as barrelled items, which is canon in Factorio and deletes an
-entire fluid subsystem from the critical path. Blue science becomes reachable without a pipe.
+
+**The pumpjack and the oil well are done**, and the well is the piece nobody had a shape for: a
+resource *block* — unbreakable ground holding Factorio's resource amount — rather than a fluid in
+the world, exactly as Factorio's `crude-oil` is an entity you stand a pumpjack on and not a puddle.
+The pumpjack spends 90 kW's worth of FE and banks ten units times the yield a second, the well loses
+ten a cycle and floors at 20%, and a pipe at the outlet corner carries the oil away. Worldgen puts
+fields down at Factorio's density and none in the starting area.
+
+The barrels shortcut this section used to prescribe — *oil moves as barrelled items, no pipes at
+all* — predates the pipe. Steam brought the fluid network forward in milestone 1, so oil already
+flows; what barrels would still spare is the refinery's three blocking outputs and the tanks under
+them, and that is the part the milestone is actually about, so it is done properly. What remains is
+the refinery and the chemical plant, a fluid-aware recipe generator with a data source for the oil
+recipes, and `oil-processing`, which in Factorio 2.0 is triggered by the first oil pumped.
 
 ### 5 — Military and pollution · 8 new
 ### 6 — Trains · 6 new
@@ -290,7 +302,7 @@ Shortcuts, and what they defer
 | Power | FE per machine — burner generator, solar, FE-battery accumulator | unchanged; FE *is* the chosen model |
 | Poles | FE cables with a wide connection radius | unchanged |
 | Research | ~~lab consumes packs, grants vanilla advancements~~ **rejected — advancements are per player and research belongs to the world.** Shipped instead: the real model, on a `SavedData`, with a list for a screen | the tech tree drawn as a tree, with a layout, pan and zoom |
-| Oil | **barrels as items, no pipes at all** | fluid network, pipes, tanks, pumps |
+| Oil | ~~barrels as items, no pipes at all~~ **superseded — the pipe network came with steam, and the well and pumpjack are the real ones.** One tank per run, no flow model | segments and throughput, if ever |
 | Trains | vanilla minecarts and chest minecarts | locomotives, wagons, signals, schedules |
 | Biters | vanilla hostiles + per-chunk pollution raising spawn rate near the factory | nests, expansion, evolution factor |
 | Rocket | silo consumes 100 rocket parts, plays a launch, grants the advancement | satellite, cargo, space science loop |
@@ -419,8 +431,8 @@ anyone — which is why an assembler showed a red full bar before any of this ex
 half a generic provider cannot know: whether the machine is doing anything, and why not when it is
 not.
 
-Written so far: the boiler, the steam engine and the pole in {@code nauvis_power}, and the pipe in
-`nauvis_fluids`. The pipe's is modelled on Factorio's own - what is in the run and how far it
+Written so far: the boiler, the steam engine and the pole in {@code nauvis_power}, and the pipe,
+the oil well and the pumpjack in `nauvis_fluids`. The pipe's is modelled on Factorio's own - what is in the run and how far it
 reaches - but stops at the extent rather than printing Factorio's `6/320`, because the 320 is its
 cap on one fluid segment and this pack has none. A tooltip is not the place to invent a rule
 nothing enforces.
