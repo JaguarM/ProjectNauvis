@@ -16,7 +16,7 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and thirty gametests pass, `./gradlew build` is clean, and the client boots into a
+A hundred and thirty-five gametests pass, `./gradlew build` is clean, and the client boots into a
 world. **Milestone 2 is closed**: the red tier is in whole — the fast belt and the fast splitter —
 a belt in hand replaces the one it is clicked on, and **belt lines climb**. Milestone 3 has its
 research half in, and five of its nine items — the steel line, green science and the medium pole,
@@ -39,6 +39,22 @@ in render distance through the terrain** — Factorio's map colour, no map — a
 click any of the nine blocks over a well and the machine lands centred on it, with the footprint
 drawn before you click. `oil-gathering` unlocks it, behind `fluid-handling` and `engine`, which
 came in with it at Factorio 2.0's costs. See `GAPS.md` for what the worldgen approximates.
+
+**And `oil-processing` is in, as the trigger Factorio 2.0 makes it: pump crude oil once.** The tree
+gained a second trigger kind — `mine-entity` beside `craft-item` — and the pumpjack reports each
+cycle through **`MiningListeners`, a new seam in Facrafting** beside `CraftListeners`: the machine
+fires it, research listens, and neither names the other, which is the only way two subsystem mods
+may share a fact. A pumpjack's first cycle on a well unlocks the refinery and the chemical plant,
+neither of which exists yet. The two tallies — crafted and mined — are kept apart on purpose,
+because `nauvis_fluids:crude_oil` is both the well and the creative item that places one.
+
+**Every block the pack registers is pickaxe work now.** Each machine mod ships a
+`BlockTagsProvider` putting all its blocks in `mineable/pickaxe`, and `every_machine_takes_a_pickaxe`
+in the pack mod walks every `nauvis*` block to hold it there. Before this, a block that required the
+correct tool and was in no `mineable/` tag had no correct tool: **a boiler, an engine, an assembler,
+a lab or a chest mined with a pickaxe dropped nothing**, and every machine dug at bare-hand speed —
+fifteen seconds for hardness three. An iron pickaxe now takes one down in three quarters of a second,
+which is about what Factorio's mining time is.
 
 **Belt lines change level the way rails do.** A belt hands to the first belt of its own tier
 straight ahead, one above, or one below - vanilla's `RailState` probe, with level winning over
@@ -253,13 +269,8 @@ whether this pack has a smelting machine of its own at all — `stone-furnace` s
 The well and the pumpjack are in (above). What is left of milestone 4, in the order the tree wants
 it:
 
-- **`oil-processing` is a triggered technology in Factorio 2.0** — `mine-entity: crude-oil, 1`, so
-  it completes the moment a pumpjack draws its first oil, with no lab and no packs. The generator
-  only knows `craft-item` triggers, so the technology is not in `data/technologies.json` yet: it
-  needs a second trigger type through `gen_technologies.py` and `nauvis_research`, and the pumpjack
-  reporting its first cycle. It unlocks the refinery, the chemical plant, `basic-oil-processing` and
-  `solid-fuel-from-petroleum-gas`, and everything after it — plastics, sulfur, flammables — hangs
-  off it.
+- ~~`oil-processing` as a trigger~~ **done** — see above. Plastics, sulfur and flammables hang
+  off it and are the next technologies to add once the refinery exists to make them mean anything.
 - **The refinery, which is the hard part.** Three outputs that block each other — heavy, light,
   petroleum — into separate tanks, and a full tank stalls the machine. That is the puzzle Factorio's
   oil *is*, and it needs real capacity and back-pressure, not barrels. `FluidNetwork` already
@@ -357,10 +368,14 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
   flank should not. With a pole in range Jade's energy bar fills, the status says *Pumping*, and the
   pipe's readout shows crude oil arriving at ten a second. Nothing consumes it yet, so the run fills
   and the machine says *Full*, which is not a fault;
-- and **check the tag question.** The pumpjack and the pipe are in `mineable/pickaxe` now, through
-  a tag provider in `nauvis_fluids`. **The boiler, the engine, the assembler and the drills require
-  the correct tool for drops and are in no `mineable/` tag at all** — if a boiler mined with a
-  pickaxe drops nothing, that is why, and every machine mod wants the same three-line provider.
+- **mine a boiler with an iron pickaxe.** It should take under a second and hand you a boiler. Every
+  machine in the pack is in `mineable/pickaxe` now; before this a boiler took fifteen seconds and
+  dropped nothing. Then mine a pumpjack from a corner block and check one pumpjack comes back;
+- and **pump oil for the first time with `oil-gathering` researched.** The moment the pumpjack
+  finishes its first cycle, the toast for Oil processing should fire and the tree should show the
+  refinery and the chemical plant unlocked — with no lab involved. The tooltip on the node says
+  *Mine 1 x Crude oil - 0 done* until then, which is Factorio's own wording for a `mine-entity`
+  trigger, and **whether "mine" reads right for pumping oil is a judgement no test makes**.
 
 **The hover readout on every machine**, which is new and which no test can see.
 

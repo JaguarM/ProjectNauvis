@@ -14,6 +14,7 @@ import com.jaguarm.nauvisresearch.research.Research;
 import com.jaguarm.nauvisresearch.research.ResearchState;
 import com.jaguarm.nauvisresearch.research.Technology;
 import com.jaguarm.nauvisresearch.research.TechnologyLayout;
+import com.jaguarm.facrafting.progress.MiningListeners;
 import com.jaguarm.facrafting.queue.CraftTicker;
 import com.jaguarm.facrafting.recipe.RecipeLocks;
 import com.mojang.serialization.MapCodec;
@@ -36,7 +37,14 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.GameType;
@@ -100,6 +108,8 @@ public final class NauvisResearchGameTests {
         TEST_TYPES.register("research_gates_the_early_machines", () -> ResearchGatesTheEarlyMachinesTest.CODEC);
         TEST_TYPES.register("research_command_moves_the_tree", () -> ResearchCommandTest.CODEC);
         TEST_TYPES.register("a_trigger_finishes_research", () -> TriggerFinishesResearchTest.CODEC);
+        TEST_TYPES.register("a_mine_trigger_finishes_research", () -> MineTriggerFinishesResearchTest.CODEC);
+        TEST_TYPES.register("pumping_oil_finishes_oil_processing", () -> PumpingOilFinishesOilProcessingTest.CODEC);
         TEST_TYPES.register("a_panel_craft_counts", () -> PanelCraftCountsTest.CODEC);
         TEST_TYPES.register("technology_layout_is_sound", () -> TechnologyLayoutTest.CODEC);
         TEST_TYPES.register("research_keeps_its_progress", () -> ResearchKeepsItsProgressTest.CODEC);
@@ -154,6 +164,18 @@ public final class NauvisResearchGameTests {
         // Alone in their batch. See above.
         register(event, alone, "research_command_moves_the_tree", ResearchCommandTest::new, 20);
         register(event, alone, "research_keeps_its_progress", ResearchKeepsItsProgressTest::new, 20);
+
+        /*
+         * A third batch, for the two tests that complete oil gathering's whole chain and hold it
+         * there while a machine runs. Everything in `alone` is synchronous and puts the tree back
+         * within its own tick; a test that waits forty ticks with the tree moved cannot share a
+         * batch with anything that reads it.
+         */
+        Holder<TestEnvironmentDefinition<?>> oil = event.registerEnvironment(
+                Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "oil"),
+                new TestEnvironmentDefinition.AllOf(List.of()));
+        register(event, oil, "a_mine_trigger_finishes_research", MineTriggerFinishesResearchTest::new, 20);
+        register(event, oil, "pumping_oil_finishes_oil_processing", PumpingOilFinishesOilProcessingTest::new, 100);
     }
 
     private interface TestFactory {
@@ -602,7 +624,7 @@ public final class NauvisResearchGameTests {
             helper.assertTrue(steam.isTriggered(), "steam power is not triggered");
             helper.assertTrue(steam.prerequisites().isEmpty(),
                     "steam power has prerequisites; nothing could ever start it");
-            helper.assertValueEqual(steam.trigger().orElseThrow().item(),
+            helper.assertValueEqual(steam.trigger().orElseThrow().target(),
                     Identifier.withDefaultNamespace("iron_ingot"), "what steam power watches for");
             helper.assertValueEqual(steam.trigger().orElseThrow().count(), 50,
                     "how many steam power watches for");
@@ -1052,7 +1074,7 @@ public final class NauvisResearchGameTests {
 
             ResearchState state = Research.state(server);
             state.forget(steam);
-            state.recordMade(trigger.item(), -state.made(trigger.item()));
+            state.recordMade(trigger.target(), -state.made(trigger.target()));
             Research.changedExternally(server);
 
             helper.assertFalse(Research.isUnlocked(server, boiler),
@@ -1060,13 +1082,13 @@ public final class NauvisResearchGameTests {
 
             // One short. The count is the whole of the condition, so being able to stop one below
             // it is what says the number is read rather than ignored.
-            Research.recordMade(helper.getLevel(), trigger.item(), trigger.count() - 1);
+            Research.recordMade(helper.getLevel(), trigger.target(), trigger.count() - 1);
             helper.assertFalse(Research.state(server).isCompleted(steam),
                     "steam power finished one item short of its trigger");
             helper.assertFalse(Research.isUnlocked(server, boiler),
                     "the boiler unlocked one item short of steam power's trigger");
 
-            Research.recordMade(helper.getLevel(), trigger.item(), 1);
+            Research.recordMade(helper.getLevel(), trigger.target(), 1);
             helper.assertTrue(Research.state(server).isCompleted(steam),
                     "steam power did not finish when its trigger was met - a new world would have "
                             + "nothing it could ever research");
@@ -1131,13 +1153,13 @@ public final class NauvisResearchGameTests {
         public void run(GameTestHelper helper) {
             MinecraftServer server = helper.getLevel().getServer();
             Technology.Trigger trigger = technology(helper, "steam_power").trigger().orElseThrow();
-            Item plate = BuiltInRegistries.ITEM.getValue(trigger.item());
+            Item plate = BuiltInRegistries.ITEM.getValue(trigger.target());
             helper.assertTrue(plate != Items.AIR,
-                    "no item is registered as " + trigger.item() + ", so the trigger watches for "
+                    "no item is registered as " + trigger.target() + ", so the trigger watches for "
                             + "something nobody can make");
 
             ResearchState state = Research.state(server);
-            int before = state.made(trigger.item());
+            int before = state.made(trigger.target());
 
             // Not a mock *server* player, which is the one a test would reach for first: putting
             // a stack away sends a slot packet, and a mock server player has no connection to
@@ -1155,15 +1177,15 @@ public final class NauvisResearchGameTests {
                 }
                 helper.assertTrue(held == 2,
                         "a finished craft put " + held + " items in the player's inventory, not 2");
-                helper.assertTrue(Research.state(server).made(trigger.item()) == before + 2,
+                helper.assertTrue(Research.state(server).made(trigger.target()) == before + 2,
                         "a craft finished in the panel counted "
-                                + (state.made(trigger.item()) - before) + " towards its trigger "
+                                + (state.made(trigger.target()) - before) + " towards its trigger "
                                 + "instead of 2 - a triggered technology can never finish, and "
                                 + "nothing says so");
             } finally {
                 // Put it back: research is per-world and this world is shared with every other
                 // test in the run.
-                state.recordMade(trigger.item(), before - state.made(trigger.item()));
+                state.recordMade(trigger.target(), before - state.made(trigger.target()));
                 Research.changedExternally(server);
             }
             helper.succeed();
@@ -1525,6 +1547,188 @@ public final class NauvisResearchGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("research keeps its progress across a switch");
+        }
+    }
+
+    /**
+     * Factorio's other trigger: oil processing finishes when crude oil has been mined once.
+     *
+     * <p>The mechanism, without a machine: the tree has {@code oil_processing} as a mine trigger on
+     * {@code nauvis_fluids:crude_oil}, one report finishes it, and the refinery unlocks. And the
+     * two tallies are separate - <em>crafting</em> something with that id must not count, because
+     * the id is also the creative item that places a well.
+     *
+     * <p>Completes the whole chain up to oil gathering first, and puts the tree back exactly
+     * afterwards; see {@code ResearchCommandTest} for why a snapshot and not a clear.
+     */
+    public static class MineTriggerFinishesResearchTest extends GameTestInstance {
+
+        public static final MapCodec<MineTriggerFinishesResearchTest> CODEC =
+                RecordCodecBuilder.<MineTriggerFinishesResearchTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(MineTriggerFinishesResearchTest::info))
+                                .apply(i, MineTriggerFinishesResearchTest::new));
+
+        public MineTriggerFinishesResearchTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            MinecraftServer server = helper.getLevel().getServer();
+            ResearchState state = Research.state(server);
+            ResourceKey<Technology> oilProcessing = ModTechnologies.key("oil_processing");
+            Technology technology = technology(helper, "oil_processing");
+            helper.assertTrue(technology != null, "oil processing is not in the tree");
+            helper.assertTrue(technology.isTriggered(), "oil processing has a cost; Factorio 2.0 triggers it");
+
+            Technology.Trigger trigger = technology.trigger().orElseThrow();
+            helper.assertValueEqual(trigger.kind(), Technology.Trigger.Kind.MINE, "oil processing's trigger kind");
+            helper.assertValueEqual(trigger.target(), Identifier.fromNamespaceAndPath("nauvis_fluids", "crude_oil"),
+                    "what oil processing waits for");
+            helper.assertValueEqual(trigger.count(), 1, "how many times - Factorio's mine-entity: crude-oil, 1");
+
+            Set<ResourceKey<Technology>> before = Set.copyOf(state.completed());
+            finish(server, state, oilProcessing, true);
+            state.recordMined(trigger.target(), -state.mined(trigger.target()));
+            Research.changedExternally(server);
+
+            ResourceKey<Recipe<?>> refinery = recipe("nauvis_fluids", "oil_refinery");
+            helper.assertFalse(Research.isUnlocked(server, refinery), "the refinery is craftable before oil processing");
+
+            // Crafting the thing with the well's id is not mining the well.
+            Research.recordMade(helper.getLevel(), trigger.target(), 1);
+            helper.assertFalse(state.isCompleted(oilProcessing),
+                    "oil processing finished on a craft of nauvis_fluids:crude_oil - the two tallies have merged");
+
+            Research.recordMined(helper.getLevel(), trigger.target(), 1);
+            helper.assertTrue(state.isCompleted(oilProcessing),
+                    "oil processing did not finish when crude oil was mined once");
+            helper.assertTrue(Research.isUnlocked(server, refinery), "the refinery is still locked after oil processing");
+
+            for (ResourceKey<Technology> key : List.copyOf(state.completed())) {
+                if (!before.contains(key)) {
+                    state.forget(key);
+                }
+            }
+            before.forEach(state::complete);
+            state.recordMade(trigger.target(), -state.made(trigger.target()));
+            state.recordMined(trigger.target(), -state.mined(trigger.target()));
+            Research.changedExternally(server);
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a mine trigger finishes research");
+        }
+    }
+
+    /**
+     * The whole chain, end to end: a real pumpjack on a real well, powered, finishes oil processing.
+     *
+     * <p>Three mods meet here and none names another: the pumpjack reports its cycle to
+     * Facrafting's {@code MiningListeners}, this mod hears it, and the technology completes. The
+     * well and the machine are found by id, so this mod compiles against neither - and when
+     * {@code nauvis_fluids} is not installed, as in this mod's own standalone run, there is nothing
+     * to test and the test says so by passing.
+     *
+     * <p>The pumpjack is placed the way a player places one, through its item, so the placement rule
+     * that centres it on the well is exercised too.
+     */
+    public static class PumpingOilFinishesOilProcessingTest extends GameTestInstance {
+
+        public static final MapCodec<PumpingOilFinishesOilProcessingTest> CODEC =
+                RecordCodecBuilder.<PumpingOilFinishesOilProcessingTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PumpingOilFinishesOilProcessingTest::info))
+                                .apply(i, PumpingOilFinishesOilProcessingTest::new));
+
+        private static final BlockPos WELL = new BlockPos(2, 1, 2);
+
+        public PumpingOilFinishesOilProcessingTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            Block well = BuiltInRegistries.BLOCK.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "crude_oil"));
+            Block pumpjack = BuiltInRegistries.BLOCK.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "pumpjack"));
+            if (well == Blocks.AIR || pumpjack == Blocks.AIR) {
+                // Standalone: no oil here to pump. The mechanism is covered by the test above.
+                helper.succeed();
+                return;
+            }
+
+            MinecraftServer server = helper.getLevel().getServer();
+            ResearchState state = Research.state(server);
+            ResourceKey<Technology> oilProcessing = ModTechnologies.key("oil_processing");
+            Identifier target = technology(helper, "oil_processing").trigger().orElseThrow().target();
+            Set<ResourceKey<Technology>> before = Set.copyOf(state.completed());
+            finish(server, state, oilProcessing, true);
+            state.recordMined(target, -state.mined(target));
+            Research.changedExternally(server);
+
+            helper.setBlock(WELL, well);
+
+            // Placed as a player would: click the top of the well with the item in hand.
+            BlockPos clicked = helper.absolutePos(WELL);
+            ItemStack stack = new ItemStack(pumpjack.asItem());
+            ((BlockItem) stack.getItem()).place(new BlockPlaceContext(helper.getLevel(), null,
+                    InteractionHand.MAIN_HAND, stack,
+                    new BlockHitResult(Vec3.atCenterOf(clicked), Direction.UP, clicked, false)));
+            BlockPos anchor = helper.absolutePos(WELL.above());
+            helper.assertTrue(helper.getLevel().getBlockState(anchor).is(pumpjack),
+                    "a pumpjack placed by clicking a well did not land on it");
+
+            // Powered the way a pole powers it: through the energy capability on any of its blocks.
+            EnergyHandler power = helper.getLevel().getCapability(Capabilities.Energy.BLOCK, anchor, null);
+            helper.assertTrue(power != null, "a pumpjack offers no energy capability");
+            try (Transaction transaction = Transaction.openRoot()) {
+                helper.assertTrue(power.insert(1200, transaction) > 0, "a pumpjack took no electricity");
+                transaction.commit();
+            }
+
+            helper.assertTrue(MiningListeners.installed() > 0,
+                    "nothing is listening to Facrafting's MiningListeners, so no machine can finish a mine trigger");
+
+            // One cycle is a second. Forty ticks is two, with room for the tick it wakes on.
+            helper.runAfterDelay(40, () -> {
+                var pumpjackEntity = helper.getLevel().getBlockEntity(anchor);
+                helper.assertTrue(state.isCompleted(oilProcessing),
+                        "a pumpjack ran on a well for two seconds and oil processing did not finish - "
+                                + "the report is not reaching research. Mined tally: " + state.mined(target)
+                                + "; prerequisites outstanding: " + technology(helper, "oil_processing").prerequisites()
+                                        .stream().filter(key -> !state.isCompleted(key)).toList()
+                                + "; the machine: " + (pumpjackEntity == null ? "no block entity"
+                                        : pumpjackEntity.saveWithoutMetadata(helper.getLevel().registryAccess())));
+                // At least the cycle that finished it. A second one ends on tick 41, and on a well as
+                // rich as the gametest world's - millions of blocks from the origin - it would find
+                // the tank still full of the first.
+                helper.assertTrue(state.mined(target) >= 1, "the pumpjack reported no cycle at all");
+                for (ResourceKey<Technology> key : List.copyOf(state.completed())) {
+                    if (!before.contains(key)) {
+                        state.forget(key);
+                    }
+                }
+                before.forEach(state::complete);
+                state.recordMined(target, -state.mined(target));
+                Research.changedExternally(server);
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("pumping oil finishes oil processing");
         }
     }
 }

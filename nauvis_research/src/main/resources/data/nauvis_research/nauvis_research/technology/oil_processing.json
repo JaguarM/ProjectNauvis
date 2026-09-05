@@ -1,0 +1,15 @@
+{
+  "name": "Oil processing",
+  "order": "0031",
+  "prerequisites": [
+    "nauvis_research:oil_gathering"
+  ],
+  "trigger": {
+    "mine": "nauvis_fluids:crude_oil",
+    "count": 1
+  },
+  "unlocks": [
+    "nauvis_fluids:chemical_plant",
+    "nauvis_fluids:oil_refinery"
+  ]
+}

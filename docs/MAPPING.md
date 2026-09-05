@@ -84,6 +84,17 @@ the recipe generator applies to an unmapped ingredient, and for the same reason:
 "I could not work it out" must not have the same representation, or a stale table looks like a
 design decision.
 
+Triggers in `data/technologies.json`
+------------------------------------
+
+A technology is paid for in science or finished by a trigger, and the trigger is one of Factorio's
+two. `craft-item` names an item in the `items` table and a count, and is heard from a bench, a
+furnace and Facrafting's panel. `mine-entity` names a resource — `crude-oil`, whose mapped id
+`nauvis_fluids:crude_oil` is the well block a pumpjack reports having mined — and is heard from the
+machine that took it, through Facrafting's `MiningListeners`. The generator writes the first as
+`"trigger": {"item": ...}` and the second as `"trigger": {"mine": ...}`, and refuses any other
+type by name rather than dropping it.
+
 `data/removals.json`, and the rule it enforces
 ---------------------------------------------
 

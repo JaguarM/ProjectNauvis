@@ -1,5 +1,6 @@
 package com.jaguarm.nauvisresearch.compat.facrafting;
 
+import com.jaguarm.facrafting.progress.MiningListeners;
 import com.jaguarm.facrafting.queue.CraftListeners;
 import com.jaguarm.facrafting.recipe.RecipeLock;
 import com.jaguarm.facrafting.recipe.RecipeLocks;
@@ -48,6 +49,11 @@ public final class FacraftingLock implements RecipeLock {
         // without this the two triggered technologies that ask for a crafted item, rather than a
         // smelted one, could never fire.
         CraftListeners.add(ResearchTriggers::made);
+
+        // And the other verb. A machine that mines something says so through Facrafting, which
+        // is the one mod this one and the machine's may both compile against; oil processing is
+        // finished by a pumpjack's first cycle and could be finished by nothing else.
+        MiningListeners.add(ResearchTriggers::mined);
     }
 
     @Override

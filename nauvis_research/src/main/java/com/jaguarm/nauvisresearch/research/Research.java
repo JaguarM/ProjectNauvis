@@ -150,6 +150,19 @@ public final class Research {
     }
 
     /**
+     * Records that a machine mined something, and finishes any technology that was waiting for it.
+     *
+     * <p>Factorio's {@code mine-entity} trigger: oil processing finishes the first time a pumpjack
+     * completes a cycle on a well. The count is cycles, not units - see {@code ResearchTriggers}.
+     */
+    public static void recordMined(ServerLevel level, Identifier resource, int count) {
+        MinecraftServer server = level.getServer();
+        ResearchState state = state(server);
+        state.recordMined(resource, count);
+        checkTriggers(server);
+    }
+
+    /**
      * Completes every triggered technology whose moment has come.
      *
      * <p>A loop rather than one pass, because completing one can meet another's prerequisites -
@@ -170,7 +183,7 @@ public final class Research {
                     continue;
                 }
                 Technology.Trigger trigger = technology.trigger().orElseThrow();
-                if (state.made(trigger.item()) < trigger.count()) {
+                if (state.tally(trigger) < trigger.count()) {
                     continue;
                 }
                 state.complete(holder.key());

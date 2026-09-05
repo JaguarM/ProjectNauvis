@@ -119,7 +119,7 @@ public final class ResearchHud {
                                 .withStyle(ChatFormatting.AQUA));
             } else {
                 Technology.Trigger trigger = waiting.value().trigger().orElseThrow();
-                int made = Math.min(ClientResearch.made(trigger.item()), trigger.count());
+                int made = Math.min(ClientResearch.tally(trigger), trigger.count());
                 label = waiting.value().title(waiting.key());
                 detail = Component.literal(made + " / " + trigger.count());
                 progress = made / (float) trigger.count();
@@ -181,7 +181,7 @@ public final class ResearchHud {
                 continue;
             }
             Technology.Trigger trigger = technology.trigger().orElseThrow();
-            float fraction = Math.min(ClientResearch.made(trigger.item()), trigger.count())
+            float fraction = Math.min(ClientResearch.tally(trigger), trigger.count())
                     / (float) trigger.count();
             if (fraction > bestFraction) {
                 best = holder;

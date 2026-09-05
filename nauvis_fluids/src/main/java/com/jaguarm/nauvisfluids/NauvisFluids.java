@@ -1,5 +1,6 @@
 package com.jaguarm.nauvisfluids;
 
+import com.jaguarm.nauvisfluids.compat.facrafting.FacraftingProgress;
 import com.jaguarm.nauvisfluids.registry.ModBlockEntities;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
 import com.jaguarm.nauvisfluids.registry.ModFeatures;
@@ -8,6 +9,7 @@ import com.jaguarm.nauvisfluids.registry.ModItems;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 
 /**
@@ -39,5 +41,11 @@ public class NauvisFluids {
         ModFeatures.FEATURES.register(modEventBus);
         modEventBus.addListener(ModPacks::addPackFinders);
         NauvisFluidsGameTests.register(modEventBus);
+
+        // Behind a branch, so the class naming Facrafting's types is never loaded without it.
+        // See FacraftingProgress.
+        if (ModList.get().isLoaded("facrafting")) {
+            FacraftingProgress.install();
+        }
     }
 }

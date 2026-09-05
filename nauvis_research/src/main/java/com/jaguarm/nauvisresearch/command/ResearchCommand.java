@@ -184,9 +184,10 @@ public final class ResearchCommand {
 
         if (technology.isTriggered()) {
             Technology.Trigger trigger = technology.trigger().orElseThrow();
-            source.sendSuccess(() -> Component.translatable(key("info.trigger"),
-                    trigger.count(), trigger.item().toString(),
-                    Research.state(server).made(trigger.item())), false);
+            String line = trigger.kind() == Technology.Trigger.Kind.MINE ? "info.trigger.mine" : "info.trigger";
+            source.sendSuccess(() -> Component.translatable(key(line),
+                    trigger.count(), trigger.target().toString(),
+                    Research.state(server).tally(trigger)), false);
         } else {
             source.sendSuccess(() -> Component.translatable(key("info.cost"),
                     technology.units(), technology.ticksPerUnit() / 20.0F,

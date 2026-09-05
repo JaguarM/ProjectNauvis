@@ -38,8 +38,11 @@ public final class ClientResearch {
     /** Units paid towards every technology part-way through, as of the last sync. */
     private static java.util.Map<ResourceKey<Technology>, Integer> progress = java.util.Map.of();
 
-    /** The trigger tally, as of the last sync. */
+    /** The craft-trigger tally, as of the last sync. */
     private static java.util.Map<net.minecraft.resources.Identifier, Integer> made = java.util.Map.of();
+
+    /** The mine-trigger tally, as of the last sync. */
+    private static java.util.Map<net.minecraft.resources.Identifier, Integer> mined = java.util.Map.of();
 
     /** The locked set, and the registry and revision it was computed for. */
     private static @Nullable Set<ResourceKey<Recipe<?>>> lockedCache;
@@ -49,11 +52,13 @@ public final class ClientResearch {
     public static void accept(List<ResourceKey<Technology>> completedKeys,
             @Nullable ResourceKey<Technology> currentKey,
             java.util.Map<ResourceKey<Technology>, Integer> paid,
-            java.util.Map<net.minecraft.resources.Identifier, Integer> tally) {
+            java.util.Map<net.minecraft.resources.Identifier, Integer> tally,
+            java.util.Map<net.minecraft.resources.Identifier, Integer> minedTally) {
         completed = new LinkedHashSet<>(completedKeys);
         current = currentKey;
         progress = java.util.Map.copyOf(paid);
         made = java.util.Map.copyOf(tally);
+        mined = java.util.Map.copyOf(minedTally);
         revision++;
         lockedCache = null;
     }
@@ -63,9 +68,22 @@ public final class ClientResearch {
         return made.getOrDefault(item, 0);
     }
 
+    /** How many times a machine has mined this resource, for drawing a trigger's progress. */
+    public static int mined(net.minecraft.resources.Identifier resource) {
+        return mined.getOrDefault(resource, 0);
+    }
+
+    /** The tally a trigger is waiting on, whichever kind it is. */
+    public static int tally(Technology.Trigger trigger) {
+        return switch (trigger.kind()) {
+            case CRAFT -> made(trigger.target());
+            case MINE -> mined(trigger.target());
+        };
+    }
+
     /** Logging out: a stale tree would gate the next world's recipes against this one's research. */
     public static void clear() {
-        accept(List.of(), null, java.util.Map.of(), java.util.Map.of());
+        accept(List.of(), null, java.util.Map.of(), java.util.Map.of(), java.util.Map.of());
     }
 
     public static Set<ResourceKey<Technology>> completed() {

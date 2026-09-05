@@ -1,0 +1,13 @@
+{
+  "values": [
+    "nauvis_logistics:burner_inserter",
+    "nauvis_logistics:inserter",
+    "nauvis_logistics:long_handed_inserter",
+    "nauvis_logistics:iron_chest",
+    "nauvis_logistics:steel_chest",
+    "nauvis_logistics:transport_belt",
+    "nauvis_logistics:fast_transport_belt",
+    "nauvis_logistics:splitter",
+    "nauvis_logistics:fast_splitter"
+  ]
+}

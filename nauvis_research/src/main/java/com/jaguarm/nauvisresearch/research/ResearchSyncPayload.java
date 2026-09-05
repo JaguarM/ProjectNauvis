@@ -28,7 +28,8 @@ public record ResearchSyncPayload(
         List<ResourceKey<Technology>> completed,
         Optional<ResourceKey<Technology>> current,
         Map<ResourceKey<Technology>, Integer> progress,
-        Map<Identifier, Integer> made) implements CustomPacketPayload {
+        Map<Identifier, Integer> made,
+        Map<Identifier, Integer> mined) implements CustomPacketPayload {
 
     public static final Type<ResearchSyncPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "research_sync"));
@@ -56,6 +57,9 @@ public record ResearchSyncPayload(
                     // technology watches for - four, today - not one per item in the game.
                     ByteBufCodecs.map(HashMap::new, Identifier.STREAM_CODEC, ByteBufCodecs.VAR_INT),
                     ResearchSyncPayload::made,
+                    // And the mining tally, for the triggers a machine finishes.
+                    ByteBufCodecs.map(HashMap::new, Identifier.STREAM_CODEC, ByteBufCodecs.VAR_INT),
+                    ResearchSyncPayload::mined,
                     ResearchSyncPayload::new);
 
     public static ResearchSyncPayload of(ResearchState state) {
@@ -63,7 +67,8 @@ public record ResearchSyncPayload(
                 List.copyOf(state.completed()),
                 Optional.ofNullable(state.current()),
                 Map.copyOf(state.progress()),
-                Map.copyOf(state.made()));
+                Map.copyOf(state.made()),
+                Map.copyOf(state.mined()));
     }
 
     @Override

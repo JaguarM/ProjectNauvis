@@ -81,6 +81,13 @@ public final class NauvisPowerData {
                     .add(ModBlocks.MEDIUM_ELECTRIC_POLE.getKey())
                     .add(ModBlocks.BIG_ELECTRIC_POLE.getKey())
                     .add(ModBlocks.SUBSTATION.getKey());
+
+            // Every block here is pickaxe work. A block that requires the correct tool and is in
+            // no mineable/ tag has no correct tool - the boiler and the engine never dropped -
+            // and digs at bare-hand speed besides. Factorio mines a machine in a fraction of a
+            // second; an iron pickaxe on hardness three is three quarters of one.
+            var pickaxe = tag(BlockTags.MINEABLE_WITH_PICKAXE);
+            ModBlocks.BLOCKS.getEntries().forEach(block -> pickaxe.add(block.getKey()));
         }
     }
 

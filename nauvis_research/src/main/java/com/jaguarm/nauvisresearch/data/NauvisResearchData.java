@@ -13,6 +13,7 @@ import com.jaguarm.nauvisresearch.registry.ModItems;
 import net.minecraft.advancements.predicates.StatePropertiesPredicate;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.world.flag.FeatureFlags;
@@ -26,6 +27,7 @@ import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.data.LanguageProvider;
+import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 /**
@@ -56,6 +58,29 @@ public final class NauvisResearchData {
                         List.of(new LootTableProvider.SubProviderEntry(BlockLoot::new,
                                 LootContextParamSets.BLOCK)),
                         lookup));
+        event.createProvider(BlockTagsData::new);
+    }
+
+    /**
+     * Which tool mines what: every block this mod registers is pickaxe work.
+     *
+     * <p>A block that requires the correct tool for its drops and is in no {@code mineable/} tag
+     * has no correct tool - it never drops - and any block in no such tag digs at bare-hand speed,
+     * a boiler taking fifteen seconds. Every machine here was in that state until this provider
+     * existed. With the tag an iron pickaxe takes a machine of hardness three down in three
+     * quarters of a second, which is about what Factorio's mining time gives.
+     */
+    private static class BlockTagsData extends BlockTagsProvider {
+
+        BlockTagsData(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
+            super(output, lookup, NauvisResearch.MODID);
+        }
+
+        @Override
+        protected void addTags(HolderLookup.Provider registries) {
+            var pickaxe = tag(BlockTags.MINEABLE_WITH_PICKAXE);
+            ModBlocks.BLOCKS.getEntries().forEach(block -> pickaxe.add(block.getKey()));
+        }
     }
 
     /** Display names and the lab's messages. One place, so a rename leaves nothing stale. */
@@ -107,6 +132,7 @@ public final class NauvisResearchData {
             add("screen.nauvis_research.research.none", "Nothing left to research.");
             add("screen.nauvis_research.research.cost", "%s x %ss - %s");
             add("screen.nauvis_research.research.trigger", "Craft %s x %s  -  %s done");
+            add("screen.nauvis_research.research.trigger.mine", "Mine %s x %s  -  %s done");
             add("screen.nauvis_research.research.needs", "Needs %s");
             add("screen.nauvis_research.research.unavailable_packs",
                     "Needs a science pack this pack does not have yet");
@@ -147,6 +173,7 @@ public final class NauvisResearchData {
             add("commands.nauvis_research.research.info.cost", "Cost: %s x %ss of %s");
             add("commands.nauvis_research.research.info.no_packs", "no packs");
             add("commands.nauvis_research.research.info.trigger", "Trigger: make %s x %s (%s so far)");
+            add("commands.nauvis_research.research.info.trigger.mine", "Trigger: mine %s x %s (%s so far)");
             // Not an error and not a caveat: most of the tree is in this state and will be until
             // the science packs above red exist. A lab pointed at one would sit still for ever.
             add("commands.nauvis_research.research.info.unbuildable",

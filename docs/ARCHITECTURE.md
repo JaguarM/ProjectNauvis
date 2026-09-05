@@ -239,6 +239,12 @@ Factorio is. Four forms of the seam, in increasing strength:
    (`RecipeLock`), a place to install one (`RecipeLocks`) and four calls to it. With nothing
    installed everything is unlocked, which is what every pack had before. **A hook's default is
    always the old behaviour.**
+5. **A meeting point, when two subsystem mods share a fact and may not share a class.** The
+   pumpjack mines oil and research wants to know; neither may depend on the other, and a listener
+   list cannot be duplicated — two copies are two lists. So Facrafting has `MiningListeners`
+   beside `CraftListeners`: the machine fires it, whoever cares listens, and Facrafting itself
+   never calls it and has no opinion about what a resource id means. Each side reaches it from a
+   `compat/facrafting/` class behind a `ModList` check, so Facrafting stays optional to both.
 
 **When a change to Facrafting needs a fact about Factorio, the change is in the wrong repo.**
 

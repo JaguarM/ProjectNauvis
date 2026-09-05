@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -23,10 +24,10 @@ import net.minecraft.world.item.crafting.Recipe;
  * {@link ResearchState} for why research belongs to the world.
  *
  * <p><b>Or it has a {@link Trigger} instead, and no cost at all.</b> "Craft fifty iron plates",
- * "craft a lab" - it finishes the moment that happens, with no lab and no packs. That is what
- * makes the opening work: the first technologies are triggered, so a new world researches its way
- * to the boiler and the lab with a pickaxe and a furnace, and only then does science become a
- * thing you build for. A technology has exactly one of the two, which
+ * "craft a lab", "pump crude oil once" - it finishes the moment that happens, with no lab and no
+ * packs. That is what makes the opening work: the first technologies are triggered, so a new world
+ * researches its way to the boiler and the lab with a pickaxe and a furnace, and only then does
+ * science become a thing you build for. A technology has exactly one of the two, which
  * {@link #isTriggered()} answers.
  *
  * <p><b>Every field is generated.</b> {@code tools/gen_technologies.py} writes these from Wube's
@@ -58,18 +59,56 @@ public record Technology(
         List<ResourceKey<Recipe<?>>> unlocks) {
 
     /**
-     * Finish this technology when the world has made {@code count} of {@code item}.
+     * Finish this technology when the world has done something {@code count} times over.
      *
-     * <p>Counted across everything that makes an item - a bench, a furnace, a machine, the
-     * crafting panel - because in Factorio all four are "crafting" and a player who smelted fifty
-     * iron plates has plainly done the thing the trigger is asking about.
+     * <p>Two kinds, which are Factorio's two: <b>craft</b> an item, counted across everything that
+     * makes one - a bench, a furnace, a machine, the crafting panel - because in Factorio all four
+     * are "crafting"; and <b>mine</b> a resource, which is Factorio's {@code mine-entity} and here
+     * means a machine took it out of the world - a pumpjack's first cycle on an oil well is what
+     * finishes oil processing. The two tallies are kept apart: an item and a block may share an id,
+     * as crude oil's do, and crafting one is not mining the other.
+     *
+     * <p>On disk a craft trigger names its {@code item} and a mine trigger names what it
+     * {@code mine}s, and exactly one of the two is present.
      */
-    public record Trigger(Identifier item, int count) {
+    public record Trigger(Kind kind, Identifier target, int count) {
 
-        public static final Codec<Trigger> CODEC = RecordCodecBuilder.create(i -> i.group(
-                Identifier.CODEC.fieldOf("item").forGetter(Trigger::item),
-                Codec.intRange(1, 100_000).optionalFieldOf("count", 1).forGetter(Trigger::count))
-                .apply(i, Trigger::new));
+        /** The verb. The tally for each is kept separately - see {@link ResearchState}. */
+        public enum Kind {
+            CRAFT,
+            MINE
+        }
+
+        /** The two keys as they appear in a technology file, one of which must be present. */
+        private record Raw(Optional<Identifier> item, Optional<Identifier> mine, int count) {}
+
+        private static final Codec<Raw> RAW_CODEC = RecordCodecBuilder.create(i -> i.group(
+                Identifier.CODEC.optionalFieldOf("item").forGetter(Raw::item),
+                Identifier.CODEC.optionalFieldOf("mine").forGetter(Raw::mine),
+                Codec.intRange(1, 100_000).optionalFieldOf("count", 1).forGetter(Raw::count))
+                .apply(i, Raw::new));
+
+        public static final Codec<Trigger> CODEC = RAW_CODEC.comapFlatMap(
+                raw -> {
+                    if (raw.item().isPresent() == raw.mine().isPresent()) {
+                        return DataResult.error(() -> "a trigger names exactly one of 'item' or 'mine'");
+                    }
+                    return DataResult.success(raw.item().isPresent()
+                            ? new Trigger(Kind.CRAFT, raw.item().get(), raw.count())
+                            : new Trigger(Kind.MINE, raw.mine().get(), raw.count()));
+                },
+                trigger -> new Raw(
+                        trigger.kind() == Kind.CRAFT ? Optional.of(trigger.target()) : Optional.empty(),
+                        trigger.kind() == Kind.MINE ? Optional.of(trigger.target()) : Optional.empty(),
+                        trigger.count()));
+
+        public static Trigger craft(Identifier item, int count) {
+            return new Trigger(Kind.CRAFT, item, count);
+        }
+
+        public static Trigger mine(Identifier resource, int count) {
+            return new Trigger(Kind.MINE, resource, count);
+        }
     }
 
     /** Ten minutes a unit. Long enough for anything Factorio has, short enough to catch a typo. */
@@ -105,7 +144,7 @@ public record Technology(
                 "technology." + key.identifier().getNamespace() + "." + key.identifier().getPath(), name);
     }
 
-    /** True when this finishes by somebody crafting something rather than by a lab. */
+    /** True when this finishes by somebody doing something rather than by a lab. */
     public boolean isTriggered() {
         return trigger.isPresent();
     }

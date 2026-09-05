@@ -32,6 +32,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.resources.Identifier;
@@ -46,6 +47,7 @@ import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePrope
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 /**
@@ -81,6 +83,29 @@ public final class NauvisMiningData {
                         List.of(new LootTableProvider.SubProviderEntry(DrillLoot::new,
                                 LootContextParamSets.BLOCK)),
                         lookup));
+        event.createProvider(BlockTagsData::new);
+    }
+
+    /**
+     * Which tool mines what: every block this mod registers is pickaxe work.
+     *
+     * <p>A block that requires the correct tool for its drops and is in no {@code mineable/} tag
+     * has no correct tool - it never drops - and any block in no such tag digs at bare-hand speed,
+     * a boiler taking fifteen seconds. Every machine here was in that state until this provider
+     * existed. With the tag an iron pickaxe takes a machine of hardness three down in three
+     * quarters of a second, which is about what Factorio's mining time gives.
+     */
+    private static class BlockTagsData extends BlockTagsProvider {
+
+        BlockTagsData(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
+            super(output, lookup, NauvisMining.MODID);
+        }
+
+        @Override
+        protected void addTags(HolderLookup.Provider registries) {
+            var pickaxe = tag(BlockTags.MINEABLE_WITH_PICKAXE);
+            ModBlocks.BLOCKS.getEntries().forEach(block -> pickaxe.add(block.getKey()));
+        }
     }
 
     /** One model per distinct shape, and one blockstate that turns them. */

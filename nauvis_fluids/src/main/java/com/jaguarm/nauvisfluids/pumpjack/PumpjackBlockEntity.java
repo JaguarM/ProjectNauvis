@@ -3,10 +3,13 @@ package com.jaguarm.nauvisfluids.pumpjack;
 import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
+import com.jaguarm.nauvisfluids.oil.OilProgress;
 import com.jaguarm.nauvisfluids.registry.ModBlockEntities;
+import com.jaguarm.nauvisfluids.registry.ModBlocks;
 import com.jaguarm.nauvisfluids.registry.ModFluids;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -31,7 +34,9 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  *       yield fall - one percent every three hundred cycles;
  *   <li><b>90 kW</b>, which at this pack's ratio - a 900 kW steam engine is 120 FE a tick - is
  *       {@value #ENERGY_PER_TICK} FE a tick while pumping;
- *   <li>and a tank of {@value #TANK_CAPACITY}, Factorio's output fluid box.
+ *   <li>and a tank of {@value #TANK_CAPACITY}, Factorio's output fluid box - which is also the
+ *       most one cycle can produce. Factorio caps a pumpjack's cycle at its fluid box volume, so
+ *       a well of any richness fills the tank in a second and no faster.
  * </ul>
  *
  * <p>The yield is a fraction, and the output is integer units, so the fraction is carried between
@@ -155,7 +160,7 @@ public class PumpjackBlockEntity extends BlockEntity {
         }
 
         if (progress >= CYCLE_TICKS) {
-            if (!bank(well)) {
+            if (!bank(level, well)) {
                 // Finished a cycle and the tank will not take it. Hold the cycle, keep the well as
                 // it is, and sleep until a pipe draws - OutputAccess wakes us then.
                 settle(PumpjackStatus.OUTPUT_FULL);
@@ -176,9 +181,12 @@ public class PumpjackBlockEntity extends BlockEntity {
      * exactly as rich as it was, so a blocked pumpjack wastes nothing, which is Factorio's
      * behaviour too.
      */
-    private boolean bank(CrudeOilBlockEntity well) {
+    private boolean bank(ServerLevel level, CrudeOilBlockEntity well) {
         long due = owed + well.amount();
-        int units = (int) (due / UNIT_DIVISOR);
+        // Factorio caps a cycle at the fluid box's volume. Above the cap the excess is simply not
+        // produced - there is nothing to carry - and below it the fraction is.
+        boolean capped = due / UNIT_DIVISOR >= TANK_CAPACITY;
+        int units = capped ? TANK_CAPACITY : (int) (due / UNIT_DIVISOR);
         if (units > 0) {
             try (Transaction transaction = Transaction.openRoot()) {
                 if (tank.insert(FluidResource.of(ModFluids.CRUDE_OIL.get()), units, transaction) != units) {
@@ -187,8 +195,12 @@ public class PumpjackBlockEntity extends BlockEntity {
                 transaction.commit();
             }
         }
-        owed = due % UNIT_DIVISOR;
+        owed = capped ? 0 : due % UNIT_DIVISOR;
         well.deplete();
+        // One cycle, whatever the yield: Factorio's mine-entity counts mining operations. This is
+        // what finishes oil processing, through whoever is listening.
+        OilProgress.report(level, well.getBlockPos(),
+                BuiltInRegistries.BLOCK.getKey(ModBlocks.CRUDE_OIL.get()), 1);
         return true;
     }
 

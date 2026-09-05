@@ -51,8 +51,14 @@ Oil
   whatever is put in at once.
 - **Crude oil goes nowhere yet.** No refinery, no storage tank, no barrelling. A pumpjack fills the
   pipe run it is attached to and stops, and says *Full*, which is correct and not a fault.
-- **`oil-processing` is not in the tree.** In Factorio 2.0 it is finished by pumping crude oil once
-  — a `mine-entity` trigger — and the generator only knows `craft-item`. See `NEXT.md`.
+- **`oil-processing` unlocks two machines that do not exist.** It is in the tree as Factorio 2.0's
+  trigger — pump crude oil once — and finishes correctly; the refinery and the chemical plant it
+  hands over are mapped and not built, so finishing it changes nothing a player can do yet.
+- **A mine trigger is only heard with Facrafting installed.** The pumpjack reports through
+  Facrafting's `MiningListeners`, the one seam two subsystem mods may share; a standalone run of
+  `nauvis_research` without it can complete craft triggers from vanilla's own events and mine
+  triggers from nothing. The pack always ships Facrafting, so this is a fact about the seam rather
+  than a hole a player meets.
 
 Belts
 -----

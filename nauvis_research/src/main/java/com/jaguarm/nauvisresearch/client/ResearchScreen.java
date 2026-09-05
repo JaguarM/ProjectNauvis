@@ -504,7 +504,7 @@ public class ResearchScreen extends Screen {
         }
         if (technology.isTriggered()) {
             Technology.Trigger trigger = technology.trigger().orElseThrow();
-            return Math.min(ClientResearch.made(trigger.item()), trigger.count())
+            return Math.min(ClientResearch.tally(trigger), trigger.count())
                     / (float) trigger.count();
         }
         if (technology.units() > 0) {
@@ -879,16 +879,32 @@ public class ResearchScreen extends Screen {
                 .withStyle(ChatFormatting.DARK_GRAY);
     }
 
+    /**
+     * What a trigger names, as the player knows it: an item's name for a craft, a block's for a
+     * mine, and the bare id if neither is registered here - which most of the tree's are not yet.
+     */
+    private static Component targetName(Technology.Trigger trigger) {
+        return switch (trigger.kind()) {
+            case CRAFT -> BuiltInRegistries.ITEM.getOptional(trigger.target())
+                    .map(item -> new ItemStack(item).getHoverName())
+                    .orElse(Component.literal(trigger.target().toString()));
+            case MINE -> BuiltInRegistries.BLOCK.getOptional(trigger.target())
+                    .map(block -> (Component) block.getName())
+                    .orElse(Component.literal(trigger.target().toString()));
+        };
+    }
+
     /** The cost, without the packs - they are drawn as items underneath rather than named. */
     private Component cost(Technology technology) {
         if (technology.isTriggered()) {
             Technology.Trigger trigger = technology.trigger().orElseThrow();
-            return Component.translatable("screen.nauvis_research.research.trigger",
+            return Component.translatable(switch (trigger.kind()) {
+                        case CRAFT -> "screen.nauvis_research.research.trigger";
+                        case MINE -> "screen.nauvis_research.research.trigger.mine";
+                    },
                     trigger.count(),
-                    BuiltInRegistries.ITEM.getOptional(trigger.item())
-                            .map(item -> new ItemStack(item).getHoverName())
-                            .orElse(Component.literal(trigger.item().toString())),
-                    Math.min(ClientResearch.made(trigger.item()), trigger.count()))
+                    targetName(trigger),
+                    Math.min(ClientResearch.tally(trigger), trigger.count()))
                     .withStyle(ChatFormatting.AQUA);
         }
         if (!technology.isResearchable()) {

@@ -58,7 +58,8 @@ public class ResearchState extends SavedData {
 
     private record Snapshot(List<ResourceKey<Technology>> completed,
             Optional<ResourceKey<Technology>> current, int units,
-            Map<ResourceKey<Technology>, Integer> progress, Map<Identifier, Integer> made) {}
+            Map<ResourceKey<Technology>, Integer> progress, Map<Identifier, Integer> made,
+            Map<Identifier, Integer> mined) {}
 
     private static final Codec<Snapshot> SNAPSHOT_CODEC = RecordCodecBuilder.create(i -> i.group(
             KEY_CODEC.listOf().optionalFieldOf("completed", List.of()).forGetter(Snapshot::completed),
@@ -70,7 +71,9 @@ public class ResearchState extends SavedData {
             Codec.unboundedMap(KEY_CODEC, Codec.INT).optionalFieldOf("progress", Map.of())
                     .forGetter(Snapshot::progress),
             Codec.unboundedMap(Identifier.CODEC, Codec.INT).optionalFieldOf("made", Map.of())
-                    .forGetter(Snapshot::made))
+                    .forGetter(Snapshot::made),
+            Codec.unboundedMap(Identifier.CODEC, Codec.INT).optionalFieldOf("mined", Map.of())
+                    .forGetter(Snapshot::mined))
             .apply(i, Snapshot::new));
 
     private static final Codec<ResearchState> CODEC = SNAPSHOT_CODEC.xmap(
@@ -84,10 +87,12 @@ public class ResearchState extends SavedData {
                             state.progress.putIfAbsent(key, snapshot.units()));
                 }
                 state.made.putAll(snapshot.made());
+                state.mined.putAll(snapshot.mined());
                 return state;
             },
             state -> new Snapshot(List.copyOf(state.completed), Optional.ofNullable(state.current),
-                    state.units(), Map.copyOf(state.progress), Map.copyOf(state.made)));
+                    state.units(), Map.copyOf(state.progress), Map.copyOf(state.made),
+                    Map.copyOf(state.mined)));
 
     public static final SavedDataType<ResearchState> TYPE = new SavedDataType<>(
             Identifier.fromNamespaceAndPath("nauvis_research", "research"),
@@ -116,6 +121,16 @@ public class ResearchState extends SavedData {
      * game, and stays that size for the life of a world.
      */
     private final Map<Identifier, Integer> made = new java.util.HashMap<>();
+
+    /**
+     * How many times each resource has been mined by a machine, for the technologies that finish
+     * on Factorio's {@code mine-entity} trigger - oil processing, when a pumpjack has run once.
+     *
+     * <p>A second map rather than a second kind of key in the first, because an item and a block
+     * may share an id: {@code nauvis_fluids:crude_oil} is both the well and, in creative, the item
+     * that places one. Crafting one is not mining the other, and the two tallies never meet.
+     */
+    private final Map<Identifier, Integer> mined = new java.util.HashMap<>();
 
     public Set<ResourceKey<Technology>> completed() {
         return java.util.Collections.unmodifiableSet(completed);
@@ -168,6 +183,32 @@ public class ResearchState extends SavedData {
         made.put(item, total);
         setDirty();
         return total;
+    }
+
+    /** How many times a machine has mined this resource, for a trigger to compare against. */
+    public int mined(Identifier resource) {
+        return mined.getOrDefault(resource, 0);
+    }
+
+    /** The whole mining tally, for the sync. */
+    public Map<Identifier, Integer> mined() {
+        return java.util.Collections.unmodifiableMap(mined);
+    }
+
+    /** @return the new total. */
+    public int recordMined(Identifier resource, int count) {
+        int total = mined(resource) + count;
+        mined.put(resource, total);
+        setDirty();
+        return total;
+    }
+
+    /** The tally a trigger is waiting on, whichever kind it is. */
+    public int tally(Technology.Trigger trigger) {
+        return switch (trigger.kind()) {
+            case CRAFT -> made(trigger.target());
+            case MINE -> mined(trigger.target());
+        };
     }
 
     /**

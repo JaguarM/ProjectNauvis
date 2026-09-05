@@ -1,5 +1,6 @@
 package com.jaguarm.nauvisfluids;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jspecify.annotations.Nullable;
@@ -9,6 +10,7 @@ import com.jaguarm.nauvisfluids.multiblock.Multiblock;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
 import com.jaguarm.nauvisfluids.oil.CrudeOilField;
 import com.jaguarm.nauvisfluids.oil.CrudeOilFieldFeature;
+import com.jaguarm.nauvisfluids.oil.OilProgress;
 import com.jaguarm.nauvisfluids.pipe.FluidNetwork;
 import com.jaguarm.nauvisfluids.pipe.FluidNetworkManager;
 import com.jaguarm.nauvisfluids.pipe.PipeBlock;
@@ -48,6 +50,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -104,6 +107,8 @@ public final class NauvisFluidsGameTests {
         TEST_TYPES.register("pumpjack_sleeps", () -> PumpjackSleepsTest.CODEC);
         TEST_TYPES.register("pumpjack_feeds_a_pipe", () -> PumpjackFeedsAPipeTest.CODEC);
         TEST_TYPES.register("oil_field_is_pumpable", () -> OilFieldIsPumpableTest.CODEC);
+        TEST_TYPES.register("pumpjack_reports_what_it_mines", () -> PumpjackReportsWhatItMinesTest.CODEC);
+        TEST_TYPES.register("pumpjack_caps_a_cycle_at_its_tank", () -> PumpjackCapsACycleTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -130,6 +135,9 @@ public final class NauvisFluidsGameTests {
         registerSpaced(event, environment, "pumpjack_sleeps", PumpjackSleepsTest::new, 200, PADDING);
         registerSpaced(event, environment, "pumpjack_feeds_a_pipe", PumpjackFeedsAPipeTest::new, 100, PADDING);
         registerSpaced(event, environment, "oil_field_is_pumpable", OilFieldIsPumpableTest::new, 60, WIDE_PADDING);
+        registerSpaced(event, environment, "pumpjack_reports_what_it_mines",
+                PumpjackReportsWhatItMinesTest::new, 100, PADDING);
+        registerSpaced(event, environment, "pumpjack_caps_a_cycle_at_its_tank", PumpjackCapsACycleTest::new, 60, PADDING);
     }
 
     private interface TestFactory {
@@ -977,6 +985,115 @@ public final class NauvisFluidsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("oil field is pumpable");
+        }
+    }
+
+    /**
+     * A pumpjack says what it mined, once per cycle, naming the well.
+     *
+     * <p>This is the report that finishes Factorio's oil processing - {@code mine-entity:
+     * crude-oil, 1} - through Facrafting's {@code MiningListeners} and into research, neither of
+     * which this mod names. What can be asserted here is this mod's half: one report per cycle,
+     * for this well, of one, whatever the yield. Other pumpjacks in the run report too, so the
+     * listener keeps only what came from this test's well.
+     */
+    public static class PumpjackReportsWhatItMinesTest extends GameTestInstance {
+
+        public static final MapCodec<PumpjackReportsWhatItMinesTest> CODEC =
+                RecordCodecBuilder.<PumpjackReportsWhatItMinesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PumpjackReportsWhatItMinesTest::info))
+                                .apply(i, PumpjackReportsWhatItMinesTest::new));
+
+        public PumpjackReportsWhatItMinesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            // The seam to research goes through Facrafting, and with Facrafting present the
+            // adapter that forwards reports must be installed - see FacraftingProgress.
+            if (ModList.get().isLoaded("facrafting")) {
+                helper.assertTrue(OilProgress.installed() > 0,
+                        "Facrafting is loaded and nothing forwards what a pumpjack mines to it");
+            }
+
+            BlockPos wellPos = helper.absolutePos(WELL);
+            List<String> reports = new ArrayList<>();
+            OilProgress.add((level, well, resource, cycles) -> {
+                if (well.equals(wellPos)) {
+                    reports.add(resource + " x" + cycles);
+                }
+            });
+
+            well(helper, WELL, 4 * CrudeOilBlockEntity.NORMAL);
+            PumpjackBlockEntity pumpjack = pumpjack(helper, PUMPJACK);
+            charge(pumpjack);
+
+            helper.runAfterDelay(50, () -> {
+                // Two cycles at 400%: forty units each, and still one report of one per cycle.
+                helper.assertValueEqual(reports, List.of("nauvis_fluids:crude_oil x1", "nauvis_fluids:crude_oil x1"),
+                        "what the pumpjack reported over two cycles");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("pumpjack reports what it mines");
+        }
+    }
+
+    /**
+     * A cycle produces at most a tankful, however rich the well.
+     *
+     * <p>Factorio caps a pumpjack's cycle at its fluid box volume, and so does this one - which is
+     * also what keeps a pumpjack working at all on a well far from the origin, where the
+     * distance factor makes a cycle worth more than the tank holds. Without the cap such a machine
+     * finished its first cycle, found the oil would not fit, and said <em>Full</em> over an empty
+     * tank for ever. The gametest world is millions of blocks out, which is how this was found.
+     */
+    public static class PumpjackCapsACycleTest extends GameTestInstance {
+
+        public static final MapCodec<PumpjackCapsACycleTest> CODEC =
+                RecordCodecBuilder.<PumpjackCapsACycleTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PumpjackCapsACycleTest::info))
+                                .apply(i, PumpjackCapsACycleTest::new));
+
+        /** Two thousand a cycle, uncapped: two hundred times normal. */
+        private static final long MONSTER = 200 * CrudeOilBlockEntity.NORMAL;
+
+        public PumpjackCapsACycleTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            CrudeOilBlockEntity well = well(helper, WELL, MONSTER);
+            PumpjackBlockEntity pumpjack = pumpjack(helper, PUMPJACK);
+            charge(pumpjack);
+
+            helper.runAfterDelay(30, () -> {
+                helper.assertValueEqual(pumpjack.stored(), PumpjackBlockEntity.TANK_CAPACITY,
+                        "what one cycle on a monster well banked - a tankful, no more and not nothing");
+                helper.assertValueEqual(well.amount(), MONSTER - CrudeOilBlockEntity.DEPLETION,
+                        "a capped cycle still takes one cycle off the well");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("pumpjack caps a cycle at its tank");
         }
     }
 }

@@ -38,8 +38,10 @@ Two ways a technology is paid for
 **A cost** - N units, one of each science pack per unit, so many seconds a unit. A lab works
 through it.
 
-**Or a trigger** - *craft fifty iron plates*, *craft a lab* - and it completes the moment that
-happens, with no lab and no packs at all. That is what makes the opening work: the first
+**Or a trigger** - *craft fifty iron plates*, *craft a lab*, *pump crude oil once* - and it
+completes the moment that happens, with no lab and no packs at all. Two trigger types: `craft-item`
+names an item, `mine-entity` names a resource a machine takes out of the world - the id of the
+block it stands on, which for crude oil is the same id as the fluid. That is what makes the opening work: the first
 technologies are triggered, so a new world researches its way to the boiler and the lab with
 nothing but a pickaxe and a furnace, and only then does science become a thing you build for.
 
@@ -235,15 +237,23 @@ def cost_of(technology: dict, items: dict) -> dict:
         raise GenError(f"'{technology['id']}' has neither a cost nor a research trigger.")
 
     if trigger:
-        if trigger.get("type") != "craft-item":
-            raise GenError(
-                f"'{technology['id']}' has a {trigger.get('type')!r} trigger; the only one this "
-                "pack can watch for is craft-item."
-            )
-        return {"trigger": {
-            "item": item_id(trigger["item"], items),
-            "count": trigger.get("count", 1),
-        }}
+        kind = trigger.get("type")
+        if kind == "craft-item":
+            return {"trigger": {
+                "item": item_id(trigger["item"], items),
+                "count": trigger.get("count", 1),
+            }}
+        if kind == "mine-entity":
+            # The resource's id in the mapping is what the machine reports having mined - for
+            # crude oil the well block, which shares its id with the fluid.
+            return {"trigger": {
+                "mine": item_id(trigger["entity"], items),
+                "count": trigger.get("count", 1),
+            }}
+        raise GenError(
+            f"'{technology['id']}' has a {kind!r} trigger; the ones this pack can watch for are "
+            "craft-item and mine-entity."
+        )
 
     seconds = cost["time_seconds"]
     ticks = seconds * TICKS_PER_SECOND
@@ -291,8 +301,10 @@ def reachable(tree: list, items: dict, aliases: dict) -> set[str]:
                 continue
             if any(p not in found for p in technology.get("prerequisites", [])):
                 continue
+            # A mine-entity trigger waits on a resource in the world, which nothing gates, so
+            # it is reachable as soon as its prerequisites are.
             trigger = technology.get("research_trigger")
-            if trigger:
+            if trigger and trigger.get("type") == "craft-item":
                 item = items.get(trigger["item"], {}).get("item")
                 owner = gated_by.get(item)
                 if owner is not None and owner not in found:

@@ -64,8 +64,12 @@ dependencies {
     // These two are runtime only, so a standalone run of this mod has the mods its recipes
     // name: Facrafting supplies the timed recipe type, Neo Progressive Materials the iron
     // gear wheel an inserter is paid for in.
-    // Runtime only: the pipe costs one iron ingot, so Facrafting is all a standalone run needs
-    // for its recipe to load.
+    // Facrafting is optional and stays so. compileOnly for the one class in compat/facrafting
+    // that names its types - the pumpjack reports what it mines through Facrafting's
+    // MiningListeners, which is how oil processing gets finished without this mod knowing what
+    // research is - loaded only when ModList says Facrafting is there, exactly as the Jade
+    // plugins are. Runtime as well, so a standalone run has the timed recipe type.
+    compileOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
 }
 

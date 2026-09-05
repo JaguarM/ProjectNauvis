@@ -94,6 +94,7 @@ public final class NauvisGameTests {
         TEST_TYPES.register("steam_travels_down_a_pipe", () -> SteamTravelsDownAPipeTest.CODEC);
         TEST_TYPES.register("vanilla_recipes_are_replaced", () -> VanillaRecipesAreReplacedTest.CODEC);
         TEST_TYPES.register("one_tool_does_everything", () -> OneToolDoesEverythingTest.CODEC);
+        TEST_TYPES.register("every_machine_takes_a_pickaxe", () -> EveryMachineTakesAPickaxeTest.CODEC);
         TEST_TYPES.register("timed_recipes_are_timed", () -> TimedRecipesAreTimedTest.CODEC);
     }
 
@@ -147,6 +148,11 @@ public final class NauvisGameTests {
         event.registerTest(
                 Identifier.fromNamespaceAndPath(Nauvis.MODID, "one_tool_does_everything"),
                 new OneToolDoesEverythingTest(
+                        new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE)));
+
+        event.registerTest(
+                Identifier.fromNamespaceAndPath(Nauvis.MODID, "every_machine_takes_a_pickaxe"),
+                new EveryMachineTakesAPickaxeTest(
                         new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE)));
 
         event.registerTest(
@@ -638,6 +644,62 @@ public final class NauvisGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("the timed recipes are timed recipes");
+        }
+    }
+
+    /**
+     * Every block the pack registers is mined with a pickaxe: it drops, and it drops quickly.
+     *
+     * <p>The bug this exists for shipped in every machine mod at once. A block that requires the
+     * correct tool for its drops and is in no {@code mineable/} tag has no correct tool, so a
+     * boiler mined with a pickaxe dropped nothing - and, tag or no tag, dug at bare-hand speed,
+     * fifteen seconds for hardness three. Each mod now ships a tag provider; this walks every
+     * block in every pack namespace so a mod that forgets its provider fails here rather than in
+     * somebody's world. The oil well is skipped because it is unbreakable, which is the point of it.
+     */
+    public static class EveryMachineTakesAPickaxeTest extends GameTestInstance {
+
+        public static final MapCodec<EveryMachineTakesAPickaxeTest> CODEC =
+                RecordCodecBuilder.<EveryMachineTakesAPickaxeTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(EveryMachineTakesAPickaxeTest::info))
+                                .apply(i, EveryMachineTakesAPickaxeTest::new));
+
+        public EveryMachineTakesAPickaxeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            ItemStack pickaxe = new ItemStack(Items.IRON_PICKAXE);
+            int checked = 0;
+            for (Block block : BuiltInRegistries.BLOCK) {
+                Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+                if (!id.getNamespace().startsWith("nauvis")) {
+                    continue;
+                }
+                var state = block.defaultBlockState();
+                if (state.getDestroySpeed(helper.getLevel(), helper.absolutePos(BlockPos.ZERO)) < 0) {
+                    continue;  // unbreakable on purpose
+                }
+                helper.assertTrue(pickaxe.isCorrectToolForDrops(state),
+                        id + " does not drop when mined with a pickaxe - it is in no mineable/ tag, "
+                                + "so its mod is missing the tag provider every other mod has");
+                helper.assertTrue(pickaxe.getDestroySpeed(state) > 1.0f,
+                        id + " digs at bare-hand speed with a pickaxe");
+                checked++;
+            }
+            helper.assertTrue(checked > 10, "only " + checked + " pack blocks were found to check");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("every machine takes a pickaxe");
         }
     }
 }

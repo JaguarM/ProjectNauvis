@@ -713,5 +713,22 @@
     "unlock_recipes": [
       "pumpjack"
     ]
+  },
+  {
+    "id": "oil-processing",
+    "prerequisites": [
+      "oil-gathering"
+    ],
+    "research_trigger": {
+      "type": "mine-entity",
+      "entity": "crude-oil",
+      "count": 1
+    },
+    "unlock_recipes": [
+      "basic-oil-processing",
+      "chemical-plant",
+      "oil-refinery",
+      "solid-fuel-from-petroleum-gas"
+    ]
   }
 ]
