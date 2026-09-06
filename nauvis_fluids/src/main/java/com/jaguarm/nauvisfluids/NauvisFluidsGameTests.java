@@ -11,6 +11,8 @@ import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlock;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlockEntity;
+import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpItem;
+import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpShape;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpStatus;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
 import com.jaguarm.nauvisfluids.oil.CrudeOilField;
@@ -127,6 +129,8 @@ public final class NauvisFluidsGameTests {
         TEST_TYPES.register("natural_water_makes_no_new_source", () -> NaturalWaterMakesNoNewSourceTest.CODEC);
         TEST_TYPES.register("worldgen_water_becomes_natural", () -> WorldgenWaterBecomesNaturalTest.CODEC);
         TEST_TYPES.register("offshore_pump_stands_only_at_water", () -> OffshorePumpStandsOnlyAtWaterTest.CODEC);
+        TEST_TYPES.register("offshore_pump_turns_to_the_water", () -> OffshorePumpTurnsToTheWaterTest.CODEC);
+        TEST_TYPES.register("offshore_pump_floats_on_a_lake", () -> OffshorePumpFloatsOnALakeTest.CODEC);
         TEST_TYPES.register("offshore_pump_pumps_at_factorio_rate", () -> OffshorePumpPumpsAtFactorioRateTest.CODEC);
         TEST_TYPES.register("offshore_pump_fills_a_pipe", () -> OffshorePumpFillsAPipeTest.CODEC);
         TEST_TYPES.register("offshore_pump_sleeps", () -> OffshorePumpSleepsTest.CODEC);
@@ -168,6 +172,10 @@ public final class NauvisFluidsGameTests {
                 WorldgenWaterBecomesNaturalTest::new, 20, PADDING);
         registerSpaced(event, environment, "offshore_pump_stands_only_at_water",
                 OffshorePumpStandsOnlyAtWaterTest::new, 40, PADDING);
+        registerSpaced(event, environment, "offshore_pump_turns_to_the_water",
+                OffshorePumpTurnsToTheWaterTest::new, 40, PADDING);
+        registerSpaced(event, environment, "offshore_pump_floats_on_a_lake",
+                OffshorePumpFloatsOnALakeTest::new, 40, PADDING);
         registerSpaced(event, environment, "offshore_pump_pumps_at_factorio_rate",
                 OffshorePumpPumpsAtFactorioRateTest::new, 60, PADDING);
         registerSpaced(event, environment, "offshore_pump_fills_a_pipe", OffshorePumpFillsAPipeTest::new, 100, PADDING);
@@ -269,10 +277,16 @@ public final class NauvisFluidsGameTests {
         return ModBlocks.WATER.get().defaultBlockState();
     }
 
-    /** A stone platform at y 1, so a machine has something to stand on and water something to lie in. */
+    /**
+     * A stone platform at y 1, so a machine has something to stand on and water something to lie
+     * in - and stone under it at y 0, so water set into the platform has a bed and stays where it
+     * was put rather than pouring into the space below and turning up, flowing, two blocks under
+     * an intake.
+     */
     private static void platform(GameTestHelper helper, int size) {
         for (int x = 0; x < size; x++) {
             for (int z = 0; z < size; z++) {
+                helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
                 helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
             }
         }
@@ -1474,14 +1488,25 @@ public final class NauvisFluidsGameTests {
             helper.setBlock(INTAKE_WATER, Blocks.WATER.defaultBlockState());
             helper.assertTrue(pumpPlacement(helper, shore) == null,
                     "an offshore pump accepts a bucket's water, so water is infinite again");
+            helper.assertValueEqual(OffshorePumpBlock.bestIntake(helper.getLevel(), helper.absolutePos(PUMP)),
+                    OffshorePumpBlock.Intake.OTHER, "what the refusal says of a bucket's water");
 
             helper.setBlock(INTAKE_WATER, naturalWater().setValue(LiquidBlock.LEVEL, 3));
             helper.assertTrue(pumpPlacement(helper, shore) == null, "an offshore pump accepts water on the move");
 
             helper.setBlock(INTAKE_WATER, Blocks.STONE);
+            helper.assertValueEqual(OffshorePumpBlock.bestIntake(helper.getLevel(), helper.absolutePos(PUMP)),
+                    OffshorePumpBlock.Intake.NONE, "what the refusal says of dry land");
+
             helper.setBlock(beside, naturalWater());
             helper.assertTrue(pumpPlacement(helper, shore) != null,
                     "an offshore pump refuses natural water beside its intake");
+            helper.setBlock(beside, Blocks.AIR);
+
+            // A bank a block above the water: the intake reaches two down.
+            helper.setBlock(INTAKE_WATER.below(), naturalWater());
+            helper.assertTrue(pumpPlacement(helper, shore) != null,
+                    "an offshore pump on a bank one block above the water refuses to stand there");
             helper.succeed();
         }
 
@@ -1675,6 +1700,121 @@ public final class NauvisFluidsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("offshore pump sleeps");
+        }
+    }
+
+    /**
+     * A pump turns to the water. The click faces north and the lake is to the east, and the pump
+     * placed faces east, intake over the lake.
+     *
+     * <p>Factorio's ghost snaps to the shoreline; this is the nearest a block can come. The
+     * player's own facing is tried first, so a pump that could face the way they look does, and
+     * only one that could not turns.
+     */
+    public static class OffshorePumpTurnsToTheWaterTest extends GameTestInstance {
+
+        public static final MapCodec<OffshorePumpTurnsToTheWaterTest> CODEC =
+                RecordCodecBuilder.<OffshorePumpTurnsToTheWaterTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OffshorePumpTurnsToTheWaterTest::info))
+                                .apply(i, OffshorePumpTurnsToTheWaterTest::new));
+
+        public OffshorePumpTurnsToTheWaterTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            platform(helper, 6);
+            BlockPos shore = PUMP.below();
+            // Under where an east-facing intake would hang, and nowhere a north-facing one reaches.
+            helper.setBlock(PUMP.east().below(), naturalWater());
+
+            BlockState placed = pumpPlacement(helper, shore);
+            helper.assertTrue(placed != null, "an offshore pump facing away from a lake beside it will not turn to it");
+            helper.assertValueEqual(placed.getValue(OffshorePumpBlock.FACING), Direction.EAST,
+                    "the way a pump clicked facing north turns when the water is to the east");
+
+            // Water the way the player faces wins over water beside, so a pump faces as placed
+            // whenever it can.
+            helper.setBlock(INTAKE_WATER, naturalWater());
+            BlockState straight = pumpPlacement(helper, shore);
+            helper.assertTrue(straight != null, "a pump with water ahead of it will not stand");
+            helper.assertValueEqual(straight.getValue(OffshorePumpBlock.FACING), Direction.NORTH,
+                    "the way a pump faces when the water is where the player looks");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("offshore pump turns to the water");
+        }
+    }
+
+    /**
+     * A click on a lake puts the pump on the lake, not under it.
+     *
+     * <p>A block in hand looks through water, so the click lands on the bed and vanilla would
+     * place just above it, on the bottom. The pump's item lifts the placement to the air over the
+     * surface, and the block then finds the water under its intake and stands.
+     */
+    public static class OffshorePumpFloatsOnALakeTest extends GameTestInstance {
+
+        public static final MapCodec<OffshorePumpFloatsOnALakeTest> CODEC =
+                RecordCodecBuilder.<OffshorePumpFloatsOnALakeTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OffshorePumpFloatsOnALakeTest::info))
+                                .apply(i, OffshorePumpFloatsOnALakeTest::new));
+
+        private static final BlockPos BED = new BlockPos(2, 0, 2);
+        private static final int DEPTH = 3;
+
+        public OffshorePumpFloatsOnALakeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            // A pool three deep and three across, on a stone bed.
+            for (int x = 1; x <= 3; x++) {
+                for (int z = 1; z <= 3; z++) {
+                    helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+                    for (int y = 1; y <= DEPTH; y++) {
+                        helper.setBlock(new BlockPos(x, y, z), naturalWater());
+                    }
+                }
+            }
+
+            BlockPos bed = helper.absolutePos(BED);
+            BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(bed), Direction.UP, bed, false);
+            BlockPlaceContext clicked = new BlockPlaceContext(helper.getLevel(), null,
+                    InteractionHand.MAIN_HAND, new ItemStack(ModItems.OFFSHORE_PUMP.get()), hit);
+            helper.assertValueEqual(clicked.getClickedPos(), bed.above(),
+                    "where vanilla would place a block clicked onto a lake bed");
+
+            BlockPlaceContext lifted = ModItems.OFFSHORE_PUMP.get().updatePlacementContext(clicked);
+            helper.assertTrue(lifted != null, "the pump's item refused the click altogether");
+            helper.assertValueEqual(lifted.getClickedPos(), bed.above(DEPTH + 1),
+                    "where the pump's item lifts a click on a lake bed to");
+
+            BlockState placed = ModBlocks.OFFSHORE_PUMP.get().getStateForPlacement(lifted);
+            helper.assertTrue(placed != null, "a pump lifted to the surface of a lake will not stand there");
+            helper.assertValueEqual(placed.getValue(OffshorePumpShape.SHAPE.part()), OffshorePumpShape.BODY_CELL,
+                    "the cell that lands on the lifted click");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("offshore pump floats on a lake");
         }
     }
 }

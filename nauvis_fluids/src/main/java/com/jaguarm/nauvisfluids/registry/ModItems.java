@@ -3,11 +3,13 @@ package com.jaguarm.nauvisfluids.registry;
 import java.util.List;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
+import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpItem;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -23,7 +25,10 @@ public final class ModItems {
 
     public static final DeferredItem<BlockItem> PIPE = ITEMS.registerSimpleBlockItem(ModBlocks.PIPE);
 
-    public static final DeferredItem<BlockItem> OFFSHORE_PUMP = ITEMS.registerSimpleBlockItem(ModBlocks.OFFSHORE_PUMP);
+    /** A block item of its own, so a click on a lake puts the pump on the water rather than under it. */
+    public static final DeferredItem<OffshorePumpItem> OFFSHORE_PUMP = ITEMS.registerItem("offshore_pump",
+            properties -> new OffshorePumpItem(ModBlocks.OFFSHORE_PUMP.get(), properties),
+            () -> new Item.Properties().useBlockDescriptionPrefix());
 
     public static final DeferredItem<BlockItem> PUMPJACK = ITEMS.registerSimpleBlockItem(ModBlocks.PUMPJACK);
 

@@ -284,6 +284,18 @@ cell that lands on the click, and `PumpjackBlock.snapPart` chooses it so the cen
 well nearest the click. The client's outline renderer asks the same method the same question, so
 the footprint drawn is the footprint placed and there is no second copy of the rule.
 
+**A machine that must stand beside something turns to it, and shows where it will go.** The offshore
+pump tries the player's facing and then the other three, and the first whose intake finds natural
+water is the way it goes - `OffshorePumpBlock.aim` - so a beach is walked with pumps looking out to
+sea. A click on the lake is lifted to the air over the surface by the pump's own `BlockItem`, through
+`updatePlacementContext`, because a block in hand looks through water and would otherwise land on the
+bed. Water has no block entity to hang a renderer on, so the ghost is two client events -
+`ExtractLevelRenderStateEvent` to work out the placement once a frame and `SubmitCustomGeometryEvent`
+to draw it - asking those same two methods, blue when it will go and red when it will not, with the
+water it would draw from marked. And when it will not go, the block says why on the action bar,
+from the server, to the player who clicked: no water, or a bucket's water. A refusal that says
+nothing is a rule nobody can learn.
+
 **An x-ray is a block entity renderer with the depth test off.** The wells light up while a pumpjack
 is in hand because every well has a block entity, so every loaded well has a renderer visited for
 it — no scan. `shouldRenderOffScreen` is what makes it see through hills, because the per-section

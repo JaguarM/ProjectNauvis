@@ -11,7 +11,9 @@ import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -44,19 +46,29 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  *
  * <h2>What counts as water</h2>
  *
- * <p>{@link #intake} looks at the four blocks the intake reaches - under it and to its three open
- * sides - for a fluid in {@code #nauvis_fluids:offshore_pumpable}, which is the still water of a
- * lake or the sea and nothing a bucket poured. The still part matters: the flowing skirt where a
- * lake spills into a dug channel is water on the move, and a channel does not bring the sea
- * inland. The other water the search finds - a puddle, a flow - is remembered, so the readout
- * can say <em>this water cannot be pumped</em> rather than <em>no water</em>, which is the
- * difference between a player learning the rule and a player filing a bug.
+ * <p>{@link #waterAt} looks at the blocks the intake reaches - under it, one and two down, so a
+ * bank a block above the water still counts, and to its three open sides, so a pump standing in
+ * the shallows reaches sideways - for a fluid in {@code #nauvis_fluids:offshore_pumpable}, which
+ * is the still water of a lake or the sea and nothing a bucket poured. The still part matters:
+ * the flowing skirt where a lake spills into a dug channel is water on the move, and a channel
+ * does not bring the sea inland.
  *
- * <h2>Facing</h2>
+ * <h2>It turns to the water, and it floats</h2>
  *
- * <p>The player faces the water and places; the body lands on the block they clicked and the
- * intake one block ahead, over the water, with the outlet at the body's back. Turn round to turn
- * the machine.
+ * <p>Factorio's placement ghost snaps an offshore pump to the shoreline under the cursor, and a
+ * pump here does the nearest thing a block can. {@link #aim} tries the way the player faces first
+ * and then the other three, and the first whose intake finds natural water is the way the pump
+ * goes - so a player walking along a beach places pumps that all look out to sea whichever way
+ * they were looking. And a click on the lake itself, which lands on the lake bed because a block
+ * in hand looks through water, is lifted by {@link OffshorePumpItem} to the air just over the
+ * surface: the pump floats there, intake over the water, as Factorio 2.0's does.
+ * {@code client/OffshorePumpGhost} draws the answer to the same two questions under the crosshair
+ * while the pump is in hand, so what is shown is what will happen.
+ *
+ * <p>When no facing finds water the placement is refused, and the player is told why on the
+ * action bar: that there is no water here, or - the case worth a sentence - that the water here is
+ * a bucket's, which the pump does not draw from. That message is the whole of how a player learns
+ * the rule.
  */
 public class OffshorePumpBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
@@ -64,6 +76,10 @@ public class OffshorePumpBlock extends BaseEntityBlock implements Multiblock.Mac
 
     /** Which way the intake points: towards the water. */
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
+
+    /** The two things a refused placement can say. */
+    public static final String NO_WATER_KEY = "nauvis_fluids.offshore_pump.no_water";
+    public static final String WRONG_WATER_KEY = "nauvis_fluids.offshore_pump.wrong_water";
 
     /** What the intake found. */
     public enum Intake {
@@ -121,43 +137,117 @@ public class OffshorePumpBlock extends BaseEntityBlock implements Multiblock.Mac
     }
 
     /**
-     * Body on the clicked block, intake ahead of the player and at natural water - or null, and
-     * so no placement at all, when the machine does not fit or the intake would find no water it
-     * can draw.
+     * Body on the clicked block - lifted to the surface already, if the click was in a lake -
+     * turned so that its intake finds natural water, or null and a word on the action bar when
+     * no turn does. Null too, and silently, when the machine simply does not fit.
      */
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
-        Direction facing = context.getHorizontalDirection();
-        BlockState placed = Multiblock.getStateForPlacement(this,
-                defaultBlockState().setValue(FACING, facing), context);
-        if (placed == null) {
+        BlockPos anchor = context.getClickedPos();
+        Direction facing = aim(context.getLevel(), anchor, context.getHorizontalDirection());
+        if (facing == null) {
+            explain(context, anchor);
             return null;
         }
-        BlockPos anchor = shape().anchorPos(context.getClickedPos(), Multiblock.part(this, placed), facing);
-        return intake(context.getLevel(), anchor, facing) == Intake.NATURAL ? placed : null;
+        return Multiblock.getStateForPlacement(this, defaultBlockState().setValue(FACING, facing), context);
+    }
+
+    /** Why a pump would not go here, to the player who tried, on the server that decided. */
+    private static void explain(BlockPlaceContext context, BlockPos anchor) {
+        if (context.getPlayer() instanceof ServerPlayer player) {
+            Intake best = bestIntake(context.getLevel(), anchor);
+            player.sendOverlayMessage(Component.translatable(
+                    best == Intake.OTHER ? WRONG_WATER_KEY : NO_WATER_KEY));
+        }
     }
 
     /**
-     * What the intake of a pump anchored at {@code anchor} and turned this way would draw from.
-     *
-     * <p>Under the intake first, then ahead and to either side: a pump on a beach reaches down
-     * into the shallows, and one standing in the water reaches sideways into it. Never back
-     * towards the body, which is where the shore is.
+     * The way a pump anchored at {@code anchor} should face for its intake to find natural water:
+     * the way the player faces if that works, then a quarter turn either way, then right round -
+     * the nearest turn wins - or null if no way does.
      */
-    public static Intake intake(LevelReader level, BlockPos anchor, Direction facing) {
-        BlockPos inlet = OffshorePumpShape.SHAPE.cellPos(anchor, OffshorePumpShape.INLET_CELL, facing);
-        boolean other = false;
-        for (BlockPos reach : List.of(inlet.below(), inlet.relative(facing),
-                inlet.relative(facing.getClockWise()), inlet.relative(facing.getCounterClockWise()))) {
-            FluidState fluid = level.getFluidState(reach);
-            if (fluid.is(ModTags.OFFSHORE_PUMPABLE)) {
-                return Intake.NATURAL;
-            }
-            if (fluid.is(FluidTags.WATER)) {
-                other = true;
+    public static @Nullable Direction aim(LevelReader level, BlockPos anchor, Direction preferred) {
+        for (Direction facing : List.of(preferred, preferred.getClockWise(),
+                preferred.getCounterClockWise(), preferred.getOpposite())) {
+            if (waterAt(level, anchor, facing) != null) {
+                return facing;
             }
         }
-        return other ? Intake.OTHER : Intake.NONE;
+        return null;
+    }
+
+    /** The best any facing finds here: what a refusal should say. */
+    public static Intake bestIntake(LevelReader level, BlockPos anchor) {
+        Intake best = Intake.NONE;
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            Intake found = intake(level, anchor, facing);
+            if (found == Intake.NATURAL) {
+                return found;
+            }
+            if (found == Intake.OTHER) {
+                best = found;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * The block just above the surface of the natural water {@code pos} is in, or {@code pos}
+     * itself when it is in none.
+     *
+     * <p>A block in hand looks through water, so a click on a lake lands on its bed, and a pump
+     * placed there would sit on the bottom. Factorio 2.0's floats, and so does this one: the body
+     * goes in the air over the top water block, and its intake hangs over the water beside it.
+     */
+    public static BlockPos afloat(LevelReader level, BlockPos pos) {
+        if (!level.getFluidState(pos).is(ModTags.OFFSHORE_PUMPABLE)) {
+            return pos;
+        }
+        BlockPos top = pos;
+        while (level.getFluidState(top.above()).is(ModTags.OFFSHORE_PUMPABLE)) {
+            top = top.above();
+        }
+        return top.above();
+    }
+
+    /**
+     * The natural water the intake of a pump anchored at {@code anchor} and turned this way would
+     * draw from, or null if it would find none.
+     */
+    public static @Nullable BlockPos waterAt(LevelReader level, BlockPos anchor, Direction facing) {
+        for (BlockPos reached : reach(anchor, facing)) {
+            if (level.getFluidState(reached).is(ModTags.OFFSHORE_PUMPABLE)) {
+                return reached;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * What the intake of a pump anchored at {@code anchor} and turned this way finds: natural
+     * water, some other water, or nothing.
+     */
+    public static Intake intake(LevelReader level, BlockPos anchor, Direction facing) {
+        if (waterAt(level, anchor, facing) != null) {
+            return Intake.NATURAL;
+        }
+        for (BlockPos reached : reach(anchor, facing)) {
+            FluidState fluid = level.getFluidState(reached);
+            if (fluid.is(FluidTags.WATER)) {
+                return Intake.OTHER;
+            }
+        }
+        return Intake.NONE;
+    }
+
+    /**
+     * The blocks an intake reaches: under it, one and two down, then ahead and to either side.
+     * Never back towards the body, which is where the shore is.
+     */
+    private static List<BlockPos> reach(BlockPos anchor, Direction facing) {
+        BlockPos inlet = OffshorePumpShape.SHAPE.cellPos(anchor, OffshorePumpShape.INLET_CELL, facing);
+        return List.of(inlet.below(), inlet.below(2), inlet.relative(facing),
+                inlet.relative(facing.getClockWise()), inlet.relative(facing.getCounterClockWise()));
     }
 
     @Override

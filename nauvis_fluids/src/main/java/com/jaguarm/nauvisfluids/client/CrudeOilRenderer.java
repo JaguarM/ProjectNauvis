@@ -74,7 +74,8 @@ public class CrudeOilRenderer implements BlockEntityRenderer<CrudeOilBlockEntity
             .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
             .build();
 
-    private static final RenderType XRAY = RenderType.create(
+    /** Lines through anything. The offshore pump's ghost draws with it too. */
+    public static final RenderType XRAY = RenderType.create(
             "nauvis_fluids:oil_xray",
             RenderSetup.builder(XRAY_PIPELINE)
                     .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)

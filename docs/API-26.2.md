@@ -409,6 +409,18 @@ Other confirmed details, second batch
 - `BlockPlaceContext(Level, @Nullable Player, InteractionHand, ItemStack, BlockHitResult)` — a null
   player is allowed and `getHorizontalDirection()` then answers north, which is how a gametest
   asks a block what it would place as.
+- **`BlockItem.updatePlacementContext(BlockPlaceContext)`** is the hook for moving where a block
+  item places, and `BlockPlaceContext.at(context, pos, face)` builds the moved context; the
+  block's `getStateForPlacement` then sees the new `getClickedPos()`. The offshore pump lifts a
+  click on a lake bed to the air over the surface with it. A block in hand raycasts with
+  `ClipContext.Fluid.NONE`, so a click on water lands on whatever is under the water.
+- **Drawing in the world without a block entity** is two events on the game bus:
+  `ExtractLevelRenderStateEvent` (once a frame, with the `ClientLevel` and the `Camera`, where the
+  world may be read) and `SubmitCustomGeometryEvent` (with the `SubmitNodeCollector` and a
+  `PoseStack` at the camera's origin, where it may not). Translate by
+  `pos - levelRenderState.cameraRenderState.pos` and `submitShapeOutline` as a renderer would.
+  `RenderLevelStageEvent`'s own javadoc points here for anything that goes through the collector.
+  `nauvis_fluids/.../client/OffshorePumpGhost.java` is the worked example.
 - `GameTestHelper.onEachTick(Runnable)` runs something every tick of the test, which is how a
   test in one mod stands in for a machine from another: the power mod's boiler tests top the
   water tank up each tick the way a pipe from an offshore pump would, and never name the pump.

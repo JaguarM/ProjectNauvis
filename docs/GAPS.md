@@ -115,10 +115,12 @@ Water
   chunk border - a lush cave's clay pool, an iceberg - may write vanilla water into a chunk that
   was already made natural. Rare, at the edges, and harmless: it is not pumpable and it cannot
   spread into natural water.
-- **An offshore pump's intake reaches four blocks: under it and to its three open sides.** Not the
-  block the intake itself replaced, so a pump set down in a one-deep puddle of natural water
-  finds the puddle gone. Still water only: the flowing skirt where a lake spills into a dug
-  channel is not a lake, and a channel does not bring the sea inland.
+- **An offshore pump's intake reaches five blocks: one and two under it, and its three open
+  sides.** Two down so that a bank a block above the water is a place to stand; not the block the
+  intake itself replaced, so a pump set down in a one-deep puddle of natural water finds the
+  puddle gone. Still water only: the flowing skirt where a lake spills into a dug channel is not
+  a lake, and a channel does not bring the sea inland. A pump clicked onto the lake floats on it,
+  which is Factorio 2.0's rule and not 1.1's.
 - **Its numbers are the pack's ratio, not Factorio's units.** 1200 a second and a fluid box of
   200 in Factorio; forty a tick and a tank of 200 here, so that one pump is twenty boilers as it
   is there. The footprint, the recipe, the technology and needing no power are identity.

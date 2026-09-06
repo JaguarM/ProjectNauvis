@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
+import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlock;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpShape;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
@@ -180,6 +181,13 @@ public final class NauvisFluidsData {
             add("jade.nauvis_fluids.offshore_pump.no_water", "No water at the intake");
             add("jade.nauvis_fluids.offshore_pump.wrong_water",
                     "This water cannot be pumped - an offshore pump draws from the still water of a lake or the sea");
+
+            // The action bar, when a pump will not go where it was clicked. The second is the
+            // one that teaches the rule: a bucket's water is not a lake.
+            add(OffshorePumpBlock.NO_WATER_KEY,
+                    "No water here - an offshore pump stands at the edge of a lake or the sea");
+            add(OffshorePumpBlock.WRONG_WATER_KEY,
+                    "This water cannot be pumped - an offshore pump draws from the still water of a lake or the sea, not a bucket's");
 
             // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the
