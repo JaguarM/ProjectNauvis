@@ -2,62 +2,61 @@ package com.jaguarm.nauvismachines.machine.furnace;
 
 import java.util.List;
 
-import com.jaguarm.facrafting.client.ClientRecipes;
-import com.jaguarm.facrafting.recipe.FacraftRecipe;
-
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 /**
- * The furnace's screen: what goes in, what is burning, what comes out, and how far along.
+ * The furnace's screen, which is vanilla's furnace screen.
  *
- * <p>Painted in the assembler's flat colours, so the two machine screens and Facrafting's panel
- * read as one interface. The burner tiers show a flame beside the fuel slot, the electric tier a
- * charge bar under the progress bar; nothing else differs, which is the point of one screen.
+ * <p>The same panel, the same three slots in the same places, the same flame and the same
+ * arrow, from vanilla's own texture and sprites - because a furnace is the one machine here that
+ * Minecraft already has a picture of, and Yannic has said vanilla's interface fits Minecraft's
+ * art far better than a flat painted panel does. The assembler's screen is still painted, and is
+ * the next to change.
+ *
+ * <p>What vanilla's furnace does not have is a status line, so the reason a furnace has stopped
+ * is a tooltip over the arrow rather than a line of text, and the hover readout outside the
+ * screen says the same thing. The electric tier has no fuel slot: its well is painted over with a
+ * patch of the panel and the flame's place holds a charge bar instead.
  */
 public class FurnaceScreen extends AbstractContainerScreen<FurnaceMenu> {
 
     private static final int PANEL_WIDTH = 176;
     private static final int PANEL_HEIGHT = 166;
 
-    private static final int COLOR_FRAME = 0xFF000000;
-    private static final int COLOR_BACKGROUND = 0xF0141414;
-    private static final int COLOR_SLOT = 0xFF3B3B3B;
-    private static final int COLOR_SLOT_EDGE = 0xFF1E1E1E;
-    private static final int COLOR_TEXT = 0xFFFFFFFF;
-    private static final int COLOR_MUTED = 0xFF909090;
-    private static final int COLOR_TRACK = 0xFF2A2A2A;
-    private static final int COLOR_FILL = 0xFF55FF55;
-    /** Fire, and the only warm colour on the panel. */
-    private static final int COLOR_FLAME = 0xFFFF9A3C;
-    /** Electricity, the assembler's yellow. */
-    private static final int COLOR_CHARGE = 0xFFFFD24A;
+    private static final Identifier TEXTURE = Identifier.withDefaultNamespace("textures/gui/container/furnace.png");
+    private static final Identifier LIT_PROGRESS = Identifier.withDefaultNamespace("container/furnace/lit_progress");
+    private static final Identifier BURN_PROGRESS = Identifier.withDefaultNamespace("container/furnace/burn_progress");
 
-    /** The progress bar, between the input column and the output well. */
-    private static final int ARROW_X = 70;
-    private static final int ARROW_Y = 32;
-    private static final int ARROW_WIDTH = 34;
-    private static final int ARROW_HEIGHT = 6;
-
-    /** The flame, beside the fuel slot and under the input: 26..40 is clear of both wells. */
-    private static final int FLAME_X = 26;
-    private static final int FLAME_Y = 35;
+    /** Vanilla's flame, between the input and the fuel slot. */
+    private static final int FLAME_X = 56;
+    private static final int FLAME_Y = 36;
     private static final int FLAME_WIDTH = 14;
     private static final int FLAME_HEIGHT = 14;
 
-    /** An electric furnace's charge, under the progress bar. */
-    private static final int CHARGE_X = 70;
-    private static final int CHARGE_Y = 44;
-    private static final int CHARGE_WIDTH = 34;
-    private static final int CHARGE_HEIGHT = 4;
+    /** Vanilla's arrow, filling left to right. */
+    private static final int ARROW_X = 79;
+    private static final int ARROW_Y = 34;
+    private static final int ARROW_WIDTH = 24;
+    private static final int ARROW_HEIGHT = 16;
 
-    /** Clear of the fuel well, which ends at 52, and vanilla's "Inventory" label at 72. */
-    private static final int STATUS_Y = 58;
+    /**
+     * A patch of plain panel from the texture, for covering the fuel well on the electric tier:
+     * the space left of the input slot is background and nothing else.
+     */
+    private static final int PATCH_U = 8;
+    private static final int PATCH_V = 17;
+
+    /** The charge bar, in the flame's place, in the assembler's electricity colour. */
+    private static final int COLOR_TRACK = 0xFF373737;
+    private static final int COLOR_CHARGE = 0xFFFFD24A;
 
     public FurnaceScreen(FurnaceMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, PANEL_WIDTH, PANEL_HEIGHT);
@@ -75,84 +74,53 @@ public class FurnaceScreen extends AbstractContainerScreen<FurnaceMenu> {
 
         int x = leftPos;
         int y = topPos;
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, 0.0F, 0.0F, imageWidth, imageHeight, 256, 256);
 
-        graphics.fill(x - 1, y - 1, x + imageWidth + 1, y + imageHeight + 1, COLOR_FRAME);
-        graphics.fill(x, y, x + imageWidth, y + imageHeight, COLOR_BACKGROUND);
-
-        for (Slotish slot : slotWells()) {
-            graphics.fill(x + slot.x() - 1, y + slot.y() - 1,
-                    x + slot.x() + 17, y + slot.y() + 17, COLOR_SLOT_EDGE);
-            graphics.fill(x + slot.x(), y + slot.y(),
-                    x + slot.x() + 16, y + slot.y() + 16, COLOR_SLOT);
-        }
-
-        drawProgress(graphics, x, y);
         if (menu.isBurner()) {
-            drawFlame(graphics, x, y);
+            if (menu.isBurning()) {
+                int lit = Mth.ceil(menu.burnProgress() * 13.0F) + 1;
+                graphics.blitSprite(RenderPipelines.GUI_TEXTURED, LIT_PROGRESS, FLAME_WIDTH, FLAME_HEIGHT,
+                        0, FLAME_HEIGHT - lit, x + FLAME_X, y + FLAME_Y + FLAME_HEIGHT - lit, FLAME_WIDTH, lit);
+            }
         } else {
-            drawCharge(graphics, x, y);
+            // No fuel slot: the well is painted over, and the flame's place is the charge.
+            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE,
+                    x + FurnaceMenu.FUEL_X - 1, y + FurnaceMenu.FUEL_Y - 1, PATCH_U, PATCH_V, 18, 18, 256, 256);
+            int left = x + FLAME_X;
+            int top = y + FLAME_Y;
+            graphics.fill(left, top, left + FLAME_WIDTH, top + FLAME_HEIGHT, COLOR_TRACK);
+            int height = Math.round(FLAME_HEIGHT * menu.charge());
+            if (height > 0) {
+                graphics.fill(left, top + FLAME_HEIGHT - height, left + FLAME_WIDTH, top + FLAME_HEIGHT, COLOR_CHARGE);
+            }
         }
+
+        int filled = Mth.ceil(menu.craftProgress() * ARROW_WIDTH);
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, BURN_PROGRESS, ARROW_WIDTH, ARROW_HEIGHT,
+                0, 0, x + ARROW_X, y + ARROW_Y, filled, ARROW_HEIGHT);
     }
 
-    private List<Slotish> slotWells() {
-        return menu.slots.stream().map(slot -> new Slotish(slot.x, slot.y)).toList();
-    }
-
-    private record Slotish(int x, int y) {}
-
-    private void drawProgress(GuiGraphicsExtractor graphics, int originX, int originY) {
-        int left = originX + ARROW_X;
-        int top = originY + ARROW_Y;
-        graphics.fill(left, top, left + ARROW_WIDTH, top + ARROW_HEIGHT, COLOR_TRACK);
-        int filled = Math.round(ARROW_WIDTH * menu.craftProgress());
-        if (filled > 0) {
-            graphics.fill(left, top, left + filled, top + ARROW_HEIGHT, COLOR_FILL);
-        }
-    }
-
-    /** Burns downward, so an almost-spent piece of coal is an almost-empty box. */
-    private void drawFlame(GuiGraphicsExtractor graphics, int originX, int originY) {
-        int left = originX + FLAME_X;
-        int top = originY + FLAME_Y;
-        graphics.fill(left, top, left + FLAME_WIDTH, top + FLAME_HEIGHT, COLOR_TRACK);
-        int height = Math.round(FLAME_HEIGHT * menu.burnProgress());
-        if (height > 0) {
-            graphics.fill(left, top + FLAME_HEIGHT - height, left + FLAME_WIDTH,
-                    top + FLAME_HEIGHT, COLOR_FLAME);
-        }
-    }
-
-    private void drawCharge(GuiGraphicsExtractor graphics, int originX, int originY) {
-        int left = originX + CHARGE_X;
-        int top = originY + CHARGE_Y;
-        graphics.fill(left, top, left + CHARGE_WIDTH, top + CHARGE_HEIGHT, COLOR_TRACK);
-        int filled = Math.round(CHARGE_WIDTH * menu.charge());
-        if (filled > 0) {
-            graphics.fill(left, top, left + filled, top + CHARGE_HEIGHT, COLOR_CHARGE);
-        }
-    }
-
+    /** Hovering the arrow says what the furnace is doing, or why it is not. */
     @Override
-    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        graphics.text(font, title, titleLabelX, titleLabelY, COLOR_TEXT, false);
-        graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, COLOR_MUTED, false);
-        graphics.text(font, statusLine(), 8, STATUS_Y, COLOR_MUTED, false);
+    protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        super.extractTooltip(graphics, mouseX, mouseY);
+        int left = leftPos + ARROW_X;
+        int top = topPos + ARROW_Y;
+        if (mouseX >= left && mouseX < left + ARROW_WIDTH && mouseY >= top && mouseY < top + ARROW_HEIGHT) {
+            graphics.setComponentTooltipForNextFrame(font, List.of(statusLine()), mouseX, mouseY);
+        }
     }
 
-    /**
-     * One line saying what the furnace is doing, or why it is not. The same words the hover
-     * readout uses, because they are the same facts.
-     */
+    /** One line saying what the furnace is doing, or why it is not. The hover readout says the same. */
     private Component statusLine() {
         FurnaceBlockEntity.Status status = menu.status();
         if (status == FurnaceBlockEntity.Status.SMELTING) {
-            ResourceKey<Recipe<?>> key = menu.smelting();
-            RecipeHolder<FacraftRecipe> holder = key == null ? null : ClientRecipes.byId(key);
-            if (holder == null) {
+            Item making = menu.smelting();
+            if (making == null) {
                 return Component.translatable("status.nauvis_machines.furnace.unknown");
             }
             return Component.translatable("status.nauvis_machines.furnace.smelting",
-                    holder.value().result().create().getHoverName());
+                    new ItemStack(making).getHoverName());
         }
         return statusText(status);
     }

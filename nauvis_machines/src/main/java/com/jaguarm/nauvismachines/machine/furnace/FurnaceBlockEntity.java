@@ -1,11 +1,10 @@
 package com.jaguarm.nauvismachines.machine.furnace;
 
-import java.util.List;
+import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.facrafting.queue.CraftListeners;
-import com.jaguarm.facrafting.recipe.CraftPlanner;
 import com.jaguarm.facrafting.recipe.FacraftRecipe;
 import com.jaguarm.facrafting.recipe.RecipeLocks;
 import com.jaguarm.facrafting.registry.ModRecipes;
@@ -14,9 +13,9 @@ import com.jaguarm.nauvismachines.machine.MachinePower;
 import com.jaguarm.nauvismachines.machine.PowerAccess;
 import com.jaguarm.nauvismachines.registry.ModBlockEntities;
 
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -32,14 +31,21 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
+import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
@@ -50,10 +56,15 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  *
  * <p>The difference from an assembler is that nobody tells it what to make. Factorio's furnace
  * runs the {@code smelting} category - iron, copper, steel and stone brick - and chooses among
- * them by what is put into it, so there is no recipe selector, no panel, and one input slot. The
- * recipes are Facrafting recipes carrying that category, generated from Factorio's own numbers;
- * a furnace is the one machine that runs them and the panel is the one place that never offers
- * them, which is exactly Factorio's arrangement.
+ * them by what is put into it, so there is no recipe selector and one input slot. The recipes
+ * are Facrafting recipes carrying that category, generated from Factorio's own numbers; a furnace
+ * is the one machine that runs them, and the panel shows them dimmed and refuses to queue them,
+ * which is Factorio's arrangement.
+ *
+ * <p>And it runs vanilla's furnace recipes for whatever Factorio has no recipe for - sand to
+ * glass, food to cooked food - at vanilla's times over its own speed. Factorio's recipes are asked
+ * first, so where the pack has an opinion the pack's number wins; vanilla's is there so that the
+ * only furnace in the pack is not one that cannot cook a fish.
  *
  * <h2>Three tiers, one entity</h2>
  *
@@ -112,6 +123,13 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /**
+     * One thing this furnace could do with what is in it, whichever kind of recipe it came from:
+     * what it takes and how many, what it makes, and how long the recipe says, before the
+     * machine's own speed is applied.
+     */
+    public record Smelt(ResourceKey<Recipe<?>> key, Ingredient input, int count, ItemStack result, int ticks) {}
+
     private final float craftingSpeed;
     private final boolean burner;
     private final int energyPerTick;
@@ -128,10 +146,16 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
     private final @Nullable EnergyHandler gridView;
 
     /**
-     * What is being smelted, by key. Chosen from the input rather than by anyone, and kept so
-     * the screen can name it and so a smelt in progress survives a reload.
+     * What is being smelted, by key. Chosen from the input rather than by anyone, and kept so a
+     * smelt in progress survives a reload and is not re-resolved every tick.
      */
     private @Nullable ResourceKey<Recipe<?>> recipeKey;
+
+    /**
+     * What the current recipe makes, for the screen. Synced on its own because a client cannot
+     * resolve a vanilla recipe key into an item and is not sent every recipe in the game.
+     */
+    private @Nullable Item making;
 
     private int progress;
     private int craftTicks;
@@ -228,6 +252,11 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
         return recipeKey;
     }
 
+    /** What the current recipe makes, or null when there is none. Synced, so the screen can name it. */
+    public @Nullable Item making() {
+        return making;
+    }
+
     public int progress() {
         return progress;
     }
@@ -241,39 +270,63 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /** Factorio's rule, the assembler's arithmetic: the recipe's time over the machine's speed. */
-    public static int craftTicksFor(FacraftRecipe recipe, float craftingSpeed) {
-        return Math.max(1, Math.round(recipe.craftTicks() / craftingSpeed));
+    public static int craftTicksFor(Smelt smelt, float craftingSpeed) {
+        return Math.max(1, Math.round(smelt.ticks() / craftingSpeed));
     }
 
     /**
-     * The smelting recipe that takes this item, if the pack has one and the world may run it.
+     * What a furnace here would do with this item, if anything: Factorio's smelting recipe for
+     * it, or vanilla's furnace recipe where Factorio has none.
      *
-     * <p>A walk over the timed recipes rather than a lookup, because Facrafting keys recipes by
-     * result and a furnace is asked by ingredient. Two hundred string compares, once per craft
-     * start and once per insertion attempt; a base of a thousand furnaces spends less on this in
-     * a tick than on one block update.
+     * <p>Factorio's are a walk over the timed recipes rather than a lookup, because Facrafting keys
+     * recipes by result and a furnace is asked by ingredient. Two hundred string compares, once per
+     * craft start and once per insertion attempt; a base of a thousand furnaces spends less on
+     * this in a tick than on one block update. Vanilla's is the recipe manager's own lookup.
      *
      * <p>The lock is part of the answer. Steel's recipe exists from the first tick and is
      * researched later, and a furnace that smelted it regardless would make steel processing a
      * technology that unlocks nothing.
      */
-    public static @Nullable RecipeHolder<FacraftRecipe> smeltingRecipeFor(ServerLevel level, ItemStack stack) {
+    public static @Nullable Smelt smeltingRecipeFor(ServerLevel level, ItemStack stack) {
         if (stack.isEmpty()) {
             return null;
         }
         for (RecipeHolder<FacraftRecipe> holder
                 : level.getServer().getRecipeManager().recipeMap().byType(ModRecipes.FACRAFT_TYPE.get())) {
-            FacraftRecipe recipe = holder.value();
-            if (!SMELTING.equals(recipe.category()) || recipe.ingredients().size() != 1) {
-                continue;
+            Smelt smelt = smeltOf(holder, stack, level);
+            if (smelt != null) {
+                return smelt;
             }
-            if (!recipe.ingredients().get(0).ingredient().test(stack)) {
-                continue;
+        }
+        return level.getServer().getRecipeManager()
+                .getRecipeFor(RecipeType.SMELTING, new SingleRecipeInput(stack), level)
+                .map(holder -> smeltOf(holder, stack, level))
+                .orElse(null);
+    }
+
+    /** This recipe as a smelt of {@code input}, or null when it is not one or does not take it. */
+    private static @Nullable Smelt smeltOf(RecipeHolder<?> holder, ItemStack input, ServerLevel level) {
+        Recipe<?> recipe = holder.value();
+        if (recipe instanceof FacraftRecipe facraft) {
+            if (!SMELTING.equals(facraft.category()) || facraft.ingredients().size() != 1) {
+                return null;
             }
-            if (!RecipeLocks.isUnlocked(level, holder.id())) {
-                continue;
+            SizedIngredient wanted = facraft.ingredients().get(0);
+            if (!wanted.ingredient().test(input) || !RecipeLocks.isUnlocked(level, holder.id())) {
+                return null;
             }
-            return holder;
+            return new Smelt(holder.id(), wanted.ingredient(), wanted.count(), facraft.result().create(),
+                    facraft.craftTicks());
+        }
+        if (recipe instanceof SmeltingRecipe smelting) {
+            // Only the furnace's own kind: a blast furnace's or a smoker's recipe is a different
+            // machine's, however alike the input.
+            if (!smelting.input().test(input) || !RecipeLocks.isUnlocked(level, holder.id())) {
+                return null;
+            }
+            // assemble rather than result(): vanilla keeps a cooking recipe's result protected.
+            return new Smelt(holder.id(), smelting.input(), 1, smelting.assemble(new SingleRecipeInput(input)),
+                    smelting.cookingTime());
         }
         return null;
     }
@@ -294,26 +347,25 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
     /** Called by {@link FurnaceBlock}, and only ever on a tick this furnace asked for. */
     public void serverTick(ServerLevel level) {
         ItemStack input = inventory.getResource(INPUT_SLOT).toStack(inventory.getAmountAsInt(INPUT_SLOT));
-        RecipeHolder<FacraftRecipe> holder = currentRecipe(level, input);
-        if (holder == null) {
+        Smelt smelt = currentSmelt(level, input);
+        if (smelt == null) {
             // Nothing to make, or nothing here can make it. Either way there is nothing to
             // schedule for: the input slot changing is what wakes it.
             progress = 0;
-            setRecipe(null);
+            setSmelt(null);
             settle(level, input.isEmpty() ? Status.IDLE : Status.CANNOT_SMELT);
             return;
         }
 
-        FacraftRecipe recipe = holder.value();
-        if (!holder.id().equals(recipeKey)) {
+        if (!smelt.key().equals(recipeKey)) {
             progress = 0;
-            setRecipe(holder.id());
         }
-        craftTicks = craftTicksFor(recipe, craftingSpeed);
+        setSmelt(smelt);
+        craftTicks = craftTicksFor(smelt, craftingSpeed);
 
         // The ingredients are checked once, as a smelt starts - counting down is the cheap part.
         if (progress == 0) {
-            Status blocked = smelt(recipe, false);
+            Status blocked = smelt(smelt, false);
             if (blocked != null) {
                 settle(level, blocked);
                 return;
@@ -331,14 +383,14 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
         spend();
 
         if (progress >= craftTicks) {
-            Status blocked = smelt(recipe, true);
+            Status blocked = smelt(smelt, true);
             if (blocked != null) {
                 // Finished but unpaid: the output filled up, or the ore was taken back out.
                 settle(level, blocked);
                 return;
             }
             progress = 0;
-            CraftListeners.fireMachine(level, recipe.result().create());
+            CraftListeners.fireMachine(level, smelt.result().copy());
         }
 
         status = Status.SMELTING;
@@ -348,23 +400,18 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /**
-     * The recipe for what is in the input slot: the one already chosen if it still fits, else
-     * a fresh look. Re-resolving by key is one map lookup; the walk only happens when the input
+     * The smelt for what is in the input slot: the one already chosen if it still fits, else a
+     * fresh look. Re-resolving by key is one map lookup; the walk only happens when the input
      * changes to something else, which a single slot can only do by emptying first.
      */
-    private @Nullable RecipeHolder<FacraftRecipe> currentRecipe(ServerLevel level, ItemStack input) {
+    private @Nullable Smelt currentSmelt(ServerLevel level, ItemStack input) {
         if (input.isEmpty()) {
             return null;
         }
         if (recipeKey != null) {
             RecipeHolder<?> held = level.getServer().getRecipeManager().byKey(recipeKey).orElse(null);
-            if (held != null && held.value() instanceof FacraftRecipe recipe
-                    && SMELTING.equals(recipe.category())
-                    && recipe.ingredients().size() == 1
-                    && recipe.ingredients().get(0).ingredient().test(input)
-                    && RecipeLocks.isUnlocked(level, held.id())) {
-                @SuppressWarnings("unchecked")
-                RecipeHolder<FacraftRecipe> same = (RecipeHolder<FacraftRecipe>) held;
+            Smelt same = held == null ? null : smeltOf(held, input, level);
+            if (same != null) {
                 return same;
             }
         }
@@ -374,28 +421,25 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
     /**
      * Pays for one smelt out of the input slot and banks the result, all or nothing.
      *
+     * <p>The input slot alone: a furnace must not pay for a smelt out of its own output, and a
+     * burner must not smelt its coal.
+     *
      * @param commit false to ask whether it is possible without doing it.
      * @return null when the smelt was, or would have been, paid for in full; otherwise why not.
      */
-    private @Nullable Status smelt(FacraftRecipe recipe, boolean commit) {
-        // The input slot alone: a furnace must not pay for a smelt out of its own output, and a
-        // burner must not smelt its coal.
-        List<ItemStack> inputs = inventory.copyToList().subList(INPUT_SLOT, INPUT_SLOT + 1);
-        Int2IntMap plan = CraftPlanner.plan(inputs, recipe);
-        if (plan == null) {
+    private @Nullable Status smelt(Smelt smelt, boolean commit) {
+        ItemResource resource = inventory.getResource(INPUT_SLOT);
+        if (resource.isEmpty() || !smelt.input().test(resource.toStack(1))
+                || inventory.getAmountAsInt(INPUT_SLOT) < smelt.count()) {
             return Status.WAITING;
         }
 
         try (Transaction transaction = Transaction.openRoot()) {
-            for (Int2IntMap.Entry entry : plan.int2IntEntrySet()) {
-                int slot = INPUT_SLOT + entry.getIntKey();
-                int amount = entry.getIntValue();
-                if (inventory.extract(slot, inventory.getResource(slot), amount, transaction) != amount) {
-                    return Status.WAITING;
-                }
+            if (inventory.extract(INPUT_SLOT, resource, smelt.count(), transaction) != smelt.count()) {
+                return Status.WAITING;
             }
 
-            ItemStack result = recipe.result().create();
+            ItemStack result = smelt.result();
             int stored = inventory.insert(OUTPUT_SLOT, ItemResource.of(result), result.getCount(), transaction);
             if (stored != result.getCount()) {
                 return Status.OUTPUT_FULL;
@@ -475,11 +519,14 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /** Records what is being smelted and tells the clients watching, who name it on the screen. */
-    private void setRecipe(@Nullable ResourceKey<Recipe<?>> key) {
-        if (key == null ? recipeKey == null : key.equals(recipeKey)) {
+    private void setSmelt(@Nullable Smelt smelt) {
+        ResourceKey<Recipe<?>> key = smelt == null ? null : smelt.key();
+        Item item = smelt == null ? null : smelt.result().getItem();
+        if (Objects.equals(key, recipeKey) && making == item) {
             return;
         }
         recipeKey = key;
+        making = item;
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
         }
@@ -547,6 +594,9 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
         if (recipeKey != null) {
             output.putString("Recipe", recipeKey.identifier().toString());
         }
+        if (making != null) {
+            output.putString("Making", BuiltInRegistries.ITEM.getKey(making).toString());
+        }
     }
 
     @Override
@@ -562,6 +612,11 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
         recipeKey = input.getString("Recipe")
                 .map(Identifier::tryParse)
                 .map(id -> ResourceKey.create(Registries.RECIPE, id))
+                .orElse(null);
+        making = input.getString("Making")
+                .map(Identifier::tryParse)
+                .map(BuiltInRegistries.ITEM::getValue)
+                .filter(item -> item != Items.AIR)
                 .orElse(null);
     }
 

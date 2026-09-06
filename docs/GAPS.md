@@ -174,11 +174,11 @@ Mining
 Smelting
 --------
 
-- **A furnace smelts Factorio's four recipes and nothing else.** Iron, copper, steel and stone
-  brick; no glass, no smooth stone, no cooked food. Vanilla's furnace recipe went in milestone 3 and
-  vanilla's smelting went with it, so nothing in the pack cooks. The campfire still does, and is the
-  pack's answer to food until something better is. A vanilla furnace found in a village is a
-  decoration.
+- **A furnace runs vanilla's furnace recipes too, at vanilla's times.** Factorio's four are asked
+  first and win where they exist; sand, food, cobblestone and the rest fall through to vanilla's
+  `minecraft:smelting` list at two hundred ticks over the tier's speed. No experience is given for
+  them - Factorio has none - and blasting and smoking recipes are not run, because those are other
+  machines'. A vanilla furnace found in a village is a decoration; its recipe went in milestone 3.
 - **A silk-touched ore block smelts into nothing.** Factorio's iron ore is the raw item and the pack
   maps it there; the ore-block recipes were conflicts and are gone.
 - **Fuel is vanilla's burn time, spent only while working.** A coal is 1600 ticks in a furnace as

@@ -4,17 +4,13 @@ import com.jaguarm.nauvismachines.NauvisMachines;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlockEntity;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceScreen;
 
-import com.jaguarm.facrafting.recipe.FacraftRecipe;
-
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
 import snownee.jade.api.IServerDataProvider;
@@ -49,12 +45,8 @@ public class FurnaceReadout implements IServerDataProvider<BlockAccessor> {
             return;
         }
         data.putInt(STATUS, furnace.status().ordinal());
-        if (furnace.recipeKey() != null && accessor.getLevel() instanceof ServerLevel level) {
-            RecipeHolder<?> holder = level.getServer().getRecipeManager().byKey(furnace.recipeKey()).orElse(null);
-            if (holder != null && holder.value() instanceof FacraftRecipe recipe) {
-                data.putString(MAKING, BuiltInRegistries.ITEM.getKey(
-                        recipe.result().typeHolder().value()).toString());
-            }
+        if (furnace.making() != null) {
+            data.putString(MAKING, BuiltInRegistries.ITEM.getKey(furnace.making()).toString());
         }
     }
 
@@ -78,8 +70,8 @@ public class FurnaceReadout implements IServerDataProvider<BlockAccessor> {
             }
             FurnaceBlockEntity.Status status = FurnaceBlockEntity.Status.of(data.getIntOr(STATUS, 0));
             if (status == FurnaceBlockEntity.Status.SMELTING) {
-                // Named by the recipe the server is running, which is not a thing the client's
-                // copy of the block entity is told about between smelts.
+                // Named by what the server's recipe makes, which covers a vanilla recipe the
+                // client could never resolve from a key.
                 Item made = data.getString(MAKING)
                         .map(Identifier::tryParse)
                         .map(BuiltInRegistries.ITEM::getValue)

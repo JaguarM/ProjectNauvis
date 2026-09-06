@@ -3,6 +3,7 @@ package com.jaguarm.nauvismachines;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.jaguarm.facrafting.machine.MachineCategories;
 import com.jaguarm.facrafting.queue.CraftListeners;
 import com.jaguarm.nauvismachines.machine.furnace.ElectricFurnaceBlock;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlock;
@@ -69,6 +70,9 @@ public final class NauvisMachinesFurnaceGameTests {
     /** What a coal is worth to a furnace, in ticks: vanilla's number, spent only while working. */
     private static final int COAL_TICKS = 1600;
 
+    /** Vanilla's cooking time, for a recipe Factorio has no opinion about. */
+    private static final int VANILLA_SMELT_TICKS = 200;
+
     private static final int PADDING = 24;
 
     private static final DeferredRegister<MapCodec<? extends GameTestInstance>> TEST_TYPES =
@@ -88,6 +92,8 @@ public final class NauvisMachinesFurnaceGameTests {
         TEST_TYPES.register("furnace_breaks_as_one", () -> FurnaceBreaksAsOneTest.CODEC);
         TEST_TYPES.register("furnace_spills_when_broken", () -> FurnaceSpillsWhenBrokenTest.CODEC);
         TEST_TYPES.register("only_the_electric_furnace_takes_power", () -> OnlyTheElectricFurnaceTakesPowerTest.CODEC);
+        TEST_TYPES.register("furnace_smelts_vanilla_recipes", () -> FurnaceSmeltsVanillaRecipesTest.CODEC);
+        TEST_TYPES.register("furnaces_say_where_smelting_happens", () -> FurnacesSayWhereSmeltingHappensTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -114,6 +120,9 @@ public final class NauvisMachinesFurnaceGameTests {
         register(event, environment, "furnace_spills_when_broken", FurnaceSpillsWhenBrokenTest::new, 60);
         register(event, environment, "only_the_electric_furnace_takes_power",
                 OnlyTheElectricFurnaceTakesPowerTest::new, 20);
+        register(event, environment, "furnace_smelts_vanilla_recipes", FurnaceSmeltsVanillaRecipesTest::new, 260);
+        register(event, environment, "furnaces_say_where_smelting_happens",
+                FurnacesSayWhereSmeltingHappensTest::new, 20);
     }
 
     private interface TestFactory {
@@ -757,6 +766,87 @@ public final class NauvisMachinesFurnaceGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a furnace spills when broken");
+        }
+    }
+
+    /**
+     * Sand goes in and glass comes out, at vanilla's two hundred ticks: a furnace runs vanilla's
+     * furnace recipes for whatever Factorio has no recipe for, so the pack's only furnace is not
+     * one that cannot make a window. Factorio's recipes are asked first - iron is tested above at
+     * Factorio's seventy, not vanilla's two hundred.
+     */
+    public static class FurnaceSmeltsVanillaRecipesTest extends GameTestInstance {
+
+        public static final MapCodec<FurnaceSmeltsVanillaRecipesTest> CODEC =
+                RecordCodecBuilder.<FurnaceSmeltsVanillaRecipesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(FurnaceSmeltsVanillaRecipesTest::info))
+                                .apply(i, FurnaceSmeltsVanillaRecipesTest::new));
+
+        public FurnaceSmeltsVanillaRecipesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            FurnaceBlockEntity furnace = stoneFurnace(helper);
+            helper.assertValueEqual(insert(furnace.automationView(), Items.COAL, 1), 1, "coal accepted");
+            helper.assertValueEqual(insert(furnace.automationView(), Items.SAND, 1), 1, "sand accepted");
+
+            helper.startSequence()
+                    .thenExecuteAfter(VANILLA_SMELT_TICKS - 1, () -> helper.assertValueEqual(output(furnace), 0,
+                            "glass a tick before vanilla's cooking time is up"))
+                    .thenExecuteAfter(1, () -> {
+                        helper.assertValueEqual(furnace.inventory().getResource(FurnaceBlockEntity.OUTPUT_SLOT).getItem(),
+                                Items.GLASS, "the item in the output slot");
+                        helper.assertValueEqual(output(furnace), 1, "glass after " + VANILLA_SMELT_TICKS + " ticks");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a furnace smelts vanilla recipes");
+        }
+    }
+
+    /**
+     * The three furnaces have told Facrafting that they run smelting, which is what the crafting
+     * panel prints under a smelting recipe as "Made in:". A furnace that forgot to say so would
+     * leave the panel telling a player that iron plates cannot be crafted by hand and nothing else.
+     */
+    public static class FurnacesSayWhereSmeltingHappensTest extends GameTestInstance {
+
+        public static final MapCodec<FurnacesSayWhereSmeltingHappensTest> CODEC =
+                RecordCodecBuilder.<FurnacesSayWhereSmeltingHappensTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(FurnacesSayWhereSmeltingHappensTest::info))
+                                .apply(i, FurnacesSayWhereSmeltingHappensTest::new));
+
+        public FurnacesSayWhereSmeltingHappensTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            List<Component> machines = MachineCategories.machinesFor(FurnaceBlockEntity.SMELTING);
+            helper.assertValueEqual(machines.size(), 3, "machines registered as running smelting");
+            helper.assertValueEqual(machines.get(0).getString(),
+                    ModBlocks.STONE_FURNACE.get().getName().getString(), "the first of them");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("the furnaces say where smelting happens");
         }
     }
 

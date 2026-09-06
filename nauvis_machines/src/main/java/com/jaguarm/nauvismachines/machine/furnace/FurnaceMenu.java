@@ -5,7 +5,6 @@ import org.jspecify.annotations.Nullable;
 import com.jaguarm.nauvismachines.registry.ModMenus;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -13,8 +12,8 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 
@@ -44,18 +43,16 @@ public class FurnaceMenu extends AbstractContainerMenu {
     public static final int DATA_COUNT = 8;
 
     /**
-     * Where the screen expects to find things. Shared, so the two cannot drift apart.
-     *
-     * <p>Vanilla's furnace has the fuel two rows under the input with the flame between. Here the
-     * fuel sits directly under the input and the flame beside it, which keeps everything above
-     * the status line at 58: two wells stacked take 16..52, and a third row would run through it.
+     * Where the screen expects to find things: vanilla's furnace layout, exactly, because the
+     * screen is vanilla's furnace texture. The input above the flame, the fuel below it, the
+     * output past the arrow.
      */
-    public static final int INPUT_X = 44;
+    public static final int INPUT_X = 56;
     public static final int INPUT_Y = 17;
-    public static final int FUEL_X = 44;
-    public static final int FUEL_Y = 35;
+    public static final int FUEL_X = 56;
+    public static final int FUEL_Y = 53;
     public static final int OUTPUT_X = 116;
-    public static final int OUTPUT_Y = 26;
+    public static final int OUTPUT_Y = 35;
 
     private static final int PLAYER_SLOTS = 36;
 
@@ -160,9 +157,9 @@ public class FurnaceMenu extends AbstractContainerMenu {
         return FurnaceBlockEntity.Status.of(data.get(DATA_STATUS));
     }
 
-    /** What the machine is smelting, read off the synced block entity, or null when nothing. */
-    public @Nullable ResourceKey<Recipe<?>> smelting() {
-        return level.getBlockEntity(machinePos) instanceof FurnaceBlockEntity furnace ? furnace.recipeKey() : null;
+    /** What the machine is making, read off the synced block entity, or null when nothing. */
+    public @Nullable Item smelting() {
+        return level.getBlockEntity(machinePos) instanceof FurnaceBlockEntity furnace ? furnace.making() : null;
     }
 
     /**

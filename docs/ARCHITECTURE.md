@@ -217,7 +217,10 @@ cannot drift apart.
 **One interface.** Facrafting owns the crafting UI and its panel attaches to any container screen;
 machine screens grow out of it rather than sit beside it. Palettes are duplicated per mod rather
 than shared, because a shared base in Facrafting would make these mods require it and kill the
-`*_standalone` recipes that exist for its absence.
+`*_standalone` recipes that exist for its absence. **And the look is vanilla's**: Yannic has said
+vanilla's interface fits Minecraft's art far better than a flat painted panel, so a screen draws
+on vanilla's own texture where vanilla has one - the furnace is vanilla's furnace screen - and the
+painted ones are the ones still to change.
 
 Facrafting learns rules, not facts
 ----------------------------------

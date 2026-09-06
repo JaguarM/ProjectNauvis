@@ -1,5 +1,7 @@
 package com.jaguarm.nauvismachines;
 
+import com.jaguarm.facrafting.machine.MachineCategories;
+import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlockEntity;
 import com.jaguarm.nauvismachines.registry.ModBlockEntities;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
 import com.jaguarm.nauvismachines.registry.ModItems;
@@ -35,5 +37,12 @@ public class NauvisMachines {
         modEventBus.addListener(ModPacks::addPackFinders);
         NauvisMachinesGameTests.register(modEventBus);
         NauvisMachinesFurnaceGameTests.register(modEventBus);
+
+        // Factorio's "Made in:" under a smelting recipe in the crafting panel. The panel shows the
+        // recipe dimmed and this is how it knows which machines to name; the three furnaces, in
+        // the order Factorio lists them.
+        MachineCategories.add(FurnaceBlockEntity.SMELTING, () -> ModBlocks.STONE_FURNACE.get().getName());
+        MachineCategories.add(FurnaceBlockEntity.SMELTING, () -> ModBlocks.STEEL_FURNACE.get().getName());
+        MachineCategories.add(FurnaceBlockEntity.SMELTING, () -> ModBlocks.ELECTRIC_FURNACE.get().getName());
     }
 }

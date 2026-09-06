@@ -16,7 +16,7 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and fifty-four gametests pass, `./gradlew build` is clean, and the client boots into a
+A hundred and fifty-six gametests pass, `./gradlew build` is clean, and the client boots into a
 world. **Milestone 2 is closed.** Milestone 3 has its research half and every item but the
 accumulator — the steel line, green science, the four poles, assembling machine 2, the solar panel
 and the three furnaces; the substation's and the electric furnace's recipes wait on the advanced
@@ -163,6 +163,11 @@ Loose ends — small enough to finish in an afternoon
 - **The furnace's fire is a lava texture on the stack's mouth**, chosen because it is opaque and
   animated and nothing else vanilla ships is both. Whether a brazier on a corner reads as a furnace
   is a judgement for eyes; the boxes are in `FurnaceShape` and `ElectricFurnaceShape`.
+- **The painted screens want vanilla's look.** Yannic has said vanilla's interface fits
+  Minecraft's art far better than the flat panels, and the furnace is on vanilla's furnace texture
+  now. The assembler, the boiler, the lab and the burner inserter are still painted, and so is
+  Facrafting's panel itself; they want the same treatment as one piece, on vanilla's nine-slice
+  sprites where no vanilla screen has the right shape.
 
 The playtest, which is still owed
 ---------------------------------
@@ -238,10 +243,13 @@ five stone in the panel, and the only thing that smelts.
   the far end at night — every cell gives light, as vanilla's furnace does;
 - look at the electric furnace's hood glowing. It is the top of a stepped block in lava; whether
   that reads as a furnace or as a lamp is a judgement no test makes;
-- and open one of each. The burner tiers have a flame beside the fuel slot; the electric one has
-  the assembler's charge bar. The panel beside them is the ordinary hand panel — **no smelting
-  recipe should appear anywhere in it**, on any tab, and steel should still be searchable for
-  where it is used.
+- and open one of each. It is vanilla's furnace screen, texture and all, which is what Yannic
+  asked for; the electric one paints over the fuel slot and puts a charge bar where the flame
+  goes, and **whether the patch is invisible is the thing to look at**. Hover the arrow for the
+  status. The panel beside them is the ordinary hand panel, and **the smelting recipes are in it,
+  dimmed, under Intermediate products**: the tooltip should say *Cannot be crafted by hand* and
+  list the three furnaces under *Made in:*, and a click should say so on the action bar and queue
+  nothing. Then put sand in a furnace and expect glass.
 
 **The two new machines.**
 
