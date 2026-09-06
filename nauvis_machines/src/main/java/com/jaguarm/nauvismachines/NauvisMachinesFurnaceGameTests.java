@@ -46,7 +46,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * The furnaces, headless. The assembler's tests are in {@link NauvisMachinesGameTests} and this
  * follows their shape; the two are separate files because each is long enough on its own.
  *
- * <p>Every smelt here is iron: raw iron to an ingot, Factorio's 3.5 seconds, from the generated
+ * <p>Every smelt here is iron: raw iron to an ingot, Factorio's 3.2 seconds, from the generated
  * recipe in Neo Progressive Materials. The numbers are asserted on the tick they should land on,
  * so a craft time or a crafting speed that drifted fails here rather than being felt in a world.
  */
@@ -61,11 +61,11 @@ public final class NauvisMachinesFurnaceGameTests {
     private static final BlockPos FURNACE = new BlockPos(0, 1, 0);
 
     /**
-     * Factorio's 3.5 seconds for an iron plate, at the stone furnace's crafting speed of 1.
-     * Seventy, from the generated recipe; a steel furnace at speed 2 takes half.
+     * Factorio's 3.2 seconds for an iron plate, at the stone furnace's crafting speed of 1.
+     * Sixty-four, from the generated recipe; a steel furnace at speed 2 takes half.
      */
-    private static final int SMELT_TICKS = 70;
-    private static final int STEEL_SMELT_TICKS = 35;
+    private static final int SMELT_TICKS = 64;
+    private static final int STEEL_SMELT_TICKS = 32;
 
     /** What a coal is worth to a furnace, in ticks: vanilla's number, spent only while working. */
     private static final int COAL_TICKS = 1600;
@@ -188,9 +188,9 @@ public final class NauvisMachinesFurnaceGameTests {
     }
 
     /**
-     * Raw iron and a coal go in; seventy ticks later an iron ingot is there and the ore is not.
+     * Raw iron and a coal go in; sixty-four ticks later an iron ingot is there and the ore is not.
      *
-     * <p>Seventy is Factorio's 3.5 seconds at crafting speed 1, from the generated recipe. The
+     * <p>Sixty-four is Factorio's 3.2 seconds at crafting speed 1, from the generated recipe. The
      * coal is checked too: one was taken from the slot, and what is left of it is exactly a coal
      * less the ticks worked, because a furnace here burns only while it smelts.
      */
@@ -238,7 +238,7 @@ public final class NauvisMachinesFurnaceGameTests {
 
     /**
      * Factorio's steel furnace: crafting speed 2 against the stone furnace's 1, on the same fuel.
-     * Thirty-five ticks against seventy, checked on the tick each lands on.
+     * Thirty-two ticks against sixty-four, checked on the tick each lands on.
      */
     public static class SteelFurnaceIsTwiceAsFastTest extends GameTestInstance {
 
@@ -286,7 +286,7 @@ public final class NauvisMachinesFurnaceGameTests {
 
     /**
      * An electric furnace with ore and no charge makes nothing and sleeps; charge it and it wakes,
-     * and thirty-five ticks later there is an ingot. The two halves of sleeping, in one test.
+     * and thirty-two ticks later there is an ingot. The two halves of sleeping, in one test.
      */
     public static class ElectricFurnaceRunsOnPowerTest extends GameTestInstance {
 
@@ -773,7 +773,7 @@ public final class NauvisMachinesFurnaceGameTests {
      * Sand goes in and glass comes out, at vanilla's two hundred ticks: a furnace runs vanilla's
      * furnace recipes for whatever Factorio has no recipe for, so the pack's only furnace is not
      * one that cannot make a window. Factorio's recipes are asked first - iron is tested above at
-     * Factorio's seventy, not vanilla's two hundred.
+     * Factorio's sixty-four, not vanilla's two hundred.
      */
     public static class FurnaceSmeltsVanillaRecipesTest extends GameTestInstance {
 

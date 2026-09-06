@@ -366,7 +366,7 @@
       "stand_in": true,
       "category": "smelting",
       "craft": {
-        "time": 3.5,
+        "time": 3.2,
         "yield": 1
       }
     },
@@ -851,7 +851,7 @@
       "stand_in": true,
       "category": "smelting",
       "craft": {
-        "time": 3.5,
+        "time": 3.2,
         "yield": 1
       }
     },
@@ -1718,7 +1718,7 @@
       "stand_in": true,
       "category": "smelting",
       "craft": {
-        "time": 3.5,
+        "time": 3.2,
         "yield": 1
       }
     },

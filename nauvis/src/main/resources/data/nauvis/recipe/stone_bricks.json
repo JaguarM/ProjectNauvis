@@ -6,7 +6,7 @@
     }
   ],
   "type": "facrafting:facraft",
-  "craft_ticks": 70,
+  "craft_ticks": 64,
   "group": "logistics",
   "order": "0053",
   "category": "smelting",

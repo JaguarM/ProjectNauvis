@@ -182,7 +182,7 @@ Smelting
 - **A silk-touched ore block smelts into nothing.** Factorio's iron ore is the raw item and the pack
   maps it there; the ore-block recipes were conflicts and are gone.
 - **Fuel is vanilla's burn time, spent only while working.** A coal is 1600 ticks in a furnace as
-  in a boiler, and a stone furnace takes 70 of them per plate, so a coal is about twenty-three
+  in a boiler, and a stone furnace takes 64 of them per plate, so a coal is twenty-five
   plates where Factorio's is thirteen. The ratio between the tiers is Factorio's - a steel furnace
   smelts twice as much with the same coal - and the absolute number is not identity.
 - **Steel needs five plates in the slot at once.** A furnace holding three says so and waits,

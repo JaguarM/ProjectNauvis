@@ -168,9 +168,6 @@ Loose ends — small enough to finish in an afternoon
   where there is a fire, and the charge bolt where there is electricity, all drawn the way vanilla
   draws its flame. The panel's grid of recipe squares is the one painted thing left, and whether
   it should be vanilla's slot sprite too is a judgement for eyes.
-- **Iron, copper and stone brick are 3.5 seconds in the reference dump and 3.2 in Factorio since
-  0.17**, the same drift that had steel at thirty-five. Steel was corrected at Yannic's word; the
-  other three wait for it, because the dump is Wube's data on his machine and not this repo's.
 
 The playtest, which is still owed
 ---------------------------------
@@ -197,9 +194,8 @@ five stone in the panel, and the only thing that smelts.
 
 - gather five cobblestone and see whether making a furnace is **obvious**. If the panel is not the
   first place a Minecraft player looks, the answer is probably a message, not putting the recipe back;
-- place it, open it, and put raw iron and coal in. A plate should come out in three and a half
-  seconds, the stack's mouth should be fire while it works, and the hover should say *Smelting
-  Iron Ingot*. Put a stick in and it should refuse it. Then take the ore out mid-smelt and watch it
+- place it, open it, and put raw iron and coal in. A plate should come out in 3.2 seconds, the
+  stack's mouth should be fire while it works, and the hover should say *Smelting Iron Ingot*. Put a stick in and it should refuse it. Then take the ore out mid-smelt and watch it
   go dark and keep its coal — a furnace here burns only while it works, which is Factorio's rule;
 - hand it five iron ingots before steel processing is researched: it should say it cannot smelt
   that yet, and start the moment the technology finishes;
