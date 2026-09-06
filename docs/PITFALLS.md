@@ -320,6 +320,13 @@ Screens and config
   it opened: the menu was built, the packet went out, and the server shut it again before anyone
   saw it. Nothing failed, because no test opened a menu on a tier 2. Evaluate the access with an
   `instanceof` on the tier's base class; `assembler_menu_stays_open_on_tier_2` pins it.
+- **Vanilla's GUI progress sprites are opaque.** `container/furnace/lit_progress` and
+  `burn_progress` carry the panel's grey baked in around the flame and the arrow, because vanilla
+  only ever blits them over a panel of that grey, where the background is invisible. Blitted onto
+  a dark panel - tinted or not - each is a grey box with a shape in it, and nothing says so: the
+  sprite exists, the atlas has it, and a person saw it. Only `container/slot` is meant to be a
+  box. A meter on a panel of any other colour needs a sprite with air round the shape, which is
+  what `texture-workshop/make_gui_textures.py` draws.
 - **A clickable box drawn through a label reads the click anyway.** The research button was first at
   (116, 16), inside the lab screen's full-width status band. Nothing looked wrong, because the
   status text is usually shorter than that. `check_gui_layout.py` catches this exactly — **but only

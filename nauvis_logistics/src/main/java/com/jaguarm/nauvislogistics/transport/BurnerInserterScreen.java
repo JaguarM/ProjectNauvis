@@ -1,5 +1,7 @@
 package com.jaguarm.nauvislogistics.transport;
 
+import com.jaguarm.nauvislogistics.NauvisLogistics;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -13,8 +15,10 @@ import net.minecraft.world.inventory.Slot;
  * The burner inserter's screen: what it is burning, and how far through a swing it is.
  *
  * <p>The same dark panel as the assembler's, the boiler's and Facrafting's panel, so the
- * interface reads as one thing rather than four, with vanilla's slot sprite and vanilla's furnace
- * flame on it, drawn the way vanilla draws them - the mix Yannic asked for. The palette and the
+ * interface reads as one thing rather than four, with vanilla's slot sprite on it and a flame in
+ * vanilla's pixel idiom, drawn the way vanilla's furnace draws its flame - the mix Yannic asked
+ * for. The flame is the pack's own sprite, because vanilla's carries the panel's grey behind it
+ * and is a box on a dark panel. The palette and the
  * drawing are copied rather than shared: Facrafting is the only place shared code may live, and
  * putting a screen base there would make this mod require it at compile time - which would make
  * {@code burner_inserter_standalone}, the recipe that exists precisely for Facrafting being
@@ -35,7 +39,7 @@ public class BurnerInserterScreen extends AbstractContainerScreen<BurnerInserter
     private static final int COLOR_FILL = 0xFF55FF55;
 
     private static final Identifier SLOT_SPRITE = Identifier.withDefaultNamespace("container/slot");
-    private static final Identifier FLAME_SPRITE = Identifier.withDefaultNamespace("container/furnace/lit_progress");
+    private static final Identifier FLAME_SPRITE = Identifier.fromNamespaceAndPath(NauvisLogistics.MODID, "meter_flame");
     private static final int METER = 14;
 
     /** The flame, above the fuel slot, where players have looked for it since the furnace. */

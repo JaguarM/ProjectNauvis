@@ -219,10 +219,12 @@ machine screens grow out of it rather than sit beside it. Palettes are duplicate
 than shared, because a shared base in Facrafting would make these mods require it and kill the
 `*_standalone` recipes that exist for its absence. **The look is the dark panel with vanilla's
 pixels on it**: Yannic likes the dark painted panel and wants the parts a Minecraft player has
-looked at for years to stay vanilla's, so a slot is vanilla's slot sprite, a fire is vanilla's
-furnace flame, and electricity is a bolt sprite of the pack's own - all three fourteen-pixel meters
-drawn the way vanilla draws its flame, the sprite tinted dark and then lit from the bottom as far
-as it is full. `texture-workshop/make_gui_textures.py` writes the bolt into every mod that draws it.
+looked at for years to stay vanilla's, so a slot is vanilla's slot sprite, and a fire, an arrow
+and a bolt are sprites of the pack's own in vanilla's pixel idiom - fourteen-pixel meters drawn
+the way vanilla draws its flame, the sprite tinted dark and then lit from the bottom as far as it
+is full. Vanilla's own flame and arrow could not be used: they are opaque, with the panel's grey
+baked in around the shape. `texture-workshop/make_gui_textures.py` writes each sprite into every
+mod that draws it.
 
 Facrafting learns rules, not facts
 ----------------------------------

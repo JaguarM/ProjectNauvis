@@ -3,19 +3,28 @@
     python texture-workshop/make_gui_textures.py            # write the PNGs
     python texture-workshop/make_gui_textures.py --preview  # also write gui-preview.png
 
-One sprite today: the charge bolt, which is the machine screens' picture of electricity. It is
-drawn the way vanilla's furnace flame is - the whole sprite tinted dark as the empty meter, and
-then the bright sprite over it from the bottom up, as far as the buffer is full - so it is the
-same shape and the same size as `container/furnace/lit_progress`, fourteen by fourteen, and any
-screen that draws a flame draws a bolt with the same three lines.
+Three sprites, and they are the machine screens' three meters: a flame for fuel, a bolt for
+electricity, and an arrow for a smelt. Each is drawn the way vanilla's furnace draws its flame -
+the whole sprite tinted dark as the empty meter, and then the bright sprite over it from the
+bottom up (or the left, for the arrow) as far as the meter is full - so any screen that draws
+one draws the others with the same three lines.
 
-The map is the silhouette; the shading is derived. A filled pixel with nothing to its right or
-below is the dark edge, one with nothing above or to its left is the highlight, and the rest is
-the body - which is how vanilla's own flame is shaded, and what makes a fourteen-pixel bolt read
-as a Minecraft sprite rather than a yellow blob.
+Why vanilla's own flame is not used
+-----------------------------------
 
-The PNG is written into every mod that draws it. A subsystem mod may not depend on another and a
-sprite is not code, so it cannot live in one place; generating both copies from this one map is
+It was, for a day. `container/furnace/lit_progress` and `burn_progress` are opaque: the panel's
+grey is baked in around the shape, because vanilla only ever blits them over a panel of that grey,
+where the background is invisible. Tinted dark on a dark panel they are boxes. So the fire and the
+arrow are drawn here, in vanilla's pixel idiom and its flame palette, with air where vanilla has
+grey; `container/slot` is the one vanilla sprite the screens still use, because a slot is a box.
+
+Two ways a map is coloured. The bolt and the arrow are a silhouette with the shading derived: a
+filled pixel with nothing to its right or below is the dark edge, one with nothing above or to
+its left is the highlight, and the rest is the body - which is how vanilla shades its own small
+sprites. The flame names its colours, because a flame is a gradient and not a bevel.
+
+Every PNG is written into every mod that draws it. A subsystem mod may not depend on another and
+a sprite is not code, so a sprite cannot live in one place; generating each copy from one map is
 what keeps them from drifting, the same argument that keeps the belt tiers on one map.
 """
 
@@ -27,18 +36,16 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, os.pardir)
 
-# Every mod with a screen that shows a charge, and where a GUI sprite lives in it. The gui atlas
-# takes `textures/gui/sprites/<name>.png` from any namespace, so the sprite id is `<mod>:charge_bolt`.
-OUT = {
-    "nauvis_machines": os.path.join(
-        ROOT, "nauvis_machines", "src", "main", "resources", "assets", "nauvis_machines",
-        "textures", "gui", "sprites"),
-    "nauvis_research": os.path.join(
-        ROOT, "nauvis_research", "src", "main", "resources", "assets", "nauvis_research",
-        "textures", "gui", "sprites"),
-}
 
-# A fat bolt, pointing down and left, the way it is drawn on a fuse box. `#` is bolt, `.` is air.
+def sprites_dir(mod):
+    """Where a GUI sprite lives in a mod. The gui atlas takes `textures/gui/sprites/<name>.png`
+    from any namespace, so the sprite id is `<mod>:<name>`."""
+    return os.path.join(ROOT, mod, "src", "main", "resources", "assets", mod, "textures", "gui", "sprites")
+
+
+AIR = (0, 0, 0, 0)
+
+# A fat bolt, pointing down and left, the way it is drawn on a fuse box.
 BOLT = """
 ........####..
 .......####...
@@ -57,55 +64,127 @@ BOLT = """
 """
 
 # The assembler's electricity colour, with an edge and a highlight either side of it.
-BODY = (0xFF, 0xD2, 0x4A, 0xFF)
-EDGE = (0xC4, 0x8A, 0x12, 0xFF)
-LIGHT = (0xFF, 0xF0, 0xA8, 0xFF)
-AIR = (0, 0, 0, 0)
+BOLT_TONES = ((0xFF, 0xD2, 0x4A, 0xFF), (0xC4, 0x8A, 0x12, 0xFF), (0xFF, 0xF0, 0xA8, 0xFF))
+
+# A flame with a tongue off its right side, in the furnace's own three colours: orange round
+# the outside, yellow within, white at the heart. Fourteen by fourteen, like vanilla's.
+FLAME = """
+......o.......
+.....oo.......
+.....oo...o...
+....ooo..oo...
+....ooo..oo...
+...oooo.ooo...
+...ooyoooooo..
+..ooyyyooooo..
+..ooyyyyoooo..
+..oyywwyyooo..
+..oyywwyyooo..
+...oyyyyyoo...
+....oyyyoo....
+.....oooo.....
+"""
+
+FLAME_PALETTE = {
+    "o": (0xFF, 0xB6, 0x00, 0xFF),
+    "y": (0xFF, 0xFF, 0x1F, 0xFF),
+    "w": (0xFF, 0xFF, 0xFF, 0xFF),
+}
+
+# An arrow pointing right, twenty-four by sixteen like vanilla's: a shaft four deep and a head
+# that fills the height. It fills from the left, so the head is the last thing to light.
+ARROW = """
+........................
+..............#.........
+..............##........
+..............###.......
+..............####......
+..............#####.....
+####################....
+#####################...
+#####################...
+####################....
+..............#####.....
+..............####......
+..............###.......
+..............##........
+..............#.........
+........................
+"""
+
+# White, with a grey edge; the highlight is white too, so the arrow reads as a flat shape.
+ARROW_TONES = ((0xFF, 0xFF, 0xFF, 0xFF), (0xA8, 0xA8, 0xA8, 0xFF), (0xFF, 0xFF, 0xFF, 0xFF))
 
 
 def parse(text):
-    rows = [line for line in text.strip("\n").splitlines()]
+    rows = text.strip("\n").splitlines()
     width = len(rows[0])
     assert all(len(row) == width for row in rows), "every row of a map is the same width"
     return rows
 
 
 def filled(rows, x, y):
-    return 0 <= y < len(rows) and 0 <= x < len(rows[y]) and rows[y][x] == "#"
+    return 0 <= y < len(rows) and 0 <= x < len(rows[y]) and rows[y][x] != "."
 
 
-def render(rows):
-    """The silhouette, shaded: edge where the light does not reach, highlight where it does."""
-    height = len(rows)
-    width = len(rows[0])
-    img = Image.new("RGBA", (width, height), AIR)
-    for y in range(height):
-        for x in range(width):
+def render_shaded(rows, tones):
+    """A silhouette, shaded: edge where the light does not reach, highlight where it does."""
+    body, edge, light = tones
+    img = Image.new("RGBA", (len(rows[0]), len(rows)), AIR)
+    for y, row in enumerate(rows):
+        for x, _ in enumerate(row):
             if not filled(rows, x, y):
                 continue
             if not filled(rows, x + 1, y) or not filled(rows, x, y + 1):
-                colour = EDGE
+                colour = edge
             elif not filled(rows, x - 1, y) or not filled(rows, x, y - 1):
-                colour = LIGHT
+                colour = light
             else:
-                colour = BODY
+                colour = body
             img.putpixel((x, y), colour)
     return img
 
 
+def render_palette(rows, palette):
+    """A map that names its own colours, letter by letter."""
+    img = Image.new("RGBA", (len(rows[0]), len(rows)), AIR)
+    for y, row in enumerate(rows):
+        for x, letter in enumerate(row):
+            if letter != ".":
+                img.putpixel((x, y), palette[letter])
+    return img
+
+
+# name -> (image, the mods whose screens draw it)
+SPRITES = {
+    "charge_bolt": (render_shaded(parse(BOLT), BOLT_TONES), ["nauvis_machines", "nauvis_research"]),
+    "meter_flame": (render_palette(parse(FLAME), FLAME_PALETTE),
+                    ["nauvis_machines", "nauvis_power", "nauvis_logistics"]),
+    "meter_arrow": (render_shaded(parse(ARROW), ARROW_TONES), ["nauvis_machines"]),
+}
+
+
 def main():
-    bolt = render(parse(BOLT))
-    for mod, directory in OUT.items():
-        os.makedirs(directory, exist_ok=True)
-        path = os.path.join(directory, "charge_bolt.png")
-        bolt.save(path)
-        print("wrote", os.path.relpath(path, ROOT))
+    for name, (img, mods) in SPRITES.items():
+        for mod in mods:
+            directory = sprites_dir(mod)
+            os.makedirs(directory, exist_ok=True)
+            path = os.path.join(directory, name + ".png")
+            img.save(path)
+            print("wrote", os.path.relpath(path, ROOT))
 
     if "--preview" in sys.argv:
         scale = 8
-        sheet = Image.new("RGBA", (bolt.width * scale + 16, bolt.height * scale + 16), (20, 20, 20, 255))
-        sheet.paste(bolt.resize((bolt.width * scale, bolt.height * scale), Image.NEAREST), (8, 8), bolt.resize(
-            (bolt.width * scale, bolt.height * scale), Image.NEAREST))
+        pad = 8
+        images = [img for img, _ in SPRITES.values()]
+        width = sum(img.width * scale for img in images) + pad * (len(images) + 1)
+        height = max(img.height * scale for img in images) + 2 * pad
+        sheet = Image.new("RGBA", (width, height), (20, 20, 20, 255))
+        x = pad
+        for img in images:
+            big = img.resize((img.width * scale, img.height * scale), Image.NEAREST)
+            sheet.paste(big, (x, pad), big)
+            x += big.width + pad
         path = os.path.join(HERE, "gui-preview.png")
         sheet.save(path)
         print("wrote", os.path.relpath(path, ROOT))

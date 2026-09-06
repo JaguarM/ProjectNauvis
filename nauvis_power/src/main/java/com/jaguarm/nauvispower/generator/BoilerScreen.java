@@ -1,5 +1,7 @@
 package com.jaguarm.nauvispower.generator;
 
+import com.jaguarm.nauvispower.NauvisPower;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -13,9 +15,11 @@ import net.minecraft.world.inventory.Slot;
  * The boiler's screen: what it is burning, how much is left of it, and how much steam is banked.
  *
  * <p>The same dark panel as the assembler's and Facrafting's panel, so the interface reads as one
- * thing rather than three, with vanilla's own slot sprite and vanilla's furnace flame on it, drawn
- * the way vanilla draws them. That mix is the one Yannic asked for: the dark look, and the pixels
- * a Minecraft player has looked at for years where there is a slot or a fire.
+ * thing rather than three, with vanilla's own slot sprite on it and a flame in vanilla's pixel
+ * idiom, drawn the way vanilla's furnace draws its flame. That mix is the one Yannic asked for:
+ * the dark look, and the pixels a Minecraft player has looked at for years where there is a slot
+ * or a fire. The flame is the pack's own sprite, because vanilla's carries the panel's grey behind
+ * it and is a box on a dark panel.
  *
  * <p>The palette and the drawing are copied from {@code AssemblerScreen} rather than shared.
  * Facrafting is the only place shared code may live, and putting a screen base there would make
@@ -40,7 +44,7 @@ public class BoilerScreen extends AbstractContainerScreen<BoilerMenu> {
     private static final int COLOR_STEAM = 0xFFB8D8E8;
 
     private static final Identifier SLOT_SPRITE = Identifier.withDefaultNamespace("container/slot");
-    private static final Identifier FLAME_SPRITE = Identifier.withDefaultNamespace("container/furnace/lit_progress");
+    private static final Identifier FLAME_SPRITE = Identifier.fromNamespaceAndPath(NauvisPower.MODID, "meter_flame");
     private static final int METER = 14;
 
     /**

@@ -16,11 +16,12 @@ import net.minecraft.world.item.ItemStack;
 /**
  * The furnace's screen: what goes in, what is burning, what comes out, and how far along.
  *
- * <p>The assembler's dark panel, with vanilla's furnace pixels on it: the slot sprite, the
- * flame and the arrow are vanilla's own, drawn as vanilla's furnace draws them - the flame and
- * the arrow dark as their empty meters and lit as far as they are full. That is the look Yannic
- * asked for, the dark panel and the vanilla fire both. The electric tier has no fuel slot and no
- * flame; in the flame's place it has the bolt every electric machine here draws.
+ * <p>The assembler's dark panel, with vanilla's slot sprite on it and a flame and an arrow in
+ * vanilla's pixel idiom, drawn as vanilla's furnace draws them - dark as their empty meters and
+ * lit as far as they are full. Not vanilla's own flame and arrow: those carry the panel's grey
+ * behind them and are boxes on a dark panel, so the two are this pack's, from
+ * {@code texture-workshop/make_gui_textures.py}. The electric tier has no fuel slot and no flame;
+ * in the flame's place it has the bolt every electric machine here draws.
  */
 public class FurnaceScreen extends AbstractContainerScreen<FurnaceMenu> {
 
@@ -35,8 +36,8 @@ public class FurnaceScreen extends AbstractContainerScreen<FurnaceMenu> {
     private static final int COLOR_UNLIT = 0xFF3B3B3B;
 
     private static final Identifier SLOT_SPRITE = Identifier.withDefaultNamespace("container/slot");
-    private static final Identifier FLAME_SPRITE = Identifier.withDefaultNamespace("container/furnace/lit_progress");
-    private static final Identifier ARROW_SPRITE = Identifier.withDefaultNamespace("container/furnace/burn_progress");
+    private static final Identifier FLAME_SPRITE = Identifier.fromNamespaceAndPath(NauvisMachines.MODID, "meter_flame");
+    private static final Identifier ARROW_SPRITE = Identifier.fromNamespaceAndPath(NauvisMachines.MODID, "meter_arrow");
     private static final Identifier BOLT_SPRITE = Identifier.fromNamespaceAndPath(NauvisMachines.MODID, "charge_bolt");
     private static final int METER = 14;
 
@@ -87,7 +88,7 @@ public class FurnaceScreen extends AbstractContainerScreen<FurnaceMenu> {
             meter(graphics, BOLT_SPRITE, x + FLAME_X, y + FLAME_Y, menu.charge());
         }
 
-        // Vanilla's arrow: the whole sprite dark, then the lit one over it as far as the smelt is.
+        // The arrow: the whole sprite dark, then the lit one over it as far as the smelt is.
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, ARROW_SPRITE,
                 x + ARROW_X, y + ARROW_Y, ARROW_WIDTH, ARROW_HEIGHT, COLOR_UNLIT);
         int filled = Mth.ceil(menu.craftProgress() * ARROW_WIDTH);

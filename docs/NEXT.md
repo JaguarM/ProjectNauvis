@@ -246,10 +246,10 @@ five stone in the panel, and the only thing that smelts.
   the far end at night — every cell gives light, as vanilla's furnace does;
 - look at the electric furnace's hood glowing. It is the top of a stepped block in lava; whether
   that reads as a furnace or as a lamp is a judgement no test makes;
-- and open one of each. The dark panel with vanilla's slot sprite, vanilla's flame and vanilla's
-  arrow on it; the electric one has the charge bolt where the flame goes. **Whether the tinted
-  sprites read as empty meters and whether the bolt reads as electricity** are the two things to
-  look at. Shift-click coal and it should land in the fuel slot at once, not in the input and
+- and open one of each. The dark panel with vanilla's slot sprite on it, and the pack's own flame
+  and arrow in vanilla's idiom; the electric one has the charge bolt where the flame goes.
+  **Whether the flame reads as vanilla's fire** is the thing to look at - it is drawn from scratch
+  because vanilla's sprite is a grey box on a dark panel. Shift-click coal and it should land in the fuel slot at once, not in the input and
   then move. The panel beside them is the ordinary hand panel, and **the smelting recipes are in
   it, dimmed, under Intermediate products**: the tooltip should say *Cannot be crafted by hand*
   and list the three furnaces under *Made in:*, and a click should say so on the action bar and
