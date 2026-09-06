@@ -102,7 +102,7 @@
     },
     "artillery-wagon": {
       "skip": true,
-      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
     },
     "assembling-machine-1": {
       "name": "Assembling machine 1",
@@ -259,17 +259,12 @@
       }
     },
     "car": {
-      "name": "Car",
-      "owner": "nauvis_trains",
-      "item": "nauvis_trains:car",
-      "craft": {
-        "time": 2,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
     },
     "cargo-wagon": {
       "skip": true,
-      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
     },
     "centrifuge": {
       "name": "Centrifuge",
@@ -725,7 +720,7 @@
     },
     "fluid-wagon": {
       "skip": true,
-      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
     },
     "flying-robot-frame": {
       "name": "Flying robot frame",
@@ -984,7 +979,7 @@
     },
     "locomotive": {
       "skip": true,
-      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
     },
     "logistic-chest-active-provider": {
       "name": "Active provider chest",
@@ -1366,7 +1361,7 @@
     },
     "pump": {
       "skip": true,
-      "why": "Not in this pack: the pump exists to load and unload fluid wagons, and trains are struck (Yannic, 2026-09-06). A tank empties into whatever its run feeds."
+      "why": "Not in this pack: the pump exists to load and unload fluid wagons, and trains are out of scope (Yannic, 2026-09-06)"
     },
     "pumpjack": {
       "name": "Pumpjack",
@@ -1396,15 +1391,15 @@
     },
     "rail": {
       "skip": true,
-      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
     },
     "rail-chain-signal": {
       "skip": true,
-      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
     },
     "rail-signal": {
       "skip": true,
-      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
     },
     "raw-fish": {
       "name": "Raw fish",
@@ -1867,7 +1862,7 @@
     },
     "train-stop": {
       "skip": true,
-      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
     },
     "transport-belt": {
       "name": "Transport belt",

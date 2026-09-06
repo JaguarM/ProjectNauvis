@@ -90,8 +90,8 @@ already do that job, which the build enforces. Blocks and nuggets coming back ap
 The jobs
 --------
 
-**Oil is played and works** - Yannic ran the chain on 2026-09-06 - and the pump and the trains are
-struck; see `PLAN.md`. The jobs below are in the order to do them. The first is the next part.
+**Oil is played and works** - Yannic ran the chain on 2026-09-06 - and trains, vehicles and the
+pump are out of the plan; see `PLAN.md`. The jobs below are in the order to do them. The first is the next part.
 
 ### 1. Blue science, and what it buys
 
@@ -210,8 +210,7 @@ The conflict half of `data/removals.json` is already waiting: the moment a mod s
 `minecraft:redstone_lamp`, `cobblestone_wall` or `iron_door`, the build fails until vanilla's is
 removed — and each is gated behind a technology in Factorio, so each is a real research unlock.
 None can be done yet: the lamp needs an iron stick, the gate needs steel, and the wall belongs to
-`nauvis_military`, which does not exist. The rail is off the list: trains are struck and vanilla's
-rail stays.
+`nauvis_military`, which does not exist.
 
 Loose ends — small enough to finish in an afternoon
 ---------------------------------------------------

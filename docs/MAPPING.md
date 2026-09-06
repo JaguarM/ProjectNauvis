@@ -235,7 +235,7 @@ looking for.
 Stand-ins, for review
 ---------------------
 
-These nineteen Factorio items resolve to something vanilla already has, so nothing new gets
+These eighteen Factorio items resolve to something vanilla already has, so nothing new gets
 registered. This is where judgement was applied and where disagreement is most likely — every
 row is a one-word change in `mapping.json`. The stone furnace was the twentieth and is a machine
 of the pack's own now, because a furnace that ran vanilla's recipes at vanilla's pace was not
@@ -255,11 +255,10 @@ Factorio's furnace.
 | `stone-wall` | `minecraft:cobblestone_wall` | |
 | `wooden-chest` | `minecraft:chest` | |
 | `lamp` | `minecraft:redstone_lamp` | |
-| `rail` | `minecraft:rail` | the trains shortcut leans on this |
 | `landfill` | `minecraft:dirt` | |
 | `concrete` | `minecraft:gray_concrete` | |
 | `hazard-concrete` | `minecraft:yellow_concrete` | |
-| `gate` | `minecraft:iron_door` | weakest of the nineteen; a real wall gate may be worth building |
+| `gate` | `minecraft:iron_door` | weakest of the eighteen; a real wall gate may be worth building |
 | `water` | `minecraft:water` | a fluid, not an item; the one fluid vanilla already has. In the world it is `nauvis_fluids:water`, which a bucket and an offshore pump both turn into this |
 | `raw-fish` | `minecraft:cod` | |
 

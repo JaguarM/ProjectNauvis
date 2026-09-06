@@ -113,7 +113,7 @@
     "minecraft:hopper_minecart": {
       "kind": "bypass",
       "replaced_by": "nauvis_logistics:burner_inserter",
-      "note": "A hopper on rails is still a hopper. The plain minecart and the chest minecart stay: PLAN.md's trains shortcut is vanilla minecarts, so those are the pack's own answer rather than a way round it."
+      "note": "A hopper on rails is still a hopper. The plain minecart and the chest minecart stay: nothing of the pack's does their job, and a vanilla recipe goes only when the pack can already do that job."
     }
   }
 }

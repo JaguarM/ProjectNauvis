@@ -99,8 +99,7 @@ Oil
   line. And nothing empties a tank on purpose: there is no pump, by decision - see `PLAN.md` - so
   what leaves a tank is what its run's sinks draw, and a tank of the wrong fluid on a run is
   emptied by breaking it.
-- **No trains, and no pump**, by decision rather than by schedule: `PLAN.md` has it. Vanilla's rail
-  and minecarts stay, and the `rail` removal `data/removals.json` was waiting for never comes.
+- **No trains, no vehicles, and no pump**, by decision rather than by schedule: `PLAN.md` has it.
 - **A tank on two runs is levelled by each in turn**, one tick apart, rather than as one segment.
   It converges within a few ticks and then sleeps, which is close enough to be indistinguishable at
   the readout, and not Factorio's single fluid segment.
@@ -339,7 +338,7 @@ Vanilla, and what is left alone
   bypass half is a judgement and grows one line at a time.
 - **The circuit network's vanilla equivalent is deliberately left alone.** Repeaters, comparators,
   observers and pistons are Minecraft's answer to combinators; removing them now would take away a
-  system and offer nothing until milestone 7. The dropper stays too, and a test asserts it, because
+  system and offer nothing until milestone 6. The dropper stays too, and a test asserts it, because
   it needs a clock to move anything — that is a build rather than a free ride.
 - **One tool, and the ladder kept.** Four planks is a stone pickaxe, the wooden one has no recipe,
   and `mineable/pickaxe` absorbs the axe, shovel and hoe tags. Material tiers are untouched, and the
