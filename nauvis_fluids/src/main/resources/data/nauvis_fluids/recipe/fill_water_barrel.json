@@ -1,0 +1,29 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 4,
+  "group": "intermediate",
+  "order": "0125",
+  "category": "crafting-with-fluid",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_fluids:empty_barrel",
+      "count": 1
+    }
+  ],
+  "fluid_ingredients": [
+    {
+      "ingredient": "minecraft:water",
+      "amount": 50
+    }
+  ],
+  "result": {
+    "id": "nauvis_fluids:water_barrel",
+    "count": 1
+  }
+}

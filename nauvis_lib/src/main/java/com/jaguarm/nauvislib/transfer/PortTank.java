@@ -1,4 +1,4 @@
-package com.jaguarm.nauvisfluids.processing;
+package com.jaguarm.nauvislib.transfer;
 
 import org.jspecify.annotations.Nullable;
 

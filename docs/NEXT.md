@@ -29,7 +29,7 @@ missing from each is `GAPS.md`.
 | | |
 |---|---|
 | `nauvis_machines:assembling_machine_1` | 3×3, ten blocks; recipe selector, six slots, timed craft at **crafting speed 0.5**, screen, 10 FE/t |
-| `nauvis_machines:assembling_machine_2` | the same at speed 0.75 and 20 FE/t, in blue. Behind `automation-2` |
+| `nauvis_machines:assembling_machine_2` | the same at speed 0.75 and 20 FE/t, in blue, with **two fluid boxes**: one in on its north edge, one out on its south, so it faces. Runs the recipes with a fluid in them too. Behind `automation-2` |
 | `nauvis_machines:speed_module` / `effectivity_module` / `productivity_module` | Factorio 2.0's tier one: +20% speed for +50% power; -30% power; +4% productivity for -5% speed and +40% power. Five advanced circuits and five circuits each, behind `modules` and their own technologies. A chip in blue, green and red |
 | a module slot | on assembling machine 2 (two), the electric furnace (two), the lab (two), the refinery and the chemical plant (three each). Effects add; the sum is read as a craft starts; productivity banks a free craft. A productivity module is refused unless the recipe is an intermediate |
 | `nauvis_machines:stone_furnace` | 2×2, five blocks; a hearth you walk over and a stack whose mouth is fire while it runs. Smelts Factorio's four recipes at speed 1, burning what a vanilla furnace burns — only while working. **A machine of ours now**, not `minecraft:furnace` |
@@ -58,6 +58,8 @@ missing from each is `GAPS.md`.
 | `nauvis_fluids:storage_tank` | 3×3, eleven blocks; 25000 of one fluid. A connection at one corner of each side, in a pinwheel, all the same port; **a length of the pipeline** - the run levels with it rather than filling or draining it, so it sleeps once settled |
 | `nauvis_fluids:oil_refinery` | 5×5, thirty blocks; 56 FE/t, crafting speed 1, the two `oil-processing` recipes chosen in the panel. **Factorio's ports**: water and crude in at the front, second and fourth cells; heavy, light and petroleum out at the back, corners and middle - fixed per fluid, so advanced processing adds pipes rather than moving them. A full output stalls the craft unpaid; drawing from it banks it |
 | `nauvis_fluids:chemical_plant` | 3×3, ten blocks; 28 FE/t, speed 1, every `chemistry` recipe: two fluids in at the back corners, two out at the front corners, two item slots in and one out. Water keeps the left input |
+| `nauvis_fluids:empty_barrel` and seven filled | a steel plate makes a barrel; an assembling machine 2 fills one from its fluid box - fifty of the fluid, a fifth of a second - and empties it back out. One drum in eight bands |
+| `neoprogressivematerials:electric_engine_unit` | an engine unit, two circuits and fifteen lubricant in an assembling machine 2: the first item made from a fluid in an assembler. Behind `electric-engine` |
 | `nauvis_power:boiler` | 3×2, seven blocks; **boils water**: water in at both ends of the front row, two a tick, two steam out under the chimney, and nothing at all without water. A row of boilers passes water along itself, end to end |
 | `nauvis_power:steam_engine` | 5×3, seventeen blocks; steam in at the open ends of its spine, 120 FE/t out |
 | `nauvis_power:small_electric_pole` | 1×1×4, wood. Reaches 7.5, supplies 5×5 |
@@ -132,14 +134,16 @@ because it has no screen to put them in; see `GAPS.md`.
 
 ### 3. An assembler with a fluid port
 
-Factorio's assembling machine 2 and 3 take one fluid ingredient - the electric engine unit's
-lubricant, the processing unit's sulfuric acid - through a fluid box on one side, and the barrel
-recipes are the same machine giving a fluid back. `ProcessingBlockEntity` already has the tank, the
-port and the recipe-order assignment; what the assembler needs is one input port on its shell, the
-`PortTank` behind it, and the fluid half of `craft` - which is the argument for the assembler
-growing out of the processing base rather than the other way round. Assembling machine 1 has no
-fluid box, which is Factorio's rule and the reason there are tiers. Barrels come with it and are
-milestone 4's last item.
+**Done.** Assembling machine 2 has Factorio's two fluid boxes - one in on its north edge, one out
+on its south, a thousand each on the library's `PortTank` - and so it faces, placed with its
+input towards the player; assembling machine 1 has none and refuses a recipe with a fluid in it,
+which is Factorio's rule and the reason there are tiers. The recipes with one fluid in or out
+are `crafting-with-fluid`, the panel says they are made in assembling machine 2, and the first
+of them is made: `neoprogressivematerials:electric_engine_unit`, an engine unit, two circuits
+and fifteen lubricant. The barrels came with it - `nauvis_fluids:empty_barrel` and the seven
+filled ones, fill and empty in a fifth of a second, from `data/fluid_recipes.json` - which was
+milestone 4's last item. The processing unit is the other fluid recipe and waits on its
+technology, which is not in the tree yet.
 
 ### 4. Make the drills Factorio's drills
 

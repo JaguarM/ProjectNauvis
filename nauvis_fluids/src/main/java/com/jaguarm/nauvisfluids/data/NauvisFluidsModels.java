@@ -69,6 +69,11 @@ public class NauvisFluidsModels extends ModelProvider {
 
         // The one flat item. Its art is texture-workshop/make_material_textures.py's.
         itemModels.generateFlatItem(ModItems.EXPLOSIVES.get(), ModelTemplates.FLAT_ITEM);
+        // The barrels: one drum in eight bands, from texture-workshop/make_barrel_textures.py.
+        itemModels.generateFlatItem(ModItems.EMPTY_BARREL.get(), ModelTemplates.FLAT_ITEM);
+        for (var barrel : ModItems.FILLED_BARRELS) {
+            itemModels.generateFlatItem(barrel.get(), ModelTemplates.FLAT_ITEM);
+        }
 
         // Natural water is drawn by the fluid renderer, not from a model, exactly as vanilla's
         // water is; what a liquid block's model carries is the particle its splashes use. This

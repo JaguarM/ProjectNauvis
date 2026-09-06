@@ -281,6 +281,14 @@ IRON = {
     "h": (190, 190, 200, 255),
 }
 
+ELECTRIC_IRON = {
+    ".": (0, 0, 0, 0),
+    "d": (44, 52, 70, 255),
+    "m": (78, 96, 128, 255),
+    "l": (122, 148, 186, 255),
+    "h": (176, 200, 232, 255),
+}
+
 COAL_BLACK = {
     ".": (0, 0, 0, 0),
     "d": (18, 18, 18, 255),
@@ -306,6 +314,9 @@ ITEMS = {
     "battery": (BATTERY, BLACK_AND_RED, "neoprogressivematerials"),
     "advanced_circuit": (ADVANCED_CIRCUIT, RED_BOARD, "neoprogressivematerials"),
     "engine_unit": (ENGINE_UNIT, IRON, "neoprogressivematerials"),
+    # The same engine in the blue-grey of Factorio's electric one: one map, so the two read as
+    # the same part with a different drive, which they are.
+    "electric_engine_unit": (ENGINE_UNIT, ELECTRIC_IRON, "neoprogressivematerials"),
     "solid_fuel": (SOLID_FUEL, COAL_BLACK, "nauvis"),
     "explosives": (EXPLOSIVES, DYNAMITE, "nauvis_fluids"),
 }

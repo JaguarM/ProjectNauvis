@@ -3,7 +3,7 @@ package com.jaguarm.nauvisfluids.compat.jade;
 import com.jaguarm.facrafting.client.ClientRecipes;
 import com.jaguarm.facrafting.recipe.FacraftRecipe;
 import com.jaguarm.nauvisfluids.NauvisFluids;
-import com.jaguarm.nauvisfluids.processing.PortTank;
+import com.jaguarm.nauvislib.transfer.PortTank;
 import com.jaguarm.nauvisfluids.processing.ProcessingBlockEntity;
 import com.jaguarm.nauvisfluids.processing.ProcessingStatus;
 

@@ -90,7 +90,9 @@ SCREENS = [
         slots=[('input', 'INPUT_X', 'INPUT_Y', 6, 3), ('output', 'OUTPUT_X', 'OUTPUT_Y', 1, 1),
                ('module', 'MODULE_X', 'MODULE_Y', 2, 2)],
         bars=[('progress bar', 'ARROW_X', 'ARROW_Y', 'ARROW_WIDTH', 'ARROW_HEIGHT'),
-              ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT')],
+              ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT'),
+              ('fluid in bar', 'FLUID_IN_X', 'FLUID_IN_Y', 'FLUID_IN_WIDTH', 'FLUID_IN_HEIGHT'),
+              ('fluid out bar', 'FLUID_OUT_X', 'FLUID_OUT_Y', 'FLUID_OUT_WIDTH', 'FLUID_OUT_HEIGHT')],
     ),
     Screen(
         # The electric tier's charge bolt is not listed because it stands exactly where the flame

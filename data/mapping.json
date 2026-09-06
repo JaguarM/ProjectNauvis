@@ -3,8 +3,8 @@
   "_generated_from": "reference/factorio/recipes.json (214 entries)",
   "_size": "Factorio tile footprint [width, depth], for entities larger than one tile. Absent means 1x1. One Minecraft block per tile - see docs/NEXT.md.",
   "_speed": "Factorio belt speed in tiles per second. Identity: it decides what a factory looks like, and throughput follows from it - four items a tile a lane, two lanes, so 1.875 tiles/s is the wiki's 15 items/s. tools/check_models.py holds each belt block's SPEED constant to this.",
-  "_category": "Factorio's recipe category, for a recipe only a machine runs: `smelting` is the four the furnaces do - plates, steel and stone brick - `chemistry` is the chemical plant's and `oil-processing` the refinery's. Absent means hand-craftable, which is Factorio's `crafting`. Not in the dump, so entered by hand against the wiki like `size`. gen_recipes.py writes it into the recipe as Facrafting's `category`, and Facrafting keeps such a recipe out of the hand panel; a machine names the category it runs. A recipe that takes or makes a fluid is a machine's whatever its category, and the recipes that make only fluids are in data/fluid_recipes.json.",
-  "_unlocks": "A technology effect names a *recipe*, and Factorio's recipe names are not always its item names. This maps the ones that differ to the item whose recipe file gen_recipes.py writes - `small-lamp` makes a lamp, `solar-panel-equipment` makes a portable solar panel. null means the pack has no counterpart at all. A name in data/fluid_recipes.json needs no line here: it resolves to that recipe's own key. Any name in none of the three is a GenError in tools/gen_technologies.py rather than a silently dropped unlock.",
+  "_category": "Factorio's recipe category, for a recipe only a machine runs: `smelting` is the four the furnaces do - plates, steel and stone brick - `chemistry` is the chemical plant's, `oil-processing` the refinery's, and `crafting-with-fluid` is a recipe with one fluid in or out that only an assembler with a fluid box - assembling machine 2 - runs: the electric engine unit, the processing unit and the barrels. Absent means hand-craftable, which is Factorio's `crafting`. Not in the dump, so entered by hand against the wiki like `size`. gen_recipes.py writes it into the recipe as Facrafting's `category`, and Facrafting keeps such a recipe out of the hand panel; a machine names the category it runs. A recipe that takes or makes a fluid is a machine's whatever its category, and the recipes that make only fluids or several things are in data/fluid_recipes.json.",
+  "_unlocks": "A technology effect names a *recipe*, and Factorio's recipe names are not always its item names. This maps the ones that differ to the item whose recipe file gen_recipes.py writes - `small-lamp` makes a lamp, `solar-panel-equipment` makes a portable solar panel. null means the pack has no counterpart at all. A name in data/fluid_recipes.json needs no line here: it resolves to that recipe's own key, which is how the barrel recipes are unlocked. Any name in none of the three is a GenError in tools/gen_technologies.py rather than a silently dropped unlock.",
   "unlocks": {
     "small-lamp": "lamp",
     "shotgun-shell": "shotgun-shells",
@@ -21,21 +21,7 @@
     "personal-roboport-mk2-equipment": "personal-roboport-mk2",
     "fusion-reactor-equipment": "portable-fusion-reactor",
     "solar-panel-equipment": "portable-solar-panel",
-    "coal-liquefaction": null,
-    "fill-water-barrel": "water-barrel",
-    "empty-water-barrel": null,
-    "fill-crude-oil-barrel": "crude-oil-barrel",
-    "empty-crude-oil-barrel": null,
-    "fill-heavy-oil-barrel": "heavy-oil-barrel",
-    "empty-heavy-oil-barrel": null,
-    "fill-light-oil-barrel": "light-oil-barrel",
-    "empty-light-oil-barrel": null,
-    "fill-lubricant-barrel": "lubricant-barrel",
-    "empty-lubricant-barrel": null,
-    "fill-petroleum-gas-barrel": "petroleum-gas-barrel",
-    "empty-petroleum-gas-barrel": null,
-    "fill-sulfuric-acid-barrel": "sulfuric-acid-barrel",
-    "empty-sulfuric-acid-barrel": null
+    "coal-liquefaction": null
   },
   "items": {
     "accumulator": {
@@ -485,7 +471,8 @@
       "craft": {
         "time": 10,
         "yield": 1
-      }
+      },
+      "category": "crafting-with-fluid"
     },
     "electric-furnace": {
       "name": "Electric furnace",
@@ -1312,7 +1299,8 @@
       "craft": {
         "time": 10,
         "yield": 1
-      }
+      },
+      "category": "crafting-with-fluid"
     },
     "production-science-pack": {
       "name": "Production science pack",

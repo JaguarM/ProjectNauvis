@@ -3,10 +3,13 @@ package com.jaguarm.nauvismachines.machine.assembler;
 import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.facrafting.machine.RecipeSelector;
+import com.jaguarm.facrafting.recipe.FacraftRecipe;
 import com.jaguarm.nauvislib.module.ModuleSlots;
 import com.jaguarm.nauvismachines.registry.ModMenus;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -57,7 +60,17 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
     public static final int DATA_ENERGY_PER_TICK = 3;
     public static final int DATA_ENERGY_CAPACITY = 4;
 
-    public static final int DATA_COUNT = 5;
+    /**
+     * The two fluid boxes, each as an amount and a fluid's registry id. Zero on a tier without
+     * them. The fluid registry is synced to the client in the server's order, so the id means the
+     * same fluid on both sides and the screen draws the bar in that fluid's colour.
+     */
+    public static final int DATA_FLUID_IN = 5;
+    public static final int DATA_FLUID_IN_ID = 6;
+    public static final int DATA_FLUID_OUT = 7;
+    public static final int DATA_FLUID_OUT_ID = 8;
+
+    public static final int DATA_COUNT = 9;
 
     /**
      * Where the screen expects to find things. Shared, so the two cannot drift apart.
@@ -185,6 +198,40 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
     public boolean hasPower() {
         int perTick = data.get(DATA_ENERGY_PER_TICK);
         return energy() >= (perTick <= 0 ? AssemblerBlockEntity.ENERGY_PER_TICK : perTick);
+    }
+
+    /** Whether this machine's tier has fluid boxes, read off the block on either side. */
+    public boolean hasFluidBoxes() {
+        return level.getBlockState(machinePos).getBlock() instanceof AssemblerBlock block && block.fluidBoxes();
+    }
+
+    /** 0 to 1 across the input fluid box. */
+    public float fluidInFill() {
+        return Math.clamp(data.get(DATA_FLUID_IN) / (float) AssemblerBlockEntity.TANK_CAPACITY, 0.0f, 1.0f);
+    }
+
+    public float fluidOutFill() {
+        return Math.clamp(data.get(DATA_FLUID_OUT) / (float) AssemblerBlockEntity.TANK_CAPACITY, 0.0f, 1.0f);
+    }
+
+    /** The fluid the input box holds or is pointed at, for the bar's colour. Empty for none. */
+    public Fluid fluidIn() {
+        return BuiltInRegistries.FLUID.byId(data.get(DATA_FLUID_IN_ID));
+    }
+
+    public Fluid fluidOut() {
+        return BuiltInRegistries.FLUID.byId(data.get(DATA_FLUID_OUT_ID));
+    }
+
+    /**
+     * What this tier can be pointed at: the panel offers only these. The first machine runs what
+     * a hand does; the second runs the recipes with a fluid in them too.
+     */
+    @Override
+    public boolean accepts(FacraftRecipe recipe) {
+        return level.getBlockState(machinePos).getBlock() instanceof AssemblerBlock block
+                ? block.accepts(recipe)
+                : recipe.isHandcraftable();
     }
 
     // ------------------------------------------------------------------ RecipeSelector

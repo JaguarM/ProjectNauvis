@@ -444,9 +444,73 @@
         0.0
       ],
       "to": [
+        7.0,
+        5.3333335,
+        1.0
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#bottom"
+        },
+        "east": {
+          "texture": "#side"
+        },
+        "north": {
+          "texture": "#side"
+        },
+        "south": {
+          "texture": "#side"
+        },
+        "up": {
+          "texture": "#top"
+        },
+        "west": {
+          "texture": "#side"
+        }
+      },
+      "from": [
+        9.0,
+        4.0,
+        0.0
+      ],
+      "to": [
         10.666667,
         5.3333335,
         1.0
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#bottom"
+        },
+        "east": {
+          "texture": "#side"
+        },
+        "north": {
+          "texture": "#side"
+        },
+        "south": {
+          "texture": "#side"
+        },
+        "up": {
+          "texture": "#top"
+        },
+        "west": {
+          "texture": "#side"
+        }
+      },
+      "from": [
+        7.0,
+        4.0,
+        0.0
+      ],
+      "to": [
+        9.0,
+        5.3333335,
+        2.3333335
       ]
     },
     {
@@ -567,12 +631,76 @@
         }
       },
       "from": [
-        5.3333335,
+        9.0,
         4.0,
         15.0
       ],
       "to": [
         10.666667,
+        5.3333335,
+        16.0
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#bottom"
+        },
+        "east": {
+          "texture": "#side"
+        },
+        "north": {
+          "texture": "#side"
+        },
+        "south": {
+          "texture": "#side"
+        },
+        "up": {
+          "texture": "#top"
+        },
+        "west": {
+          "texture": "#side"
+        }
+      },
+      "from": [
+        5.3333335,
+        4.0,
+        15.0
+      ],
+      "to": [
+        7.0,
+        5.3333335,
+        16.0
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#bottom"
+        },
+        "east": {
+          "texture": "#side"
+        },
+        "north": {
+          "texture": "#side"
+        },
+        "south": {
+          "texture": "#side"
+        },
+        "up": {
+          "texture": "#top"
+        },
+        "west": {
+          "texture": "#side"
+        }
+      },
+      "from": [
+        7.0,
+        4.0,
+        13.666667
+      ],
+      "to": [
+        9.0,
         5.3333335,
         16.0
       ]

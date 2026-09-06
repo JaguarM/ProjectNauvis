@@ -286,10 +286,13 @@ takes only what the generators leave over and gives only what they cannot cover 
 field carries a factory through the night with it. The substation and the electric furnace are
 built and gated behind blue science.
 
-### 4 — Oil · 11 new
+### 4 — Oil · 11 new · *all built*
 
 `pumpjack`, `oil-refinery`, `chemical-plant`, `empty-barrel`, `storage-tank`,
 `plastic-bar`, `advanced-circuit`, `engine-unit`, `science-pack-3`, `electric-mining-drill`.
+Every one of them exists, and the assembling machine 2 grew the fluid box that the barrels and
+the electric engine unit needed; what is left of the milestone is the drills becoming
+Factorio's drills, which is `NEXT.md`'s job 4.
 
 **The pumpjack and the oil well are done**, and the well is the piece nobody had a shape for: a
 resource *block* — unbreakable ground holding Factorio's resource amount — rather than a fluid in

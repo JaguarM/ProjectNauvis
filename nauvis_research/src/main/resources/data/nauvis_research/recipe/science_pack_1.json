@@ -12,7 +12,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 100,
   "group": "intermediate",
-  "order": "0142",
+  "order": "0156",
   "ingredients": [
     {
       "ingredient": "minecraft:copper_ingot",

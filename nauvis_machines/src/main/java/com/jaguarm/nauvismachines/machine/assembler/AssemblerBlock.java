@@ -1,5 +1,6 @@
 package com.jaguarm.nauvismachines.machine.assembler;
 
+import com.jaguarm.facrafting.recipe.FacraftRecipe;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.mojang.serialization.MapCodec;
@@ -24,6 +25,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -59,10 +62,21 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  */
 public abstract class AssemblerBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
+    /**
+     * Where the machine's own north points, on a tier that has a fluid box.
+     *
+     * <p>Only there. A Factorio assembler has no direction - what goes in and what comes out is
+     * decided by the inserters around it - until it grows a fluid box, and then the box's side is
+     * the one thing about it that has a direction. So the first machine has no facing at all and a
+     * blockstate a quarter the size, and the second faces the way the player stood when they
+     * placed it, which puts its fluid input towards them and its output beyond.
+     */
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
+
     public AssemblerBlock(Properties properties) {
         super(properties);
-        registerDefaultState(getStateDefinition().any()
-                .setValue(AssemblerShape.SHAPE.part(), AssemblerShape.SHAPE.anchor()));
+        BlockState base = getStateDefinition().any().setValue(shape().part(), shape().anchor());
+        registerDefaultState(fluidBoxes() ? base.setValue(FACING, Direction.NORTH) : base);
     }
 
     @Override
@@ -70,9 +84,44 @@ public abstract class AssemblerBlock extends BaseEntityBlock implements Multiblo
         return AssemblerShape.SHAPE;
     }
 
-    // No facing override. A Factorio assembler has no direction: what goes in and what comes out
-    // is decided by the inserters around it, so the shape is only ever asked for its north frame
-    // and the blockstate is a tenth the size it would otherwise be.
+    /**
+     * Whether this tier has Factorio's fluid boxes: one in and one out. The second and third
+     * machines do and the first does not, which is Factorio's rule and the reason there are tiers.
+     * A constant on the subclass, like the speed, because it is read from {@code Block}'s
+     * constructor.
+     */
+    public boolean fluidBoxes() {
+        return false;
+    }
+
+    /**
+     * Which recipes this tier runs: what a hand does, and - with a fluid box - the recipes with one
+     * fluid in or out that Factorio files under {@code crafting-with-fluid}. The panel offers a
+     * machine only what this says, and the block entity refuses the rest.
+     */
+    public boolean accepts(FacraftRecipe recipe) {
+        if (recipe.isHandcraftable()) {
+            return true;
+        }
+        return fluidBoxes()
+                && (recipe.category().isEmpty() || CRAFTING_WITH_FLUID.equals(recipe.category()))
+                && recipe.fluidIngredients().size() <= 1
+                && recipe.fluidResults().size() <= 1;
+    }
+
+    /** Factorio's category for a recipe with a fluid in it that an assembler runs. */
+    public static final String CRAFTING_WITH_FLUID = "crafting-with-fluid";
+
+    @Override
+    public Direction facing(BlockState state) {
+        return state.hasProperty(FACING) ? state.getValue(FACING) : Direction.NORTH;
+    }
+
+    /** A machine with a fluid box faces the player, so its input is towards them; the rest face north. */
+    @Override
+    public Direction placementFacing(BlockPlaceContext context) {
+        return fluidBoxes() ? context.getHorizontalDirection().getOpposite() : Direction.NORTH;
+    }
 
     /**
      * Factorio's {@code crafting_speed}: how many recipe-seconds this machine gets through in a
@@ -97,7 +146,10 @@ public abstract class AssemblerBlock extends BaseEntityBlock implements Multiblo
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(AssemblerShape.SHAPE.part());
+        builder.add(shape().part());
+        if (fluidBoxes()) {
+            builder.add(FACING);
+        }
     }
 
     /**
@@ -125,7 +177,11 @@ public abstract class AssemblerBlock extends BaseEntityBlock implements Multiblo
     /** Null, and so no placement at all, unless all ten blocks fit and nobody is standing there. */
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
-        return Multiblock.getStateForPlacement(this, defaultBlockState(), context);
+        BlockState base = defaultBlockState();
+        if (fluidBoxes()) {
+            base = base.setValue(FACING, placementFacing(context));
+        }
+        return Multiblock.getStateForPlacement(this, base, context);
     }
 
     @Override

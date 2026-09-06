@@ -63,7 +63,7 @@ public final class AssemblerShape {
     public static final String GEARBOX = "gearbox";
 
     /** The mechanism on top, and the only part of an assembler you have to walk around. */
-    private static final float[][] GEARBOX_BOXES = {
+    static final float[][] GEARBOX_BOXES = {
         {2, 0, 2, 14, 12, 14},
         {4, 12, 4, 12, 16, 12},
     };

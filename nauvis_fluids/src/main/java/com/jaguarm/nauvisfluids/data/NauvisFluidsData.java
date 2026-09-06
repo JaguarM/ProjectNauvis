@@ -152,6 +152,14 @@ public final class NauvisFluidsData {
             add("fluid.nauvis_fluids.lubricant", "Lubricant");
             add("fluid.nauvis_fluids.sulfuric_acid", "Sulfuric acid");
             addItem(ModItems.EXPLOSIVES, "Explosives");
+            addItem(ModItems.EMPTY_BARREL, "Empty barrel");
+            addItem(ModItems.WATER_BARREL, "Water barrel");
+            addItem(ModItems.CRUDE_OIL_BARREL, "Crude oil barrel");
+            addItem(ModItems.HEAVY_OIL_BARREL, "Heavy oil barrel");
+            addItem(ModItems.LIGHT_OIL_BARREL, "Light oil barrel");
+            addItem(ModItems.LUBRICANT_BARREL, "Lubricant barrel");
+            addItem(ModItems.PETROLEUM_GAS_BARREL, "Petroleum gas barrel");
+            addItem(ModItems.SULFURIC_ACID_BARREL, "Sulfuric acid barrel");
 
             // Jade's settings screen lists every provider and asserts if one has no name, and
             // that assert fires from ScreenEvent.Init - a missing key here is not a blank line in

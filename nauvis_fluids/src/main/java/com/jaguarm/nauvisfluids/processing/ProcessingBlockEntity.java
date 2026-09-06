@@ -13,6 +13,7 @@ import com.jaguarm.nauvislib.module.ModuleEffect;
 import com.jaguarm.nauvislib.module.ModuleSlots;
 import com.jaguarm.nauvislib.module.Productivity;
 import com.jaguarm.nauvislib.transfer.FluidOutputAccess;
+import com.jaguarm.nauvislib.transfer.PortTank;
 import com.jaguarm.nauvislib.transfer.MachineAccess;
 import com.jaguarm.nauvislib.transfer.MachinePower;
 import com.jaguarm.nauvislib.transfer.PowerAccess;

@@ -105,7 +105,7 @@ ORDER_DIGITS = 4
 # - centrifuging, crafting-with-fluid - and each joins this set the day a machine runs it; an
 # unknown one is a typo until then, and a typo here is a recipe that quietly vanishes from every
 # panel.
-CATEGORIES = {"smelting", "chemistry", "oil-processing"}
+CATEGORIES = {"smelting", "chemistry", "oil-processing", "crafting-with-fluid"}
 
 # The three released mods live in their own repos beside this one; everything else is a
 # subproject here. Both are resolved to a `src/main/resources` root.

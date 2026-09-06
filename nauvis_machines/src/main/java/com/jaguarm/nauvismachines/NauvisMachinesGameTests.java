@@ -4,11 +4,14 @@ import com.jaguarm.nauvislib.module.ModuleSlots;
 import com.jaguarm.nauvislib.transfer.MachinePower;
 import java.util.List;
 
+import org.jspecify.annotations.Nullable;
+
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlock;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblingMachine2Block;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlockEntity;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerMenu;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
+import com.jaguarm.nauvismachines.machine.assembler.AssemblingMachine2Shape;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
@@ -45,7 +48,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
@@ -121,6 +127,10 @@ public final class NauvisMachinesGameTests {
                 () -> ProductivityModulesBankAFreeCraftTest.CODEC);
         TEST_TYPES.register("productivity_module_needs_an_intermediate",
                 () -> ProductivityModuleNeedsAnIntermediateTest.CODEC);
+        TEST_TYPES.register("only_the_second_machine_has_fluid_boxes", () -> OnlyTheSecondMachineHasFluidBoxesTest.CODEC);
+        TEST_TYPES.register("assembling_machine_2_crafts_with_a_fluid", () -> AssemblingMachine2CraftsWithAFluidTest.CODEC);
+        TEST_TYPES.register("assembling_machine_2_fills_and_empties_a_barrel",
+                () -> AssemblingMachine2FillsAndEmptiesABarrelTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -146,6 +156,12 @@ public final class NauvisMachinesGameTests {
                 ProductivityModulesBankAFreeCraftTest::new, 300);
         register(event, environment, "productivity_module_needs_an_intermediate",
                 ProductivityModuleNeedsAnIntermediateTest::new, 20);
+        register(event, environment, "only_the_second_machine_has_fluid_boxes",
+                OnlyTheSecondMachineHasFluidBoxesTest::new, 20);
+        register(event, environment, "assembling_machine_2_crafts_with_a_fluid",
+                AssemblingMachine2CraftsWithAFluidTest::new, 400);
+        register(event, environment, "assembling_machine_2_fills_and_empties_a_barrel",
+                AssemblingMachine2FillsAndEmptiesABarrelTest::new, 100);
         register(event, environment, "assembler_sleeps", AssemblerSleepsTest::new, 60);
         register(event, environment, "assembler_stalls_when_full", AssemblerStallsWhenFullTest::new, 100);
         register(event, environment, "assembler_spills_when_broken", AssemblerSpillsWhenBrokenTest::new, 60);
@@ -1389,6 +1405,261 @@ public final class NauvisMachinesGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a productivity module needs an intermediate product");
+        }
+    }
+
+    /** The fluid handler a pipe would find at a test-relative position, from that face, or null. */
+    private static @Nullable ResourceHandler<FluidResource> fluidAt(GameTestHelper helper, BlockPos pos,
+            Direction side) {
+        return helper.getLevel().getCapability(Capabilities.Fluid.BLOCK, helper.absolutePos(pos), side);
+    }
+
+    /** Where a cell of a machine anchored at {@link #MACHINE} stands, for a machine facing north. */
+    private static BlockPos cell(MachineShape shape, int part) {
+        return shape.cellPos(MACHINE, part, Direction.NORTH);
+    }
+
+    private static int fill(ResourceHandler<FluidResource> handler, Fluid fluid, int amount) {
+        try (Transaction transaction = Transaction.openRoot()) {
+            int inserted = handler.insert(FluidResource.of(fluid), amount, transaction);
+            transaction.commit();
+            return inserted;
+        }
+    }
+
+    /**
+     * The first machine has no fluid box and the second has two, at two faces and no others.
+     *
+     * <p>Factorio's rule and the reason there are tiers. A pipe against the second machine's north
+     * edge fills its input, one against the south edge drains its output, and a pipe on a flank or
+     * a corner finds nothing - exactly as a refinery's flank offers nothing. The first machine
+     * offers nothing anywhere and refuses a recipe with a fluid in it.
+     */
+    public static class OnlyTheSecondMachineHasFluidBoxesTest extends GameTestInstance {
+
+        public static final MapCodec<OnlyTheSecondMachineHasFluidBoxesTest> CODEC =
+                RecordCodecBuilder.<OnlyTheSecondMachineHasFluidBoxesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OnlyTheSecondMachineHasFluidBoxesTest::info))
+                                .apply(i, OnlyTheSecondMachineHasFluidBoxesTest::new));
+
+        public OnlyTheSecondMachineHasFluidBoxesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
+            AssemblerBlockEntity first = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            helper.assertFalse(first.hasFluidBoxes(), "an assembling machine 1 has a fluid box");
+            for (int part = 0; part < AssemblerShape.SHAPE.cellCount(); part++) {
+                for (Direction side : Direction.values()) {
+                    helper.assertTrue(fluidAt(helper, cell(AssemblerShape.SHAPE, part), side) == null,
+                            "an assembling machine 1 offers a fluid handler at cell " + part + " " + side);
+                }
+            }
+
+            helper.getLevel().destroyBlock(helper.absolutePos(MACHINE), false);
+            helper.startSequence().thenExecuteAfter(3, () -> {
+                placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+                AssemblerBlockEntity second = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+                helper.assertTrue(second.hasFluidBoxes(), "an assembling machine 2 has no fluid box");
+                MachineShape shape = AssemblingMachine2Shape.SHAPE;
+                helper.assertTrue(fluidAt(helper, cell(shape, AssemblingMachine2Shape.NORTH_EDGE), Direction.NORTH) != null,
+                        "no fluid handler at the second machine's input port");
+                helper.assertTrue(fluidAt(helper, cell(shape, AssemblingMachine2Shape.SOUTH_EDGE), Direction.SOUTH) != null,
+                        "no fluid handler at the second machine's output port");
+                helper.assertTrue(fluidAt(helper, cell(shape, AssemblingMachine2Shape.NORTH_EDGE), Direction.UP) == null,
+                        "a fluid handler on top of the input cell, where no pipe is drawn");
+                helper.assertTrue(fluidAt(helper, cell(shape, 5), Direction.EAST) == null,
+                        "a fluid handler on the second machine's flank");
+                helper.assertTrue(fluidAt(helper, cell(shape, 0), Direction.NORTH) == null,
+                        "a fluid handler on the second machine's corner");
+
+                // Drawing from the input, or filling the output, is refused: a pipe run must not
+                // drain the lubricant back out, and must not pour into a box the machine fills.
+                ResourceHandler<FluidResource> out = fluidAt(helper, cell(shape, AssemblingMachine2Shape.SOUTH_EDGE), Direction.SOUTH);
+                helper.assertValueEqual(fill(out, Fluids.WATER, 10), 0, "water a pipe could pour into the output box");
+            }).thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("only the second machine has fluid boxes");
+        }
+    }
+
+    /**
+     * An assembling machine 2 makes an electric engine unit: two circuits and an engine unit from
+     * its slots, fifteen lubricant from its fluid box, ten seconds at 0.75.
+     *
+     * <p>The first item in the pack made from a fluid in an assembler. The lubricant is another
+     * mod's fluid and the recipe needs it, so this passes on the tier's refusal alone when the
+     * recipe is not here - the standalone run - and runs the craft in the pack. The input box takes
+     * only the recipe's fluid: water against it is refused, which is what keeps a wrong pipe from
+     * filling a machine that could never use it.
+     */
+    public static class AssemblingMachine2CraftsWithAFluidTest extends GameTestInstance {
+
+        public static final MapCodec<AssemblingMachine2CraftsWithAFluidTest> CODEC =
+                RecordCodecBuilder.<AssemblingMachine2CraftsWithAFluidTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AssemblingMachine2CraftsWithAFluidTest::info))
+                                .apply(i, AssemblingMachine2CraftsWithAFluidTest::new));
+
+        public AssemblingMachine2CraftsWithAFluidTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            Item product = BuiltInRegistries.ITEM.getValue(
+                    Identifier.fromNamespaceAndPath("neoprogressivematerials", "electric_engine_unit"));
+            Fluid lubricant = BuiltInRegistries.FLUID.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "lubricant"));
+            ResourceKey<Recipe<?>> recipe = product == Items.AIR ? null
+                    : AssemblerBlockEntity.recipeProducing(helper.getLevel(), product);
+            if (recipe == null || lubricant == Fluids.EMPTY) {
+                helper.succeed();
+                return;
+            }
+
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
+            AssemblerBlockEntity first = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            first.setRecipe(recipe);
+            helper.assertTrue(first.recipeKey() == null,
+                    "an assembling machine 1 accepted a recipe with a fluid in it");
+            helper.getLevel().destroyBlock(helper.absolutePos(MACHINE), false);
+
+            // Registered up front, because the test framework's tick map cannot be added to from
+            // inside one of its own callbacks. The machine arrives a few ticks in.
+            AssemblerBlockEntity[] machine = new AssemblerBlockEntity[1];
+            helper.onEachTick(() -> {
+                if (machine[0] != null) {
+                    charge(machine[0]);
+                }
+            });
+
+            // Two hundred ticks over 0.75 is 266.7, so 267.
+            int ticks = Math.round(200 / AssemblingMachine2Block.CRAFTING_SPEED);
+            helper.startSequence()
+                    .thenExecuteAfter(3, () -> {
+                        placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+                        machine[0] = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+                        machine[0].setRecipe(recipe);
+                        helper.assertValueEqual(machine[0].recipeKey(), recipe, "the recipe on an assembling machine 2");
+
+                        ResourceHandler<FluidResource> in = fluidAt(helper,
+                                cell(AssemblingMachine2Shape.SHAPE, AssemblingMachine2Shape.NORTH_EDGE), Direction.NORTH);
+                        helper.assertTrue(in != null, "no handler at the input port");
+                        helper.assertValueEqual(fill(in, Fluids.WATER, 100), 0, "water taken by a box pointed at lubricant");
+                        helper.assertValueEqual(fill(in, lubricant, 100), 100, "lubricant taken by the input box");
+                        helper.assertValueEqual(insert(machine[0].automationView(),
+                                item(helper, "neoprogressivematerials:electronic_circuit"), 2), 2, "circuits accepted");
+                        helper.assertValueEqual(insert(machine[0].automationView(),
+                                item(helper, "neoprogressivematerials:engine_unit"), 1), 1, "an engine unit accepted");
+                    })
+                    .thenExecuteAfter(ticks + 3, () -> {
+                        helper.assertValueEqual(machine[0].inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 1,
+                                "electric engine units made after " + (ticks + 3) + " ticks");
+                        helper.assertValueEqual(machine[0].fluidIn().getAmountAsInt(0), 85,
+                                "lubricant left in the box after one craft of fifteen");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("assembling machine 2 crafts with a fluid");
+        }
+    }
+
+    /**
+     * An assembling machine 2 fills a barrel from its input box and empties one into its output box.
+     *
+     * <p>Factorio's barrels: an empty barrel and fifty water make a water barrel in a fifth of a
+     * second, and the reverse gives the water back - through the output port, which a pipe drains
+     * and nothing fills. The barrels are the fluids mod's items, so this passes on nothing when
+     * they are not here and runs both ways in the pack.
+     */
+    public static class AssemblingMachine2FillsAndEmptiesABarrelTest extends GameTestInstance {
+
+        public static final MapCodec<AssemblingMachine2FillsAndEmptiesABarrelTest> CODEC =
+                RecordCodecBuilder.<AssemblingMachine2FillsAndEmptiesABarrelTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AssemblingMachine2FillsAndEmptiesABarrelTest::info))
+                                .apply(i, AssemblingMachine2FillsAndEmptiesABarrelTest::new));
+
+        public AssemblingMachine2FillsAndEmptiesABarrelTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            Item empty = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "empty_barrel"));
+            Item full = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "water_barrel"));
+            if (empty == Items.AIR || full == Items.AIR) {
+                helper.succeed();
+                return;
+            }
+            ResourceKey<Recipe<?>> fill = AssemblerBlockEntity.recipeProducing(helper.getLevel(), full);
+            ResourceKey<Recipe<?>> drain = ResourceKey.create(Registries.RECIPE,
+                    Identifier.fromNamespaceAndPath("nauvis_fluids", "empty_water_barrel"));
+            helper.assertTrue(fill != null, "no recipe fills a water barrel");
+
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+            AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            helper.onEachTick(() -> charge(machine));
+            machine.setRecipe(fill);
+            ResourceHandler<FluidResource> in = fluidAt(helper,
+                    cell(AssemblingMachine2Shape.SHAPE, AssemblingMachine2Shape.NORTH_EDGE), Direction.NORTH);
+            helper.assertValueEqual(fill(in, Fluids.WATER, 50), 50, "water taken by the input box");
+            helper.assertValueEqual(insert(machine.automationView(), empty, 1), 1, "an empty barrel accepted");
+
+            // A fifth of a second over 0.75 is 5.3, so five ticks.
+            helper.startSequence()
+                    .thenExecuteAfter(8, () -> {
+                        helper.assertValueEqual(machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 1,
+                                "water barrels made");
+                        helper.assertTrue(machine.inventory().getResource(AssemblerBlockEntity.OUTPUT_SLOT).is(full),
+                                "what the machine made is not a water barrel");
+                        helper.assertValueEqual(machine.fluidIn().getAmountAsInt(0), 0, "water left after filling");
+
+                        // Now the other way: the barrel back in, the water out through the output port.
+                        machine.inventory().set(AssemblerBlockEntity.OUTPUT_SLOT, ItemResource.EMPTY, 0);
+                        machine.setRecipe(drain);
+                        helper.assertValueEqual(machine.recipeKey(), drain, "the emptying recipe on the machine");
+                        helper.assertValueEqual(insert(machine.automationView(), full, 1), 1, "a water barrel accepted");
+                    })
+                    .thenExecuteAfter(8, () -> {
+                        helper.assertTrue(machine.inventory().getResource(AssemblerBlockEntity.OUTPUT_SLOT).is(empty),
+                                "what emptying a barrel left in the output slot");
+                        helper.assertValueEqual(machine.fluidOut().getAmountAsInt(0), 50, "water in the output box");
+                        ResourceHandler<FluidResource> out = fluidAt(helper,
+                                cell(AssemblingMachine2Shape.SHAPE, AssemblingMachine2Shape.SOUTH_EDGE), Direction.SOUTH);
+                        try (Transaction transaction = Transaction.openRoot()) {
+                            helper.assertValueEqual(out.extract(FluidResource.of(Fluids.WATER), 50, transaction), 50,
+                                    "water a pipe drew from the output port");
+                            transaction.commit();
+                        }
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("assembling machine 2 fills and empties a barrel");
         }
     }
 }

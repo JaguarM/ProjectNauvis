@@ -3,6 +3,8 @@ package com.jaguarm.nauvismachines.machine.assembler;
 import com.jaguarm.nauvislib.module.ModuleEffect;
 import com.jaguarm.nauvislib.module.ModuleSlots;
 import com.jaguarm.nauvislib.module.Productivity;
+import com.jaguarm.nauvislib.transfer.FluidOutputAccess;
+import com.jaguarm.nauvislib.transfer.PortTank;
 import com.jaguarm.nauvislib.transfer.PowerAccess;
 import com.jaguarm.nauvislib.transfer.MachinePower;
 import com.jaguarm.nauvislib.transfer.MachineAccess;
@@ -19,7 +21,9 @@ import com.jaguarm.nauvismachines.registry.ModBlockEntities;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -42,10 +46,14 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.fluids.FluidStackTemplate;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
@@ -140,6 +148,20 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
     private final ModuleSlots modules;
     private final Productivity productivity = new Productivity();
 
+    /**
+     * Factorio's fluid boxes, on a tier that has them: one fluid in, one fluid out, a thousand
+     * each, pointed at whatever fluid the recipe puts there. Null on the first machine, which has
+     * none - and so cannot be pointed at a recipe with a fluid in it. The tank behind a port is the
+     * library's {@link PortTank}, the same as the refinery's.
+     */
+    private final @Nullable PortTank fluidIn;
+    private final @Nullable PortTank fluidOut;
+    /** What a pipe sees at the output: extraction only, and a wake-up on the way out. */
+    private final @Nullable ResourceHandler<FluidResource> fluidOutView;
+
+    /** Factorio's fluid box on an assembler holds a thousand, like the refinery's. */
+    public static final int TANK_CAPACITY = 1000;
+
     /** Unrestricted, because the machine spends from it. What the grid sees is {@link #gridView}. */
     private final MachinePower energy;
 
@@ -176,6 +198,12 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
                 case AssemblerMenu.DATA_CRAFT_TICKS -> craftTicks;
                 case AssemblerMenu.DATA_ENERGY -> energy.getAmountAsInt();
                 case AssemblerMenu.DATA_ENERGY_PER_TICK -> currentEnergyPerTick();
+                case AssemblerMenu.DATA_FLUID_IN -> fluidIn == null ? 0 : fluidIn.getAmountAsInt(0);
+                case AssemblerMenu.DATA_FLUID_IN_ID -> fluidIn == null ? 0
+                        : BuiltInRegistries.FLUID.getId(fluidIn.shownFluid());
+                case AssemblerMenu.DATA_FLUID_OUT -> fluidOut == null ? 0 : fluidOut.getAmountAsInt(0);
+                case AssemblerMenu.DATA_FLUID_OUT_ID -> fluidOut == null ? 0
+                        : BuiltInRegistries.FLUID.getId(fluidOut.shownFluid());
                 case AssemblerMenu.DATA_ENERGY_CAPACITY -> energyCapacity();
                 default -> 0;
             };
@@ -202,6 +230,15 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         energyPerTick = tier == null ? AssemblingMachine1Block.ENERGY_PER_TICK : tier.energyPerTick();
         modules = new ModuleSlots(tier == null ? 0 : tier.moduleSlots(), this::onInventoryChanged,
                 module -> module.effect().productivity() <= 0 || allowsProductivity());
+        if (tier != null && tier.fluidBoxes()) {
+            fluidIn = new PortTank(TANK_CAPACITY, this::onInventoryChanged);
+            fluidOut = new PortTank(TANK_CAPACITY, this::onInventoryChanged);
+            fluidOutView = new FluidOutputAccess(fluidOut, this::wake);
+        } else {
+            fluidIn = null;
+            fluidOut = null;
+            fluidOutView = null;
+        }
         energy = new MachinePower(energyPerTick * BUFFER_TICKS, this::onPowerChanged);
         gridView = new PowerAccess(energy);
     }
@@ -213,6 +250,33 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
     public ModuleSlots modules() {
         return modules;
+    }
+
+    /** Whether this machine has fluid boxes at all: the tier's, read once. */
+    public boolean hasFluidBoxes() {
+        return fluidIn != null;
+    }
+
+    /** The input fluid box, or null on a tier without one. What a pipe fills, at the input port. */
+    public @Nullable PortTank fluidIn() {
+        return fluidIn;
+    }
+
+    /** The output fluid box, or null on a tier without one. */
+    public @Nullable PortTank fluidOut() {
+        return fluidOut;
+    }
+
+    /** What a pipe sees at the output port: extraction only. Null on a tier without a fluid box. */
+    public @Nullable ResourceHandler<FluidResource> fluidOutView() {
+        return fluidOutView;
+    }
+
+    /** Which recipes this tier runs. The menu asks for the panel; {@link #setRecipe} asks for itself. */
+    public boolean accepts(FacraftRecipe recipe) {
+        return getBlockState().getBlock() instanceof AssemblerBlock tier
+                ? tier.accepts(recipe)
+                : recipe.isHandcraftable();
     }
 
     /** How far towards a free craft, for the readout. */
@@ -301,16 +365,25 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         if (Objects.equals(recipeKey, key)) {
             return;
         }
-        // Factorio refuses a recipe that may not have productivity modules while any sit in the
-        // machine, rather than throwing the modules out or quietly ignoring them. So does this.
-        if (key != null && level instanceof ServerLevel serverLevel
-                && modules.holdsAnyRefusedBy(module -> module.effect().productivity() <= 0)) {
+        FacraftRecipe chosen = null;
+        if (key != null && level instanceof ServerLevel serverLevel) {
             RecipeHolder<?> holder = serverLevel.getServer().getRecipeManager().byKey(key).orElse(null);
-            if (holder != null && holder.value() instanceof FacraftRecipe facraft && !allowsProductivity(facraft)) {
+            chosen = holder != null && holder.value() instanceof FacraftRecipe facraft ? facraft : null;
+            // A recipe this tier cannot run - a fluid on a machine with no fluid box - is refused
+            // rather than stored. The panel already filters on the same rule; this is the last
+            // line behind it.
+            if (chosen != null && !accepts(chosen)) {
+                return;
+            }
+            // Factorio refuses a recipe that may not have productivity modules while any sit in
+            // the machine, rather than throwing the modules out or quietly ignoring them.
+            if (chosen != null && !allowsProductivity(chosen)
+                    && modules.holdsAnyRefusedBy(module -> module.effect().productivity() <= 0)) {
                 return;
             }
         }
         recipeKey = key;
+        pointTanks(chosen);
         progress = 0;
         craftTicks = 0;
         setChanged();
@@ -323,9 +396,39 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         wake();
     }
 
+    /**
+     * Points the fluid boxes at the recipe's fluids, and empties them of anything else.
+     *
+     * <p>The input box takes only the recipe's fluid ingredient, so a run of the wrong fluid is
+     * refused at the wall, and the output box is pointed at the fluid result so a pipe can draw a
+     * fluid the machine has not made yet. A recipe with no fluid leaves both boxes pointed at
+     * nothing, and nothing goes in. Changing recipe throws away what the new one has no use for,
+     * as Factorio does.
+     */
+    private void pointTanks(@Nullable FacraftRecipe recipe) {
+        if (fluidIn == null || fluidOut == null) {
+            return;
+        }
+        Fluid in = null;
+        if (recipe != null && !recipe.fluidIngredients().isEmpty()) {
+            List<Holder<Fluid>> fluids = recipe.fluidIngredients().get(0).ingredient().fluids();
+            in = fluids.isEmpty() ? null : fluids.get(0).value();
+        }
+        Fluid out = recipe != null && !recipe.fluidResults().isEmpty()
+                ? recipe.fluidResults().get(0).fluid().value()
+                : null;
+        fluidIn.assign(in);
+        fluidOut.assign(out);
+    }
+
     /** Called by {@link AssemblerBlock}, and only ever on a tick this machine asked for. */
     public void serverTick(ServerLevel level) {
         FacraftRecipe recipe = recipe(level);
+        if (recipe != null && fluidIn != null && fluidIn.assigned() == null && recipe.hasFluids()) {
+            // Loaded from disk with the tanks not yet pointed: the recipe is resolved by key only
+            // once a level is here, so the first tick is where the boxes learn their fluids.
+            pointTanks(recipe);
+        }
         if (recipe == null) {
             // No recipe, or one that no longer exists. Nothing to schedule for; choosing a
             // recipe wakes it again.
@@ -421,10 +524,30 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
                 }
             }
 
-            ItemStack result = recipe.resultStack();
-            int stored = inventory.insert(
-                    OUTPUT_SLOT, ItemResource.of(result), result.getCount(), transaction);
-            if (stored != result.getCount()) {
+            // The fluid half, on a tier that has it: one fluid in from the input box, one out to
+            // the output box, inside the same transaction as the items, so a full output box
+            // stalls the craft with the lubricant still in the tank.
+            if (!recipe.fluidIngredients().isEmpty()) {
+                if (fluidIn == null) {
+                    return false;
+                }
+                SizedFluidIngredient ingredient = recipe.fluidIngredients().get(0);
+                FluidResource held = fluidIn.getResource(0);
+                if (held.isEmpty() || !ingredient.test(held.toStack(ingredient.amount()))
+                        || fluidIn.extract(0, held, ingredient.amount(), transaction) != ingredient.amount()) {
+                    return false;
+                }
+            }
+
+            if (recipe.hasItemResult()) {
+                ItemStack result = recipe.resultStack();
+                int stored = inventory.insert(
+                        OUTPUT_SLOT, ItemResource.of(result), result.getCount(), transaction);
+                if (stored != result.getCount()) {
+                    return false;
+                }
+            }
+            if (!bankFluid(recipe, transaction)) {
                 return false;
             }
 
@@ -435,12 +558,29 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
-    /** Banks one more result without paying for it: the productivity bonus. Nothing if it will not fit. */
+    /** The fluid result into the output box, if the recipe has one. True when there is room, or none to bank. */
+    private boolean bankFluid(FacraftRecipe recipe, Transaction transaction) {
+        if (recipe.fluidResults().isEmpty()) {
+            return true;
+        }
+        if (fluidOut == null) {
+            return false;
+        }
+        FluidStackTemplate result = recipe.fluidResults().get(0);
+        return fluidOut.insert(0, FluidResource.of(result.fluid()), result.amount(), transaction) == result.amount();
+    }
+
+    /** Banks one more craft's products without paying for them: the productivity bonus. Nothing if they will not fit. */
     private boolean bankFree(FacraftRecipe recipe) {
-        ItemStack result = recipe.resultStack();
         try (Transaction transaction = Transaction.openRoot()) {
-            if (inventory.insert(OUTPUT_SLOT, ItemResource.of(result), result.getCount(), transaction)
-                    != result.getCount()) {
+            if (recipe.hasItemResult()) {
+                ItemStack result = recipe.resultStack();
+                if (inventory.insert(OUTPUT_SLOT, ItemResource.of(result), result.getCount(), transaction)
+                        != result.getCount()) {
+                    return false;
+                }
+            }
+            if (!bankFluid(recipe, transaction)) {
                 return false;
             }
             transaction.commit();
@@ -568,6 +708,10 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         inventory.serialize(output.child("Inventory"));
         modules.serialize(output.child("Modules"));
         productivity.save(output);
+        if (fluidIn != null && fluidOut != null) {
+            fluidIn.serialize(output.child("FluidIn"));
+            fluidOut.serialize(output.child("FluidOut"));
+        }
         energy.serialize(output.child("Energy"));
         output.putInt("Progress", progress);
         if (recipeKey != null) {
@@ -581,6 +725,10 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         input.child("Inventory").ifPresent(inventory::deserialize);
         input.child("Modules").ifPresent(modules::deserialize);
         productivity.load(input);
+        if (fluidIn != null && fluidOut != null) {
+            input.child("FluidIn").ifPresent(fluidIn::deserialize);
+            input.child("FluidOut").ifPresent(fluidOut::deserialize);
+        }
         input.child("Energy").ifPresent(energy::deserialize);
         progress = input.getIntOr("Progress", 0);
         recipeKey = input.getString("Recipe")

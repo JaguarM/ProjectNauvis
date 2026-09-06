@@ -3,6 +3,7 @@ package com.jaguarm.nauvismachines;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
 import com.jaguarm.nauvislib.pack.BenchRecipePacks;
 import com.jaguarm.facrafting.machine.MachineCategories;
+import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlock;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlockEntity;
 import com.jaguarm.nauvismachines.registry.ModBlockEntities;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
@@ -46,5 +47,8 @@ public class NauvisMachines {
         MachineCategories.add(FurnaceBlockEntity.SMELTING, () -> ModBlocks.STONE_FURNACE.get().getName());
         MachineCategories.add(FurnaceBlockEntity.SMELTING, () -> ModBlocks.STEEL_FURNACE.get().getName());
         MachineCategories.add(FurnaceBlockEntity.SMELTING, () -> ModBlocks.ELECTRIC_FURNACE.get().getName());
+        // The recipes with a fluid in them - the electric engine unit, the barrels - are the
+        // second machine's and not the first's: the panel says so under each of them.
+        MachineCategories.add(AssemblerBlock.CRAFTING_WITH_FLUID, () -> ModBlocks.ASSEMBLING_MACHINE_2.get().getName());
     }
 }

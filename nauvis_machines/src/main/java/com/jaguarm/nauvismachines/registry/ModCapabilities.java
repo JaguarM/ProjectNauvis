@@ -3,7 +3,9 @@ package com.jaguarm.nauvismachines.registry;
 import java.util.function.Function;
 
 import com.jaguarm.nauvismachines.NauvisMachines;
+import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlock;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlockEntity;
+import com.jaguarm.nauvismachines.machine.assembler.AssemblingMachine2Shape;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlockEntity;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
 
@@ -64,6 +66,22 @@ public final class ModCapabilities {
                 ModBlocks.STONE_FURNACE.get(), ModBlocks.STEEL_FURNACE.get(), ModBlocks.ELECTRIC_FURNACE.get());
         anywhere(event, Capabilities.Energy.BLOCK, FurnaceBlockEntity.class, FurnaceBlockEntity::gridView,
                 ModBlocks.ELECTRIC_FURNACE.get());
+
+        // The second machine's fluid boxes, at the two faces its shape names and nowhere else: a
+        // pipe on the north edge fills the input, one on the south edge drains the output, and a
+        // pipe on a flank finds nothing - which is Factorio's assembler exactly.
+        AssemblerBlock second = ModBlocks.ASSEMBLING_MACHINE_2.get();
+        event.registerBlock(Capabilities.Fluid.BLOCK, (level, pos, state, blockEntity, side) -> {
+            String port = second.shape().portAt(Multiblock.part(second, state), side, second.facing(state));
+            if (port == null) {
+                return null;
+            }
+            BlockPos anchor = Multiblock.anchorPos(second, state, pos);
+            if (!level.isLoaded(anchor) || !(level.getBlockEntity(anchor) instanceof AssemblerBlockEntity machine)) {
+                return null;
+            }
+            return AssemblingMachine2Shape.FLUID_IN.equals(port) ? machine.fluidIn() : machine.fluidOutView();
+        }, second);
     }
 
     /**

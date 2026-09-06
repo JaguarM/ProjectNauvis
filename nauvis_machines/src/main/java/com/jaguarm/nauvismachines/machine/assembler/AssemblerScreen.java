@@ -58,6 +58,20 @@ public class AssemblerScreen extends MachineScreen<AssemblerMenu> {
      */
     private static final int STATUS_Y = 58;
 
+    /**
+     * The two fluid boxes, on the tier that has them: two thin bars under the output and the
+     * module slots, in the fluid's own colour. The wells above end at y=43 and the status line
+     * starts at 58, so the two bars take 45..50 and 51..56.
+     */
+    private static final int FLUID_IN_X = 116;
+    private static final int FLUID_IN_Y = 45;
+    private static final int FLUID_IN_WIDTH = 54;
+    private static final int FLUID_IN_HEIGHT = 5;
+    private static final int FLUID_OUT_X = 116;
+    private static final int FLUID_OUT_Y = 51;
+    private static final int FLUID_OUT_WIDTH = 54;
+    private static final int FLUID_OUT_HEIGHT = 5;
+
     public AssemblerScreen(AssemblerMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
     }
@@ -68,6 +82,12 @@ public class AssemblerScreen extends MachineScreen<AssemblerMenu> {
         // over exactly the recipe's craft time.
         bar(graphics, x + ARROW_X, y + ARROW_Y, ARROW_WIDTH, ARROW_HEIGHT, menu.craftProgress(), COLOR_FILL);
         meter(graphics, BOLT, x + CHARGE_X, y + CHARGE_Y, menu.charge());
+        if (menu.hasFluidBoxes()) {
+            fluidBar(graphics, x + FLUID_IN_X, y + FLUID_IN_Y, FLUID_IN_WIDTH, FLUID_IN_HEIGHT,
+                    menu.fluidInFill(), menu.fluidIn());
+            fluidBar(graphics, x + FLUID_OUT_X, y + FLUID_OUT_Y, FLUID_OUT_WIDTH, FLUID_OUT_HEIGHT,
+                    menu.fluidOutFill(), menu.fluidOut());
+        }
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.jaguarm.nauvismachines.machine.assembler;
 
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -10,7 +11,8 @@ import net.minecraft.world.level.block.BaseEntityBlock;
  * <p>The same ten blocks, the same screen, the same block entity; a tier is two numbers on the
  * block, exactly as a belt tier is a speed on a subclass. Half again as fast as the first machine
  * and twice as hungry, which is Factorio's trade. Behind {@code automation-2}, which wants steel
- * and green science. Module slots are the part of the tier this pack does not have yet.
+ * and green science. Two module slots, and a fluid box each side - which is why it faces, and the
+ * first machine does not.
  */
 public class AssemblingMachine2Block extends AssemblerBlock {
 
@@ -48,4 +50,15 @@ public class AssemblingMachine2Block extends AssemblerBlock {
     }
 
     public static final int MODULE_SLOTS = 2;
+
+    /** The same footprint with a fluid box each side, and so a facing. See {@link AssemblingMachine2Shape}. */
+    @Override
+    public MachineShape shape() {
+        return AssemblingMachine2Shape.SHAPE;
+    }
+
+    @Override
+    public boolean fluidBoxes() {
+        return true;
+    }
 }

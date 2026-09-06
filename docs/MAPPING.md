@@ -111,12 +111,11 @@ the oil recipes — `basic-oil-processing`, the two crackings, the three solid-f
 `coal-liquefaction` — whose products this pack's recipe dump carries as raw inputs with no recipe
 of their own. A technology that unlocks only those unlocks nothing here.
 
-Fourteen more rows are the barrels, because `fluid-handling` unlocks them by recipe name:
-`fill-crude-oil-barrel` maps to the `crude-oil-barrel` item, whose recipe it is, and
-`empty-crude-oil-barrel` is `null` because emptying a barrel makes a fluid, which is the same case
-as the oil recipes above. Seven fluids, two rows each. The filled barrels are `raw` today, so the
-generator reports them as *not registered* and passes on nothing — the moment a barrel recipe
-exists the same rows start unlocking it.
+The barrels need no rows: their fourteen recipes are in `data/fluid_recipes.json`, and a name in
+that file resolves to its own key - `fill-water-barrel` to `nauvis_fluids:fill_water_barrel` -
+so `fluid-handling` unlocks them by naming them. The filled barrels stay `raw` in the items
+table, because the dump gives them no recipe of their own; the fluid recipes file is where
+both halves of each pair live.
 
 **A recipe name in neither table is a `GenError`, not a dropped unlock.** That is the same rule
 the recipe generator applies to an unmapped ingredient, and for the same reason: "no opinion" and

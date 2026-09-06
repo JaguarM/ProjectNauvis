@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 
 import com.jaguarm.nauvismachines.NauvisMachines;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
+import com.jaguarm.nauvismachines.machine.assembler.AssemblingMachine2Shape;
 import com.jaguarm.nauvismachines.machine.furnace.ElectricFurnaceShape;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlock;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceShape;
@@ -32,6 +33,7 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
  * Block and item models, generated from each machine's shape rather than written beside it.
@@ -105,9 +107,11 @@ public class NauvisMachinesModels extends ModelProvider {
         machine(blockModels, ModBlocks.ASSEMBLING_MACHINE_1.get(), AssemblerShape.SHAPE,
                 new Look(new Textures(blastSide, metalTop, metalTop),
                         Map.of(AssemblerShape.GEARBOX, machinery), Map.of()), false);
-        machine(blockModels, ModBlocks.ASSEMBLING_MACHINE_2.get(), AssemblerShape.SHAPE,
+        // The second machine has a fluid box each side and so a facing: its shape has two port
+        // cells, and its blockstate turns with the machine as a boiler's does.
+        facingMachine(blockModels, ModBlocks.ASSEMBLING_MACHINE_2.get(), AssemblingMachine2Shape.SHAPE,
                 new Look(new Textures(Identifier.withDefaultNamespace("block/light_blue_terracotta"), metalTop, metalTop),
-                        Map.of(AssemblerShape.GEARBOX, machinery), Map.of()), false);
+                        Map.of(AssemblerShape.GEARBOX, machinery), Map.of()));
 
         // The furnaces. The stack's top is the fire while it is lit.
         machine(blockModels, ModBlocks.STONE_FURNACE.get(), FurnaceShape.SHAPE,
@@ -192,6 +196,31 @@ public class NauvisMachinesModels extends ModelProvider {
         }
 
         // The whole machine, shrunk into one block. See inventoryModel.
+        blockModels.registerSimpleItemModel(block, inventoryModel(blockModels, block, shape, look.casing()));
+    }
+
+    /**
+     * A machine that faces: one dispatch over {@code part} and {@code HORIZONTAL_FACING} together,
+     * with each cell's own turn and the machine's added by hand. Not two mutators in a row - a
+     * {@code VariantMutator} sets {@code y} rather than adding to it, and the facing would overwrite
+     * the corner's turn. See {@code NauvisPowerModels} and {@code docs/PITFALLS.md}.
+     */
+    private void facingMachine(BlockModelGenerators blockModels, Block block, MachineShape shape, Look look) {
+        Map<String, Identifier> models = new HashMap<>();
+        for (MachineCell cell : shape.cells()) {
+            models.computeIfAbsent(cell.model(), name -> cellModel(blockModels, block, name, cell, look.of(name)));
+        }
+        PropertyDispatch.C2<MultiVariant, Integer, Direction> dispatch =
+                PropertyDispatch.initial(shape.part(), BlockStateProperties.HORIZONTAL_FACING);
+        for (int index = 0; index < shape.cellCount(); index++) {
+            MachineCell cell = shape.cell(index);
+            for (Direction facing : Direction.Plane.HORIZONTAL) {
+                dispatch = dispatch.select(index, facing, BlockModelGenerators
+                        .plainVariant(models.get(cell.model()))
+                        .with(turn(cell.turns() + Boxes.quarterTurns(facing))));
+            }
+        }
+        blockModels.blockStateOutput.accept(MultiVariantGenerator.dispatch(block).with(dispatch));
         blockModels.registerSimpleItemModel(block, inventoryModel(blockModels, block, shape, look.casing()));
     }
 

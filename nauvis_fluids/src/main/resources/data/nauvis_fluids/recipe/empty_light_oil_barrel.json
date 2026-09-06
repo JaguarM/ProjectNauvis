@@ -1,0 +1,29 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 4,
+  "group": "intermediate",
+  "order": "0112",
+  "category": "crafting-with-fluid",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_fluids:light_oil_barrel",
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "nauvis_fluids:empty_barrel",
+    "count": 1
+  },
+  "fluid_results": [
+    {
+      "id": "nauvis_fluids:light_oil",
+      "amount": 50
+    }
+  ]
+}

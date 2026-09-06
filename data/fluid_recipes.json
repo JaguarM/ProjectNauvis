@@ -1,7 +1,7 @@
 {
   "_": "Factorio's recipes that are not named after one item: they make a fluid, several things at once, or one thing that several recipes make. reference/factorio/recipes.json is keyed by product and cannot carry them, so these are transcribed from Wube's data/base/prototypes/recipe.lua, in the same units - time in seconds, amounts in items or fluid units - and every id here is resolved through data/mapping.json's items table exactly as the dump's are. tools/gen_recipes.py turns them into facraft recipes with fluid ingredients and fluid results; tools/gen_technologies.py resolves a technology that unlocks one to its recipe key, <owner>:<id with underscores>. Never edit the numbers: they are the spec, the same as the dump's.",
-  "_category": "Factorio's recipe category, which is the machine that runs it: oil-processing is the refinery's, chemistry the chemical plant's. A recipe here always has one, because every one of them takes or makes a fluid and the hand has no pipes.",
-  "_missing": "coal-liquefaction (10 coal, 25 heavy oil, 50 steam -> 90 heavy oil, 20 light oil, 10 petroleum gas, 5 s) is left out until production science exists: its technology needs it, and a recipe no technology names is free from the first tick. The barrel recipes wait on a machine that fills them.",
+  "_category": "Factorio's recipe category, which is the machine that runs it: oil-processing is the refinery's, chemistry the chemical plant's. A recipe here always has one, because every one of them takes or makes a fluid and the hand has no pipes.`crafting-with-fluid` is the assembler with a fluid box - assembling machine 2 - and the barrel recipes are its: an empty barrel and 50 of a fluid make a filled one in 0.2 s, and the reverse empties it, from Wube's fluid-recipes.lua.",
+  "_missing": "coal-liquefaction (10 coal, 25 heavy oil, 50 steam -> 90 heavy oil, 20 light oil, 10 petroleum gas, 5 s) is left out until production science exists: its technology needs it, and a recipe no technology names is free from the first tick.",
   "recipes": [
     {
       "id": "basic-oil-processing",
@@ -9,8 +9,18 @@
       "owner": "nauvis_fluids",
       "category": "oil-processing",
       "time": 5,
-      "ingredients": [{"id": "crude-oil", "amount": 100}],
-      "results": [{"id": "petroleum-gas", "amount": 45}]
+      "ingredients": [
+        {
+          "id": "crude-oil",
+          "amount": 100
+        }
+      ],
+      "results": [
+        {
+          "id": "petroleum-gas",
+          "amount": 45
+        }
+      ]
     },
     {
       "id": "advanced-oil-processing",
@@ -18,8 +28,30 @@
       "owner": "nauvis_fluids",
       "category": "oil-processing",
       "time": 5,
-      "ingredients": [{"id": "water", "amount": 50}, {"id": "crude-oil", "amount": 100}],
-      "results": [{"id": "heavy-oil", "amount": 25}, {"id": "light-oil", "amount": 45}, {"id": "petroleum-gas", "amount": 55}]
+      "ingredients": [
+        {
+          "id": "water",
+          "amount": 50
+        },
+        {
+          "id": "crude-oil",
+          "amount": 100
+        }
+      ],
+      "results": [
+        {
+          "id": "heavy-oil",
+          "amount": 25
+        },
+        {
+          "id": "light-oil",
+          "amount": 45
+        },
+        {
+          "id": "petroleum-gas",
+          "amount": 55
+        }
+      ]
     },
     {
       "id": "heavy-oil-cracking",
@@ -27,8 +59,22 @@
       "owner": "nauvis_fluids",
       "category": "chemistry",
       "time": 2,
-      "ingredients": [{"id": "water", "amount": 30}, {"id": "heavy-oil", "amount": 40}],
-      "results": [{"id": "light-oil", "amount": 30}]
+      "ingredients": [
+        {
+          "id": "water",
+          "amount": 30
+        },
+        {
+          "id": "heavy-oil",
+          "amount": 40
+        }
+      ],
+      "results": [
+        {
+          "id": "light-oil",
+          "amount": 30
+        }
+      ]
     },
     {
       "id": "light-oil-cracking",
@@ -36,8 +82,22 @@
       "owner": "nauvis_fluids",
       "category": "chemistry",
       "time": 2,
-      "ingredients": [{"id": "water", "amount": 30}, {"id": "light-oil", "amount": 30}],
-      "results": [{"id": "petroleum-gas", "amount": 20}]
+      "ingredients": [
+        {
+          "id": "water",
+          "amount": 30
+        },
+        {
+          "id": "light-oil",
+          "amount": 30
+        }
+      ],
+      "results": [
+        {
+          "id": "petroleum-gas",
+          "amount": 20
+        }
+      ]
     },
     {
       "id": "solid-fuel-from-heavy-oil",
@@ -45,8 +105,18 @@
       "owner": "nauvis_fluids",
       "category": "chemistry",
       "time": 2,
-      "ingredients": [{"id": "heavy-oil", "amount": 20}],
-      "results": [{"id": "solid-fuel", "amount": 1}]
+      "ingredients": [
+        {
+          "id": "heavy-oil",
+          "amount": 20
+        }
+      ],
+      "results": [
+        {
+          "id": "solid-fuel",
+          "amount": 1
+        }
+      ]
     },
     {
       "id": "solid-fuel-from-light-oil",
@@ -54,8 +124,18 @@
       "owner": "nauvis_fluids",
       "category": "chemistry",
       "time": 2,
-      "ingredients": [{"id": "light-oil", "amount": 10}],
-      "results": [{"id": "solid-fuel", "amount": 1}]
+      "ingredients": [
+        {
+          "id": "light-oil",
+          "amount": 10
+        }
+      ],
+      "results": [
+        {
+          "id": "solid-fuel",
+          "amount": 1
+        }
+      ]
     },
     {
       "id": "solid-fuel-from-petroleum-gas",
@@ -63,8 +143,340 @@
       "owner": "nauvis_fluids",
       "category": "chemistry",
       "time": 2,
-      "ingredients": [{"id": "petroleum-gas", "amount": 20}],
-      "results": [{"id": "solid-fuel", "amount": 1}]
+      "ingredients": [
+        {
+          "id": "petroleum-gas",
+          "amount": 20
+        }
+      ],
+      "results": [
+        {
+          "id": "solid-fuel",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "fill-water-barrel",
+      "name": "Fill water barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "water",
+          "amount": 50
+        }
+      ],
+      "results": [
+        {
+          "id": "water-barrel",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "empty-water-barrel",
+      "name": "Empty water barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "water-barrel",
+          "amount": 1
+        }
+      ],
+      "results": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "water",
+          "amount": 50
+        }
+      ]
+    },
+    {
+      "id": "fill-crude-oil-barrel",
+      "name": "Fill crude oil barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "crude-oil",
+          "amount": 50
+        }
+      ],
+      "results": [
+        {
+          "id": "crude-oil-barrel",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "empty-crude-oil-barrel",
+      "name": "Empty crude oil barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "crude-oil-barrel",
+          "amount": 1
+        }
+      ],
+      "results": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "crude-oil",
+          "amount": 50
+        }
+      ]
+    },
+    {
+      "id": "fill-heavy-oil-barrel",
+      "name": "Fill heavy oil barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "heavy-oil",
+          "amount": 50
+        }
+      ],
+      "results": [
+        {
+          "id": "heavy-oil-barrel",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "empty-heavy-oil-barrel",
+      "name": "Empty heavy oil barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "heavy-oil-barrel",
+          "amount": 1
+        }
+      ],
+      "results": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "heavy-oil",
+          "amount": 50
+        }
+      ]
+    },
+    {
+      "id": "fill-light-oil-barrel",
+      "name": "Fill light oil barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "light-oil",
+          "amount": 50
+        }
+      ],
+      "results": [
+        {
+          "id": "light-oil-barrel",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "empty-light-oil-barrel",
+      "name": "Empty light oil barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "light-oil-barrel",
+          "amount": 1
+        }
+      ],
+      "results": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "light-oil",
+          "amount": 50
+        }
+      ]
+    },
+    {
+      "id": "fill-lubricant-barrel",
+      "name": "Fill lubricant barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "lubricant",
+          "amount": 50
+        }
+      ],
+      "results": [
+        {
+          "id": "lubricant-barrel",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "empty-lubricant-barrel",
+      "name": "Empty lubricant barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "lubricant-barrel",
+          "amount": 1
+        }
+      ],
+      "results": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "lubricant",
+          "amount": 50
+        }
+      ]
+    },
+    {
+      "id": "fill-petroleum-gas-barrel",
+      "name": "Fill petroleum gas barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "petroleum-gas",
+          "amount": 50
+        }
+      ],
+      "results": [
+        {
+          "id": "petroleum-gas-barrel",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "empty-petroleum-gas-barrel",
+      "name": "Empty petroleum gas barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "petroleum-gas-barrel",
+          "amount": 1
+        }
+      ],
+      "results": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "petroleum-gas",
+          "amount": 50
+        }
+      ]
+    },
+    {
+      "id": "fill-sulfuric-acid-barrel",
+      "name": "Fill sulfuric acid barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "sulfuric-acid",
+          "amount": 50
+        }
+      ],
+      "results": [
+        {
+          "id": "sulfuric-acid-barrel",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "empty-sulfuric-acid-barrel",
+      "name": "Empty sulfuric acid barrel",
+      "owner": "nauvis_fluids",
+      "category": "crafting-with-fluid",
+      "time": 0.2,
+      "ingredients": [
+        {
+          "id": "sulfuric-acid-barrel",
+          "amount": 1
+        }
+      ],
+      "results": [
+        {
+          "id": "empty-barrel",
+          "amount": 1
+        },
+        {
+          "id": "sulfuric-acid",
+          "amount": 50
+        }
+      ]
     }
   ]
 }

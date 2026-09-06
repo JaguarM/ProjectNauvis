@@ -287,6 +287,17 @@ the tank behind a port takes only the fluid the recipe put there, so a run of th
 refused at the wall. One base class runs both the refinery and the chemical plant; a
 `ProcessingLayout` is the whole difference.
 
+**A tier that grows a fluid box grows a facing with it.** Assembling machine 1 has no direction -
+what goes in and out is the inserters' business - and assembling machine 2 has two fluid boxes on
+two named faces, so it is the only assembler with a `FACING` property, and the property lives on
+the tier: `AssemblerBlock.fluidBoxes()` is a constant on the subclass, read from `Block`'s
+constructor to decide the blockstate, and `AssemblingMachine2Shape` is `AssemblerShape` with two
+port cells and two ports. The tanks behind them are the library's `PortTank`, pointed at the
+recipe's fluid when the recipe is chosen, the same object the refinery uses; the fluid half of a
+craft is inside the same transaction as the items, so a full output box stalls the craft with
+the lubricant still in the tank. Which recipes a tier runs is `AssemblerBlock.accepts`, asked by
+the menu for the panel and by the block entity for itself, so the two cannot disagree.
+
 **A renderer that draws outside its own block has to say so.** `getRenderBoundingBox` defaults to
 the one block, and geometry past it is frustum-culled with no error and nothing in the log. The
 wires between poles hit this exactly. See `API-26.2.md`.

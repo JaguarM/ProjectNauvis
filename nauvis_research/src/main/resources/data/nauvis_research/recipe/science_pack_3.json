@@ -16,7 +16,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 240,
   "group": "intermediate",
-  "order": "0144",
+  "order": "0158",
   "ingredients": [
     {
       "ingredient": "neoprogressivematerials:advanced_circuit",

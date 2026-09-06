@@ -107,11 +107,17 @@ Oil
 - **A tank on two runs is levelled by each in turn**, one tick apart, rather than as one segment.
   It converges within a few ticks and then sleeps, which is close enough to be indistinguishable at
   the readout, and not Factorio's single fluid segment.
-- **No coal liquefaction, and no barrels.** Coal liquefaction's technology needs production
-  science, which the tree does not reach, and a recipe no technology names is free from the first
-  tick, so the recipe is left out of `data/fluid_recipes.json` rather than shipped unlocked. The
-  barrel recipes need a machine that takes and gives fluids in an item, which is Factorio's
-  assembler with fluids, and wait on it.
+- **No coal liquefaction.** Its technology needs production science, which the tree does not
+  reach, and a recipe no technology names is free from the first tick, so the recipe is left out
+  of `data/fluid_recipes.json` rather than shipped unlocked.
+- **An assembler's fluid boxes are two fixed faces.** Factorio's assembling machine 2 has its
+  input box on one side and its output on the opposite one and is rotated to move them; here
+  the machine faces the way the player stood when placing it, input towards them, and is not
+  turned afterwards - break it and place it again. The first machine has no fluid box and no
+  facing, as in Factorio.
+- **No processing unit yet.** It is the other recipe with a fluid in it - two advanced circuits,
+  twenty circuits and five sulfuric acid - and its technology is not in the tree; the item is
+  not registered until it is.
 - **Explosives do nothing.** The item exists because the chemical plant makes it and the mapping
   owns it; cliff explosives and artillery are milestones away.
 - **A mine trigger is only heard with Facrafting installed.** The pumpjack reports through
