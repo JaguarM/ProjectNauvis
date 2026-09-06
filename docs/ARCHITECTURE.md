@@ -243,6 +243,17 @@ supposed to be asleep. Meeting in the middle converges in one step and then noth
 run needs no such rule, because it pushes into sinks and pulls from sources and a machine is never
 both for one fluid.
 
+**A module is an item the library knows the shape of and a slot the machine owns.** Factorio's
+three module effects are `nauvis_lib`'s `ModuleEffect` - speed, energy and productivity as
+fractions, added across a machine's slots, with Factorio's floor of a fifth on speed and power -
+and an item that is a module implements the library's `Module`. The items are `nauvis_machines`'
+and the slots are on every machine mod through `ModuleSlots`, one module a slot, so a refinery in
+the fluids mod holds a module from the machines mod without either naming the other. A machine
+reads the sum once, as a craft starts, and holds it for the craft; productivity is `Productivity`,
+a bar every craft adds to that pays out one free craft's worth of product when it fills and stays
+owed when the output is full. The slot count is a number on the block beside the crafting speed,
+because Factorio's counts are identity.
+
 **A battery takes only surplus and gives only into a shortfall.** The grid tells its endpoints apart
 by what they refuse - a generator refuses filling, a machine refuses draining - and an accumulator
 refuses neither, so it carries `nauvis_lib`'s `EnergyBuffer` marker and `PowerNetwork` gives it

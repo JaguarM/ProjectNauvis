@@ -1,5 +1,6 @@
 package com.jaguarm.nauvisresearch.lab;
 
+import com.jaguarm.nauvislib.module.ModuleSlots;
 import com.jaguarm.nauvisresearch.registry.ModBlocks;
 import com.jaguarm.nauvisresearch.registry.ModMenus;
 
@@ -48,6 +49,10 @@ public class LabMenu extends AbstractContainerMenu {
     public static final int PACKS_Y = 34;
     public static final int PACK_COLUMNS = 6;
 
+    /** The two module slots, in a column to the left of the packs. */
+    public static final int MODULE_X = 8;
+    public static final int MODULE_Y = 34;
+
     private static final int PLAYER_SLOTS = 36;
 
     private final ContainerData data;
@@ -57,12 +62,13 @@ public class LabMenu extends AbstractContainerMenu {
     public LabMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory,
                 new LabInventory(LabBlockEntity.SLOT_COUNT, () -> {}),
+                new ModuleSlots(LabBlockEntity.MODULE_SLOTS, () -> {}),
                 new SimpleContainerData(DATA_COUNT),
                 ContainerLevelAccess.NULL);
     }
 
     public LabMenu(int containerId, Inventory playerInventory, LabInventory packs,
-            ContainerData data, ContainerLevelAccess access) {
+            ModuleSlots modules, ContainerData data, ContainerLevelAccess access) {
         super(ModMenus.LAB.get(), containerId);
         this.data = data;
         this.access = access;
@@ -71,6 +77,9 @@ public class LabMenu extends AbstractContainerMenu {
             addSlot(new ResourceHandlerSlot(packs, packs::set, slot,
                     PACKS_X + (slot % PACK_COLUMNS) * 18,
                     PACKS_Y + (slot / PACK_COLUMNS) * 18));
+        }
+        for (int slot = 0; slot < modules.size(); slot++) {
+            addSlot(new ResourceHandlerSlot(modules, modules::set, slot, MODULE_X, MODULE_Y + slot * 18));
         }
 
         for (int row = 0; row < 3; row++) {
@@ -128,14 +137,19 @@ public class LabMenu extends AbstractContainerMenu {
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
 
-        int machineEnd = LabBlockEntity.SLOT_COUNT;
+        int packsEnd = LabBlockEntity.SLOT_COUNT;
+        int machineEnd = packsEnd + LabBlockEntity.MODULE_SLOTS;
         int inventoryEnd = machineEnd + PLAYER_SLOTS;
 
         if (index < machineEnd) {
             if (!moveItemStackTo(stack, machineEnd, inventoryEnd, true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (!moveItemStackTo(stack, 0, machineEnd, false)) {
+        } else if (ModuleSlots.moduleOf(stack) != null) {
+            if (!moveItemStackTo(stack, packsEnd, machineEnd, false)) {
+                return ItemStack.EMPTY;
+            }
+        } else if (!moveItemStackTo(stack, 0, packsEnd, false)) {
             return ItemStack.EMPTY;
         }
 

@@ -1,5 +1,8 @@
 package com.jaguarm.nauvismachines.machine.assembler;
 
+import com.jaguarm.nauvislib.module.ModuleEffect;
+import com.jaguarm.nauvislib.module.ModuleSlots;
+import com.jaguarm.nauvislib.module.Productivity;
 import com.jaguarm.nauvislib.transfer.PowerAccess;
 import com.jaguarm.nauvislib.transfer.MachinePower;
 import com.jaguarm.nauvislib.transfer.MachineAccess;
@@ -126,6 +129,17 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
     private final AssemblerInventory inventory = new AssemblerInventory(SLOT_COUNT, this::onInventoryChanged);
 
+    /**
+     * The tier's module slots - none on the first machine - and the free craft they work towards.
+     *
+     * <p>Their sum is read once a craft, as it starts: the speed multiplies the crafting speed,
+     * the energy multiplies the draw, and the productivity goes into the bank after each craft.
+     * A productivity module is refused unless the recipe is an intermediate product, which is
+     * Factorio's rule and the one restriction modules have; see {@link #allowsProductivity}.
+     */
+    private final ModuleSlots modules;
+    private final Productivity productivity = new Productivity();
+
     /** Unrestricted, because the machine spends from it. What the grid sees is {@link #gridView}. */
     private final MachinePower energy;
 
@@ -161,7 +175,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
                 case AssemblerMenu.DATA_PROGRESS -> progress;
                 case AssemblerMenu.DATA_CRAFT_TICKS -> craftTicks;
                 case AssemblerMenu.DATA_ENERGY -> energy.getAmountAsInt();
-                case AssemblerMenu.DATA_ENERGY_PER_TICK -> energyPerTick;
+                case AssemblerMenu.DATA_ENERGY_PER_TICK -> currentEnergyPerTick();
                 case AssemblerMenu.DATA_ENERGY_CAPACITY -> energyCapacity();
                 default -> 0;
             };
@@ -186,6 +200,8 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         AssemblerBlock tier = state.getBlock() instanceof AssemblerBlock block ? block : null;
         craftingSpeed = tier == null ? AssemblingMachine1Block.CRAFTING_SPEED : tier.craftingSpeed();
         energyPerTick = tier == null ? AssemblingMachine1Block.ENERGY_PER_TICK : tier.energyPerTick();
+        modules = new ModuleSlots(tier == null ? 0 : tier.moduleSlots(), this::onInventoryChanged,
+                module -> module.effect().productivity() <= 0 || allowsProductivity());
         energy = new MachinePower(energyPerTick * BUFFER_TICKS, this::onPowerChanged);
         gridView = new PowerAccess(energy);
     }
@@ -193,6 +209,39 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
     /** Factorio's crafting speed for this machine's tier. */
     public float craftingSpeed() {
         return craftingSpeed;
+    }
+
+    public ModuleSlots modules() {
+        return modules;
+    }
+
+    /** How far towards a free craft, for the readout. */
+    public Productivity productivity() {
+        return productivity;
+    }
+
+    /** The tier's draw under the modules in it right now. What the screen's bolt is read against. */
+    public int currentEnergyPerTick() {
+        return modules.effect().scaleEnergy(energyPerTick);
+    }
+
+    /**
+     * Whether a productivity module may go in: Factorio allows them only for intermediate
+     * products, which is what the recipe's tab says. A machine with no recipe chosen takes one, as
+     * Factorio's does; choosing a recipe that may not have them is then refused while they sit
+     * there - see {@link #setRecipe}.
+     */
+    public boolean allowsProductivity() {
+        if (recipeKey == null || !(level instanceof ServerLevel serverLevel)) {
+            return true;
+        }
+        FacraftRecipe recipe = recipe(serverLevel);
+        return recipe == null || allowsProductivity(recipe);
+    }
+
+    /** Factorio's restriction, read off the recipe's crafting-menu tab. */
+    public static boolean allowsProductivity(FacraftRecipe recipe) {
+        return "intermediate".equals(recipe.group());
     }
 
     /** FE this tier spends per tick of a craft. */
@@ -252,6 +301,15 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         if (Objects.equals(recipeKey, key)) {
             return;
         }
+        // Factorio refuses a recipe that may not have productivity modules while any sit in the
+        // machine, rather than throwing the modules out or quietly ignoring them. So does this.
+        if (key != null && level instanceof ServerLevel serverLevel
+                && modules.holdsAnyRefusedBy(module -> module.effect().productivity() <= 0)) {
+            RecipeHolder<?> holder = serverLevel.getServer().getRecipeManager().byKey(key).orElse(null);
+            if (holder != null && holder.value() instanceof FacraftRecipe facraft && !allowsProductivity(facraft)) {
+                return;
+            }
+        }
         recipeKey = key;
         progress = 0;
         craftTicks = 0;
@@ -278,7 +336,11 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
 
-        craftTicks = craftTicksFor(recipe, craftingSpeed);
+        // The modules are read as the craft starts and hold for the craft, which is Factorio's
+        // rule: a module pulled out mid-craft finishes that craft at the speed it began at.
+        ModuleEffect effect = modules.effect();
+        craftTicks = craftTicksFor(recipe, (float) (craftingSpeed * effect.speedFactor()));
+        int draw = effect.scaleEnergy(energyPerTick);
 
         // The ingredients are checked once, as a craft starts. Counting down is the cheap part;
         // simulating a whole craft every tick for every machine in a base is not.
@@ -286,7 +348,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
 
-        if (energy.getAmountAsInt() < energyPerTick) {
+        if (energy.getAmountAsInt() < draw) {
             // Out of power, holding the craft where it stands. Nothing here can wake it - the
             // grid can, and MachinePower is what tells us it has. PLAN.md's brownout, where a
             // machine that cannot refill runs slower rather than stopping, is the later shape.
@@ -296,7 +358,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
         if (progress < craftTicks) {
             progress++;
-            energy.set(energy.getAmountAsInt() - energyPerTick);
+            energy.set(energy.getAmountAsInt() - draw);
         }
 
         if (progress >= craftTicks) {
@@ -312,6 +374,16 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
             // does: "craft a lab" is finished by an assembler making one. Facrafting carries the
             // news to whoever is counting, and this mod never learns who that is.
             CraftListeners.fireMachine(level, recipe.resultStack());
+
+            // Productivity: every craft earns a fraction of a free one, and when a whole one is
+            // owed it is handed over unpaid. One that will not fit stays owed, as Factorio's does.
+            if (allowsProductivity(recipe)) {
+                productivity.earn(effect.productivityBonus());
+            }
+            if (productivity.owed() && bankFree(recipe)) {
+                productivity.pay();
+                CraftListeners.fireMachine(level, recipe.resultStack());
+            }
         }
 
         setChanged();
@@ -359,6 +431,19 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
             if (commit) {
                 transaction.commit();
             }
+            return true;
+        }
+    }
+
+    /** Banks one more result without paying for it: the productivity bonus. Nothing if it will not fit. */
+    private boolean bankFree(FacraftRecipe recipe) {
+        ItemStack result = recipe.resultStack();
+        try (Transaction transaction = Transaction.openRoot()) {
+            if (inventory.insert(OUTPUT_SLOT, ItemResource.of(result), result.getCount(), transaction)
+                    != result.getCount()) {
+                return false;
+            }
+            transaction.commit();
             return true;
         }
     }
@@ -432,7 +517,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new AssemblerMenu(containerId, playerInventory, inventory, menuData, worldPosition);
+        return new AssemblerMenu(containerId, playerInventory, inventory, modules, menuData, worldPosition);
     }
 
     /**
@@ -466,12 +551,23 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
             inventory.set(slot, ItemResource.EMPTY, 0);
             Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), resource.toStack(amount));
         }
+        for (int slot = 0; slot < modules.size(); slot++) {
+            int amount = modules.getAmountAsInt(slot);
+            if (amount <= 0) {
+                continue;
+            }
+            ItemResource resource = modules.getResource(slot);
+            modules.set(slot, ItemResource.EMPTY, 0);
+            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), resource.toStack(amount));
+        }
     }
 
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
         inventory.serialize(output.child("Inventory"));
+        modules.serialize(output.child("Modules"));
+        productivity.save(output);
         energy.serialize(output.child("Energy"));
         output.putInt("Progress", progress);
         if (recipeKey != null) {
@@ -483,6 +579,8 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         input.child("Inventory").ifPresent(inventory::deserialize);
+        input.child("Modules").ifPresent(modules::deserialize);
+        productivity.load(input);
         input.child("Energy").ifPresent(energy::deserialize);
         progress = input.getIntOr("Progress", 0);
         recipeKey = input.getString("Recipe")

@@ -87,6 +87,14 @@ public abstract class AssemblerBlock extends BaseEntityBlock implements Multiblo
     /** FE spent per tick of a craft, at the pack's ratio of 120 FE/t to Factorio's 900 kW engine. */
     public abstract int energyPerTick();
 
+    /**
+     * Factorio's module slots: none on the first machine, two on the second, four on the third.
+     * Identity like the footprint, and on the block like the speed, so a tier is a class.
+     */
+    public int moduleSlots() {
+        return 0;
+    }
+
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(AssemblerShape.SHAPE.part());

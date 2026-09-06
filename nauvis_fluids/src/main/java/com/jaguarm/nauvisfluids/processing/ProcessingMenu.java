@@ -2,6 +2,7 @@ package com.jaguarm.nauvisfluids.processing;
 
 import com.jaguarm.facrafting.machine.RecipeSelector;
 import com.jaguarm.facrafting.recipe.FacraftRecipe;
+import com.jaguarm.nauvislib.module.ModuleSlots;
 
 import org.jspecify.annotations.Nullable;
 
@@ -61,13 +62,18 @@ public abstract class ProcessingMenu extends AbstractContainerMenu implements Re
     private final BlockPos machinePos;
     private final Level level;
 
+    /** How many of this menu's slots are the machine's, items and modules; the player's follow. */
+    private final int machineSlots;
+
     /**
      * @param inputSlots  x, y of each item input slot, in the screen's frame
      * @param outputSlots x, y of each item output slot
+     * @param moduleSlots x, y of each module slot, one per slot the layout has
      */
     protected ProcessingMenu(MenuType<?> type, int containerId, Inventory playerInventory,
-            ProcessingLayout layout, ItemStacksResourceHandler items, int[][] inputSlots,
-            int[][] outputSlots, ContainerData data, BlockPos machinePos) {
+            ProcessingLayout layout, ItemStacksResourceHandler items, ModuleSlots modules,
+            int[][] inputSlots, int[][] outputSlots, int[][] moduleSlots, ContainerData data,
+            BlockPos machinePos) {
         super(type, containerId);
         this.layout = layout;
         this.data = data;
@@ -81,6 +87,11 @@ public abstract class ProcessingMenu extends AbstractContainerMenu implements Re
             addSlot(new OutputSlot(items, layout.itemInputs() + index,
                     outputSlots[index][0], outputSlots[index][1]));
         }
+        for (int index = 0; index < modules.size(); index++) {
+            addSlot(new ResourceHandlerSlot(modules, modules::set, index,
+                    moduleSlots[index][0], moduleSlots[index][1]));
+        }
+        machineSlots = slots.size();
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 addSlot(new Slot(playerInventory, 9 + row * 9 + col, 8 + col * 18, 84 + row * 18));
@@ -184,10 +195,15 @@ public abstract class ProcessingMenu extends AbstractContainerMenu implements Re
         }
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
-        int machineEnd = layout.itemSlots();
+        int machineEnd = machineSlots;
         int inventoryEnd = machineEnd + PLAYER_SLOTS;
         if (index < machineEnd) {
             if (!moveItemStackTo(stack, machineEnd, inventoryEnd, true)) {
+                return ItemStack.EMPTY;
+            }
+        } else if (ModuleSlots.moduleOf(stack) != null) {
+            // A module goes to the module slots and nowhere else.
+            if (!moveItemStackTo(stack, layout.itemSlots(), machineEnd, false)) {
                 return ItemStack.EMPTY;
             }
         } else if (layout.itemInputs() == 0 || !moveItemStackTo(stack, 0, layout.itemInputs(), false)) {

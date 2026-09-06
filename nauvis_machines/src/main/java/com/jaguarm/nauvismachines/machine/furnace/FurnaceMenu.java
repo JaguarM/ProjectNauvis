@@ -2,6 +2,7 @@ package com.jaguarm.nauvismachines.machine.furnace;
 
 import org.jspecify.annotations.Nullable;
 
+import com.jaguarm.nauvislib.module.ModuleSlots;
 import com.jaguarm.nauvismachines.client.ClientSlotRules;
 import com.jaguarm.nauvismachines.registry.ModMenus;
 
@@ -56,6 +57,9 @@ public class FurnaceMenu extends AbstractContainerMenu {
     public static final int FUEL_Y = 35;
     public static final int OUTPUT_X = 116;
     public static final int OUTPUT_Y = 26;
+    /** The electric furnace's two module slots, in a row to the right of the output. */
+    public static final int MODULE_X = 136;
+    public static final int MODULE_Y = 26;
 
     private static final int PLAYER_SLOTS = 36;
 
@@ -67,6 +71,9 @@ public class FurnaceMenu extends AbstractContainerMenu {
 
     /** How many of this menu's slots are the machine's; the player's follow. */
     private final int machineSlots;
+
+    /** How many of those are item slots; the module slots follow them. */
+    private final int itemSlots;
 
     /**
      * Client side: NeoForge's menu factory hands the machine's position across.
@@ -81,9 +88,15 @@ public class FurnaceMenu extends AbstractContainerMenu {
     public FurnaceMenu(int containerId, Inventory playerInventory, BlockPos machinePos) {
         this(containerId, playerInventory,
                 clientInventory(playerInventory.player.level(), isBurnerAt(playerInventory.player.level(), machinePos)),
+                new ModuleSlots(moduleSlotsAt(playerInventory.player.level(), machinePos), () -> {}),
                 new SimpleContainerData(DATA_COUNT),
                 machinePos,
                 isBurnerAt(playerInventory.player.level(), machinePos));
+    }
+
+    /** The tier's module slot count, read off the block, or none for a block that is not one of ours. */
+    private static int moduleSlotsAt(Level level, BlockPos pos) {
+        return level.getBlockState(pos).getBlock() instanceof FurnaceBlock block ? block.moduleSlots() : 0;
     }
 
     private static FurnaceInventory clientInventory(Level level, boolean burner) {
@@ -92,7 +105,7 @@ public class FurnaceMenu extends AbstractContainerMenu {
     }
 
     public FurnaceMenu(int containerId, Inventory playerInventory, FurnaceInventory inventory,
-            ContainerData data, BlockPos machinePos, boolean burner) {
+            ModuleSlots modules, ContainerData data, BlockPos machinePos, boolean burner) {
         super(ModMenus.FURNACE.get(), containerId);
         this.data = data;
         this.machinePos = machinePos;
@@ -105,6 +118,10 @@ public class FurnaceMenu extends AbstractContainerMenu {
             addSlot(new ResourceHandlerSlot(inventory, inventory::set, FurnaceBlockEntity.FUEL_SLOT, FUEL_X, FUEL_Y));
         }
         addSlot(new OutputSlot(inventory, FurnaceBlockEntity.OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y));
+        itemSlots = slots.size();
+        for (int index = 0; index < modules.size(); index++) {
+            addSlot(new ResourceHandlerSlot(modules, modules::set, index, MODULE_X + index * 18, MODULE_Y));
+        }
         machineSlots = slots.size();
 
         for (int row = 0; row < 3; row++) {
@@ -205,7 +222,12 @@ public class FurnaceMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(stack, machineSlots, inventoryEnd, true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (!moveItemStackTo(stack, 0, machineSlots - 1, false)) {
+        } else if (ModuleSlots.moduleOf(stack) != null) {
+            // A module goes to the module slots and nowhere else.
+            if (!moveItemStackTo(stack, itemSlots, machineSlots, false)) {
+                return ItemStack.EMPTY;
+            }
+        } else if (!moveItemStackTo(stack, 0, itemSlots - 1, false)) {
             // Into the input or the fuel slot, whichever will have it, and never the output.
             // Each slot refuses what it cannot use, so ore lands in the input and coal in the
             // fuel slot without the click having to say which.

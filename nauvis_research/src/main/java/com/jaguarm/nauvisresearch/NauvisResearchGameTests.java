@@ -117,6 +117,7 @@ public final class NauvisResearchGameTests {
         TEST_TYPES.register("research_keeps_its_progress", () -> ResearchKeepsItsProgressTest.CODEC);
         TEST_TYPES.register("a_lab_spends_blue_science", () -> LabSpendsBlueScienceTest.CODEC);
         TEST_TYPES.register("bonuses_reach_the_world", () -> BonusesReachTheWorldTest.CODEC);
+        TEST_TYPES.register("lab_takes_modules", () -> LabTakesModulesTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -164,6 +165,7 @@ public final class NauvisResearchGameTests {
         register(event, environment, "a_trigger_finishes_research", TriggerFinishesResearchTest::new, 20);
         register(event, environment, "a_panel_craft_counts", PanelCraftCountsTest::new, 20);
         register(event, environment, "technology_layout_is_sound", TechnologyLayoutTest::new, 20);
+        register(event, environment, "lab_takes_modules", LabTakesModulesTest::new, 20);
 
         // Alone in their batch. See above.
         register(event, alone, "research_command_moves_the_tree", ResearchCommandTest::new, 20);
@@ -1949,6 +1951,65 @@ public final class NauvisResearchGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("bonuses reach the world");
+        }
+    }
+
+    /**
+     * A lab has two module slots, and speed modules in them shorten a unit.
+     *
+     * <p>The modules are the machines mod's items and this mod does not name it, so the test finds
+     * them by id and passes when they are not there - which is the standalone run. With them, two
+     * speed modules make a lab two fifths faster: a 600-tick unit is 429 ticks, on top of whatever
+     * research speed the world has, and the lab draws half again as much twice over.
+     */
+    public static class LabTakesModulesTest extends GameTestInstance {
+
+        public static final MapCodec<LabTakesModulesTest> CODEC =
+                RecordCodecBuilder.<LabTakesModulesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(LabTakesModulesTest::info))
+                                .apply(i, LabTakesModulesTest::new));
+
+        public LabTakesModulesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            Item speed = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_machines", "speed_module"));
+            LabBlockEntity lab = placeLab(helper);
+            helper.assertValueEqual(lab.modules().size(), LabBlockEntity.MODULE_SLOTS, "module slots on a lab");
+            if (speed == Items.AIR) {
+                // Standalone: no modules to put in. The slots exist, which is what this mod owns.
+                helper.succeed();
+                return;
+            }
+
+            helper.assertFalse(lab.modules().isValid(0, ItemResource.of(Items.REDSTONE)),
+                    "a lab's module slot took something that is not a module");
+            for (int slot = 0; slot < LabBlockEntity.MODULE_SLOTS; slot++) {
+                try (Transaction transaction = Transaction.openRoot()) {
+                    helper.assertValueEqual(lab.modules().insert(slot, ItemResource.of(speed), 2, transaction), 1,
+                            "speed modules taken by one slot - a slot holds one module");
+                    transaction.commit();
+                }
+            }
+
+            Technology engine = technology(helper, "electric_engine");
+            int bare = LabBlockEntity.cycleTicksFor(engine, helper.getLevel());
+            int modded = LabBlockEntity.cycleTicksFor(engine, helper.getLevel(), lab.modules().effect());
+            helper.assertValueEqual(modded, (int) Math.round(bare / 1.4),
+                    "ticks a unit takes with two speed modules, against " + bare + " without");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a lab takes modules");
         }
     }
 }

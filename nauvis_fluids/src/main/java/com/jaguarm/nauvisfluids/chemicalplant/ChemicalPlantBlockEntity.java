@@ -34,8 +34,10 @@ public class ChemicalPlantBlockEntity extends ProcessingBlockEntity {
     public static final int ENERGY_PER_TICK = 28;
     public static final int ITEM_INPUTS = 2;
     public static final int ITEM_OUTPUTS = 1;
+    /** Factorio's chemical plant takes three. */
+    public static final int MODULE_SLOTS = 3;
     public static final ProcessingLayout LAYOUT =
-            new ProcessingLayout(CATEGORY, 2, 2, ITEM_INPUTS, ITEM_OUTPUTS, ENERGY_PER_TICK);
+            new ProcessingLayout(CATEGORY, 2, 2, ITEM_INPUTS, ITEM_OUTPUTS, ENERGY_PER_TICK, MODULE_SLOTS);
 
     public static final int WATER_PORT = 0;
 
@@ -50,6 +52,6 @@ public class ChemicalPlantBlockEntity extends ProcessingBlockEntity {
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new ChemicalPlantMenu(containerId, playerInventory, items(), menuData(), worldPosition);
+        return new ChemicalPlantMenu(containerId, playerInventory, items(), modules(), menuData(), worldPosition);
     }
 }

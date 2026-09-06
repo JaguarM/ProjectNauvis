@@ -36,15 +36,20 @@ public class ChemicalPlantScreen extends ProcessingScreen<ChemicalPlantMenu> {
     private static final int OUT1_WIDTH = 56;
     private static final int OUT1_HEIGHT = 8;
 
-    /** The progress bar, between the slots. */
-    private static final int ARROW_X = 70;
+    /**
+     * The progress bar, between the module slots and the output.
+     *
+     * <p>The top row is full: two inputs to x=43, the bolt, three module slots to x=115, and the
+     * output well from x=151. The bar fits the gap that is left, on the row's centre line.
+     */
+    private static final int ARROW_X = 116;
     private static final int ARROW_Y = 24;
     private static final int ARROW_WIDTH = 34;
     private static final int ARROW_HEIGHT = 6;
 
-    /** The charge, a bolt under the progress bar. */
-    private static final int CHARGE_X = 80;
-    private static final int CHARGE_Y = 34;
+    /** The charge, a bolt between the ingredient slots and the module slots. */
+    private static final int CHARGE_X = 44;
+    private static final int CHARGE_Y = 17;
     private static final int CHARGE_WIDTH = 14;
     private static final int CHARGE_HEIGHT = 14;
 

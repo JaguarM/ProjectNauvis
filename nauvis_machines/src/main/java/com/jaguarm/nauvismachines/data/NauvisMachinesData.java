@@ -109,6 +109,13 @@ public final class NauvisMachinesData {
             addBlock(ModBlocks.STONE_FURNACE, "Stone furnace");
             addBlock(ModBlocks.STEEL_FURNACE, "Steel furnace");
             addBlock(ModBlocks.ELECTRIC_FURNACE, "Electric furnace");
+            addItem(ModItems.SPEED_MODULE, "Speed module");
+            addItem(ModItems.EFFECTIVITY_MODULE, "Efficiency module");
+            addItem(ModItems.PRODUCTIVITY_MODULE, "Productivity module");
+            // A module's tooltip: one line per effect that is not zero, in Factorio's words.
+            add("tooltip.nauvis_machines.module.speed", "Speed %s");
+            add("tooltip.nauvis_machines.module.energy", "Energy consumption %s");
+            add("tooltip.nauvis_machines.module.productivity", "Productivity %s");
 
             // The screen. Its recipe list is Facrafting's panel, so there is very little here.
             // "skips research" is not a caveat, it is the point of the pack and has to be on the

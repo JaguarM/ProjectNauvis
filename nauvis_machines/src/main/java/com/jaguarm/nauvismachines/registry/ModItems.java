@@ -3,6 +3,7 @@ package com.jaguarm.nauvismachines.registry;
 import java.util.List;
 
 import com.jaguarm.nauvismachines.NauvisMachines;
+import com.jaguarm.nauvismachines.module.ModuleItem;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -37,6 +38,20 @@ public final class ModItems {
             ITEMS.registerSimpleBlockItem(ModBlocks.ELECTRIC_FURNACE);
 
     /**
+     * The three first-tier modules, Factorio's colours and Factorio 2.0's numbers. The ids are the
+     * dump's - {@code effectivity_module}, which Factorio has since renamed to efficiency - and
+     * the display names are the modern ones, the same rule as the science packs.
+     */
+    public static final DeferredItem<ModuleItem> SPEED_MODULE = ITEMS.registerItem("speed_module",
+            properties -> new ModuleItem(properties, ModuleItem.SPEED));
+
+    public static final DeferredItem<ModuleItem> EFFECTIVITY_MODULE = ITEMS.registerItem("effectivity_module",
+            properties -> new ModuleItem(properties, ModuleItem.EFFICIENCY));
+
+    public static final DeferredItem<ModuleItem> PRODUCTIVITY_MODULE = ITEMS.registerItem("productivity_module",
+            properties -> new ModuleItem(properties, ModuleItem.PRODUCTIVITY));
+
+    /**
      * Its own tab, rather than one shared with the pack mod. A subsystem mod has to be usable
      * on its own, and a tab that only exists when another mod is installed is not that.
      */
@@ -51,6 +66,9 @@ public final class ModItems {
                         output.accept(ELECTRIC_FURNACE.get());
                         output.accept(ASSEMBLING_MACHINE_1.get());
                         output.accept(ASSEMBLING_MACHINE_2.get());
+                        output.accept(SPEED_MODULE.get());
+                        output.accept(EFFECTIVITY_MODULE.get());
+                        output.accept(PRODUCTIVITY_MODULE.get());
                     })
                     .build());
 

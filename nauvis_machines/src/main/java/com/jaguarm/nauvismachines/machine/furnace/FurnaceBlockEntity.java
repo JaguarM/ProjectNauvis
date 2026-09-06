@@ -1,5 +1,8 @@
 package com.jaguarm.nauvismachines.machine.furnace;
 
+import com.jaguarm.nauvislib.module.ModuleEffect;
+import com.jaguarm.nauvislib.module.ModuleSlots;
+import com.jaguarm.nauvislib.module.Productivity;
 import com.jaguarm.nauvislib.transfer.PowerAccess;
 import com.jaguarm.nauvislib.transfer.MachinePower;
 import com.jaguarm.nauvislib.transfer.MachineAccess;
@@ -175,7 +178,7 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
                 case FurnaceMenu.DATA_BURN_TIME -> burnTime;
                 case FurnaceMenu.DATA_BURN_TIME_TOTAL -> burnTimeTotal;
                 case FurnaceMenu.DATA_ENERGY -> energyStored();
-                case FurnaceMenu.DATA_ENERGY_PER_TICK -> energyPerTick;
+                case FurnaceMenu.DATA_ENERGY_PER_TICK -> currentEnergyPerTick();
                 case FurnaceMenu.DATA_ENERGY_CAPACITY -> energyCapacity();
                 case FurnaceMenu.DATA_STATUS -> status.ordinal();
                 default -> 0;
@@ -205,6 +208,9 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
         inventory = new FurnaceInventory(this::onInventoryChanged, this::smeltable,
                 burner ? this::burnable : resource -> false);
         automationView = new MachineAccess(inventory, OUTPUT_SLOT);
+        // Every smelting recipe makes an intermediate product, so every module is welcome here.
+        modules = new ModuleSlots(tier == null ? 0 : tier.moduleSlots(), this::onInventoryChanged);
+        draw = energyPerTick;
 
         if (burner) {
             energy = null;
@@ -233,6 +239,29 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
 
     public int energyStored() {
         return energy == null ? 0 : energy.getAmountAsInt();
+    }
+
+    /**
+     * The tier's module slots - none on the burner furnaces, two on the electric one - and the
+     * free smelt they work towards. Read once a smelt, as it starts, like the assembler's.
+     */
+    private final ModuleSlots modules;
+    private final Productivity productivity = new Productivity();
+
+    /** The draw under the modules read at the start of the smelt in progress. */
+    private int draw;
+
+    public ModuleSlots modules() {
+        return modules;
+    }
+
+    public Productivity productivity() {
+        return productivity;
+    }
+
+    /** The tier's draw under the modules in it right now, for the screen. */
+    public int currentEnergyPerTick() {
+        return modules.effect().scaleEnergy(energyPerTick);
     }
 
     public FurnaceInventory inventory() {
@@ -361,7 +390,13 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
             progress = 0;
         }
         setSmelt(smelt);
-        craftTicks = craftTicksFor(smelt, craftingSpeed);
+
+        // The modules are read as the smelt starts and hold for the smelt, which is Factorio's rule.
+        if (progress == 0) {
+            ModuleEffect effect = modules.effect();
+            craftTicks = craftTicksFor(smelt, (float) (craftingSpeed * effect.speedFactor()));
+            draw = effect.scaleEnergy(energyPerTick);
+        }
 
         // The ingredients are checked once, as a smelt starts - counting down is the cheap part.
         if (progress == 0) {
@@ -391,6 +426,14 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
             }
             progress = 0;
             CraftListeners.fireMachine(level, smelt.result().copy());
+
+            // Productivity: every smelt earns a fraction of a free one; a whole one is banked
+            // unpaid when it is owed and there is room, and stays owed until there is.
+            productivity.earn(modules.effect().productivityBonus());
+            if (productivity.owed() && bankFree(smelt)) {
+                productivity.pay();
+                CraftListeners.fireMachine(level, smelt.result().copy());
+            }
         }
 
         status = Status.SMELTING;
@@ -452,19 +495,32 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /** Banks one more result without paying for it: the productivity bonus. Nothing if it will not fit. */
+    private boolean bankFree(Smelt smelt) {
+        ItemStack result = smelt.result();
+        try (Transaction transaction = Transaction.openRoot()) {
+            if (inventory.insert(OUTPUT_SLOT, ItemResource.of(result), result.getCount(), transaction)
+                    != result.getCount()) {
+                return false;
+            }
+            transaction.commit();
+            return true;
+        }
+    }
+
     /** Whether there is something to pay this tick with: burning fuel, or charge. */
     private boolean spendable(ServerLevel level) {
         if (burner) {
             return burnTime > 0 || refuel(level);
         }
-        return energy != null && energy.getAmountAsInt() >= energyPerTick;
+        return energy != null && energy.getAmountAsInt() >= draw;
     }
 
     private void spend() {
         if (burner) {
             burnTime--;
         } else if (energy != null) {
-            energy.set(energy.getAmountAsInt() - energyPerTick);
+            energy.set(energy.getAmountAsInt() - draw);
         }
     }
 
@@ -560,7 +616,7 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new FurnaceMenu(containerId, playerInventory, inventory, menuData, worldPosition, burner);
+        return new FurnaceMenu(containerId, playerInventory, inventory, modules, menuData, worldPosition, burner);
     }
 
     /** Spilled when the machine is broken. See the assembler: this is the hook, and not the block's. */
@@ -579,12 +635,24 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
             inventory.set(slot, ItemResource.EMPTY, 0);
             Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), resource.toStack(amount));
         }
+        for (int slot = 0; slot < modules.size(); slot++) {
+            int amount = modules.getAmountAsInt(slot);
+            if (amount <= 0) {
+                continue;
+            }
+            ItemResource resource = modules.getResource(slot);
+            modules.set(slot, ItemResource.EMPTY, 0);
+            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), resource.toStack(amount));
+        }
     }
 
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
         inventory.serialize(output.child("Inventory"));
+        modules.serialize(output.child("Modules"));
+        productivity.save(output);
+        output.putInt("Draw", draw);
         if (energy != null) {
             energy.serialize(output.child("Energy"));
         }
@@ -603,6 +671,9 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         input.child("Inventory").ifPresent(inventory::deserialize);
+        input.child("Modules").ifPresent(modules::deserialize);
+        productivity.load(input);
+        draw = input.getIntOr("Draw", energyPerTick);
         if (energy != null) {
             input.child("Energy").ifPresent(energy::deserialize);
         }

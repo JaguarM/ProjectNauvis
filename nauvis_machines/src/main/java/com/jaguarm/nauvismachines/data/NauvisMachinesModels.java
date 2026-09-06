@@ -15,6 +15,7 @@ import com.jaguarm.nauvislib.multiblock.Boxes;
 import com.jaguarm.nauvislib.multiblock.MachineCell;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
+import com.jaguarm.nauvismachines.registry.ModItems;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.ItemModelGenerators;
@@ -23,6 +24,7 @@ import net.minecraft.client.data.models.MultiVariant;
 import net.minecraft.client.data.models.blockstates.MultiVariantGenerator;
 import net.minecraft.client.data.models.blockstates.PropertyDispatch;
 import net.minecraft.client.data.models.model.ModelLocationUtils;
+import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.client.data.models.model.TextureMapping;
 import net.minecraft.client.renderer.block.dispatch.VariantMutator;
 import net.minecraft.core.Direction;
@@ -81,6 +83,12 @@ public class NauvisMachinesModels extends ModelProvider {
 
     @Override
     protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {
+        // The three modules, on art of their own from texture-workshop/make_module_textures.py:
+        // one chip in Factorio's three colours.
+        itemModels.generateFlatItem(ModItems.SPEED_MODULE.get(), ModelTemplates.FLAT_ITEM);
+        itemModels.generateFlatItem(ModItems.EFFECTIVITY_MODULE.get(), ModelTemplates.FLAT_ITEM);
+        itemModels.generateFlatItem(ModItems.PRODUCTIVITY_MODULE.get(), ModelTemplates.FLAT_ITEM);
+
         Identifier blastSide = TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_side").sprite();
         Identifier metalTop = TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite();
         Identifier furnaceSide = TextureMapping.getBlockTexture(Blocks.FURNACE, "_side").sprite();

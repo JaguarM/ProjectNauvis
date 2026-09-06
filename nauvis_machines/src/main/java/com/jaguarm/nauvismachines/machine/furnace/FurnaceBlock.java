@@ -77,6 +77,11 @@ public abstract class FurnaceBlock extends BaseEntityBlock implements Multiblock
     /** FE spent per tick of smelting by an electric tier; nothing for a burner. */
     public abstract int energyPerTick();
 
+    /** Factorio's module slots: none on the burner furnaces, two on the electric one. */
+    public int moduleSlots() {
+        return 0;
+    }
+
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         // shape() from inside Block's constructor is safe only because every subclass answers

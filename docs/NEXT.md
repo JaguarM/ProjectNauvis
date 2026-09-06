@@ -30,6 +30,8 @@ missing from each is `GAPS.md`.
 |---|---|
 | `nauvis_machines:assembling_machine_1` | 3×3, ten blocks; recipe selector, six slots, timed craft at **crafting speed 0.5**, screen, 10 FE/t |
 | `nauvis_machines:assembling_machine_2` | the same at speed 0.75 and 20 FE/t, in blue. Behind `automation-2` |
+| `nauvis_machines:speed_module` / `effectivity_module` / `productivity_module` | Factorio 2.0's tier one: +20% speed for +50% power; -30% power; +4% productivity for -5% speed and +40% power. Five advanced circuits and five circuits each, behind `modules` and their own technologies. A chip in blue, green and red |
+| a module slot | on assembling machine 2 (two), the electric furnace (two), the lab (two), the refinery and the chemical plant (three each). Effects add; the sum is read as a craft starts; productivity banks a free craft. A productivity module is refused unless the recipe is an intermediate |
 | `nauvis_machines:stone_furnace` | 2×2, five blocks; a hearth you walk over and a stack whose mouth is fire while it runs. Smelts Factorio's four recipes at speed 1, burning what a vanilla furnace burns — only while working. **A machine of ours now**, not `minecraft:furnace` |
 | `nauvis_machines:steel_furnace` | the same at speed 2, in iron. Behind `advanced-material-processing` |
 | `nauvis_machines:electric_furnace` | 3×3, ten blocks, speed 2, 24 FE/t, a hood that glows. Behind `advanced-material-processing-2`, blue science |
@@ -113,15 +115,20 @@ and that is the rest of this job.
 
 ### 2. Modules
 
-Speed, effectivity and productivity, tier one - `nauvis_machines` owns them per `PLAN.md`, and
-`nauvis_mining`'s three NPA modules (`speed`, `efficiency`, `range`) are ids in the pack's
-namespace that have to be resolved first; `range` has no counterpart at all. A module is a slot
-on a machine and three numbers the machine reads each craft: a speed multiplier, an energy
-multiplier, and a productivity bonus that banks a free craft every so many. The assemblers, the
-furnaces, the drills, the refinery and the chemical plant all take them in Factorio, with
-Factorio's slot counts, and the base classes are where the numbers are read - one place per
-machine kind, the same shape as `craftingSpeed`. The beacon is not in this job: `effect-transmission`
-costs production science.
+**The three tier-one modules exist and every machine with a screen takes them**: speed,
+efficiency and productivity in `nauvis_machines`, at Factorio 2.0's numbers, on `nauvis_lib`'s
+`Module` interface so the refinery, the chemical plant and the lab hold them without naming the
+machines mod. Factorio's slot counts - none on assembling machine 1 and the burner furnaces, two
+on assembling machine 2, the electric furnace and the lab, three on the refinery and the chemical
+plant - and Factorio's arithmetic: effects add, a machine is never slower or cheaper than a fifth
+of itself, and productivity is a bar that pays out a free craft. A productivity module is
+refused unless the recipe is an intermediate product.
+
+What is left of the job is the drills. `nauvis_mining`'s three NPA modules (`speed`,
+`efficiency`, `range`) are still ids in the pack's namespace and its slots still take them and
+not ours; `range` has no counterpart at all. That is the first thing job 4 resolves. The beacon
+is not in this job: `effect-transmission` costs production science. The pumpjack takes none
+because it has no screen to put them in; see `GAPS.md`.
 
 ### 3. An assembler with a fluid port
 
@@ -239,6 +246,7 @@ How to run everything
 | `python texture-workshop/make_chest_textures.py` | the two chests' art. Not a map — see that file on why |
 | `python texture-workshop/make_miner_textures.py` | the two drills' art, from ASCII maps. Came across with the fork |
 | `python texture-workshop/make_material_textures.py` | Neo Progressive Materials' item art |
+| `python texture-workshop/make_module_textures.py` | the three modules: one chip, three colours |
 | `./gradlew :nauvis:packConfig` | the pack's config over `run/config`. Every run task depends on it |
 
 The six checks — `checkRecipes`, `checkTechnologies`, `checkRemovals`, `checkModels`,

@@ -1,5 +1,6 @@
 package com.jaguarm.nauvismachines;
 
+import com.jaguarm.nauvislib.module.ModuleSlots;
 import com.jaguarm.nauvislib.transfer.MachinePower;
 import java.util.List;
 
@@ -115,6 +116,11 @@ public final class NauvisMachinesGameTests {
         TEST_TYPES.register("assembler_breaks_as_one", () -> AssemblerBreaksAsOneTest.CODEC);
         TEST_TYPES.register("assembler_fed_from_any_cell", () -> AssemblerFedFromAnyCellTest.CODEC);
         TEST_TYPES.register("assemblers_tile_walkably", () -> AssemblersTileWalkablyTest.CODEC);
+        TEST_TYPES.register("speed_modules_speed_an_assembler", () -> SpeedModulesSpeedAnAssemblerTest.CODEC);
+        TEST_TYPES.register("productivity_modules_bank_a_free_craft",
+                () -> ProductivityModulesBankAFreeCraftTest.CODEC);
+        TEST_TYPES.register("productivity_module_needs_an_intermediate",
+                () -> ProductivityModuleNeedsAnIntermediateTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -135,6 +141,11 @@ public final class NauvisMachinesGameTests {
         register(event, environment, "assembler_holds_items", AssemblerHoldsItemsTest::new, 20);
         register(event, environment, "assembler_crafts", AssemblerCraftsTest::new, 100);
         register(event, environment, "assembling_machine_2_is_faster", AssemblingMachine2IsFasterTest::new, 100);
+        register(event, environment, "speed_modules_speed_an_assembler", SpeedModulesSpeedAnAssemblerTest::new, 100);
+        register(event, environment, "productivity_modules_bank_a_free_craft",
+                ProductivityModulesBankAFreeCraftTest::new, 300);
+        register(event, environment, "productivity_module_needs_an_intermediate",
+                ProductivityModuleNeedsAnIntermediateTest::new, 20);
         register(event, environment, "assembler_sleeps", AssemblerSleepsTest::new, 60);
         register(event, environment, "assembler_stalls_when_full", AssemblerStallsWhenFullTest::new, 100);
         register(event, environment, "assembler_spills_when_broken", AssemblerSpillsWhenBrokenTest::new, 60);
@@ -1159,6 +1170,225 @@ public final class NauvisMachinesGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("assembling machine 2 is faster");
+        }
+    }
+
+    /** Puts a module into a machine's slots the way a player does, through the handler. */
+    private static void module(GameTestHelper helper, ModuleSlots slots, int slot, Item module) {
+        try (Transaction transaction = Transaction.openRoot()) {
+            helper.assertValueEqual(slots.insert(slot, ItemResource.of(module), 1, transaction), 1,
+                    module + " accepted by module slot " + slot);
+            transaction.commit();
+        }
+    }
+
+    /**
+     * Two speed modules make an assembling machine 2 two fifths faster and twice as hungry.
+     *
+     * <p>Factorio's arithmetic: the effects add, so two modules at a fifth are plus two fifths on
+     * the speed and two halves on the draw. A ten-tick recipe at 0.75 takes thirteen ticks bare
+     * and ten with the modules in, and the two machines are run side by side so the difference is
+     * what is asserted rather than a number that happens to come out.
+     */
+    public static class SpeedModulesSpeedAnAssemblerTest extends GameTestInstance {
+
+        public static final MapCodec<SpeedModulesSpeedAnAssemblerTest> CODEC =
+                RecordCodecBuilder.<SpeedModulesSpeedAnAssemblerTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(SpeedModulesSpeedAnAssemblerTest::info))
+                                .apply(i, SpeedModulesSpeedAnAssemblerTest::new));
+
+        private static final BlockPos SECOND = MACHINE.offset(4, 0, 0);
+
+        public SpeedModulesSpeedAnAssemblerTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            Item product = ModItems.ASSEMBLING_MACHINE_1.get();
+            ResourceKey<Recipe<?>> recipe = AssemblerBlockEntity.recipeProducing(helper.getLevel(), product);
+            helper.assertTrue(recipe != null, "no timed recipe makes an assembling machine 1");
+
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+            AssemblerBlockEntity bare = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            placeMachine(helper, SECOND, ModBlocks.ASSEMBLING_MACHINE_2.get());
+            AssemblerBlockEntity modded = helper.getBlockEntity(SECOND, AssemblerBlockEntity.class);
+
+            helper.assertValueEqual(modded.modules().size(), AssemblingMachine2Block.MODULE_SLOTS,
+                    "module slots on an assembling machine 2");
+            module(helper, modded.modules(), 0, ModItems.SPEED_MODULE.get());
+            module(helper, modded.modules(), 1, ModItems.SPEED_MODULE.get());
+            helper.assertTrue(Math.abs(modded.modules().effect().speed() - 0.4) < 1e-9,
+                    "two speed modules' speed adds to two fifths");
+            helper.assertValueEqual(modded.currentEnergyPerTick(), 2 * AssemblingMachine2Block.ENERGY_PER_TICK,
+                    "the draw under two speed modules - half again each, added");
+
+            for (AssemblerBlockEntity machine : List.of(bare, modded)) {
+                machine.setRecipe(recipe);
+                charge(machine);
+                feedOneCraft(helper, machine.automationView());
+            }
+
+            // Ten ticks over 0.75 times 1.4 is 9.5, so ten; bare it is 13.3, so thirteen.
+            int moddedTicks = AssemblerBlockEntity.craftTicksFor(
+                    helper.getLevel().getServer().getRecipeManager().byKey(recipe)
+                            .map(holder -> (com.jaguarm.facrafting.recipe.FacraftRecipe) holder.value()).orElseThrow(),
+                    (float) (AssemblingMachine2Block.CRAFTING_SPEED * modded.modules().effect().speedFactor()));
+            helper.assertValueEqual(moddedTicks, 10, "ticks a ten-tick recipe takes with two speed modules");
+
+            helper.runAfterDelay(moddedTicks + 1, () -> {
+                helper.assertValueEqual(modded.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 1,
+                        "what the machine with speed modules had made after " + (moddedTicks + 1) + " ticks");
+                helper.assertValueEqual(bare.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 0,
+                        "what the bare machine had made after " + (moddedTicks + 1)
+                                + " ticks - it should still be working");
+                helper.assertTrue(modded.energyStored() < bare.energyStored(),
+                        "the machine with speed modules spent no more power than the bare one");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("speed modules speed an assembler");
+        }
+    }
+
+    /**
+     * Two productivity modules bank a free gear every twelve and a half crafts.
+     *
+     * <p>Factorio's productivity bar: each craft adds the modules' bonus - two at a twenty-fifth is
+     * two twenty-fifths - and when the bar fills the machine hands over one more product it never
+     * paid for. Thirteen crafts' worth of plates go in; thirteen crafts fill the bar past one; and
+     * fourteen gears come out, the last of them free. Twelve crafts in, there are exactly twelve.
+     */
+    public static class ProductivityModulesBankAFreeCraftTest extends GameTestInstance {
+
+        public static final MapCodec<ProductivityModulesBankAFreeCraftTest> CODEC =
+                RecordCodecBuilder.<ProductivityModulesBankAFreeCraftTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ProductivityModulesBankAFreeCraftTest::info))
+                                .apply(i, ProductivityModulesBankAFreeCraftTest::new));
+
+        public ProductivityModulesBankAFreeCraftTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            Item gear = item(helper, "neoprogressivematerials:iron_gear_wheel");
+            ResourceKey<Recipe<?>> recipe = AssemblerBlockEntity.recipeProducing(helper.getLevel(), gear);
+            helper.assertTrue(recipe != null, "no timed recipe makes an iron gear wheel");
+
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+            AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            machine.setRecipe(recipe);
+            module(helper, machine.modules(), 0, ModItems.PRODUCTIVITY_MODULE.get());
+            module(helper, machine.modules(), 1, ModItems.PRODUCTIVITY_MODULE.get());
+            // A gear is ten ticks; at 0.75 times 0.9 that is 14.8, so fifteen a craft.
+            helper.onEachTick(() -> charge(machine));
+            helper.assertValueEqual(insert(machine.automationView(), Items.IRON_INGOT, 26), 26,
+                    "plates for thirteen gears accepted");
+
+            helper.startSequence()
+                    .thenExecuteAfter(12 * 15 + 6, () -> {
+                        helper.assertValueEqual(
+                                machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 12,
+                                "gears after twelve crafts - the bar is at 0.96 and nothing is owed yet");
+                        helper.assertTrue(Math.abs(machine.productivity().banked() - 0.96) < 1e-6,
+                                "the productivity bar after twelve crafts: " + machine.productivity().banked());
+                    })
+                    .thenExecuteAfter(15, () -> {
+                        helper.assertValueEqual(
+                                machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 14,
+                                "gears after thirteen crafts - the thirteenth fills the bar and one is free");
+                        helper.assertValueEqual(machine.inventory().getAmountAsInt(0), 0,
+                                "plates left - thirteen crafts paid for, not fourteen");
+                        helper.assertTrue(Math.abs(machine.productivity().banked() - 0.04) < 1e-6,
+                                "the bar after paying out: " + machine.productivity().banked());
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("productivity modules bank a free craft");
+        }
+    }
+
+    /**
+     * A productivity module goes only into a machine making an intermediate product.
+     *
+     * <p>Factorio's one restriction on modules, read off the recipe's crafting-menu tab: a gear is
+     * an intermediate, a stone furnace is not. Refused at the slot, so the screen refuses it; and a
+     * recipe that may not have them is refused while one sits in the machine, rather than the
+     * module being thrown out or quietly ignored. A machine with no recipe takes one, as Factorio's
+     * does.
+     */
+    public static class ProductivityModuleNeedsAnIntermediateTest extends GameTestInstance {
+
+        public static final MapCodec<ProductivityModuleNeedsAnIntermediateTest> CODEC =
+                RecordCodecBuilder.<ProductivityModuleNeedsAnIntermediateTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ProductivityModuleNeedsAnIntermediateTest::info))
+                                .apply(i, ProductivityModuleNeedsAnIntermediateTest::new));
+
+        public ProductivityModuleNeedsAnIntermediateTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            ResourceKey<Recipe<?>> gear = AssemblerBlockEntity.recipeProducing(
+                    helper.getLevel(), item(helper, "neoprogressivematerials:iron_gear_wheel"));
+            ResourceKey<Recipe<?>> furnace = AssemblerBlockEntity.recipeProducing(
+                    helper.getLevel(), ModItems.STONE_FURNACE.get());
+            helper.assertTrue(gear != null && furnace != null, "the gear and the stone furnace recipes");
+
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+            AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            ItemResource productivity = ItemResource.of(ModItems.PRODUCTIVITY_MODULE.get());
+            ItemResource speed = ItemResource.of(ModItems.SPEED_MODULE.get());
+
+            helper.assertTrue(machine.modules().isValid(0, productivity),
+                    "a productivity module refused by a machine with no recipe");
+
+            machine.setRecipe(furnace);
+            helper.assertFalse(machine.modules().isValid(0, productivity),
+                    "a productivity module accepted by a machine making a stone furnace");
+            helper.assertTrue(machine.modules().isValid(0, speed),
+                    "a speed module refused by a machine making a stone furnace");
+
+            machine.setRecipe(gear);
+            helper.assertTrue(machine.modules().isValid(0, productivity),
+                    "a productivity module refused by a machine making gears");
+            module(helper, machine.modules(), 0, ModItems.PRODUCTIVITY_MODULE.get());
+
+            machine.setRecipe(furnace);
+            helper.assertValueEqual(machine.recipeKey(), gear,
+                    "the recipe after choosing a stone furnace with a productivity module in - "
+                            + "Factorio refuses the recipe, and so should this");
+            helper.assertValueEqual(machine.modules().getAmountAsInt(0), 1,
+                    "the productivity module, which must not have been thrown out");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a productivity module needs an intermediate product");
         }
     }
 }

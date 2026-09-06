@@ -85,18 +85,21 @@ SCREENS = [
         'assembler',
         'nauvis_machines/src/main/java/com/jaguarm/nauvismachines/machine/assembler',
         'AssemblerMenu.java', 'AssemblerScreen.java',
-        slots=[('input', 'INPUT_X', 'INPUT_Y', 6, 3), ('output', 'OUTPUT_X', 'OUTPUT_Y', 1, 1)],
+        # The module slots are the second tier's; the first has none, and the layout is checked
+        # for the most a screen of this kind can have.
+        slots=[('input', 'INPUT_X', 'INPUT_Y', 6, 3), ('output', 'OUTPUT_X', 'OUTPUT_Y', 1, 1),
+               ('module', 'MODULE_X', 'MODULE_Y', 2, 2)],
         bars=[('progress bar', 'ARROW_X', 'ARROW_Y', 'ARROW_WIDTH', 'ARROW_HEIGHT'),
               ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT')],
     ),
     Screen(
         # The electric tier's charge bolt is not listed because it stands exactly where the flame
-        # does, on a screen that draws one or the other and never both.
+        # does, on a screen that draws one or the other and never both. Its module slots are.
         'furnace',
         'nauvis_machines/src/main/java/com/jaguarm/nauvismachines/machine/furnace',
         'FurnaceMenu.java', 'FurnaceScreen.java',
         slots=[('input', 'INPUT_X', 'INPUT_Y', 1, 1), ('fuel', 'FUEL_X', 'FUEL_Y', 1, 1),
-               ('output', 'OUTPUT_X', 'OUTPUT_Y', 1, 1)],
+               ('output', 'OUTPUT_X', 'OUTPUT_Y', 1, 1), ('module', 'MODULE_X', 'MODULE_Y', 2, 2)],
         bars=[('progress bar', 'ARROW_X', 'ARROW_Y', 'ARROW_WIDTH', 'ARROW_HEIGHT'),
               ('flame', 'FLAME_X', 'FLAME_Y', 'FLAME_WIDTH', 'FLAME_HEIGHT')],
     ),
@@ -113,7 +116,7 @@ SCREENS = [
         'lab',
         'nauvis_research/src/main/java/com/jaguarm/nauvisresearch/lab',
         'LabMenu.java', 'LabScreen.java',
-        slots=[('pack', 'PACKS_X', 'PACKS_Y', 6, 6)],
+        slots=[('pack', 'PACKS_X', 'PACKS_Y', 6, 6), ('module', 'MODULE_X', 'MODULE_Y', 2, 1)],
         bars=[('cycle bar', 'PROGRESS_X', 'PROGRESS_Y', 'PROGRESS_WIDTH', 'PROGRESS_HEIGHT'),
               ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT'),
               # Not a bar but the same kind of box, and the first thing on any screen here that
@@ -125,7 +128,7 @@ SCREENS = [
         'oil refinery',
         'nauvis_fluids/src/main/java/com/jaguarm/nauvisfluids/refinery',
         'OilRefineryMenu.java', 'OilRefineryScreen.java',
-        slots=[],
+        slots=[('module', 'MODULE_X', 'MODULE_Y', 3, 3)],
         bars=[('water bar', 'IN0_X', 'IN0_Y', 'IN0_WIDTH', 'IN0_HEIGHT'),
               ('crude bar', 'IN1_X', 'IN1_Y', 'IN1_WIDTH', 'IN1_HEIGHT'),
               ('heavy bar', 'OUT0_X', 'OUT0_Y', 'OUT0_WIDTH', 'OUT0_HEIGHT'),
@@ -138,7 +141,8 @@ SCREENS = [
         'chemical plant',
         'nauvis_fluids/src/main/java/com/jaguarm/nauvisfluids/chemicalplant',
         'ChemicalPlantMenu.java', 'ChemicalPlantScreen.java',
-        slots=[('input', 'INPUT_X', 'INPUT_Y', 2, 2), ('output', 'OUTPUT_X', 'OUTPUT_Y', 1, 1)],
+        slots=[('input', 'INPUT_X', 'INPUT_Y', 2, 2), ('output', 'OUTPUT_X', 'OUTPUT_Y', 1, 1),
+               ('module', 'MODULE_X', 'MODULE_Y', 3, 3)],
         bars=[('input bar 0', 'IN0_X', 'IN0_Y', 'IN0_WIDTH', 'IN0_HEIGHT'),
               ('input bar 1', 'IN1_X', 'IN1_Y', 'IN1_WIDTH', 'IN1_HEIGHT'),
               ('output bar 0', 'OUT0_X', 'OUT0_Y', 'OUT0_WIDTH', 'OUT0_HEIGHT'),

@@ -156,6 +156,7 @@ public final class NauvisFluidsGameTests {
         TEST_TYPES.register("refinery_runs_basic_oil_processing", () -> RefineryRunsBasicOilProcessingTest.CODEC);
         TEST_TYPES.register("refinery_outputs_block_each_other", () -> RefineryOutputsBlockEachOtherTest.CODEC);
         TEST_TYPES.register("chemical_plant_makes_plastic", () -> ChemicalPlantMakesPlasticTest.CODEC);
+        TEST_TYPES.register("oil_machines_take_modules", () -> OilMachinesTakeModulesTest.CODEC);
         TEST_TYPES.register("oil_machines_sleep", () -> OilMachinesSleepTest.CODEC);
         TEST_TYPES.register("oil_machines_run_only_their_category", () -> OilMachinesRunOnlyTheirCategoryTest.CODEC);
     }
@@ -213,6 +214,8 @@ public final class NauvisFluidsGameTests {
                 RefineryOutputsBlockEachOtherTest::new, 300, PADDING);
         registerSpaced(event, environment, "chemical_plant_makes_plastic",
                 ChemicalPlantMakesPlasticTest::new, 200, PADDING);
+        registerSpaced(event, environment, "oil_machines_take_modules",
+                OilMachinesTakeModulesTest::new, 20, PADDING);
         registerSpaced(event, environment, "oil_machines_sleep", OilMachinesSleepTest::new, 200, PADDING);
         registerSpaced(event, environment, "oil_machines_run_only_their_category",
                 OilMachinesRunOnlyTheirCategoryTest::new, 40, PADDING);
@@ -2421,6 +2424,65 @@ public final class NauvisFluidsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("oil machines run only their category");
+        }
+    }
+
+    /**
+     * The refinery and the chemical plant have three module slots each, and modules in them change
+     * the machine's speed and draw by Factorio's arithmetic.
+     *
+     * <p>The modules are the machines mod's items and this mod does not name it, so the test finds
+     * them by id and passes on the slots alone when they are not there - the standalone run. With
+     * them, three speed modules are plus three fifths on the speed and half again three times on
+     * the draw: a 210 kW plant at 28 FE a tick draws 70.
+     */
+    public static class OilMachinesTakeModulesTest extends GameTestInstance {
+
+        public static final MapCodec<OilMachinesTakeModulesTest> CODEC =
+                RecordCodecBuilder.<OilMachinesTakeModulesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OilMachinesTakeModulesTest::info))
+                                .apply(i, OilMachinesTakeModulesTest::new));
+
+        public OilMachinesTakeModulesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            ChemicalPlantBlockEntity plant = chemicalPlant(helper, MACHINE);
+            helper.assertValueEqual(plant.layout().moduleSlots(), ChemicalPlantBlockEntity.MODULE_SLOTS,
+                    "module slots in the chemical plant's layout");
+            helper.assertValueEqual(plant.modules().size(), 3, "module slots on a chemical plant");
+            helper.assertValueEqual(OilRefineryBlockEntity.LAYOUT.moduleSlots(), 3, "module slots on a refinery");
+
+            var speed = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_machines", "speed_module"));
+            if (speed == Items.AIR) {
+                helper.succeed();
+                return;
+            }
+            for (int slot = 0; slot < 3; slot++) {
+                try (Transaction transaction = Transaction.openRoot()) {
+                    helper.assertValueEqual(plant.modules().insert(slot, ItemResource.of(speed), 1, transaction), 1,
+                            "a speed module taken by slot " + slot);
+                    transaction.commit();
+                }
+            }
+            helper.assertTrue(Math.abs(plant.modules().effect().speedFactor() - 1.6) < 1e-9,
+                    "three speed modules' speed factor: " + plant.modules().effect().speedFactor());
+            helper.assertValueEqual(plant.currentEnergyPerTick(),
+                    (int) Math.round(ChemicalPlantBlockEntity.ENERGY_PER_TICK * 2.5),
+                    "the draw under three speed modules");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("oil machines take modules");
         }
     }
 }

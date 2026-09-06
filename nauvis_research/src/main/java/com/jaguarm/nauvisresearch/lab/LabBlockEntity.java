@@ -1,5 +1,8 @@
 package com.jaguarm.nauvisresearch.lab;
 
+import com.jaguarm.nauvislib.module.ModuleEffect;
+import com.jaguarm.nauvislib.module.ModuleSlots;
+import com.jaguarm.nauvislib.module.Productivity;
 import com.jaguarm.nauvislib.transfer.PowerAccess;
 import com.jaguarm.nauvislib.transfer.MachinePower;
 import com.jaguarm.nauvislib.transfer.MachineAccess;
@@ -109,6 +112,20 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
 
     private final LabInventory packs = new LabInventory(SLOT_COUNT, this::onPacksChanged);
 
+    /** Factorio's lab takes two modules. */
+    public static final int MODULE_SLOTS = 2;
+
+    /**
+     * The module slots and the free unit they work towards. Read once a unit, as it starts: the
+     * speed shortens the unit, the energy scales the draw, and the productivity banks a unit of
+     * research the packs never paid for - Factorio 2.0's research productivity.
+     */
+    private final ModuleSlots modules = new ModuleSlots(MODULE_SLOTS, this::onPacksChanged);
+    private final Productivity productivity = new Productivity();
+
+    /** The draw under the modules read at the start of the unit in progress. */
+    private int draw = ENERGY_PER_TICK;
+
     /** Packs in, never out. A hopper under a lab must not drain what it was fed. */
     private final ResourceHandler<ItemResource> automationView = new MachineAccess(packs, SLOT_COUNT);
 
@@ -164,6 +181,14 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
         return packs;
     }
 
+    public ModuleSlots modules() {
+        return modules;
+    }
+
+    public Productivity productivity() {
+        return productivity;
+    }
+
     public ResourceHandler<ItemResource> automationView() {
         return automationView;
     }
@@ -206,7 +231,12 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
      * and never below one.
      */
     public static int cycleTicksFor(Technology technology, ServerLevel level) {
-        double speed = 1 + Research.bonus(level.getServer(), LABORATORY_SPEED);
+        return cycleTicksFor(technology, level, ModuleEffect.NONE);
+    }
+
+    /** The same, with the lab's modules on top of the world's research speed. */
+    public static int cycleTicksFor(Technology technology, ServerLevel level, ModuleEffect effect) {
+        double speed = (1 + Research.bonus(level.getServer(), LABORATORY_SPEED)) * effect.speedFactor();
         return Math.max(1, (int) Math.round(technology.ticksPerUnit() / speed));
     }
 
@@ -235,17 +265,24 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
 
-        if (energy.getAmountAsInt() < ENERGY_PER_TICK) {
+        // The modules are read as a unit starts and hold for the unit, which is Factorio's rule.
+        Holder.Reference<Technology> technology = Research.current(level.getServer());
+        if (progress == 0) {
+            ModuleEffect effect = modules.effect();
+            cycleTicks = technology == null
+                    ? IDLE_TICKS_PER_CYCLE
+                    : cycleTicksFor(technology.value(), level, effect);
+            draw = effect.scaleEnergy(ENERGY_PER_TICK);
+        }
+
+        if (energy.getAmountAsInt() < draw) {
             // Out of power, holding the cycle where it stands rather than losing it. Nothing here
             // can restart it - see MachinePower, which is what hears the grid come back.
             return;
         }
 
-        Holder.Reference<Technology> technology = Research.current(level.getServer());
-        cycleTicks = technology == null ? IDLE_TICKS_PER_CYCLE : cycleTicksFor(technology.value(), level);
-
         try (Transaction transaction = Transaction.openRoot()) {
-            energy.extract(ENERGY_PER_TICK, transaction);
+            energy.extract(draw, transaction);
             transaction.commit();
         }
 
@@ -263,6 +300,15 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
             // The unit belongs to the world, not to this machine. Completing the technology is
             // Research's business, including telling everybody about it.
             Research.addUnit(level);
+
+            // Research productivity: every unit earns a fraction of a free one, and a whole one
+            // is reported to the world without any packs being spent on it.
+            productivity.earn(modules.effect().productivityBonus());
+            if (productivity.owed()) {
+                productivity.pay();
+                cycles++;
+                Research.addUnit(level);
+            }
         }
 
         setChanged();
@@ -377,6 +423,9 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
         packs.serialize(output.child("Packs"));
+        modules.serialize(output.child("Modules"));
+        productivity.save(output);
+        output.putInt("Draw", draw);
         energy.serialize(output.child("Energy"));
         output.putInt("Progress", progress);
         output.putInt("Cycles", cycles);
@@ -387,6 +436,9 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         input.child("Packs").ifPresent(packs::deserialize);
+        input.child("Modules").ifPresent(modules::deserialize);
+        productivity.load(input);
+        draw = input.getIntOr("Draw", ENERGY_PER_TICK);
         input.child("Energy").ifPresent(energy::deserialize);
         progress = input.getIntOr("Progress", 0);
         cycles = input.getIntOr("Cycles", 0);
@@ -406,7 +458,7 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new LabMenu(containerId, playerInventory, packs, menuData,
+        return new LabMenu(containerId, playerInventory, packs, modules, menuData,
                 ContainerLevelAccess.create(level, worldPosition));
     }
 
@@ -433,6 +485,15 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
             ItemResource pack = packs.getResource(slot);
             packs.set(slot, ItemResource.EMPTY, 0);
             Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), pack.toStack(amount));
+        }
+        for (int slot = 0; slot < modules.size(); slot++) {
+            int amount = modules.getAmountAsInt(slot);
+            if (amount <= 0) {
+                continue;
+            }
+            ItemResource module = modules.getResource(slot);
+            modules.set(slot, ItemResource.EMPTY, 0);
+            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), module.toStack(amount));
         }
     }
 }

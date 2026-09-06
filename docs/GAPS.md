@@ -75,9 +75,10 @@ Oil
 - **There is no map, so there is an x-ray.** Factorio's map view is how oil is found. Holding a
   pumpjack outlines every well within render distance through the terrain; further than that,
   nothing. Whether that finds a field at this density is a judgement only a player makes.
-- **No mining productivity, no pollution, no modules.** The pumpjack has two module slots and
-  10/min of pollution in Factorio, and mining productivity research raises its output. All three
-  are mechanics this pack does not have yet; the machine is the plain 90 kW one.
+- **No mining productivity, no pollution, and no module slots on the pumpjack.** Factorio's has
+  two and 10/min of pollution, and mining productivity research raises its output. Pollution and
+  the research are mechanics this pack does not have yet; the slots wait on a screen to put a
+  module in, which the pumpjack does not have. The machine is the plain 90 kW one.
 - **No brownout, again.** A pumpjack short of 12 FE stops; Factorio's runs slower.
 - **The tank is one number and the pipe run is one tank**, as for steam. Factorio 2.0's flow
   model — segments, throughput falling with length — is not modelled, and a pipeline here carries
@@ -96,8 +97,8 @@ Oil
 - **A machine's ports have no throughput.** A port takes whatever its run offers up to its tank,
   and a craft's worth leaves an output in one tick; Factorio's fluid boxes fill and drain through
   its flow model. The same gap as the pipes' - see above - seen from the machine.
-- **No modules, no pollution, no brownout on the refinery and the chemical plant**, as for the
-  pumpjack and the assemblers. The refinery is the plain 420 kW machine and the plant the 210 kW one.
+- **No pollution and no brownout on the refinery and the chemical plant**, as for the
+  pumpjack and the assemblers. Both take three modules, which is Factorio's number.
 - **The storage tank has no window.** Factorio's shows a bar; the hover readout says the same
   line. And nothing empties a tank on purpose: there is no pump, by decision - see `PLAN.md` - so
   what leaves a tank is what its run's sinks draw, and a tank of the wrong fluid on a run is
@@ -250,6 +251,24 @@ Mining
   `nauvis_machines` per `PLAN.md`, and a range module has no counterpart at all — a drill's area
   is a property of the entity. The three items are live ids in the pack's namespace, which is why
   they are the first thing job 1 resolves.
+
+Modules
+-------
+
+- **Tier one only.** Speed, efficiency and productivity modules 2 and 3 cost production and
+  utility science, which the pack does not make. The mapping has their ids; nothing registers
+  them.
+- **No beacon.** `effect-transmission` costs production science. A module works in the machine
+  it sits in and nowhere else.
+- **A refused recipe says nothing.** Choosing a recipe that may not have productivity modules
+  while one sits in the machine is refused, as Factorio refuses it - but Factorio says so and
+  this pack's panel does not, so the click looks like nothing happened. Take the module out
+  first, or read the tooltip on the slot.
+- **The drills still take Neo Progressive Automation's modules.** `nauvis_mining:speed_module`,
+  `efficiency_module` and `range_module` are the fork's, not Factorio's, and its slots refuse
+  ours. Job 4 in `NEXT.md` replaces them.
+- **A module's effect is read as a craft starts and held for the craft.** Pull a speed module
+  out mid-craft and that craft finishes at the speed it began at, which is Factorio's rule.
 
 Smelting
 --------

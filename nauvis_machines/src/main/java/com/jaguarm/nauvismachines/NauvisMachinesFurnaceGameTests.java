@@ -94,6 +94,7 @@ public final class NauvisMachinesFurnaceGameTests {
         TEST_TYPES.register("only_the_electric_furnace_takes_power", () -> OnlyTheElectricFurnaceTakesPowerTest.CODEC);
         TEST_TYPES.register("furnace_smelts_vanilla_recipes", () -> FurnaceSmeltsVanillaRecipesTest.CODEC);
         TEST_TYPES.register("furnaces_say_where_smelting_happens", () -> FurnacesSayWhereSmeltingHappensTest.CODEC);
+        TEST_TYPES.register("electric_furnace_takes_modules", () -> ElectricFurnaceTakesModulesTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -109,6 +110,7 @@ public final class NauvisMachinesFurnaceGameTests {
         register(event, environment, "stone_furnace_smelts", StoneFurnaceSmeltsTest::new, 120);
         register(event, environment, "steel_furnace_is_twice_as_fast", SteelFurnaceIsTwiceAsFastTest::new, 120);
         register(event, environment, "electric_furnace_runs_on_power", ElectricFurnaceRunsOnPowerTest::new, 200);
+        register(event, environment, "electric_furnace_takes_modules", ElectricFurnaceTakesModulesTest::new, 100);
         register(event, environment, "furnace_wakes_when_fuel_arrives", FurnaceWakesWhenFuelArrivesTest::new, 200);
         register(event, environment, "furnace_keeps_its_coal_when_idle", FurnaceKeepsItsCoalWhenIdleTest::new, 60);
         register(event, environment, "furnace_takes_only_what_it_can_use", FurnaceTakesOnlyWhatItCanUseTest::new, 20);
@@ -894,6 +896,67 @@ public final class NauvisMachinesFurnaceGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("only the electric furnace takes power");
+        }
+    }
+
+    /**
+     * The electric furnace has two module slots, the burner furnaces none, and two speed modules
+     * smelt a plate in twenty-three ticks instead of thirty-two.
+     *
+     * <p>Sixty-four ticks over a crafting speed of two times 1.4 is 22.9, so twenty-three, and the
+     * draw is twice the tier's - half again for each module, added. The stone furnace is asserted
+     * too: a slot it does not have is a slot a module cannot be put in.
+     */
+    public static class ElectricFurnaceTakesModulesTest extends GameTestInstance {
+
+        public static final MapCodec<ElectricFurnaceTakesModulesTest> CODEC =
+                RecordCodecBuilder.<ElectricFurnaceTakesModulesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ElectricFurnaceTakesModulesTest::info))
+                                .apply(i, ElectricFurnaceTakesModulesTest::new));
+
+        public ElectricFurnaceTakesModulesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            FurnaceBlockEntity furnace = place(helper, FURNACE, ModBlocks.ELECTRIC_FURNACE.get());
+            helper.assertValueEqual(furnace.modules().size(), ElectricFurnaceBlock.MODULE_SLOTS,
+                    "module slots on an electric furnace");
+            for (int slot = 0; slot < ElectricFurnaceBlock.MODULE_SLOTS; slot++) {
+                try (Transaction transaction = Transaction.openRoot()) {
+                    helper.assertValueEqual(
+                            furnace.modules().insert(slot, ItemResource.of(ModItems.SPEED_MODULE.get()), 1, transaction),
+                            1, "a speed module taken by slot " + slot);
+                    transaction.commit();
+                }
+            }
+            helper.assertValueEqual(furnace.currentEnergyPerTick(), 2 * ElectricFurnaceBlock.ENERGY_PER_TICK,
+                    "the draw under two speed modules");
+            charge(furnace);
+            feed(helper, furnace, 0, 1);
+
+            // Sixty-four over two times 1.4 is twenty-three; bare it would be thirty-two.
+            helper.startSequence()
+                    .thenExecuteAfter(20, () -> helper.assertValueEqual(output(furnace), 0,
+                            "ingots before even a modded smelt could have finished"))
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(output(furnace), 1,
+                                "ingots twenty-five ticks in - a bare electric furnace would still be smelting");
+                        helper.assertValueEqual(place(helper, FURNACE.offset(4, 0, 0), ModBlocks.STONE_FURNACE.get())
+                                .modules().size(), 0, "module slots on a stone furnace");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an electric furnace takes modules");
         }
     }
 }

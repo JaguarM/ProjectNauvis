@@ -51,4 +51,12 @@ public class ElectricFurnaceBlock extends FurnaceBlock {
     public int energyPerTick() {
         return ENERGY_PER_TICK;
     }
+
+    /** Factorio's electric furnace has two; the burner furnaces have none. */
+    @Override
+    public int moduleSlots() {
+        return MODULE_SLOTS;
+    }
+
+    public static final int MODULE_SLOTS = 2;
 }

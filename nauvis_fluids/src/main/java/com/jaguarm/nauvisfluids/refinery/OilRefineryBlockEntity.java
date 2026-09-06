@@ -39,7 +39,11 @@ public class OilRefineryBlockEntity extends ProcessingBlockEntity {
     public static final String CATEGORY = "oil-processing";
     /** 420 kW at the pack's ratio. The ratio is what is kept. */
     public static final int ENERGY_PER_TICK = 56;
-    public static final ProcessingLayout LAYOUT = new ProcessingLayout(CATEGORY, 2, 3, 0, 0, ENERGY_PER_TICK);
+    /** Factorio's refinery takes three. */
+    public static final int MODULE_SLOTS = 3;
+
+    public static final ProcessingLayout LAYOUT =
+            new ProcessingLayout(CATEGORY, 2, 3, 0, 0, ENERGY_PER_TICK, MODULE_SLOTS);
 
     /** Which input each fluid keeps: water left, crude right. */
     public static final int WATER_PORT = 0;
@@ -80,6 +84,6 @@ public class OilRefineryBlockEntity extends ProcessingBlockEntity {
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new OilRefineryMenu(containerId, playerInventory, items(), menuData(), worldPosition);
+        return new OilRefineryMenu(containerId, playerInventory, items(), modules(), menuData(), worldPosition);
     }
 }

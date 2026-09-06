@@ -40,4 +40,12 @@ public class AssemblingMachine2Block extends AssemblerBlock {
     public int energyPerTick() {
         return ENERGY_PER_TICK;
     }
+
+    /** Factorio's assembling machine 2 has two. */
+    @Override
+    public int moduleSlots() {
+        return MODULE_SLOTS;
+    }
+
+    public static final int MODULE_SLOTS = 2;
 }

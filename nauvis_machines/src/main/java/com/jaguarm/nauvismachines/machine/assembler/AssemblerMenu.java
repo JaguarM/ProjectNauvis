@@ -3,6 +3,7 @@ package com.jaguarm.nauvismachines.machine.assembler;
 import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.facrafting.machine.RecipeSelector;
+import com.jaguarm.nauvislib.module.ModuleSlots;
 import com.jaguarm.nauvismachines.registry.ModMenus;
 
 import net.minecraft.core.BlockPos;
@@ -21,7 +22,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 
 /**
- * The assembler's menu: six ingredient slots, one output slot, and the machine's progress.
+ * The assembler's menu: six ingredient slots, one output slot, the tier's module slots, and the
+ * machine's progress.
  *
  * <p>Implements {@link RecipeSelector}, which is what makes Facrafting's crafting panel change
  * its mind about what a click means. With this menu open, clicking a recipe over there points
@@ -32,6 +34,10 @@ import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
  * <p>The chosen recipe is not a data slot, because a recipe key is not an int. The client reads
  * it off the block entity instead, which it already has - {@link AssemblerBlockEntity} pushes its
  * state to watching clients whenever the recipe changes.
+ *
+ * <p>How many module slots there are is the tier's, read off the block at the machine's position
+ * on both sides, so an assembling machine 1 draws none and an assembling machine 2 draws two, and
+ * the client's stand-in handler is the right size for the slots it is asked to show.
  */
 public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelector {
 
@@ -43,9 +49,10 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
     public static final int DATA_ENERGY = 2;
 
     /**
-     * What a tick of crafting costs and how much the buffer holds, which differ by tier. Sent
-     * rather than read off a constant, because the client's menu knows the machine's position and
-     * not its block, and a bar drawn against the wrong tier's capacity would read as always full.
+     * What a tick of crafting costs and how much the buffer holds, which differ by tier - and by
+     * the modules in it. Sent rather than read off a constant, because the client's menu knows
+     * the machine's position and not its block, and a bar drawn against the wrong tier's capacity
+     * would read as always full.
      */
     public static final int DATA_ENERGY_PER_TICK = 3;
     public static final int DATA_ENERGY_CAPACITY = 4;
@@ -58,12 +65,15 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
      * <p>Everything is arranged around one horizontal centre line at y=35: the ingredient block
      * runs 17..53, the output well 26..44, and the progress bar sits between them. The first
      * attempt put the bar at x=74 while the third ingredient column ran to x=84, and drew one on
-     * top of the other.
+     * top of the other. The module slots stand to the right of the output, in a row, on the same
+     * centre line.
      */
     public static final int INPUT_X = 8;
     public static final int INPUT_Y = 17;
     public static final int OUTPUT_X = 116;
     public static final int OUTPUT_Y = 26;
+    public static final int MODULE_X = 136;
+    public static final int MODULE_Y = 26;
 
     private static final int PLAYER_SLOTS = 36;
 
@@ -72,16 +82,21 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
     private final BlockPos machinePos;
     private final Level level;
 
+    /** How many of this menu's slots are the machine's; the player's follow. */
+    private final int machineSlots;
+    private final int moduleSlots;
+
     /** Client side: NeoForge's menu factory hands the machine's position across. */
     public AssemblerMenu(int containerId, Inventory playerInventory, BlockPos machinePos) {
         this(containerId, playerInventory,
                 new AssemblerInventory(AssemblerBlockEntity.SLOT_COUNT, () -> {}),
+                new ModuleSlots(moduleSlotsAt(playerInventory.player.level(), machinePos), () -> {}),
                 new SimpleContainerData(DATA_COUNT),
                 machinePos);
     }
 
     public AssemblerMenu(int containerId, Inventory playerInventory, AssemblerInventory inventory,
-            ContainerData data, BlockPos machinePos) {
+            ModuleSlots modules, ContainerData data, BlockPos machinePos) {
         super(ModMenus.ASSEMBLER.get(), containerId);
         this.data = data;
         this.machinePos = machinePos;
@@ -98,6 +113,12 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
 
         addSlot(new OutputSlot(inventory, AssemblerBlockEntity.OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y));
 
+        moduleSlots = modules.size();
+        for (int index = 0; index < moduleSlots; index++) {
+            addSlot(new ResourceHandlerSlot(modules, modules::set, index, MODULE_X + index * 18, MODULE_Y));
+        }
+        machineSlots = slots.size();
+
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 addSlot(new Slot(playerInventory, 9 + row * 9 + col, 8 + col * 18, 84 + row * 18));
@@ -108,6 +129,11 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
         }
 
         addDataSlots(data);
+    }
+
+    /** The tier's module slot count, read off the block, or none for a block that is not one of ours. */
+    private static int moduleSlotsAt(Level level, BlockPos pos) {
+        return level.getBlockState(pos).getBlock() instanceof AssemblerBlock block ? block.moduleSlots() : 0;
     }
 
     /**
@@ -207,11 +233,16 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
 
-        int machineEnd = AssemblerBlockEntity.SLOT_COUNT;
-        int inventoryEnd = machineEnd + PLAYER_SLOTS;
+        int inventoryEnd = machineSlots + PLAYER_SLOTS;
 
-        if (index < machineEnd) {
-            if (!moveItemStackTo(stack, machineEnd, inventoryEnd, true)) {
+        if (index < machineSlots) {
+            if (!moveItemStackTo(stack, machineSlots, inventoryEnd, true)) {
+                return ItemStack.EMPTY;
+            }
+        } else if (ModuleSlots.moduleOf(stack) != null) {
+            // A module goes to the module slots and nowhere else: an ingredient slot would take
+            // it and the machine would then sit waiting for a recipe that wants one.
+            if (!moveItemStackTo(stack, AssemblerBlockEntity.SLOT_COUNT, machineSlots, false)) {
                 return ItemStack.EMPTY;
             }
         } else if (!moveItemStackTo(stack, 0, AssemblerBlockEntity.INPUT_SLOTS, false)) {

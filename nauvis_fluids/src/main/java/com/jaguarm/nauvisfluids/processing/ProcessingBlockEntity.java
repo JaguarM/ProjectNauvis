@@ -9,6 +9,9 @@ import java.util.function.ToIntFunction;
 import com.jaguarm.facrafting.queue.CraftListeners;
 import com.jaguarm.facrafting.recipe.CraftPlanner;
 import com.jaguarm.facrafting.recipe.FacraftRecipe;
+import com.jaguarm.nauvislib.module.ModuleEffect;
+import com.jaguarm.nauvislib.module.ModuleSlots;
+import com.jaguarm.nauvislib.module.Productivity;
 import com.jaguarm.nauvislib.transfer.FluidOutputAccess;
 import com.jaguarm.nauvislib.transfer.MachineAccess;
 import com.jaguarm.nauvislib.transfer.MachinePower;
@@ -163,8 +166,34 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
         }
         items = new ProcessingInventory(layout.itemSlots(), this::onItemsChanged);
         automationView = new MachineAccess(items, layout.itemInputs());
+        // Every oil recipe makes an intermediate product, so every module is welcome here.
+        modules = new ModuleSlots(layout.moduleSlots(), this::onItemsChanged);
+        draw = layout.energyPerTick();
         energy = new MachinePower(layout.energyPerTick() * BUFFER_TICKS, this::onPowerChanged);
         gridView = new PowerAccess(energy);
+    }
+
+    /**
+     * The layout's module slots and the free craft they work towards. Read once a craft, as it
+     * starts, like the assembler's; a module pulled out mid-craft finishes that craft as it began.
+     */
+    private final ModuleSlots modules;
+    private final Productivity productivity = new Productivity();
+
+    /** The draw under the modules read at the start of the craft in progress. */
+    private int draw;
+
+    public ModuleSlots modules() {
+        return modules;
+    }
+
+    public Productivity productivity() {
+        return productivity;
+    }
+
+    /** The layout's draw under the modules in it right now, for the readout. */
+    public int currentEnergyPerTick() {
+        return modules.effect().scaleEnergy(layout.energyPerTick());
     }
 
     // --- what the outside world sees ------------------------------------------------------------
@@ -385,7 +414,12 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
 
     /** Factorio's rule: the recipe's time over the machine's crafting speed, never below one tick. */
     public static int craftTicksFor(FacraftRecipe recipe) {
-        return Math.max(1, Math.round(recipe.craftTicks() / CRAFTING_SPEED));
+        return craftTicksFor(recipe, ModuleEffect.NONE);
+    }
+
+    /** The same, with the modules' speed on top of the machine's. */
+    public static int craftTicksFor(FacraftRecipe recipe, ModuleEffect effect) {
+        return Math.max(1, (int) Math.round(recipe.craftTicks() / (CRAFTING_SPEED * effect.speedFactor())));
     }
 
     /** Called by the block, and only ever on a tick this machine asked for. */
@@ -399,7 +433,12 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
         if (recipe != assignedFor) {
             assign(recipe);
         }
-        craftTicks = craftTicksFor(recipe);
+        // The modules are read as the craft starts and hold for the craft, which is Factorio's rule.
+        if (progress == 0) {
+            ModuleEffect effect = modules.effect();
+            craftTicks = craftTicksFor(recipe, effect);
+            draw = effect.scaleEnergy(layout.energyPerTick());
+        }
         // The ingredients and the room for the products are checked once, as a craft starts.
         // Counting down is the cheap part; simulating a whole craft every tick is not.
         if (progress == 0) {
@@ -410,14 +449,14 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
             }
         }
         if (progress < craftTicks) {
-            if (energy.getAmountAsInt() < layout.energyPerTick()) {
+            if (energy.getAmountAsInt() < draw) {
                 // Out of power, holding the craft where it stands. The grid wakes this, through
                 // MachinePower.
                 settle(ProcessingStatus.NO_POWER);
                 return;
             }
             progress++;
-            energy.set(energy.getAmountAsInt() - layout.energyPerTick());
+            energy.set(energy.getAmountAsInt() - draw);
         }
         // Banking a finished craft costs nothing, and is not held for want of power: the buffer is
         // exactly one craft deep, so the last tick of every craft empties it, and a machine that
@@ -435,6 +474,15 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
                 // Factorio's craft-item trigger counts what a machine makes. Facrafting carries
                 // the news to whoever is counting, and this mod never learns who that is.
                 CraftListeners.fireMachine(level, recipe.resultStack());
+            }
+            // Productivity: every craft earns a fraction of a free one, and a whole one - every
+            // product of the recipe, fluids included - is banked unpaid when it is owed and fits.
+            productivity.earn(modules.effect().productivityBonus());
+            if (productivity.owed() && bankFree(recipe)) {
+                productivity.pay();
+                if (recipe.hasItemResult()) {
+                    CraftListeners.fireMachine(level, recipe.resultStack());
+                }
             }
         }
         status = ProcessingStatus.WORKING;
@@ -524,6 +572,39 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
         }
     }
 
+    /**
+     * Banks one more craft's products without paying for them: the productivity bonus. All or
+     * nothing, so a refinery owed a free craft with one output tank full banks nothing and stays
+     * owed, as Factorio's does.
+     */
+    private boolean bankFree(FacraftRecipe recipe) {
+        List<FluidStackTemplate> fluidsOut = recipe.fluidResults();
+        if (outputPorts.length != fluidsOut.size()) {
+            return false;
+        }
+        try (Transaction transaction = Transaction.openRoot()) {
+            for (int i = 0; i < fluidsOut.size(); i++) {
+                FluidStackTemplate result = fluidsOut.get(i);
+                if (outputPorts[i] < 0) {
+                    return false;
+                }
+                PortTank tank = outputs.get(outputPorts[i]);
+                if (tank.insert(0, FluidResource.of(result.fluid()), result.amount(), transaction) != result.amount()) {
+                    return false;
+                }
+            }
+            if (recipe.hasItemResult()) {
+                ItemStack result = recipe.resultStack();
+                int slot = layout.itemInputs();
+                if (items.insert(slot, ItemResource.of(result), result.getCount(), transaction) != result.getCount()) {
+                    return false;
+                }
+            }
+            transaction.commit();
+            return true;
+        }
+    }
+
     /** The selected recipe as it exists right now, or null if there is none or it is gone. */
     private @Nullable FacraftRecipe recipe(ServerLevel level) {
         return recipeKey == null ? null : resolve(level, recipeKey);
@@ -599,6 +680,15 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
             items.set(slot, ItemResource.EMPTY, 0);
             Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), resource.toStack(amount));
         }
+        for (int slot = 0; slot < modules.size(); slot++) {
+            int amount = modules.getAmountAsInt(slot);
+            if (amount <= 0) {
+                continue;
+            }
+            ItemResource resource = modules.getResource(slot);
+            modules.set(slot, ItemResource.EMPTY, 0);
+            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), resource.toStack(amount));
+        }
     }
 
     protected ContainerData menuData() {
@@ -615,6 +705,9 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
             outputs.get(i).serialize(output.child("Output" + i));
         }
         items.serialize(output.child("Items"));
+        modules.serialize(output.child("Modules"));
+        productivity.save(output);
+        output.putInt("Draw", draw);
         energy.serialize(output.child("Energy"));
         output.putInt("Progress", progress);
         output.putInt("Status", status.ordinal());
@@ -633,6 +726,9 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
             input.child("Output" + i).ifPresent(outputs.get(i)::deserialize);
         }
         input.child("Items").ifPresent(items::deserialize);
+        input.child("Modules").ifPresent(modules::deserialize);
+        productivity.load(input);
+        draw = input.getIntOr("Draw", layout.energyPerTick());
         input.child("Energy").ifPresent(energy::deserialize);
         progress = input.getIntOr("Progress", 0);
         status = ProcessingStatus.byOrdinal(input.getIntOr("Status", ProcessingStatus.NO_RECIPE.ordinal()));

@@ -6,6 +6,9 @@
   "block.nauvis_machines.stone_furnace": "Stone furnace",
   "config.jade.plugin_nauvis_machines": "Project Nauvis: Machines",
   "config.jade.plugin_nauvis_machines.furnace": "Furnace",
+  "item.nauvis_machines.effectivity_module": "Efficiency module",
+  "item.nauvis_machines.productivity_module": "Productivity module",
+  "item.nauvis_machines.speed_module": "Speed module",
   "itemGroup.nauvis_machines": "Project Nauvis: Machines",
   "pack.nauvis_machines.crafting_table": "Nauvis Machines: bench recipes (skips research)",
   "screen.nauvis_machines.assembler.idle": "Idle - pick a recipe on the right",
@@ -21,5 +24,8 @@
   "status.nauvis_machines.furnace.smelting": "Smelting %s",
   "status.nauvis_machines.furnace.unknown": "Smelting",
   "status.nauvis_machines.furnace.waiting": "Waiting for more of it - the recipe takes several at once",
-  "tab.facrafting.group.production": "Production"
+  "tab.facrafting.group.production": "Production",
+  "tooltip.nauvis_machines.module.energy": "Energy consumption %s",
+  "tooltip.nauvis_machines.module.productivity": "Productivity %s",
+  "tooltip.nauvis_machines.module.speed": "Speed %s"
 }
