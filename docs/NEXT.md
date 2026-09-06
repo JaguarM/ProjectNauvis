@@ -21,9 +21,11 @@ library from the machine's own placement rule. **The oil chain's fluids, items a
 heavy and light oil, petroleum gas, lubricant and sulfuric acid; plastic, sulfur, battery, the
 advanced circuit, the engine unit, solid fuel and explosives; and every recipe from basic oil
 processing to cracking, generated with fluid ingredients and results now that Facrafting's recipe
-carries fluids. What is still missing is the machines that run them. Every block the pack registers
-is pickaxe work, but for the water. How each of these is built is `ARCHITECTURE.md`; what is deliberately missing
-from each is `GAPS.md`.
+carries fluids. **And the machines that run them**: the oil refinery with Factorio's five ports,
+the chemical plant with its four and its item slots, and the storage tank that levels with the
+pipeline it is joined to. Crude oil becomes plastic. Every block the pack registers is pickaxe
+work, but for the water. How each of these is built is `ARCHITECTURE.md`; what is deliberately
+missing from each is `GAPS.md`.
 
 | | |
 |---|---|
@@ -49,6 +51,9 @@ from each is `GAPS.md`.
 | `nauvis_fluids:pumpjack` | 3×3, ten blocks, centred on a well or nowhere; 12 FE/t; 10 × yield a second into a 1000 tank, a cycle capped at the tank; oil leaves the north-east corner's north face and turns with the machine. Snaps to the well, x-rays every well while in hand |
 | `nauvis_fluids:water` | **the water of every lake and sea the world generates**, in place of `minecraft:water`: swum in, boated on and scooped exactly as before, but a bucket of it is a water bucket, a poured bucket is vanilla's water, and two sources never make a third. A lake is as big as the world made it |
 | `nauvis_fluids:offshore_pump` | 1×2, two blocks; body on the shore, intake ahead of it over the water. 40 water a tick into a 200 tank, no power, `minecraft:water` out of the body's back. **Stands only at natural water** - not a puddle, not a flow - and says so on the action bar when it will not. **Turns itself to the water** and floats when clicked onto a lake |
+| `nauvis_fluids:storage_tank` | 3×3, eleven blocks; 25000 of one fluid. A connection at one corner of each side, in a pinwheel, all the same port; **a length of the pipeline** - the run levels with it rather than filling or draining it, so it sleeps once settled |
+| `nauvis_fluids:oil_refinery` | 5×5, thirty blocks; 56 FE/t, crafting speed 1, the two `oil-processing` recipes chosen in the panel. **Factorio's ports**: water and crude in at the front, second and fourth cells; heavy, light and petroleum out at the back, corners and middle - fixed per fluid, so advanced processing adds pipes rather than moving them. A full output stalls the craft unpaid; drawing from it banks it |
+| `nauvis_fluids:chemical_plant` | 3×3, ten blocks; 28 FE/t, speed 1, every `chemistry` recipe: two fluids in at the back corners, two out at the front corners, two item slots in and one out. Water keeps the left input |
 | `nauvis_power:boiler` | 3×2, seven blocks; **boils water**: water in at both ends of the front row, two a tick, two steam out under the chimney, and nothing at all without water. A row of boilers passes water along itself, end to end |
 | `nauvis_power:steam_engine` | 5×3, seventeen blocks; steam in at the open ends of its spine, 120 FE/t out |
 | `nauvis_power:small_electric_pole` | 1×1×4, wood. Reaches 7.5, supplies 5×5 |
@@ -124,28 +129,23 @@ None of the rest is a small change, and none of it is urgent: the drills work, t
 and their recipes and footprints are already Factorio-correct. Do it as one designed piece rather
 than four.
 
-### 2. Oil, the rest of it
+### 2. Oil, what is left
 
-`sulfur`, `battery` and the `accumulator` cannot be built yet, and it is not the code: sulfur is
-petroleum gas and water, a battery is sulfuric acid, and an accumulator is five batteries — the
-whole branch waits on the refinery. The accumulator also wants `PowerNetwork`'s third case; see
-`GAPS.md`.
+The chain runs end to end - well, pumpjack, refinery, chemical plant, plastic - and every recipe on
+the branch is a real one a machine makes. What is still mapped and not built:
 
-- **The refinery, which is the hard part.** Three outputs that block each other — heavy, light,
-  petroleum — into separate tanks, and a full tank stalls the machine. That is the puzzle Factorio's
-  oil *is*, and it needs real capacity and back-pressure, not barrels. `FluidNetwork` already
-  carries any fluid, one per run; what it lacks is a tank block and a machine with several fluid
-  ports. The `storage-tank` is 3×3 and mapped. `oil-processing` already unlocks both machines.
-- **The recipes are there, generated.** `data/fluid_recipes.json` carries what the dump cannot -
-  the refinery's three, the two crackings, the three solid fuels - and `gen_recipes.py` writes
-  fluid ingredients and results into every recipe that has them; Facrafting's recipe carries
-  fluids and may make no item at all. Plastic, sulfur, the battery, the advanced circuit, the engine
-  unit, solid fuel and explosives are registered, with textures from the workshop, and the tree has
-  `advanced-oil-processing`, `lubricant`, `battery` and `explosives`. The panel shows all of it,
-  dimmed, and says no machine makes it yet, which is true.
-- **The chemical plant** is the same shape as the refinery with items as well as fluids: two item
-  slots in, one out, two fluids in, two out, 3×3, 210 kW, and every `chemistry` recipe. Build the
-  two on one base.
+- **A client boot to look at the three machines.** The refinery's column, the tank's drum and the
+  chemical plant's vat are boxes chosen without eyes, on vanilla textures; `render_model.py` shows
+  them without a boot, and a boot shows the two screens, whose bars are in the fluids' own
+  colours. Nothing has been looked at.
+- **The pump and pipe-to-ground.** Factorio's `pump` is 1×2, moves 1200 a second one way and is
+  the only way to empty a tank on purpose; `pipe-to-ground` is two blocks with up to ten of nothing
+  between them. Both are mapped to `nauvis_fluids` and behind `fluid-handling`, which is in the
+  tree and unlocks a storage tank a player can already build.
+- **The accumulator.** A battery is buildable now - sulfuric acid, iron and copper in a chemical
+  plant - so five of them are, and what the accumulator waits on is `PowerNetwork`'s third case;
+  see `GAPS.md`.
+- **Barrels**, which are Factorio's assembler taking and giving a fluid in an item. See `GAPS.md`.
 
 ### 3. More removals follow the items
 

@@ -61,21 +61,12 @@ dependencies {
     // there, so this mod still runs standalone without it.
     compileOnly "maven.modrinth:jade:${jade_version}"
 
-    // No compile-time dependency, deliberately. An inserter moves items between whatever is
-    // beside it through Capabilities.Item.BLOCK, which is NeoForge's - it never needs to know
-    // what a Facrafting recipe is. nauvis_machines is the one mod in the pack that compiles
-    // against a sibling, and it should stay the only one.
-    //
-    // These two are runtime only, so a standalone run of this mod has the mods its recipes
-    // name: Facrafting supplies the timed recipe type, Neo Progressive Materials the iron
-    // gear wheel an inserter is paid for in.
-    // Facrafting is optional and stays so. compileOnly for the one class in compat/facrafting
-    // that names its types - the pumpjack reports what it mines through Facrafting's
-    // MiningListeners, which is how oil processing gets finished without this mod knowing what
-    // research is - loaded only when ModList says Facrafting is there, exactly as the Jade
-    // plugins are. Runtime as well, so a standalone run has the timed recipe type.
-    compileOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
-    runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
+    // Facrafting, required: the refinery and the chemical plant run its fluid recipes, choose
+    // them through its panel and say "Made in:" through its categories. A machine that runs a
+    // FacraftRecipe has to be able to name the type, which is the exception non-negotiable #3
+    // makes for Facrafting and nothing else. The pumpjack reports what it mines through
+    // Facrafting's MiningListeners for the same reason - research is another subsystem mod.
+    implementation "com.jaguarm.facrafting:facrafting:${facrafting_version}"
 }
 
 neoForge {

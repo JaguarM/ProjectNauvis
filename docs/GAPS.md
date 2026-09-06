@@ -79,13 +79,28 @@ Oil
 - **The tank is one number and the pipe run is one tank**, as for steam. Factorio 2.0's flow
   model — segments, throughput falling with length — is not modelled, and a pipeline here carries
   whatever is put in at once.
-- **Crude oil goes nowhere yet.** No refinery, no storage tank, no barrelling. A pumpjack fills the
-  pipe run it is attached to and stops, and says *Full*, which is correct and not a fault.
-- **`oil-processing` unlocks two machines that do not exist.** It is in the tree as Factorio 2.0's
-  trigger — pump crude oil once — and finishes correctly; the refinery and the chemical plant it
-  hands over are mapped and not built, so finishing it changes nothing a player can do yet. The
-  recipes it and its branch unlock are real and show in the panel, dimmed, with no "Made in:"
-  line, because no machine has registered for `oil-processing` or `chemistry`.
+- **Where each fluid enters and leaves a machine is a table on the machine, not a field on the
+  recipe.** Factorio fixes it per recipe with `fluidbox_index`, which `data/fluid_recipes.json`
+  does not carry. The refinery keeps water and crude at its first and second inputs and heavy,
+  light and petroleum at its three outputs; the chemical plant keeps water at its first input;
+  everything else takes the next free port in recipe order. That reproduces Factorio for every
+  recipe the pack ships - basic oil processing's crude and gas are where advanced processing's
+  are, so the upgrade adds pipes rather than moving them - and a recipe from another pack with a
+  fluid no table names gets the next free port, which is Factorio's default too.
+- **Changing a machine's recipe throws away what the new recipe has no port for.** Factorio does
+  the same, behind a confirmation; there is no confirmation here. A refinery switched from
+  advanced to basic processing loses its heavy and light oil.
+- **A machine's ports have no throughput.** A port takes whatever its run offers up to its tank,
+  and a craft's worth leaves an output in one tick; Factorio's fluid boxes fill and drain through
+  its flow model. The same gap as the pipes' - see above - seen from the machine.
+- **No modules, no pollution, no brownout on the refinery and the chemical plant**, as for the
+  pumpjack and the assemblers. The refinery is the plain 420 kW machine and the plant the 210 kW one.
+- **The storage tank has no window.** Factorio's shows a bar; the hover readout says the same
+  line. And nothing empties a tank on purpose: with no pump built, what leaves a tank is what its
+  run's sinks draw, so a tank of the wrong fluid on a run is emptied by breaking it.
+- **A tank on two runs is levelled by each in turn**, one tick apart, rather than as one segment.
+  It converges within a few ticks and then sleeps, which is close enough to be indistinguishable at
+  the readout, and not Factorio's single fluid segment.
 - **No coal liquefaction, and no barrels.** Coal liquefaction's technology needs production
   science, which the tree does not reach, and a recipe no technology names is free from the first
   tick, so the recipe is left out of `data/fluid_recipes.json` rather than shipped unlocked. The
@@ -94,8 +109,9 @@ Oil
 - **Explosives do nothing.** The item exists because the chemical plant makes it and the mapping
   owns it; cliff explosives and artillery are milestones away.
 - **A mine trigger is only heard with Facrafting installed.** The pumpjack reports through
-  Facrafting's `MiningListeners`, the one seam two subsystem mods may share; a standalone run of
-  `nauvis_research` without it can complete craft triggers from vanilla's own events and mine
+  Facrafting's `MiningListeners`, the one seam two subsystem mods may share, and `nauvis_fluids`
+  now requires Facrafting outright, since its machines run Facrafting's recipes. A standalone run
+  of `nauvis_research` without it can complete craft triggers from vanilla's own events and mine
   triggers from nothing. The pack always ships Facrafting, so this is a fact about the seam rather
   than a hole a player meets.
 

@@ -2,15 +2,22 @@ package com.jaguarm.nauvislib.client;
 
 import com.jaguarm.nauvislib.NauvisLib;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
+import net.neoforged.neoforge.client.fluid.FluidTintSource;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The screen every machine in the pack is drawn on.
@@ -148,6 +155,28 @@ public abstract class MachineScreen<T extends AbstractContainerMenu> extends Abs
         if (amount > 0) {
             graphics.fill(left, top, left + amount, top + height, colour);
         }
+    }
+
+    /**
+     * A bar of a fluid, in the colour the fluid is drawn with in the world.
+     *
+     * <p>The colour is read off the fluid's own model - the tint its still texture is drawn with -
+     * so a tank of heavy oil is the brown Factorio made it and a tank of water is water, with no
+     * table of colours kept here to drift from the one in the fluid mod. An empty bar, or one with
+     * no fluid to name, is the plain fill colour.
+     */
+    protected static void fluidBar(GuiGraphicsExtractor graphics, int left, int top, int width, int height,
+            float fill, @Nullable Fluid fluid) {
+        int colour = fluid == null || fluid == Fluids.EMPTY ? COLOR_FILL : fluidColour(fluid);
+        bar(graphics, left, top, width, height, fill, colour);
+    }
+
+    /** The colour a fluid is drawn with in the world, opaque. */
+    public static int fluidColour(Fluid fluid) {
+        FluidState state = fluid.defaultFluidState();
+        FluidModel model = Minecraft.getInstance().getModelManager().getFluidStateModelSet().get(state);
+        FluidTintSource tint = model.fluidTintSource();
+        return tint == null ? 0xFFFFFFFF : tint.color(state) | 0xFF000000;
     }
 
     protected static boolean within(double mouseX, double mouseY, int x, int y, int width, int height) {

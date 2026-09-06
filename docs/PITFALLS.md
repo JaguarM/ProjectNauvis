@@ -75,6 +75,14 @@ Blocks and multi-blocks
   face its pipe lies on now - `FluidNetwork.addEndpoint` takes the face - which is the question
   `PipeBlock.connects` was already asking. **Anything that resolves a sided capability has to say
   which side, or it is asking a different question from the one it draws.**
+- **A full sink looks exactly like a source to an insert probe.** The pipe run told them apart by
+  asking a handler to take one unit back - a source refuses, a sink accepts - and a sink with no
+  room refuses too. So the tick a boiler's water tank stood full with room in the pipe, the run
+  drained the boiler into itself, pushed it back next tick, and counted both as work: a run that
+  never slept and a tank that sloshed. The run now asks a second question of anything that refused
+  - `isValid` and `getCapacityAsLong` - and `FluidOutputAccess` answers no to both, so a source is
+  a source when it is empty too. **An extract-only view must report no capacity and nothing
+  valid**, not delegate those to the tank behind it.
 - **A machine spills its inventory from `BlockEntity#preRemoveSideEffects`**, not from
   `Block#affectNeighborsAfterRemoval`. The base implementation drops contents only for a
   `Container`, so a capability inventory — a `ResourceHandler` — that does not override it eats
@@ -171,6 +179,13 @@ Waking, ticking and belts
   belt with `y = 0` clears `onGround` — and the next tick's `stepOn` does not run, so the belt
   carries in stutters. For a player it also breaks fall damage and step sounds.
   `BeltBlock.stepOn` reads `onGround()` before the move and puts it back after.
+
+- **Bank a finished craft before asking for power.** A machine's buffer is a hundred ticks of
+  its own draw and a refinery's recipe is a hundred ticks long, so the last tick of every craft
+  empties the buffer. A tick that checked for power before handing over what was already made
+  stalled on every craft with the product in hand, and the test read it as `NO_POWER` at the very
+  moment the gas should have appeared. The pumpjack had the order right; the processing machine
+  copied the assembler, whose recipes are shorter than its buffer, and did not.
 
 Gametests
 ---------

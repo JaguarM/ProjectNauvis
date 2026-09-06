@@ -21,7 +21,7 @@ import net.neoforged.fml.common.Mod;
  * world save from the first placement onwards. What is behind an id may be crude and rewritten;
  * the id may not.
  *
- * <p>This is the one mod in the pack with a compile-time dependency, on Facrafting: an
+ * <p>This mod compiles against Facrafting, as {@code nauvis_fluids} does for its refinery: an
  * assembler <em>is</em> a machine that runs a timed Facrafting recipe. The arrow points one way
  * and there is no cycle, which is what non-negotiable #3 asks for.
  */

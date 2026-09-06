@@ -8,7 +8,10 @@ import com.jaguarm.nauvisfluids.NauvisFluids;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlock;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpShape;
+import com.jaguarm.nauvisfluids.chemicalplant.ChemicalPlantShape;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;
+import com.jaguarm.nauvisfluids.refinery.OilRefineryShape;
+import com.jaguarm.nauvisfluids.tank.StorageTankShape;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
 import com.jaguarm.nauvisfluids.registry.ModFluids;
 import com.jaguarm.nauvisfluids.registry.ModItems;
@@ -63,7 +66,7 @@ public final class NauvisFluidsData {
     /**
      * Which tool mines what.
      *
-     * <p>The pipe and the two pumps all require the correct tool for their drops, and the tool
+     * <p>The pipe, the pumps and the oil machines all require the correct tool for their drops, and the tool
      * that is correct is decided by this tag and nothing else - a block that requires a tool and
      * is in no {@code mineable/} tag has no correct tool, and never drops. The oil well is not
      * here: it is unbreakable, and has no drops to protect. Nor is water, for the reason water
@@ -80,7 +83,10 @@ public final class NauvisFluidsData {
             tag(BlockTags.MINEABLE_WITH_PICKAXE)
                     .add(ModBlocks.PIPE.getKey())
                     .add(ModBlocks.OFFSHORE_PUMP.getKey())
-                    .add(ModBlocks.PUMPJACK.getKey());
+                    .add(ModBlocks.PUMPJACK.getKey())
+                    .add(ModBlocks.STORAGE_TANK.getKey())
+                    .add(ModBlocks.OIL_REFINERY.getKey())
+                    .add(ModBlocks.CHEMICAL_PLANT.getKey());
         }
     }
 
@@ -129,6 +135,9 @@ public final class NauvisFluidsData {
             addBlock(ModBlocks.CRUDE_OIL, "Crude oil");
             addBlock(ModBlocks.PUMPJACK, "Pumpjack");
             addBlock(ModBlocks.OFFSHORE_PUMP, "Offshore pump");
+            addBlock(ModBlocks.STORAGE_TANK, "Storage tank");
+            addBlock(ModBlocks.OIL_REFINERY, "Oil refinery");
+            addBlock(ModBlocks.CHEMICAL_PLANT, "Chemical plant");
             // "Water", exactly as a bucket's is. The world's water and a poured puddle look the
             // same and are scooped the same; the one thing that tells them apart is an offshore
             // pump, and the pump is what says so. The fluid type names itself by this key too.
@@ -152,6 +161,8 @@ public final class NauvisFluidsData {
             add("config.jade.plugin_nauvis_fluids.crude_oil", "Oil well");
             add("config.jade.plugin_nauvis_fluids.pumpjack", "Pumpjack");
             add("config.jade.plugin_nauvis_fluids.offshore_pump", "Offshore pump");
+            add("config.jade.plugin_nauvis_fluids.storage_tank", "Storage tank");
+            add("config.jade.plugin_nauvis_fluids.processing", "Oil refinery and chemical plant");
 
             // Factorio's pipe tooltip, as near as is honest. It says "Pipeline extent: 6/320";
             // the 320 is its cap on one fluid segment and this pack has none, so ours stops at
@@ -193,6 +204,27 @@ public final class NauvisFluidsData {
             // any GUI scale above the smallest. The second is the one that teaches the rule.
             add(OffshorePumpBlock.NO_WATER_KEY, "No water here to pump");
             add(OffshorePumpBlock.WRONG_WATER_KEY, "Only a lake or the sea can be pumped");
+            // The storage tank's readout: Factorio's tank window is the one line.
+            add("jade.nauvis_fluids.storage_tank.contents", "%s: %s / %s");
+            add("jade.nauvis_fluids.storage_tank.empty", "Empty - holds %s");
+            // The refinery's and the chemical plant's: what it makes, the status line, the tanks.
+            add("jade.nauvis_fluids.processing.making", "Making %s");
+            add("jade.nauvis_fluids.processing.working", "Working");
+            add("jade.nauvis_fluids.processing.idle", "No recipe set");
+            add("jade.nauvis_fluids.processing.no_ingredients", "Waiting for ingredients");
+            add("jade.nauvis_fluids.processing.output_full", "Output full - nothing is drawing it off");
+            add("jade.nauvis_fluids.processing.no_power", "No power");
+            add("jade.nauvis_fluids.processing.tank", "%s: %s / %s");
+            // The same machines' screens. The idle line is the assembler's, because the answer
+            // is the same: the recipe is chosen in the panel to the right.
+            add("screen.nauvis_fluids.processing.idle", "Idle - pick a recipe on the right");
+            add("screen.nauvis_fluids.processing.unknown", "Making something this client has not been told about");
+            add("screen.nauvis_fluids.processing.making", "Making %s");
+            add("screen.nauvis_fluids.processing.no_power", "No power - run a wire to it");
+            add("screen.nauvis_fluids.processing.no_ingredients", "Waiting for ingredients");
+            add("screen.nauvis_fluids.processing.output_full", "Output full - nothing is drawing it off");
+            add("screen.nauvis_fluids.processing.tank", "%s: %s / %s");
+            add("screen.nauvis_fluids.processing.tank_empty", "Empty - no recipe uses this port");
 
             // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the
@@ -218,6 +250,9 @@ public final class NauvisFluidsData {
             // cell they hit - so only the anchor may carry a drop.
             add(ModBlocks.PUMPJACK.get(), anchorOnly(ModBlocks.PUMPJACK.get(), PumpjackShape.SHAPE));
             add(ModBlocks.OFFSHORE_PUMP.get(), anchorOnly(ModBlocks.OFFSHORE_PUMP.get(), OffshorePumpShape.SHAPE));
+            add(ModBlocks.STORAGE_TANK.get(), anchorOnly(ModBlocks.STORAGE_TANK.get(), StorageTankShape.SHAPE));
+            add(ModBlocks.OIL_REFINERY.get(), anchorOnly(ModBlocks.OIL_REFINERY.get(), OilRefineryShape.SHAPE));
+            add(ModBlocks.CHEMICAL_PLANT.get(), anchorOnly(ModBlocks.CHEMICAL_PLANT.get(), ChemicalPlantShape.SHAPE));
             // The oil well and the water have no table at all: noLootTable() in their properties,
             // so they are skipped here and drop nothing if anything ever manages to break one.
         }

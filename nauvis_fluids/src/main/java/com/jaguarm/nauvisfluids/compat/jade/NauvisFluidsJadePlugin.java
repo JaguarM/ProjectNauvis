@@ -3,7 +3,9 @@ package com.jaguarm.nauvisfluids.compat.jade;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlock;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlock;
 import com.jaguarm.nauvisfluids.pipe.PipeBlock;
+import com.jaguarm.nauvisfluids.processing.ProcessingBlock;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackBlock;
+import com.jaguarm.nauvisfluids.tank.StorageTankBlock;
 
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
@@ -11,7 +13,8 @@ import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.WailaPlugin;
 
 /**
- * What this mod tells Jade to say about a pipe, an oil well, a pumpjack and an offshore pump.
+ * What this mod tells Jade to say about a pipe, an oil well, a pumpjack, an offshore pump, a
+ * storage tank, and the two machines that process oil.
  *
  * <p>Nothing here loads unless Jade is installed - Jade finds this class by its annotation and
  * only then touches it, so the dependency stays {@code compileOnly} and the mod runs standalone
@@ -29,6 +32,8 @@ public class NauvisFluidsJadePlugin implements IWailaPlugin {
         registration.registerBlockDataProvider(CrudeOilReadout.INSTANCE, CrudeOilBlock.class);
         registration.registerBlockDataProvider(PumpjackReadout.INSTANCE, PumpjackBlock.class);
         registration.registerBlockDataProvider(OffshorePumpReadout.INSTANCE, OffshorePumpBlock.class);
+        registration.registerBlockDataProvider(StorageTankReadout.INSTANCE, StorageTankBlock.class);
+        registration.registerBlockDataProvider(ProcessingReadout.INSTANCE, ProcessingBlock.class);
     }
 
     @Override
@@ -37,5 +42,7 @@ public class NauvisFluidsJadePlugin implements IWailaPlugin {
         registration.registerBlockComponent(CrudeOilReadout.Client.INSTANCE, CrudeOilBlock.class);
         registration.registerBlockComponent(PumpjackReadout.Client.INSTANCE, PumpjackBlock.class);
         registration.registerBlockComponent(OffshorePumpReadout.Client.INSTANCE, OffshorePumpBlock.class);
+        registration.registerBlockComponent(StorageTankReadout.Client.INSTANCE, StorageTankBlock.class);
+        registration.registerBlockComponent(ProcessingReadout.Client.INSTANCE, ProcessingBlock.class);
     }
 }

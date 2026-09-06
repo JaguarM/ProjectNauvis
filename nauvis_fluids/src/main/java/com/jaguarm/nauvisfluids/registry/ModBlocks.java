@@ -1,10 +1,13 @@
 package com.jaguarm.nauvisfluids.registry;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
+import com.jaguarm.nauvisfluids.chemicalplant.ChemicalPlantBlock;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlock;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlock;
 import com.jaguarm.nauvisfluids.pipe.PipeBlock;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackBlock;
+import com.jaguarm.nauvisfluids.refinery.OilRefineryBlock;
+import com.jaguarm.nauvisfluids.tank.StorageTankBlock;
 
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SoundType;
@@ -90,6 +93,36 @@ public final class ModBlocks {
     public static final DeferredBlock<OffshorePumpBlock> OFFSHORE_PUMP = BLOCKS.registerBlock(
             "offshore_pump",
             OffshorePumpBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops());
+
+    /** Three by three, twenty-five thousand of one fluid. See {@link StorageTankBlock}. */
+    public static final DeferredBlock<StorageTankBlock> STORAGE_TANK = BLOCKS.registerBlock(
+            "storage_tank",
+            StorageTankBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops());
+
+    /** Five by five, crude oil in and three oils out. See {@link OilRefineryBlock}. */
+    public static final DeferredBlock<OilRefineryBlock> OIL_REFINERY = BLOCKS.registerBlock(
+            "oil_refinery",
+            OilRefineryBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops());
+
+    /** Three by three, every chemistry recipe. See {@link ChemicalPlantBlock}. */
+    public static final DeferredBlock<ChemicalPlantBlock> CHEMICAL_PLANT = BLOCKS.registerBlock(
+            "chemical_plant",
+            ChemicalPlantBlock::new,
             properties -> properties
                     .mapColor(MapColor.METAL)
                     .strength(3.0F, 6.0F)

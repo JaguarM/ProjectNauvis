@@ -268,6 +268,28 @@ public final class MachineShape {
         return named != null && named.contains(new Port(part, toLocal(side, facing)));
     }
 
+    /**
+     * The name of the port on this face of this cell, for a machine turned this way, or null
+     * when the face is not a port.
+     *
+     * <p>The other way round from {@link #hasPort}: a machine with several fluid ports - a
+     * refinery has five - publishes a different tank on each, so what it needs to know is not
+     * whether a face is <em>the</em> port but which one it is. A query with no side names no
+     * port, because a machine with several has no one answer to give.
+     */
+    public @Nullable String portAt(int part, @Nullable Direction side, Direction facing) {
+        if (side == null) {
+            return null;
+        }
+        Port port = new Port(part, toLocal(side, facing));
+        for (Map.Entry<String, Set<Port>> named : ports.entrySet()) {
+            if (named.getValue().contains(port)) {
+                return named.getKey();
+            }
+        }
+        return null;
+    }
+
     /** A world-space face, expressed in the machine's own north-facing frame. */
     public static Direction toLocal(Direction side, Direction facing) {
         if (side.getAxis() == Direction.Axis.Y) {

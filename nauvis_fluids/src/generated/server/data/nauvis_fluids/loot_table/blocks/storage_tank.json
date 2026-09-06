@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "conditions": [
+            {
+              "block": "nauvis_fluids:storage_tank",
+              "condition": "minecraft:block_state_property",
+              "properties": {
+                "part": "4"
+              }
+            }
+          ],
+          "name": "nauvis_fluids:storage_tank"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "nauvis_fluids:blocks/storage_tank"
+}

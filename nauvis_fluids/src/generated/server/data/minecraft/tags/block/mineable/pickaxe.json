@@ -2,6 +2,9 @@
   "values": [
     "nauvis_fluids:pipe",
     "nauvis_fluids:offshore_pump",
-    "nauvis_fluids:pumpjack"
+    "nauvis_fluids:pumpjack",
+    "nauvis_fluids:storage_tank",
+    "nauvis_fluids:oil_refinery",
+    "nauvis_fluids:chemical_plant"
   ]
 }

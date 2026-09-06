@@ -31,6 +31,9 @@ public final class ModItems {
             () -> new Item.Properties().useBlockDescriptionPrefix());
 
     public static final DeferredItem<BlockItem> PUMPJACK = ITEMS.registerSimpleBlockItem(ModBlocks.PUMPJACK);
+    public static final DeferredItem<BlockItem> STORAGE_TANK = ITEMS.registerSimpleBlockItem(ModBlocks.STORAGE_TANK);
+    public static final DeferredItem<BlockItem> OIL_REFINERY = ITEMS.registerSimpleBlockItem(ModBlocks.OIL_REFINERY);
+    public static final DeferredItem<BlockItem> CHEMICAL_PLANT = ITEMS.registerSimpleBlockItem(ModBlocks.CHEMICAL_PLANT);
 
     /**
      * The map editor's oil well. No recipe and no drop, so survival never sees one; it exists so
@@ -59,6 +62,9 @@ public final class ModItems {
                         output.accept(PIPE.get());
                         output.accept(OFFSHORE_PUMP.get());
                         output.accept(PUMPJACK.get());
+                        output.accept(STORAGE_TANK.get());
+                        output.accept(OIL_REFINERY.get());
+                        output.accept(CHEMICAL_PLANT.get());
                         output.accept(CRUDE_OIL.get());
                         output.accept(EXPLOSIVES.get());
                     })

@@ -11,7 +11,10 @@ import com.jaguarm.nauvislib.multiblock.Boxes;
 import com.jaguarm.nauvislib.multiblock.MachineCell;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpShape;
+import com.jaguarm.nauvisfluids.chemicalplant.ChemicalPlantShape;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;
+import com.jaguarm.nauvisfluids.refinery.OilRefineryShape;
+import com.jaguarm.nauvisfluids.tank.StorageTankShape;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
 import com.jaguarm.nauvisfluids.registry.ModItems;
 
@@ -86,6 +89,22 @@ public class NauvisFluidsModels extends ModelProvider {
         machine(blockModels, ModBlocks.OFFSHORE_PUMP.get(), OffshorePumpShape.SHAPE,
                 TextureMapping.getBlockTexture(Blocks.IRON_BLOCK).sprite(),
                 TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite());
+        // The oil machines share the pumpjack's dark shell, so the oil field and the refinery
+        // behind it read as one family; what stands on each deck is drawn in something else so
+        // it reads as the part that makes the machine that machine.
+        Identifier shell = TextureMapping.getBlockTexture(Blocks.POLISHED_BLACKSTONE).sprite();
+        Identifier deck = TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite();
+        Identifier iron = TextureMapping.getBlockTexture(Blocks.IRON_BLOCK).sprite();
+        // Copper is a weathering collection in 26.2, so its texture is named directly.
+        Identifier copper = Identifier.withDefaultNamespace("block/copper_block");
+        machine(blockModels, ModBlocks.STORAGE_TANK.get(), StorageTankShape.SHAPE, shell, deck,
+                Map.of(StorageTankShape.DRUM, iron));
+        machine(blockModels, ModBlocks.OIL_REFINERY.get(), OilRefineryShape.SHAPE, shell, deck,
+                Map.of(OilRefineryShape.TOWER, iron, OilRefineryShape.DRUM, copper));
+        // Factorio's chemical plant is the teal one.
+        machine(blockModels, ModBlocks.CHEMICAL_PLANT.get(), ChemicalPlantShape.SHAPE,
+                Identifier.withDefaultNamespace("block/cyan_terracotta"), deck,
+                Map.of(ChemicalPlantShape.VAT, iron));
     }
 
     /**
@@ -218,10 +237,21 @@ public class NauvisFluidsModels extends ModelProvider {
      */
     private static void machine(BlockModelGenerators blockModels, Block block, MachineShape shape,
             Identifier side, Identifier top) {
+        machine(blockModels, block, shape, side, top, Map.of());
+    }
+
+    /**
+     * The same, with some models drawn in a texture of their own: {@code parts} names a model
+     * and the texture for all six of its faces, for the drum on a tank or the column on a
+     * refinery, so the mechanism stands out from the shell it stands on.
+     */
+    private static void machine(BlockModelGenerators blockModels, Block block, MachineShape shape,
+            Identifier side, Identifier top, Map<String, Identifier> parts) {
         Map<String, Identifier> models = new HashMap<>();
         for (MachineCell cell : shape.cells()) {
-            models.computeIfAbsent(cell.model(),
-                    name -> cellModel(blockModels, block, cell, side, top));
+            models.computeIfAbsent(cell.model(), name -> parts.containsKey(name)
+                    ? cellModel(blockModels, block, cell, parts.get(name), parts.get(name))
+                    : cellModel(blockModels, block, cell, side, top));
         }
 
         PropertyDispatch.C2<MultiVariant, Integer, Direction> dispatch =

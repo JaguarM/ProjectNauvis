@@ -90,6 +90,13 @@ battery and explosives, which the chemical plant runs, and `oil-processing` on t
 Coal liquefaction is left out of the file on purpose: a recipe no technology names is free from
 the first tick, and its technology needs production science, which the tree does not reach.
 
+One thing the file does not carry is Factorio's `fluidbox_index` - which port each fluid uses. The
+machine keeps that instead: the refinery holds water and crude at its two inputs and heavy, light
+and petroleum at its three outputs in that order, the chemical plant holds water at its first
+input, and any other fluid takes the next free port in recipe order. Every recipe here lands where
+Factorio puts it, including basic oil processing's crude at the second input and gas at the third
+output; see `GAPS.md` for what a recipe from elsewhere would get.
+
 The `unlocks` table
 -------------------
 

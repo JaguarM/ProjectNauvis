@@ -1,4 +1,7 @@
-// 26.2	2026-09-06T20:11:53.7440808	Loot Tables
+// 26.2	2026-09-06T22:48:19.1429579	Loot Tables
+6c2240e95370dc39a18dbfb95278dca3805dfc7e data/nauvis_fluids/loot_table/blocks/chemical_plant.json
 d7188ee5e7614a7dc8057031279b890d515497f6 data/nauvis_fluids/loot_table/blocks/offshore_pump.json
+6833b2d5658aad81f7f92591caa98dc1b825ff7f data/nauvis_fluids/loot_table/blocks/oil_refinery.json
 eb5c73857c80deff77be1f86e3ef2731684a53ca data/nauvis_fluids/loot_table/blocks/pipe.json
 cb5c219852a3e5a83add1c3bdc17615575fa0614 data/nauvis_fluids/loot_table/blocks/pumpjack.json
+209cfcbc3ddf5d759650e15f6a436bf033b1bf18 data/nauvis_fluids/loot_table/blocks/storage_tank.json

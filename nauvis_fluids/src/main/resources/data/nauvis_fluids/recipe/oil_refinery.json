@@ -1,0 +1,42 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 160,
+  "group": "production",
+  "order": "0082",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:electronic_circuit",
+      "count": 10
+    },
+    {
+      "ingredient": "neoprogressivematerials:iron_gear_wheel",
+      "count": 10
+    },
+    {
+      "ingredient": "nauvis_fluids:pipe",
+      "count": 10
+    },
+    {
+      "ingredient": "neoprogressivematerials:steel_plate",
+      "count": 15
+    },
+    {
+      "ingredient": "minecraft:stone_bricks",
+      "count": 10
+    }
+  ],
+  "result": {
+    "id": "nauvis_fluids:oil_refinery",
+    "count": 1
+  }
+}

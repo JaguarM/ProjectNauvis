@@ -1,0 +1,30 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 60,
+  "group": "logistics",
+  "order": "0055",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 20
+    },
+    {
+      "ingredient": "neoprogressivematerials:steel_plate",
+      "count": 5
+    }
+  ],
+  "result": {
+    "id": "nauvis_fluids:storage_tank",
+    "count": 1
+  }
+}

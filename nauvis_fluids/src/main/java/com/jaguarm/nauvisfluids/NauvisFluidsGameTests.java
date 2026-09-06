@@ -9,6 +9,8 @@ import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
+import com.jaguarm.nauvisfluids.chemicalplant.ChemicalPlantBlock;
+import com.jaguarm.nauvisfluids.chemicalplant.ChemicalPlantBlockEntity;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlock;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlockEntity;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpItem;
@@ -21,13 +23,20 @@ import com.jaguarm.nauvisfluids.oil.OilProgress;
 import com.jaguarm.nauvisfluids.pipe.FluidNetwork;
 import com.jaguarm.nauvisfluids.pipe.FluidNetworkManager;
 import com.jaguarm.nauvisfluids.pipe.PipeBlock;
+import com.jaguarm.nauvisfluids.processing.ProcessingBlock;
+import com.jaguarm.nauvisfluids.processing.ProcessingBlockEntity;
+import com.jaguarm.nauvisfluids.processing.ProcessingStatus;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackBlock;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackBlockEntity;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackStatus;
+import com.jaguarm.nauvisfluids.refinery.OilRefineryBlock;
+import com.jaguarm.nauvisfluids.refinery.OilRefineryBlockEntity;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
 import com.jaguarm.nauvisfluids.registry.ModFluids;
 import com.jaguarm.nauvisfluids.registry.ModItems;
+import com.jaguarm.nauvisfluids.tank.StorageTankBlock;
+import com.jaguarm.nauvisfluids.tank.StorageTankBlockEntity;
 import com.jaguarm.nauvisfluids.water.NaturalWaterFeature;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -61,6 +70,7 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.PushReaction;
@@ -72,8 +82,11 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
@@ -139,6 +152,12 @@ public final class NauvisFluidsGameTests {
         TEST_TYPES.register("offshore_pump_pumps_at_factorio_rate", () -> OffshorePumpPumpsAtFactorioRateTest.CODEC);
         TEST_TYPES.register("offshore_pump_fills_a_pipe", () -> OffshorePumpFillsAPipeTest.CODEC);
         TEST_TYPES.register("offshore_pump_sleeps", () -> OffshorePumpSleepsTest.CODEC);
+        TEST_TYPES.register("storage_tank_levels_with_its_run", () -> StorageTankLevelsWithItsRunTest.CODEC);
+        TEST_TYPES.register("refinery_runs_basic_oil_processing", () -> RefineryRunsBasicOilProcessingTest.CODEC);
+        TEST_TYPES.register("refinery_outputs_block_each_other", () -> RefineryOutputsBlockEachOtherTest.CODEC);
+        TEST_TYPES.register("chemical_plant_makes_plastic", () -> ChemicalPlantMakesPlasticTest.CODEC);
+        TEST_TYPES.register("oil_machines_sleep", () -> OilMachinesSleepTest.CODEC);
+        TEST_TYPES.register("oil_machines_run_only_their_category", () -> OilMachinesRunOnlyTheirCategoryTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -186,6 +205,17 @@ public final class NauvisFluidsGameTests {
                 OffshorePumpPumpsAtFactorioRateTest::new, 60, PADDING);
         registerSpaced(event, environment, "offshore_pump_fills_a_pipe", OffshorePumpFillsAPipeTest::new, 100, PADDING);
         registerSpaced(event, environment, "offshore_pump_sleeps", OffshorePumpSleepsTest::new, 100, PADDING);
+        registerSpaced(event, environment, "storage_tank_levels_with_its_run",
+                StorageTankLevelsWithItsRunTest::new, 100, PADDING);
+        registerSpaced(event, environment, "refinery_runs_basic_oil_processing",
+                RefineryRunsBasicOilProcessingTest::new, 300, PADDING);
+        registerSpaced(event, environment, "refinery_outputs_block_each_other",
+                RefineryOutputsBlockEachOtherTest::new, 300, PADDING);
+        registerSpaced(event, environment, "chemical_plant_makes_plastic",
+                ChemicalPlantMakesPlasticTest::new, 200, PADDING);
+        registerSpaced(event, environment, "oil_machines_sleep", OilMachinesSleepTest::new, 200, PADDING);
+        registerSpaced(event, environment, "oil_machines_run_only_their_category",
+                OilMachinesRunOnlyTheirCategoryTest::new, 40, PADDING);
     }
 
     private interface TestFactory {
@@ -350,6 +380,66 @@ public final class NauvisFluidsGameTests {
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(below), Direction.UP, below, false);
         return new BlockPlaceContext(helper.getLevel(), null,
                 InteractionHand.MAIN_HAND, new ItemStack(ModItems.PUMPJACK.get()), hit);
+    }
+
+    // --- the tank and the oil machines ----------------------------------------------------------
+
+    /**
+     * Where the oil machine tests put the anchor: the middle of a seven-block platform at y 1, so
+     * a refinery's twenty-five cells and a tank's nine both fit with a block to spare.
+     */
+    private static final BlockPos MACHINE = new BlockPos(3, 2, 3);
+
+    private static StorageTankBlockEntity storageTank(GameTestHelper helper, BlockPos anchor) {
+        StorageTankBlock block = ModBlocks.STORAGE_TANK.get();
+        Multiblock.place(block, helper.getLevel(), helper.absolutePos(anchor),
+                block.defaultBlockState().setValue(StorageTankBlock.FACING, Direction.NORTH));
+        return helper.getBlockEntity(anchor, StorageTankBlockEntity.class);
+    }
+
+    /** A refinery facing north: outputs on the north row, inputs on the south. */
+    private static OilRefineryBlockEntity refinery(GameTestHelper helper, BlockPos anchor) {
+        OilRefineryBlock block = ModBlocks.OIL_REFINERY.get();
+        Multiblock.place(block, helper.getLevel(), helper.absolutePos(anchor),
+                block.defaultBlockState().setValue(ProcessingBlock.FACING, Direction.NORTH));
+        return helper.getBlockEntity(anchor, OilRefineryBlockEntity.class);
+    }
+
+    private static ChemicalPlantBlockEntity chemicalPlant(GameTestHelper helper, BlockPos anchor) {
+        ChemicalPlantBlock block = ModBlocks.CHEMICAL_PLANT.get();
+        Multiblock.place(block, helper.getLevel(), helper.absolutePos(anchor),
+                block.defaultBlockState().setValue(ProcessingBlock.FACING, Direction.NORTH));
+        return helper.getBlockEntity(anchor, ChemicalPlantBlockEntity.class);
+    }
+
+    /** Fills the machine's buffer the way a pole would: through the insert-only grid view. */
+    private static void charge(ProcessingBlockEntity machine) {
+        try (Transaction transaction = Transaction.openRoot()) {
+            machine.gridView().insert(machine.energyCapacity(), transaction);
+            transaction.commit();
+        }
+    }
+
+    /** Puts fluid into a tank the way a pipe run would, and says how much it took. */
+    private static int fill(ResourceHandler<FluidResource> tank, Fluid fluid, int amount) {
+        try (Transaction transaction = Transaction.openRoot()) {
+            int taken = tank.insert(FluidResource.of(fluid), amount, transaction);
+            transaction.commit();
+            return taken;
+        }
+    }
+
+    /** Takes fluid out of a tank the way a pipe run would, and says how much it got. */
+    private static int drain(ResourceHandler<FluidResource> tank, Fluid fluid, int amount) {
+        try (Transaction transaction = Transaction.openRoot()) {
+            int taken = tank.extract(FluidResource.of(fluid), amount, transaction);
+            transaction.commit();
+            return taken;
+        }
+    }
+
+    private static ResourceKey<Recipe<?>> recipe(String namespace, String name) {
+        return ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(namespace, name));
     }
 
     // --- pipes --------------------------------------------------------------------------------
@@ -1888,7 +1978,7 @@ public final class NauvisFluidsGameTests {
             for (String name : new String[] {"basic_oil_processing", "advanced_oil_processing",
                     "heavy_oil_cracking", "light_oil_cracking", "solid_fuel_from_heavy_oil",
                     "solid_fuel_from_light_oil", "solid_fuel_from_petroleum_gas", "lubricant",
-                    "sulfuric_acid", "explosives"}) {
+                    "sulfuric_acid", "explosives", "oil_refinery", "chemical_plant", "storage_tank"}) {
                 ResourceKey<Recipe<?>> key = ResourceKey.create(Registries.RECIPE,
                         Identifier.fromNamespaceAndPath(NauvisFluids.MODID, name));
                 RecipeHolder<?> holder = recipes.byKey(key).orElse(null);
@@ -1907,6 +1997,430 @@ public final class NauvisFluidsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("oil recipes load");
+        }
+    }
+
+    // --- the storage tank and the oil machines -------------------------------------------------
+
+    /**
+     * A tank on a run settles at the run's fraction full, in one step, and then sleeps.
+     *
+     * <p>The claim the tank rests on: it is a length of the pipeline, not a sink the run pours
+     * into or a source it pours out of. Two pipes and a tank are twenty-five thousand two hundred
+     * of capacity, so a full tank leaves a hundred and ninety-nine in the pipes; empty the tank
+     * and those flow back until the pipes hold two. Either way the run goes dormant afterwards,
+     * because nothing moves on the second visit.
+     */
+    public static class StorageTankLevelsWithItsRunTest extends GameTestInstance {
+
+        public static final MapCodec<StorageTankLevelsWithItsRunTest> CODEC =
+                RecordCodecBuilder.<StorageTankLevelsWithItsRunTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(StorageTankLevelsWithItsRunTest::info))
+                                .apply(i, StorageTankLevelsWithItsRunTest::new));
+
+        /** The north-west corner's north face is a connection; the pipes run north from it. */
+        private static final BlockPos NEAR_PIPE = new BlockPos(2, 2, 1);
+        private static final BlockPos FAR_PIPE = new BlockPos(2, 2, 0);
+        /** The corner's west face is not, and a pipe there stays unconnected. */
+        private static final BlockPos FLANK_PIPE = new BlockPos(1, 2, 2);
+
+        public StorageTankLevelsWithItsRunTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            platform(helper, 7);
+            pipe(helper, NEAR_PIPE);
+            pipe(helper, FAR_PIPE);
+            pipe(helper, FLANK_PIPE);
+            StorageTankBlockEntity tank = storageTank(helper, MACHINE);
+            int total = StorageTankBlockEntity.CAPACITY;
+            int combined = total + 2 * FluidNetwork.CAPACITY_PER_PIPE;
+
+            helper.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertTrue(helper.getBlockState(NEAR_PIPE).getValue(PipeBlock.SOUTH),
+                                "a pipe at the tank's connection does not reach into it");
+                        helper.assertFalse(helper.getBlockState(FLANK_PIPE).getValue(PipeBlock.EAST),
+                                "a pipe on a face that is not a connection reaches into the tank");
+                        helper.assertValueEqual(fill(tank.tank(), Fluids.WATER, total), total, "filling the tank");
+                    })
+                    .thenExecuteAfter(30, () -> {
+                        FluidNetwork run = networkAt(helper, NEAR_PIPE, "the connected pipe has no run");
+                        helper.assertValueEqual(run.fluid().getFluid(), Fluids.WATER, "what the run took from the tank");
+                        int tankShare = (int) ((long) total * StorageTankBlockEntity.CAPACITY / combined);
+                        helper.assertValueEqual(tank.stored(), tankShare, "the tank after levelling");
+                        helper.assertValueEqual(run.amount(), total - tankShare, "the run after levelling");
+                        helper.assertFalse(grid(helper).isActive(run), "a levelled run is still ticking");
+                        helper.assertValueEqual(drain(tank.tank(), Fluids.WATER, tank.stored()), tankShare,
+                                "emptying the tank");
+                    })
+                    .thenExecuteAfter(30, () -> {
+                        FluidNetwork run = networkAt(helper, NEAR_PIPE, "the connected pipe has no run");
+                        int left = total - (int) ((long) total * StorageTankBlockEntity.CAPACITY / combined);
+                        int tankShare = (int) ((long) left * StorageTankBlockEntity.CAPACITY / combined);
+                        helper.assertValueEqual(tank.stored(), tankShare, "the tank after the run levelled back into it");
+                        helper.assertValueEqual(run.amount(), left - tankShare, "the run after levelling back");
+                        helper.assertFalse(grid(helper).isActive(run), "a re-levelled run is still ticking");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("storage tank levels with its run");
+        }
+    }
+
+    /**
+     * A refinery on basic oil processing turns a hundred crude into forty-five petroleum gas every
+     * five seconds, takes the crude at its right-hand input and gives the gas at its right-hand
+     * output - Factorio's ports, which is what lets a player add advanced processing's pipes
+     * without moving these - and stops when the crude runs out.
+     */
+    public static class RefineryRunsBasicOilProcessingTest extends GameTestInstance {
+
+        public static final MapCodec<RefineryRunsBasicOilProcessingTest> CODEC =
+                RecordCodecBuilder.<RefineryRunsBasicOilProcessingTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(RefineryRunsBasicOilProcessingTest::info))
+                                .apply(i, RefineryRunsBasicOilProcessingTest::new));
+
+        /** The crude input: the fourth cell of the south row, on its south face. */
+        private static final BlockPos CRUDE_CELL = new BlockPos(4, 2, 5);
+        /** The petroleum output: the north-east corner, on its north face. */
+        private static final BlockPos PETROLEUM_CELL = new BlockPos(5, 2, 1);
+
+        public RefineryRunsBasicOilProcessingTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            platform(helper, 7);
+            OilRefineryBlockEntity refinery = refinery(helper, MACHINE);
+            charge(refinery);
+            refinery.setRecipe(recipe(NauvisFluids.MODID, "basic_oil_processing"));
+            Fluid crude = ModFluids.CRUDE_OIL.get();
+            Fluid petroleum = ModFluids.PETROLEUM_GAS.get();
+
+            helper.assertTrue(helper.getLevel().getCapability(Capabilities.Fluid.BLOCK,
+                    helper.absolutePos(CRUDE_CELL), Direction.SOUTH) != null, "no port on the crude cell's south face");
+            helper.assertTrue(helper.getLevel().getCapability(Capabilities.Fluid.BLOCK,
+                    helper.absolutePos(CRUDE_CELL), Direction.NORTH) == null, "a port on the crude cell's inside face");
+            helper.assertTrue(helper.getLevel().getCapability(Capabilities.Fluid.BLOCK,
+                    helper.absolutePos(PETROLEUM_CELL), Direction.NORTH) != null, "no port on the petroleum cell's north face");
+            helper.assertValueEqual(fill(refinery.inputAccess(OilRefineryBlockEntity.CRUDE_PORT), crude, 200), 200,
+                    "crude into the crude port");
+            helper.assertValueEqual(fill(refinery.inputAccess(OilRefineryBlockEntity.WATER_PORT), Fluids.WATER, 50), 0,
+                    "water into a port basic oil processing does not use");
+            helper.assertValueEqual(fill(refinery.inputAccess(OilRefineryBlockEntity.WATER_PORT), crude, 50), 0,
+                    "crude into the water port");
+
+            helper.startSequence()
+                    .thenExecuteAfter(110, () -> {
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT).getAmountAsInt(0), 45,
+                                "petroleum gas after one craft");
+                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.CRUDE_PORT).getAmountAsInt(0), 100,
+                                "crude after one craft");
+                        // The buffer is five seconds of draw and the recipe is five seconds long, so
+                        // one charge is exactly one craft: the gas was banked, and the next craft waits.
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_POWER, "status after one charge's worth");
+                        charge(refinery);
+                    })
+                    .thenExecuteAfter(105, () -> {
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT).getAmountAsInt(0), 90,
+                                "petroleum gas after two crafts");
+                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.CRUDE_PORT).getAmountAsInt(0), 0,
+                                "crude after two crafts");
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_INGREDIENTS, "status with the crude gone");
+                        helper.assertFalse(isScheduled(helper, MACHINE, ModBlocks.OIL_REFINERY.get()),
+                                "a refinery out of crude is still asking for ticks");
+                        helper.assertValueEqual(drain(refinery.outputAccess(OilRefineryBlockEntity.PETROLEUM_PORT), petroleum, 90), 90,
+                                "drawing the gas off at the petroleum port");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("refinery runs basic oil processing");
+        }
+    }
+
+    /**
+     * Advanced oil processing with nowhere to put the heavy oil makes no light oil and no gas
+     * either, and spends nothing - the whole puzzle of Factorio's oil in one assertion. Draw some
+     * heavy oil off and the other two flow again.
+     */
+    public static class RefineryOutputsBlockEachOtherTest extends GameTestInstance {
+
+        public static final MapCodec<RefineryOutputsBlockEachOtherTest> CODEC =
+                RecordCodecBuilder.<RefineryOutputsBlockEachOtherTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(RefineryOutputsBlockEachOtherTest::info))
+                                .apply(i, RefineryOutputsBlockEachOtherTest::new));
+
+        public RefineryOutputsBlockEachOtherTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            platform(helper, 7);
+            OilRefineryBlockEntity refinery = refinery(helper, MACHINE);
+            charge(refinery);
+            refinery.setRecipe(recipe(NauvisFluids.MODID, "advanced_oil_processing"));
+            Fluid heavy = ModFluids.HEAVY_OIL.get();
+            int full = ProcessingBlockEntity.TANK_CAPACITY;
+            helper.assertValueEqual(fill(refinery.inputAccess(OilRefineryBlockEntity.WATER_PORT), Fluids.WATER, full), full,
+                    "water into the water port");
+            helper.assertValueEqual(fill(refinery.inputAccess(OilRefineryBlockEntity.CRUDE_PORT), ModFluids.CRUDE_OIL.get(), full), full,
+                    "crude into the crude port");
+            // The heavy oil tank is jammed full before the first craft can start.
+            helper.assertValueEqual(fill(refinery.outputTank(OilRefineryBlockEntity.HEAVY_PORT), heavy, full), full,
+                    "jamming the heavy oil tank");
+
+            helper.startSequence()
+                    .thenExecuteAfter(120, () -> {
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.OUTPUT_FULL, "status with heavy oil jammed");
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.LIGHT_PORT).getAmountAsInt(0), 0,
+                                "light oil made while jammed");
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT).getAmountAsInt(0), 0,
+                                "petroleum gas made while jammed");
+                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.WATER_PORT).getAmountAsInt(0), full,
+                                "water spent while jammed");
+                        helper.assertFalse(isScheduled(helper, MACHINE, ModBlocks.OIL_REFINERY.get()),
+                                "a jammed refinery is still asking for ticks");
+                        helper.assertValueEqual(drain(refinery.outputAccess(OilRefineryBlockEntity.HEAVY_PORT), heavy, 100), 100,
+                                "drawing heavy oil off");
+                    })
+                    .thenExecuteAfter(110, () -> {
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.HEAVY_PORT).getAmountAsInt(0), 925,
+                                "heavy oil after one craft");
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.LIGHT_PORT).getAmountAsInt(0), 45,
+                                "light oil after one craft");
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT).getAmountAsInt(0), 55,
+                                "petroleum gas after one craft");
+                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.WATER_PORT).getAmountAsInt(0), 950,
+                                "water after one craft");
+                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.CRUDE_PORT).getAmountAsInt(0), 900,
+                                "crude after one craft");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("refinery outputs block each other");
+        }
+    }
+
+    /**
+     * A chemical plant on plastic turns twenty petroleum gas and a coal into two plastic bars a
+     * second, and stops when the coal runs out. The recipe is Neo Progressive Materials', and
+     * the test says so rather than failing when that mod is not in the run.
+     */
+    public static class ChemicalPlantMakesPlasticTest extends GameTestInstance {
+
+        public static final MapCodec<ChemicalPlantMakesPlasticTest> CODEC =
+                RecordCodecBuilder.<ChemicalPlantMakesPlasticTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(ChemicalPlantMakesPlasticTest::info))
+                                .apply(i, ChemicalPlantMakesPlasticTest::new));
+
+        private static final int OUTPUT_SLOT = ChemicalPlantBlockEntity.ITEM_INPUTS;
+
+        public ChemicalPlantMakesPlasticTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            if (!ModList.get().isLoaded("neoprogressivematerials")) {
+                helper.succeed();  // no plastic to make without the mod that owns it
+                return;
+            }
+            platform(helper, 7);
+            ChemicalPlantBlockEntity plant = chemicalPlant(helper, MACHINE);
+            charge(plant);
+            plant.setRecipe(recipe("neoprogressivematerials", "plastic_bar"));
+            helper.assertTrue(plant.recipeKey() != null, "the chemical plant refused plastic");
+            Fluid petroleum = ModFluids.PETROLEUM_GAS.get();
+            helper.assertValueEqual(fill(plant.inputAccess(0), petroleum, 100), 100, "petroleum gas into the first port");
+            try (Transaction transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(plant.items().insert(0, ItemResource.of(Items.COAL), 4, transaction), 4, "coal into the first slot");
+                transaction.commit();
+            }
+
+            helper.startSequence()
+                    .thenExecuteAfter(25, () -> {
+                        helper.assertValueEqual(plant.items().getAmountAsInt(OUTPUT_SLOT), 2, "plastic after one craft");
+                        helper.assertValueEqual(BuiltInRegistries.ITEM.getKey(plant.items().getResource(OUTPUT_SLOT).toStack(1).getItem()),
+                                Identifier.fromNamespaceAndPath("neoprogressivematerials", "plastic_bar"), "what the plant made");
+                        helper.assertValueEqual(plant.inputTank(0).getAmountAsInt(0), 80, "petroleum gas after one craft");
+                    })
+                    .thenExecuteAfter(65, () -> {
+                        helper.assertValueEqual(plant.items().getAmountAsInt(OUTPUT_SLOT), 8, "plastic after four crafts");
+                        helper.assertValueEqual(plant.items().getAmountAsInt(0), 0, "coal after four crafts");
+                        helper.assertValueEqual(plant.inputTank(0).getAmountAsInt(0), 20, "petroleum gas after four crafts");
+                        helper.assertValueEqual(plant.status(), ProcessingStatus.NO_INGREDIENTS, "status with the coal gone");
+                        helper.assertFalse(isScheduled(helper, MACHINE, ModBlocks.CHEMICAL_PLANT.get()),
+                                "a chemical plant out of coal is still asking for ticks");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("chemical plant makes plastic");
+        }
+    }
+
+    /**
+     * A refinery asks for a tick only while it has work, and is woken by each of the things that
+     * can give it some: a recipe, an ingredient, electricity, and room for a product.
+     *
+     * <p>The one to watch is the last: a machine that finished a craft into a full tank holds it
+     * unpaid, and drawing from the tank is what lets it bank the craft and carry on.
+     */
+    public static class OilMachinesSleepTest extends GameTestInstance {
+
+        public static final MapCodec<OilMachinesSleepTest> CODEC =
+                RecordCodecBuilder.<OilMachinesSleepTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OilMachinesSleepTest::info))
+                                .apply(i, OilMachinesSleepTest::new));
+
+        public OilMachinesSleepTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            platform(helper, 7);
+            OilRefineryBlockEntity refinery = refinery(helper, MACHINE);
+            Block block = ModBlocks.OIL_REFINERY.get();
+            Fluid crude = ModFluids.CRUDE_OIL.get();
+            Fluid petroleum = ModFluids.PETROLEUM_GAS.get();
+            int full = ProcessingBlockEntity.TANK_CAPACITY;
+
+            helper.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_RECIPE, "status with no recipe");
+                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a refinery with no recipe is asking for ticks");
+                        refinery.setRecipe(recipe(NauvisFluids.MODID, "basic_oil_processing"));
+                        helper.assertTrue(isScheduled(helper, MACHINE, block), "choosing a recipe did not wake it");
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_INGREDIENTS, "status with no crude");
+                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a refinery with no crude is asking for ticks");
+                        fill(refinery.inputAccess(OilRefineryBlockEntity.CRUDE_PORT), crude, 100);
+                        helper.assertTrue(isScheduled(helper, MACHINE, block), "crude arriving did not wake it");
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_POWER, "status with no power");
+                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a refinery with no power is asking for ticks");
+                        charge(refinery);
+                        helper.assertTrue(isScheduled(helper, MACHINE, block), "power arriving did not wake it");
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.WORKING, "status while crafting");
+                        helper.assertTrue(isScheduled(helper, MACHINE, block), "a working refinery is not asking for ticks");
+                        // Jam the output while the craft is under way, so it finishes into a full tank.
+                        helper.assertValueEqual(fill(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT), petroleum, full), full,
+                                "jamming the petroleum tank");
+                    })
+                    .thenExecuteAfter(110, () -> {
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.OUTPUT_FULL, "status with the output jammed");
+                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a jammed refinery is asking for ticks");
+                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.CRUDE_PORT).getAmountAsInt(0), 100,
+                                "crude spent on a craft that could not be banked");
+                        drain(refinery.outputAccess(OilRefineryBlockEntity.PETROLEUM_PORT), petroleum, 100);
+                        helper.assertTrue(isScheduled(helper, MACHINE, block), "drawing from the jammed tank did not wake it");
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT).getAmountAsInt(0), 945,
+                                "petroleum gas once the held craft was banked");
+                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.CRUDE_PORT).getAmountAsInt(0), 0,
+                                "crude once the held craft was banked");
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_INGREDIENTS, "status after the crude was spent");
+                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a refinery out of crude is asking for ticks");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("oil machines sleep");
+        }
+    }
+
+    /**
+     * A refinery runs oil processing and a chemical plant runs chemistry, and each refuses the
+     * other's recipes at the block entity, behind whatever the panel showed.
+     */
+    public static class OilMachinesRunOnlyTheirCategoryTest extends GameTestInstance {
+
+        public static final MapCodec<OilMachinesRunOnlyTheirCategoryTest> CODEC =
+                RecordCodecBuilder.<OilMachinesRunOnlyTheirCategoryTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OilMachinesRunOnlyTheirCategoryTest::info))
+                                .apply(i, OilMachinesRunOnlyTheirCategoryTest::new));
+
+        public OilMachinesRunOnlyTheirCategoryTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            platform(helper, 7);
+            ChemicalPlantBlockEntity plant = chemicalPlant(helper, MACHINE);
+            ResourceKey<Recipe<?>> basic = recipe(NauvisFluids.MODID, "basic_oil_processing");
+            ResourceKey<Recipe<?>> cracking = recipe(NauvisFluids.MODID, "heavy_oil_cracking");
+            plant.setRecipe(basic);
+            helper.assertTrue(plant.recipeKey() == null, "a chemical plant took an oil processing recipe");
+            plant.setRecipe(cracking);
+            helper.assertValueEqual(plant.recipeKey(), cracking, "a chemical plant refused cracking");
+            helper.assertValueEqual(plant.inputTank(ChemicalPlantBlockEntity.WATER_PORT).assigned(), Fluids.WATER,
+                    "the water port of a plant on heavy oil cracking");
+            helper.assertValueEqual(plant.inputTank(1).assigned(), ModFluids.HEAVY_OIL.get(),
+                    "the other port of a plant on heavy oil cracking");
+            helper.assertValueEqual(plant.outputTank(0).assigned(), ModFluids.LIGHT_OIL.get(),
+                    "the first output of a plant on heavy oil cracking");
+            helper.assertTrue(plant.outputTank(1).assigned() == null, "the second output of a plant on heavy oil cracking");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("oil machines run only their category");
         }
     }
 }

@@ -7,6 +7,9 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import java.util.ArrayList;
+import java.util.List;
+import com.jaguarm.nauvislib.transfer.FluidBuffer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -37,6 +40,15 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * extract-only - so it gives, and a steam engine accepts it, so it does not. The test is asked of
  * each machine about itself, which is why it still works on the tick a run is empty and has
  * nothing of its own to compare against.
+ *
+ * <h2>Except a tank, which is neither</h2>
+ *
+ * <p>A storage tank is a length of the pipeline that happens to hold twenty-five thousand, and
+ * Factorio's fills and empties with the pipes around it. Pushed into as a sink it would swallow
+ * the run; pulled from as a source it would be poured back out. A handler marked
+ * {@link FluidBuffer} is left out of both and <em>levelled</em> instead: the run and every tank on
+ * it settle at one fraction full, in one step, and then nothing moves - which is what lets a run
+ * with a tank on it sleep like any other. A tank on two runs is levelled by each in turn.
  */
 public final class FluidNetwork {
 
@@ -75,6 +87,7 @@ public final class FluidNetwork {
     private final LongArrayList hungry = new LongArrayList();
     private final IntArrayList wanted = new IntArrayList();
     private final LongArrayList gone = new LongArrayList();
+    private final List<ResourceHandler<FluidResource>> buffers = new ArrayList<>();
 
     private boolean merged;
 
@@ -233,6 +246,7 @@ public final class FluidNetwork {
             }
         }
         moved += pull();
+        moved += level();
         dropMissing();
         return moved;
     }
@@ -245,7 +259,7 @@ public final class FluidNetwork {
             for (var entry : endpoints.long2ObjectEntrySet()) {
                 long pos = entry.getLongKey();
                 ResourceHandler<FluidResource> handler = live(pos, entry.getValue());
-                if (handler == null) {
+                if (handler == null || handler instanceof FluidBuffer) {
                     continue;
                 }
                 int want = handler.insert(resource, MAX_TRANSFER, probe);
@@ -313,13 +327,13 @@ public final class FluidNetwork {
                 break;
             }
             ResourceHandler<FluidResource> handler = live(entry.getLongKey(), entry.getValue());
-            if (handler == null) {
+            if (handler == null || handler instanceof FluidBuffer) {
                 continue;
             }
 
             for (int index = 0; index < handler.size() && moved < room; index++) {
                 FluidResource offered = handler.getResource(index);
-                if (offered.isEmpty() || !accepts(offered) || takesItBack(handler, offered)) {
+                if (offered.isEmpty() || !accepts(offered) || takesItBack(handler, index, offered)) {
                     continue;
                 }
                 try (Transaction transfer = Transaction.openRoot()) {
@@ -334,11 +348,89 @@ public final class FluidNetwork {
         return moved;
     }
 
-    /** Whether this handler would accept back what it is offering - a sink, not a source. */
-    private static boolean takesItBack(ResourceHandler<FluidResource> handler, FluidResource offered) {
+    /**
+     * Whether this handler would accept back what it is offering - a sink, not a source.
+     *
+     * <p>Two questions, because a full sink answers the first one the way a source does. A
+     * boiler's water tank that is full for a tick would take water if it had room, and a run
+     * that read "no" as "source" would drain it into itself and push it back next tick, for
+     * ever, each move waking the other. So a handler that will not take one unit now is asked
+     * whether it takes the fluid at all; {@code FluidOutputAccess} says it does not, which is
+     * what makes a boiler's steam port a source and its water port never one.
+     */
+    private static boolean takesItBack(ResourceHandler<FluidResource> handler, int index, FluidResource offered) {
         try (Transaction probe = Transaction.openRoot()) {
-            return handler.insert(offered, 1, probe) > 0;
+            if (handler.insert(offered, 1, probe) > 0) {
+                return true;
+            }
         }
+        return handler.isValid(index, offered) && handler.getCapacityAsLong(index, offered) > 0;
+    }
+
+    /**
+     * Settles the run and every tank on it at one fraction full.
+     *
+     * <p>Whole units, rounded down for the tanks, so the run keeps the remainder and a tank is
+     * never asked for more than it holds. Once settled the targets do not change until something
+     * else moves fluid, so the second call moves nothing and the run goes dormant like any other.
+     * A tank holding some other fluid is left out, exactly as a pipe run carries one fluid.
+     */
+    private int level() {
+        buffers.clear();
+        FluidResource fluid = contents.getResource(0);
+        long total = contents.getAmountAsInt(0);
+        long combined = capacity();
+        for (var entry : endpoints.long2ObjectEntrySet()) {
+            ResourceHandler<FluidResource> handler = live(entry.getLongKey(), entry.getValue());
+            if (!(handler instanceof FluidBuffer) || handler.size() == 0) {
+                continue;
+            }
+            FluidResource held = handler.getResource(0);
+            if (fluid.isEmpty()) {
+                if (held.isEmpty()) {
+                    continue;  // nothing anywhere to level
+                }
+                fluid = held;
+            } else if (!held.isEmpty() && !held.equals(fluid)) {
+                continue;
+            }
+            if (held.isEmpty() && !handler.isValid(0, fluid)) {
+                continue;
+            }
+            buffers.add(handler);
+            total += handler.getAmountAsLong(0);
+            combined += handler.getCapacityAsLong(0, fluid);
+        }
+        if (buffers.isEmpty() || fluid.isEmpty() || combined <= 0) {
+            return 0;
+        }
+        int moved = 0;
+        for (ResourceHandler<FluidResource> tank : buffers) {
+            long target = total * tank.getCapacityAsLong(0, fluid) / combined;
+            int delta = (int) (target - tank.getAmountAsLong(0));
+            if (delta > 0) {
+                moved += move(contents, tank, fluid, Math.min(delta, contents.getAmountAsInt(0)));
+            } else if (delta < 0) {
+                moved += move(tank, contents, fluid, Math.min(-delta, capacity() - contents.getAmountAsInt(0)));
+            }
+        }
+        return moved;
+    }
+
+    /** As much of {@code amount} as both ends agree to, or nothing. */
+    private static int move(ResourceHandler<FluidResource> from, ResourceHandler<FluidResource> to,
+            FluidResource fluid, int amount) {
+        if (amount <= 0) {
+            return 0;
+        }
+        try (Transaction transfer = Transaction.openRoot()) {
+            int taken = from.extract(fluid, amount, transfer);
+            if (taken > 0 && to.insert(fluid, taken, transfer) == taken) {
+                transfer.commit();
+                return taken;
+            }
+        }
+        return 0;
     }
 
     /** A run carries one fluid at a time, whichever arrived first. */

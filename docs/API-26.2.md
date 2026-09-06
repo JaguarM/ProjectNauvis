@@ -444,6 +444,14 @@ Other confirmed details, second batch
 - `RegisterCapabilitiesEvent.registerBlock` may be called more than once for one capability and
   one block; the providers are asked in turn until one answers. A boiler offers steam at one face
   and water at two others through two registrations of `Capabilities.Fluid.BLOCK`.
+- `Registry.getValue(Identifier)` is the lookup by id, nullable, with `getOptional` beside it;
+  `getId(T)` and `byId(int)` are the numeric pair, and a registry's numeric ids are synced to the
+  client in the server's order, so an int in a data slot names the same fluid on both sides.
+- **`Blocks.COPPER_BLOCK` is a `WeatheringCopperCollection<Block>`**, not a block, so
+  `TextureMapping.getBlockTexture` refuses it. Name the texture:
+  `Identifier.withDefaultNamespace("block/copper_block")`.
+- **A nested `protected record`'s canonical constructor is protected too**, and a subclass in
+  another package may not `new` it. A record meant to be built by subclasses is `public`.
 
 A fluid of your own, and what still asks for vanilla's by name
 --------------------------------------------------------------

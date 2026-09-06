@@ -4,13 +4,19 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
+import com.jaguarm.nauvisfluids.chemicalplant.ChemicalPlantBlock;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlock;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlockEntity;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpShape;
+import com.jaguarm.nauvisfluids.processing.ProcessingBlockEntity;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackBlock;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackBlockEntity;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;
+import com.jaguarm.nauvisfluids.refinery.OilRefineryBlock;
+import com.jaguarm.nauvisfluids.tank.StorageTankBlock;
+import com.jaguarm.nauvisfluids.tank.StorageTankBlockEntity;
+import com.jaguarm.nauvisfluids.tank.StorageTankShape;
 
 import org.jspecify.annotations.Nullable;
 
@@ -67,6 +73,40 @@ public final class ModCapabilities {
 
         atPort(event, offshorePump, OffshorePumpShape.OUTPUT, OffshorePumpBlockEntity.class,
                 OffshorePumpBlockEntity::output);
+
+        // The tank, both ways round at all four connections: it is the pipeline's, and the run
+        // levels with it. See FluidBuffer.
+        StorageTankBlock tank = ModBlocks.STORAGE_TANK.get();
+        atPort(event, tank, StorageTankShape.PORT, StorageTankBlockEntity.class, StorageTankBlockEntity::tank);
+
+        // The two processing machines: electricity anywhere, a different tank at each named port,
+        // and for the chemical plant its item slots anywhere along the perimeter.
+        OilRefineryBlock refinery = ModBlocks.OIL_REFINERY.get();
+        anywhere(event, Capabilities.Energy.BLOCK, refinery,
+                ProcessingBlockEntity.class, (be, side) -> be.gridView());
+        eachPort(event, refinery);
+        ChemicalPlantBlock chemicalPlant = ModBlocks.CHEMICAL_PLANT.get();
+        anywhere(event, Capabilities.Energy.BLOCK, chemicalPlant,
+                ProcessingBlockEntity.class, (be, side) -> be.gridView());
+        anywhere(event, Capabilities.Item.BLOCK, chemicalPlant,
+                ProcessingBlockEntity.class, (be, side) -> be.automationView());
+        eachPort(event, chemicalPlant);
+    }
+
+    /**
+     * A processing machine's ports, each answering with its own tank: the shape says which port a
+     * face is, and the machine says what is behind that port.
+     */
+    private static <B extends Block & Multiblock.MachineBlock> void eachPort(
+            RegisterCapabilitiesEvent event, B block) {
+        event.registerBlock(Capabilities.Fluid.BLOCK, (level, pos, state, blockEntity, side) -> {
+            String port = block.shape().portAt(Multiblock.part(block, state), side, block.facing(state));
+            if (port == null) {
+                return null;
+            }
+            ProcessingBlockEntity machine = anchor(level, pos, state, block, ProcessingBlockEntity.class);
+            return machine == null ? null : machine.portAccess(port);
+        }, block);
     }
 
     /** Offered by every block of the machine, on every face. */

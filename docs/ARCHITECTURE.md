@@ -243,6 +243,28 @@ supposed to be asleep. Meeting in the middle converges in one step and then noth
 run needs no such rule, because it pushes into sinks and pulls from sources and a machine is never
 both for one fluid.
 
+**A tank is a length of the pipeline.** A pipe run fills sinks and drains sources, and a storage
+tank is neither: Factorio's fills and empties with the pipes around it. So a handler marked
+`nauvis_lib`'s `FluidBuffer` is left out of both halves of the run's tick and *levelled* instead -
+the run and every tank on it settle at one fraction full, in whole units, in one step, and the
+second visit moves nothing, which is what lets the run go dormant. The marker is in the library so
+a tank in any mod can say so to the pipe mod without naming it.
+
+**A full sink is not a source.** The run tells the two apart by asking a handler whether it would
+take back what it offers, and a sink that is full for a tick says no exactly as a source does - so
+the run asks a second question, `isValid` and a capacity, and an extract-only view answers no to
+both. Without that a boiler's full water tank was drained into its own feed pipe and refilled next
+tick, for ever. `FluidOutputAccess` is where a source says it takes nothing; `PITFALLS.md` has the
+symptom.
+
+**A fluid's port is the machine's to fix.** Factorio's refinery puts heavy, light and petroleum out
+of three particular places whatever the recipe, and that is what makes its oil a puzzle about
+pipes rather than about numbers. `ProcessingBlockEntity` gives a recipe's fluids ports in recipe
+order except where the machine keeps a place for one - `preferredInput`, `preferredOutput` - and
+the tank behind a port takes only the fluid the recipe put there, so a run of the wrong fluid is
+refused at the wall. One base class runs both the refinery and the chemical plant; a
+`ProcessingLayout` is the whole difference.
+
 **A renderer that draws outside its own block has to say so.** `getRenderBoundingBox` defaults to
 the one block, and geometry past it is frustum-culled with no error and nothing in the log. The
 wires between poles hit this exactly. See `API-26.2.md`.
@@ -357,8 +379,10 @@ increasing strength:
    pumpjack mines oil and research wants to know; neither may depend on the other, and a listener
    list cannot be duplicated — two copies are two lists. So Facrafting has `MiningListeners`
    beside `CraftListeners`: the machine fires it, whoever cares listens, and Facrafting itself
-   never calls it and has no opinion about what a resource id means. Each side reaches it from a
-   `compat/facrafting/` class behind a `ModList` check, so Facrafting stays optional to both.
+   never calls it and has no opinion about what a resource id means. Research reaches it from a
+   `compat/facrafting/` class behind a `ModList` check, so Facrafting stays optional to it; the
+   fluid mod requires Facrafting outright, because its refinery runs Facrafting's recipes, and
+   calls it directly.
 
 **When a change to Facrafting needs a fact about Factorio, the change is in the wrong repo.**
 
@@ -421,6 +445,12 @@ was taken.
 **Licences are not a decision point for including or depending on a mod here.** The pack is not
 monetised and ships the way thousands of CurseForge packs do; weigh version support, API shape and
 maintenance instead. This does not extend to *copying* — CLAUDE.md's rule stands and is separate.
+
+**Two subsystem mods compile against Facrafting**, and both declare it required: `nauvis_machines`
+for the assemblers and the furnaces, `nauvis_fluids` for the refinery and the chemical plant. A
+machine that runs a `FacraftRecipe` has to name the type, chooses its recipe through the panel's
+`RecipeSelector` and says "Made in:" through `MachineCategories`; that is the exception
+non-negotiable #3 makes for Facrafting and for nothing else.
 
 **KubeJS** is still on 26.1.2 and in beta, one Minecraft version behind us. LGPL-3.0, so no
 obstacle once it ports. Where it would help is pack policy — stripping vanilla recipes is one

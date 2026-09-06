@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "nauvis_fluids:block/oil_refinery_inventory"
+  }
+}

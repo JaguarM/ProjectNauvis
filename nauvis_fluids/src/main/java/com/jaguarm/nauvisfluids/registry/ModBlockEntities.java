@@ -1,10 +1,13 @@
 package com.jaguarm.nauvisfluids.registry;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
+import com.jaguarm.nauvisfluids.chemicalplant.ChemicalPlantBlockEntity;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlockEntity;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
 import com.jaguarm.nauvisfluids.pipe.PipeBlockEntity;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackBlockEntity;
+import com.jaguarm.nauvisfluids.refinery.OilRefineryBlockEntity;
+import com.jaguarm.nauvisfluids.tank.StorageTankBlockEntity;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -33,6 +36,18 @@ public final class ModBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<OffshorePumpBlockEntity>> OFFSHORE_PUMP =
             BLOCK_ENTITIES.register("offshore_pump",
                     () -> new BlockEntityType<>(OffshorePumpBlockEntity::new, ModBlocks.OFFSHORE_PUMP.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<StorageTankBlockEntity>> STORAGE_TANK =
+            BLOCK_ENTITIES.register("storage_tank",
+                    () -> new BlockEntityType<>(StorageTankBlockEntity::new, ModBlocks.STORAGE_TANK.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<OilRefineryBlockEntity>> OIL_REFINERY =
+            BLOCK_ENTITIES.register("oil_refinery",
+                    () -> new BlockEntityType<>(OilRefineryBlockEntity::new, ModBlocks.OIL_REFINERY.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ChemicalPlantBlockEntity>> CHEMICAL_PLANT =
+            BLOCK_ENTITIES.register("chemical_plant",
+                    () -> new BlockEntityType<>(ChemicalPlantBlockEntity::new, ModBlocks.CHEMICAL_PLANT.get()));
 
     private ModBlockEntities() {}
 }

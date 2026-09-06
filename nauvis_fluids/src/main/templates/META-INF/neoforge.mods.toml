@@ -13,7 +13,8 @@ Factorio's fluids: pipes, oil wells and the pumpjack, the world's water and the 
 
 Every lake and sea generates as water of this mod's own - a bucket of it is an ordinary water
 bucket, and it never makes a new source - and the offshore pump is the one thing that draws from
-it. The refinery, the chemical plant and the storage tank are next.
+it. The refinery and the chemical plant run Facrafting's fluid recipes; the storage tank is a
+length of pipeline that holds twenty-five thousand.
 '''
 
 [[dependencies.${mod_id}]]
@@ -38,10 +39,11 @@ it. The refinery, the chemical plant and the storage tank are next.
     ordering="AFTER"
     side="BOTH"
 
-# Optional: without Facrafting the timed recipe drops out and the bench recipe takes over.
+# Required: the refinery and the chemical plant are machines that run Facrafting's fluid
+# recipes, and a mod that cannot work without another says so.
 [[dependencies.${mod_id}]]
     modId="facrafting"
-    type="optional"
+    type="required"
     versionRange="[${facrafting_version},)"
     ordering="AFTER"
     side="BOTH"

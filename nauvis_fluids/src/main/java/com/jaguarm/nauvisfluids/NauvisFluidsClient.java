@@ -1,7 +1,10 @@
 package com.jaguarm.nauvisfluids;
 
 import com.jaguarm.nauvisfluids.client.CrudeOilRenderer;
+import com.jaguarm.nauvisfluids.chemicalplant.ChemicalPlantScreen;
+import com.jaguarm.nauvisfluids.refinery.OilRefineryScreen;
 import com.jaguarm.nauvisfluids.registry.ModBlockEntities;
+import com.jaguarm.nauvisfluids.registry.ModMenus;
 import com.jaguarm.nauvisfluids.registry.ModFluids;
 
 import net.minecraft.client.renderer.block.FluidModel;
@@ -12,6 +15,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.event.RegisterFluidModelsEvent;
 import net.neoforged.neoforge.client.fluid.FluidTintSources;
 
@@ -80,6 +84,13 @@ public class NauvisFluidsClient {
                 new Material(Identifier.withDefaultNamespace("block/water_flow")),
                 null,
                 FluidTintSources.constant(tint));
+    }
+
+    /** The two machine screens. The recipe list beside them is Facrafting's panel. */
+    @SubscribeEvent
+    static void registerScreens(RegisterMenuScreensEvent event) {
+        event.register(ModMenus.OIL_REFINERY.get(), OilRefineryScreen::new);
+        event.register(ModMenus.CHEMICAL_PLANT.get(), ChemicalPlantScreen::new);
     }
 
     /** The x-ray: an outline drawn on every oil well while a pumpjack is in hand. */
