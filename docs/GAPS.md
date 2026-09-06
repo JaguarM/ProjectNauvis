@@ -44,7 +44,7 @@ Oil
   `max((1300 + d) / 2600, 1)`, and both are used as written. The density term on top — the spread
   between 90% and 200% at the edge of the starting area — is this pack's, chosen to match what a
   Factorio player finds there, because the real one lives in a noise program this pack has no copy
-  of. **Fields are four times as common as Factorio's**: a rarity of 300 per chunk against the 1200
+  of. **Fields are four times as common as Factorio's**: one per 300 chunks against the one per 1200
   that would be its 1.8 per square kilometre, and none within 150 blocks of the origin rather than
   Factorio's wider starting area. Factorio's oil is rare and easy to find because the map shows it;
   here the only map is a pumpjack in hand outlining wells within render distance, so the density
@@ -61,7 +61,7 @@ Oil
   read the spawn would make new chunks richer or poorer after `/setworldspawn`.
 - **There is no map, so there is an x-ray.** Factorio's map view is how oil is found. Holding a
   pumpjack outlines every well within render distance through the terrain; further than that,
-  nothing. Whether that finds a field at Factorio's density is the open playtest question.
+  nothing. Whether that finds a field at this density is a judgement only a player makes.
 - **No mining productivity, no pollution, no modules.** The pumpjack has two module slots and
   10/min of pollution in Factorio, and mining productivity research raises its output. All three
   are mechanics this pack does not have yet; the machine is the plain 90 kW one.
@@ -98,7 +98,7 @@ Belts
 - **And so nothing tests that a belt carries anything at all.** `belt_carries_what_stands_on_it`
   asserted a distance, which for a resting item is not a fact about the belt — it failed one run in
   five, and was deleted rather than weakened. **A belt that stopped carrying the player would pass
-  every test in this repo.** Stand on one during a playtest; it is the only instrument there is.
+  every test in this repo.** Standing on one is the only instrument there is.
 - **A belt does not turn you as it carries you.** An entity on a corner is pushed the way that block
   faces, so a bend is two straight shoves rather than an arc. Items do curve.
 - **A belt in hand re-points the belt it replaces**, which is Factorio's fast-replace and is worth
@@ -214,8 +214,9 @@ Crafting and the panel
 Research
 --------
 
-- **The tree is 25 technologies, not Factorio's whole one** — the early game plus the branches the
-  pack can reach. Adding one is a JSON entry, and the build reports missing prerequisites.
+- **The tree is the early game plus the branches the pack can reach, not Factorio's whole one.**
+  `data/technologies.json` is the list; adding one is a JSON entry, and the build reports missing
+  prerequisites.
 - **A technology that unlocks nothing is still offered**, and now says so. 128 of the 216 unlock no
   recipe, because their only effects are mechanics this pack lacks; four of those are in the tree
   today. They were kept because a technology's cost and place in the graph are identity and go into
@@ -229,7 +230,7 @@ Research
   every recipe, off by default, and a vanilla crafting recipe never goes near Facrafting, where the
   gate lives. There is no hook that would let it, so the labels read **"(skips research)"** — not a
   caveat but the point, and the one line a player reads before turning one on.
-- **Eleven of the nineteen recipes can never be gated, and that is arithmetic rather than policy.**
+- **The opening's recipes can never be gated, and that is arithmetic rather than policy.**
   A lab costs circuits, gears and belts; red science costs a plate and a gear; running a lab needs a
   boiler, an engine and a pole; a boiler needs a furnace and pipes. Gate any of those and a new
   world can never reach its own first research. The tree solves it the other way: the first
@@ -237,7 +238,8 @@ Research
   `research_gates_the_early_machines` asserts the free set again at run time, because the
   generator's answer and the server's could drift and only one is what a player meets.
   **Note what is not in that set: a mining drill.** In Minecraft you mine ore with a pickaxe, so a
-  drill is a convenience — which is why the electric drill could become the second research.
+  drill is a convenience — which is why the electric drill is the first technology a lab is paid
+  for.
 - **A lab that has never had a technology picked rechecks once a second**, because choosing research
   happens on a screen and reaches no block. Bounded: only a lab with packs *and* power *and* no
   research pays it.

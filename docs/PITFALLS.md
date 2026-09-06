@@ -65,7 +65,11 @@ Blocks and multi-blocks
   range, so a network must reduce endpoints by *identity* rather than position, or one engine is
   charged several times a tick.
 - **A machine spills its inventory from `BlockEntity#preRemoveSideEffects`**, not from
-  `Block#affectNeighborsAfterRemoval`. The wrong one compiles, reads correctly, and drops nothing.
+  `Block#affectNeighborsAfterRemoval`. The base implementation drops contents only for a
+  `Container`, so a capability inventory — a `ResourceHandler` — that does not override it eats
+  everything in it on every break; overriding the other compiles, reads correctly, and drops
+  nothing, because the block entity is already gone by then. `assembler_spills_when_broken` catches
+  it.
 - **A modded `Container` must register its own item capability.** NeoForge wraps vanilla's, but
   only for a hard-coded list of vanilla block entity types.
 - **Overriding `getContainerSize` does not resize the list it counts.** `ChestBlockEntity` builds
@@ -217,8 +221,10 @@ Data, recipes and registries
   would load and `advanced-electronics` would not, and the difference would be one log line and a
   research list that was quietly short. `Technology` keeps names, not lookups. **Whenever data ships
   ahead of the things it names, the reference has to be a name and not a lookup.**
-- **A built-in datapack needs a `pack.mcmeta`**, or `AddPackFindersEvent` throws a bare NPE naming
-  neither the mod nor the directory.
+- **A built-in datapack needs a `pack.mcmeta`**, or `AddPackFindersEvent` throws a bare
+  `NullPointerException: ... because "pack" is null` from `PackRepository.discoverAvailable`, naming
+  neither the mod nor the directory. `nauvis_logistics/src/main/resources/crafting_table/` is the
+  shape.
 - **Two block tags decide two different things about a tool.** `incorrect_for_<material>_tool` is
   the **tier** — whether the block drops at all. `mineable/<tool>` is the **kind**, and carries
   **speed**. Asked for a pickaxe that does everything, this pack first emptied the seven tier tags:
@@ -306,7 +312,7 @@ Screens and config
   rather than assumed: `WailaTickHandler` runs the callbacks and *then* calls
   `ObjectDataCenter.set`, so the redirected accessor is the one the server data is fetched for. See
   `nauvis_lib`'s `compat/jade/MultiblockRedirect`, registered once for every machine in every mod.
-- **A special item model names no model, and the checker said so for a year.**
+- **A special item model names no model, and the checker said so, wrongly.**
   A `minecraft:special` item definition - a chest, a bed, a banner, a shield - puts its *renderer*
   under `"model"` as an object and the model carrying the display transforms under `"base"`, so
   `check_models.py`'s "every `model` key that is a string" rule found nothing in one and reported

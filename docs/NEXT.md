@@ -2,28 +2,20 @@ Next session
 ============
 
 Rewritten 2026-09-06. This file is only what to pick up now and how to run things; it is meant to
-stay short and to be edited down as jobs finish. The durable material lives beside it:
-
-| | |
-|---|---|
-| `PLAN.md` | the milestones and what the pack is for |
-| `MAPPING.md` | what stands in for what |
-| `API-26.2.md` | the 26.x renames, confirmed against decompiled sources |
-| `ARCHITECTURE.md` | the rules a machine is built to, and the patterns worth copying |
-| `PITFALLS.md` | things that compile, pass tests, and are still wrong. **Read before writing** |
-| `GAPS.md` | what is deliberately missing, so a hole is not mistaken for a bug |
+stay short and to be edited down as jobs finish. The durable material lives beside it, and
+`CLAUDE.md` says which file is for what. **Read `PITFALLS.md` before writing.**
 
 Where the pack stands
 ---------------------
 
-A hundred and fifty-six gametests pass, `./gradlew build` is clean, and the client boots into a
-world. **Milestone 2 is closed.** Milestone 3 has its research half and every item but the
-accumulator — the steel line, green science, the four poles, assembling machine 2, the solar panel
-and the three furnaces; the substation's and the electric furnace's recipes wait on the advanced
-circuit, and the accumulator waits on the refinery. **Milestone 4 has begun**: oil wells in the
-ground, the pumpjack, `oil-gathering` and `oil-processing` in the tree, and the five technologies
-from plastics to the substation behind blue science. Every block the pack registers is pickaxe work.
-How each of these is built is `ARCHITECTURE.md`; what is deliberately missing from each is `GAPS.md`.
+Every gametest passes, `./gradlew build` is clean, and the client boots into a world. **Milestone 2
+is closed.** Milestone 3 has its research half and every item but the accumulator — the steel line,
+green science, the four poles, assembling machine 2, the solar panel and the three furnaces; the
+substation's and the electric furnace's recipes wait on the advanced circuit, and the accumulator
+waits on the refinery. **Milestone 4 has begun**: oil wells in the ground, the pumpjack,
+`oil-gathering` and `oil-processing` in the tree, and the five technologies from plastics to the
+substation behind blue science. Every block the pack registers is pickaxe work. How each of these
+is built is `ARCHITECTURE.md`; what is deliberately missing from each is `GAPS.md`.
 
 | | |
 |---|---|
@@ -58,7 +50,7 @@ How each of these is built is `ARCHITECTURE.md`; what is deliberately missing fr
 | `nauvis_research:science_pack_1` | red science — a copper plate and an iron gear wheel |
 | `nauvis_research:science_pack_2` | green science — an inserter and a belt. The gate in front of the rest of milestone 3 |
 | `neoprogressivematerials:steel_plate` | five iron plates and sixteen seconds, in a furnace |
-| `nauvis_research:technology` | 216 technologies, a synced datapack registry, generated. 36 are in the tree; two are finished by a trigger a machine fires |
+| `nauvis_research:technology` | a synced datapack registry, generated from `data/technologies.json`: the early game and the branches the pack can reach, out of Factorio's 216. Five are finished by a trigger a furnace, a bench or a pumpjack fires, not by a lab |
 | the tech screen | **a list and a search box on the left, one technology's neighbourhood in the middle, its cost and unlocks on the right.** Factorio's shape. Clicking a node re-centres the picture on it; the button on the right is what starts a research |
 | a view | the selection, **every** ancestor, and descendants two deep by longest path. A node that needs technologies the picture does not show says so with `+n` in its corner |
 | the list | sorted into three blocks and coloured by them — ready in yellow-brown, unreachable in red, researched in green at the bottom. The current research sits above the rest of the first block |
@@ -169,236 +161,14 @@ Loose ends — small enough to finish in an afternoon
   draws its flame. The panel's grid of recipe squares is the one painted thing left, and whether
   it should be vanilla's slot sprite too is a judgement for eyes.
 
-The playtest, which is still owed
----------------------------------
+The playtest
+------------
 
-Every job ends with `./gradlew build`, `:nauvis:runGameTestServer`, **and a client boot**. Three of
-the last four bugs in this pack were found by a person looking at the game. Nothing in this repo
-can see a tab strip, a tech tree or a corner readout, and nothing ever will — that is a permanent
-hole, not a gap in the suite. **A model can be looked at, though**: `python tools/render_model.py
-<model id> out.png` draws any block model from the item slot's angle, holes and all. Render every
-new machine's `_inventory` model before asking anybody to boot a client; the boot is still owed, for
-lighting and for how the thing sits in a world.
-
-Seen so far: the solar panel's output follows the sun, oil fields are found at the new density, and
-the pumpjack's top faces were slits until the anvil sprite went. Not yet seen: everything below.
-
-**`/research`, first**, because it is what makes everything below reachable without playing
-forwards to it. `/research grant nauvis_research:solar_energy` puts the tree where you need it;
-`/research all` opens everything the pack can currently reach; `/research reset` puts it back.
-`/oil field` puts oil where you stand.
-
-**The first ten minutes, which is the biggest risk.** There is no hopper, the chest is a Facrafting
-recipe at Factorio's price, and **the stone furnace is a two-by-two machine of the pack's own** —
-five stone in the panel, and the only thing that smelts.
-
-- gather five cobblestone and see whether making a furnace is **obvious**. If the panel is not the
-  first place a Minecraft player looks, the answer is probably a message, not putting the recipe back;
-- place it, open it, and put raw iron and coal in. A plate should come out in 3.2 seconds, the
-  stack's mouth should be fire while it works, and the hover should say *Smelting Iron Ingot*. Put a stick in and it should refuse it. Then take the ore out mid-smelt and watch it
-  go dark and keep its coal — a furnace here burns only while it works, which is Factorio's rule;
-- hand it five iron ingots before steel processing is researched: it should say it cannot smelt
-  that yet, and start the moment the technology finishes;
-- build a burner inserter and check it does everything a hopper did — chest into furnace is the case
-  every Minecraft player builds. It is behind Automation, so the honest test is the whole opening:
-  hand-mine, hand-craft a lab and a boiler, research Automation, *then* automate anything;
-- and time it. The lab alone is ten circuits, ten gears and four belts by hand. If it drags, the
-  lever is a trigger's count in `data/technologies.json`, not the machinery under it.
-
-**Oil.**
-
-- **look at a field.** Three to eight black-topped blocks four apart on levelled pads, the grass and
-  trees cleared over each. Whether the pads read as a field or as a scar is a judgement no test
-  makes; `levelAround` in `CrudeOilFieldFeature` is the lever, and on flat ground it does nothing;
-- **hover a well.** Jade should say `Yield: 143%` or thereabouts — between 90 and 200 near the start,
-  climbing with distance. Place a well in creative and hover it: it should read a plausible yield,
-  because a well works out its own richness from where it is;
-- **hold a pumpjack over a field and walk about.** The nearest well's 3×3 footprint should appear in
-  blue as you aim near it and move from well to well as you aim, and go when you look away. Click
-  one block off a well: the machine should land centred on it anyway, outlet on the far side.
-  **Whether the footprint reads as a placement ghost or as a stray box is the thing to judge**;
-- **look at the pumpjack in a world**, now that its decks are solid. Whether a nodding donkey inside
-  one block reads as a pumpjack at all is a judgement for eyes — see the loose end above;
-- **pipe it and power it.** A pipe at the outlet corner should reach into the machine; one on a
-  flank should not. With a pole in range Jade's energy bar fills, the status says *Pumping*, and the
-  pipe's readout shows crude oil arriving at ten a second. Nothing consumes it yet, so the run fills
-  and the machine says *Full*, which is not a fault;
-- **mine a boiler with an iron pickaxe.** It should take under a second and hand you a boiler.
-  Before this a boiler took fifteen seconds and dropped nothing. Then mine a pumpjack from a corner
-  block and check one pumpjack comes back;
-- and **pump oil for the first time with `oil-gathering` researched.** The moment the pumpjack
-  finishes its first cycle, the toast for Oil processing should fire and the tree should show the
-  refinery and the chemical plant unlocked — with no lab involved. The tooltip on the node says
-  *Mine 1 x Crude oil - 0 done* until then, which is Factorio's own wording for a `mine-entity`
-  trigger, and **whether "mine" reads right for pumping oil is a judgement no test makes**.
-
-**The furnaces**, which nobody has seen.
-
-- stand the three in a row. Stone is a vanilla furnace's sides, steel is iron and electric is
-  polished deepslate with an iron hood — **whether they read as three tiers of one machine is the
-  question**, and it was decided in three texture lines;
-- build a furnace column: six stone furnaces in a line with a belt down each side. It should be
-  walkable along the hearths with the stacks two apart, and the lit ones should be obvious from
-  the far end at night — every cell gives light, as vanilla's furnace does;
-- look at the electric furnace's hood glowing. It is the top of a stepped block in lava; whether
-  that reads as a furnace or as a lamp is a judgement no test makes;
-- and open one of each. The dark panel with vanilla's slot sprite on it, and the pack's own flame
-  and arrow in vanilla's idiom; the electric one has the charge bolt where the flame goes.
-  **Whether the flame reads as vanilla's fire** is the thing to look at - it is drawn from scratch
-  because vanilla's sprite is a grey box on a dark panel. Shift-click coal and it should land in the fuel slot at once, not in the input and
-  then move. The panel beside them is the ordinary hand panel, and **the smelting recipes are in
-  it, dimmed, under Intermediate products**: the tooltip should say *Cannot be crafted by hand*
-  and list the three furnaces under *Made in:*, and a click should say so on the action bar and
-  queue nothing. Then put sand in a furnace and expect glass;
-- and smelt steel: five iron plates in a stone furnace should take sixteen seconds and eight in a
-  steel or electric one.
-
-**The two new machines.**
-
-- put an assembling machine 1 and a 2 side by side and set both to gears. The second should
-  finish noticeably sooner and its bar should fill faster; the first now takes a full second per
-  gear where it took half, which is Factorio's number and **whether it reads as right or as a
-  regression is the thing to judge**. The blue livery is `light_blue_terracotta` on the sides and
-  is the only thing telling the tiers apart across a base;
-- stand on a solar field and walk across it — half a block, so it should be a floor — and decide
-  **whether nine framed panels read as a solar field or as a blue slab**. Put a block over the
-  middle of one: *Under a roof*. A dark panel looks up every ten seconds, so it should be making
-  power within ten seconds of dawn without being touched.
-
-**The four poles**, which nobody has seen and which are the biggest visual change here.
-
-- stand all four in a row. They go 4, 5, 6, 5 blocks tall and 1×1, 1×1, 2×2, 2×2 wide, in wood,
-  anvil-grey, iron and deepslate. **Whether that reads as a ladder is the whole question** — it was
-  decided in four shape files and a texture line, and nothing in this repo can see it;
-- climb a big pole. All four are in `minecraft:climbable` and the legs collide while the ring on
-  top does not, so going up one and standing on the ring is a thing that either works or is
-  maddening;
-- look at a big pole's top from below and from above. The four heads' arms are supposed to meet
-  across the seams as one closed square; if a leg's arm stops short or two of them overlap, that is
-  `PoleBoxes.LEG_HEAD` and it will be obvious;
-- run a wire between a small pole and a big one. The two ends attach at different heights and the
-  big end comes off the middle of a 2×2 footprint rather than off one of its legs, which is new and
-  is drawn rather than tested;
-- put a small pole down, walk eight blocks, put a medium one down, and see the wire appear. Eight
-  is past the small pole's reach and inside the medium one's, so that is the tier working;
-- and put a substation in the middle of a field of machines. Eighteen by eighteen is most of a
-  chunk, and whether that feels generous or absurd at Minecraft's scale is a judgement no test
-  makes.
-
-**The hover readout on every machine**, which no test can see.
-
-- look at a boiler, a steam engine, an assembler, a lab and both drills **from a corner rather than
-  from the middle**. Jade should say exactly what it says from the middle — the same name, the same
-  energy bar, the same lines;
-- and check the two-block machines the same way: a splitter from either half, a pole from any
-  height. **If a readout is missing on one block of a machine, the redirect is not seeing that
-  block** and `nauvis_lib`'s `MultiblockRedirect` is where to look.
-
-**The drills**, whose dig area is now the machine itself.
-
-- put a burner drill and an electric one down and look at each. The blue outline should sit
-  exactly on the machine — 2×2 and 3×3 — and appear from any block of it rather than only from the
-  one holding the block entity. **That the area *is* the machine is the whole idea**;
-- put a range module in an electric drill and watch the outline grow by a ring;
-- and let one run dry mid-area. It works its own footprint first and rings outward from there, so
-  what it leaves behind should look like a tidy square rather than a strip.
-
-**Slopes**, which nothing in this repo can see at all.
-
-- build a belt line up a three-block hill and look at it from the side. **Whether the ramps read as
-  one continuous belt, or as three slabs at an angle with gaps between them, is the whole
-  question** - the joint at the bottom of each ramp is closed by an adapter box that was reasoned
-  about rather than looked at, and the joint at the top is closed by nothing at all. If there is a
-  wedge of daylight at either end, that is `beltRamp` in `NauvisLogisticsModels`;
-- walk up it. Sixteen steps of a pixel under a smooth ramp: whether that feels like walking up a
-  slope or like walking up stairs is a judgement no test makes. Then ride it - stand still and let
-  it carry you up;
-- **drop items on it and watch them go up.** A dropped item is carried at a rate that wanders and
-  stalls about one run in six, on the flat as much as on a slope (`GAPS.md`). Whether that reads
-  as a belt or as a fault is a judgement for eyes. Try a minecart on one too;
-- watch items go up and come down. They cross a ramp about 41% faster than flat ground, which is
-  deliberate and written down in `GAPS.md`. **Whether it reads as a speed-up or as a glitch** is the
-  thing to decide; the tread's texture is stretched by the same amount so that the two agree;
-- put a corner at the top of a climb and a corner at the bottom. A block that both turns and changes
-  level is carried correctly and drawn flat - see `GAPS.md` - so the question is whether that is
-  invisible in practice or obvious;
-- and turn a belt in the middle of a working line **on a client**. The items should follow the new
-  line immediately.
-
-**The red belt and fast-replace**, which nothing in this repo can judge.
-
-- lay a yellow line, then walk *along* it with red belts in hand and click each one. **Whether that
-  reads as upgrading a line rather than as breaking it** is the whole question — the belt under you
-  changes colour, points where you are walking and keeps what was on it, and you get the yellow one
-  back;
-- click a belt that is turning a corner, from the side. It will point where you are looking, because
-  a belt in hand places a belt — so upgrading a corner is done from along the line, not across it.
-  **Whether that reads as Factorio or as a trap is the thing to judge**;
-- run a yellow line into a red one and watch the join. The two are two runs and items cross at the
-  seam; whether the tread's change of pace reads as intended or as a stutter is a thing to look at;
-- put a fast splitter in a red line and a yellow splitter in the same line beside it. The red one
-  keeps the line's throughput and the yellow one halves it, which is the reason it exists; **whether
-  the two read as a pair with the belts they belong to is the question** — the housing is the same
-  iron and only the top changes, gold for yellow and redstone for red;
-- and tell red from yellow across a base, which is the thing the palette was chosen for at 8x on a
-  dark background rather than in a world at midday.
-
-**The two chests**, which nobody has seen since they became real chests.
-
-- put an iron chest down and open it. The lid should swing, the sound should be the copper chest's,
-  and the box should read as metal rather than as a grey cube;
-- put a steel chest beside it and check they are two chests and not one long one;
-- and tell the two apart across a room. Iron is dark neutral grey and steel is light blue-grey,
-  which is a decision made in `make_chest_textures.py` at 8x on a dark background.
-
-**The research screen and the tree.** Most of what follows was rebuilt after the first look at it
-and has not been looked at since.
-
-- open a lab, press **Tech**, and hover a node. Whether the tooltip reads as a row of its own, a
-  name over a cost over the items it hands over, is the question;
-- **hover `research_speed_1`, which unlocks nothing.** It should say *no effect yet* where the
-  others list what they hand over. Four nodes in the tree are in that state: it, `research_speed_2`,
-  `steel_axe` and `physical_projectile_damage_1`;
-- Automation should be the obvious first click, saying `10 x 10s` with a red science pack;
-- feed a lab, power it, pick Automation, and watch the lab's bar and the research row move together;
-- **leave the crafting panel open while the last unit finishes.** The assembler and the long-handed
-  inserter should appear without the screen being closed;
-- **click through five or six technologies in the list.** Every click redraws the picture around
-  what was clicked, and **whether that reads as navigating or as the screen jumping about** is the
-  whole question. Look at `science_pack_1` specifically, the widest view, and decide whether it
-  needs a cap; and look at `oil_processing`, whose view is the one that found the layout bug;
-- **select `automation` and read the `+2` on `automation_2`.** It means "this also needs two
-  technologies you cannot see from here". Whether a badge says that is a judgement no test makes;
-- **the pack pips**, twelve-pixel science packs under each node's icon. Whether red and green are
-  distinguishable there — the levers are `PIP` and `NODE` in `ResearchScreen`;
-- **read the list top to bottom.** It is sorted into what it is coloured by — ready, then locked,
-  then done. **Whether the first block really is "what to do next"** is the thing to check; if the
-  fourth colour for the current research is one too many, `rank` and `colourOf` are the two methods;
-- **type an item name into the search**, not a technology name — "assembling machine", "belt",
-  "steel". The list matches what a technology unlocks;
-- **tick "hide researched"** with a few technologies done. What is left should be the work
-  outstanding, with the arrows through the hidden ones kept;
-- **hover `automation_2` and look at what lights up.** Its prerequisites and everything behind them
-  go amber. Whether amber on a green-and-grey tree is one colour too many is a judgement no test
-  makes;
-- **roll the wheel.** It zooms about the cursor and no longer scrolls. Whether losing scroll-to-pan
-  is missed is a judgement for whoever uses it;
-- **start Automation, let it get a few units in, then click something else and click back.** The
-  bar under the node should still be there;
-- the corner readout, for a long technology name; and the toast, which should fire once per
-  technology and **never on relog** — if it fires on every login the advancement is not being saved.
-
-**The older debt, which no boot has covered.**
-
-- stand on a belt. Nothing in the suite tests that a belt carries anything — see `GAPS.md`;
-- lay a coal belt with a burner inserter beside it and watch it pick its own fuel off the line;
-- put an inserter on each side of one belt and check they fill two lanes rather than fighting;
-- watch a long-handed inserter reach over a belt, and how long the pause feels once it runs dry.
-  `IDLE_RECHECK_TICKS` is one second, chosen on arithmetic and never on somebody's eye. **If it
-  reads as a jam rather than an arm, halve it** — one constant, linear cost;
-- tell the three inserters apart at a glance on the same line;
-- **whether alphabetical order *within* a tab reads wrong** to somebody who knows where Factorio
-  puts things. It is the last part of the panel nobody has judged.
+Every job ends with `./gradlew build`, `:nauvis:runGameTestServer`, **and a client boot**.
+**A model can be looked at** without one: `python tools/render_model.py <model id> out.png` draws
+any block model from the item slot's angle, holes and all. Render every new machine's `_inventory`
+model before asking anybody to boot a client; the boot is still owed, for lighting and for how the
+thing sits in a world.
 
 How to run everything
 ---------------------
@@ -419,6 +189,7 @@ How to run everything
 | `python tools/check_gui_layout.py` | every machine screen's boxes, for overlaps |
 | `python texture-workshop/make_belt_textures.py` | the belt's art, from ASCII maps. `--preview` for a sheet |
 | `python texture-workshop/make_chest_textures.py` | the two chests' art. Not a map — see that file on why |
+| `python texture-workshop/make_miner_textures.py` | the two drills' art, from ASCII maps. Came across with the fork |
 | `python texture-workshop/make_material_textures.py` | Neo Progressive Materials' item art |
 | `./gradlew :nauvis:packConfig` | the pack's config over `run/config`. Every run task depends on it |
 

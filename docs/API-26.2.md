@@ -445,28 +445,16 @@ If a generated file has a hand-written twin, `processResources` fails with *"Ent
 duplicate but no duplicate handling strategy has been set"*. Delete the hand-written one;
 datagen owns it now.
 
-Silent failures — these compile and then do nothing
----------------------------------------------------
+Data layout that fails silently
+-------------------------------
 
-- **A machine spills its inventory from `BlockEntity#preRemoveSideEffects(BlockPos,
-  BlockState)`**, not from `Block#affectNeighborsAfterRemoval`. The base implementation drops
-  contents *only for a `Container`*, so a capability inventory — a `ResourceHandler` — that
-  does not override this eats everything in it on every break. Overriding
-  `affectNeighborsAfterRemoval` instead compiles, reads correctly, and drops nothing, because
-  the block entity is already gone by then. Note `MinerBlock` in Neo Progressive Automation has
-  exactly that override and only works because its entity is a `WorldlyContainer`; do not copy
-  it. `assembler_spills_when_broken` is the gametest that catches this.
-- **A built-in datapack needs a `pack.mcmeta`.** `AddPackFindersEvent#addPackFinders` pointed at
-  a resource directory without one fails with a bare
-  `NullPointerException: ... because "pack" is null` from `PackRepository.discoverAvailable`,
-  naming neither the mod nor the directory. See `nauvis_logistics/src/main/resources/crafting_table/`.
+The behavioural ones — the spill hook, the missing `pack.mcmeta`, the item spawned at a corner —
+are in `PITFALLS.md`. These are layout:
+
 - **`data/<ns>/recipe/` and `data/<ns>/loot_table/` are singular.** Plural folder names do not
   error; the block just silently drops nothing.
 - **Recipes use `result.id`**, not `result.item`.
 - **Flat item icons need both** `assets/<ns>/items/<name>.json` and `models/item/<name>.json`.
-- **`GameTestHelper.spawnItem(Item, BlockPos)` spawns at the block's corner**, not its centre —
-  it passes the position straight through as floats. Over a one-block-wide thing the item hangs
-  half off it. The `(float, float, float)` overload plus a half is what you meant.
 - **A texture animates from a vertical strip plus a `.mcmeta`**, and the `frames` list may name
   the same frame more than once and in any order. That is how a scroll lands on a speed that is
   not a whole number of pixels a tick: see `texture-workshop/make_belt_textures.py`.
@@ -483,6 +471,6 @@ string.
 Fix: add the group to the `exclusiveContent { forRepository { mavenCentral() } }` block so
 Central serves it exclusively, delete the offending directory under
 `~/.gradle/caches/modules-2/files-2.1`, and rebuild with `--refresh-dependencies`.
-`../NeoProgressiveAutomation/build.gradle` carries a working example.
+The `repositories` block of `nauvis/build.gradle` carries a working example.
 
 Toolchain: **Java 25**. Mojang ships 25 to end users. NeoForge 26.2.0.59, ModDevGradle 2.0.143.

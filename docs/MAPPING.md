@@ -3,8 +3,8 @@ The mapping table
 
 `data/mapping.json` answers one question for each of Factorio's 214 items: **what is this in
 Minecraft, and which mod owns it?** Every recipe in the pack is generated from it plus
-`reference/factorio/recipes.json`, and every technology from it plus
-`reference/factorio/technologies.json`. It is the single review surface for the pack's naming
+`reference/factorio/recipes.json`, and every technology from it plus `data/technologies.json`.
+It is the single review surface for the pack's naming
 and stand-in decisions — one file instead of two hundred recipe JSONs and two hundred more
 technologies.
 
@@ -65,6 +65,11 @@ iron plate, copper plate, steel plate and stone brick are `smelting` here. `gen_
 that into the recipe as Facrafting's `category`, Facrafting keeps such a recipe out of the hand
 panel and the hand queue, and a furnace is the machine that names the category it runs. The other
 categories join the generator's list the day a machine runs them.
+
+A fluid is a row like any other, `raw` where the dump gives it no recipe, and its `item` is the
+fluid's id — `nauvis_fluids:steam`, `nauvis_fluids:crude_oil` — because a pipe and a machine meet
+at the fluid capability and a barrel is an item with a row of its own. The barrel shortcut
+`PLAN.md` once prescribed went when the pipe came with steam.
 
 The `unlocks` table
 -------------------
@@ -228,8 +233,8 @@ Factorio's furnace.
 | `landfill` | `minecraft:dirt` | |
 | `concrete` | `minecraft:gray_concrete` | |
 | `hazard-concrete` | `minecraft:yellow_concrete` | |
-| `gate` | `minecraft:iron_door` | weakest of the twenty; a real wall gate may be worth building |
-| `water` | `minecraft:water` | a fluid, not an item — barrels come first anyway |
+| `gate` | `minecraft:iron_door` | weakest of the nineteen; a real wall gate may be worth building |
+| `water` | `minecraft:water` | a fluid, not an item; the one fluid vanilla already has |
 | `raw-fish` | `minecraft:cod` | |
 
 Skipped outright
@@ -253,12 +258,6 @@ Open questions
 - **`uranium-ore`** has no vanilla equivalent and needs a real ore block, worldgen and all.
   It is milestone-8-adjacent, so it can wait, but it is the one raw input that is genuinely
   new content rather than a mapping decision.
-- **Fluids** (`crude-oil`, `heavy-oil`, `light-oil`, `petroleum-gas`, `steam`, `lubricant`,
-  `sulfuric-acid`) map to barrel *items* during the shortcut phase and to real fluids after.
-  The mapping needs a second field for that when milestone 4 lands, rather than being edited
-  twice. **Settled on the third-party question:** refining and the chemical plant have no
-  answer on 26.2, so barrels stand. Tanks and fluid pipes do exist, in Fluid Tank — a
-  candidate for the real-fluids phase, not for milestone 4. See `PLAN.md`.
 - **`solid-fuel`, `uranium-235`, `uranium-238`** appear as raw in the dump but are products of
   chemistry and centrifuging in the real game. They belong to `nauvis_fluids` and their
   recipes have to be written by hand — the only place in the pack where that is true.

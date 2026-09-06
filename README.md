@@ -8,7 +8,7 @@ A Minecraft modpack that recreates Factorio.
 | Minecraft | 26.2 |
 | NeoForge | 26.2.0.59 |
 | Java | 25 |
-| Status | milestone 0 done; assembler, inserter, chest and power work. See `docs/NEXT.md` |
+| Status | milestones 0–2 done, 3 all but the accumulator, 4 begun. See `docs/NEXT.md` |
 
 Mine, smelt, automate, research, defend, launch a rocket — Factorio's loop with Factorio's
 own numbers, built as a small set of first-party mods rather than a three-hundred-mod pack.
@@ -20,23 +20,22 @@ Where things are
 
 | | |
 |---|---|
-| `CLAUDE.md` | the five non-negotiables. Read first |
+| `CLAUDE.md` | the five non-negotiables, and which doc is for what. Read first |
 | `docs/NEXT.md` | what the next session should pick up, and how to run everything |
-| `docs/PLAN.md` | mod map, milestones, shortcuts, what testing means |
-| `docs/MAPPING.md` | how the 214 Factorio items resolve to Minecraft ones |
-| `docs/API-26.2.md` | confirmed 26.2 renames, checked against decompiled sources |
-| `docs/ARCHITECTURE.md` | the rules a machine is built to, and the patterns worth copying |
-| `docs/PITFALLS.md` | things that compile, pass tests, and are still wrong |
-| `docs/GAPS.md` | what is deliberately missing |
-| `data/mapping.json` | the mapping itself. Hand-maintained |
-| `tools/gen_mapping.py` | seeded it once; refuses to overwrite |
-| `tools/gen_recipes.py` | turns the mapping plus Factorio's dump into recipe JSON |
+| `data/mapping.json` | what stands in for what. Hand-maintained |
+| `data/technologies.json` | the technology tree, from Factorio's own data |
+| `data/removals.json` | the vanilla recipes the pack takes away, and the rule for it |
+| `tools/` | the generators — recipes, technologies, removals — and the checks the build runs |
+| `texture-workshop/` | the scripts that draw the pack's own art |
+| `nauvis_lib/` | the framework: multi-blocks, transfer views, the machine screen |
 | `nauvis/` | the pack mod: policy, vanilla replacement, raw resources, terrain |
 | `nauvis_machines/` | assemblers, furnaces, modules, beacon, radar |
 | `nauvis_logistics/` | belts, inserters, splitters, chests, robots |
 | `nauvis_power/` | boiler, steam engine, solar, accumulator, poles |
-| `nauvis_fluids/` | barrels then pipes, oil, chemistry, nuclear |
-| `reference/` | Factorio's data and Create's source. Gitignored, not ours |
+| `nauvis_fluids/` | pipes, oil, chemistry, nuclear |
+| `nauvis_research/` | labs, science packs, the technology tree |
+| `nauvis_mining/` | the two mining drills |
+| `reference/` | Factorio's data and other people's source. Gitignored, not ours |
 
 Three mods live in their own repos alongside this one: [Facrafting][fc],
 [Neo Progressive Materials][npm] and [Crumbling Ore][co]. A fourth,
@@ -46,9 +45,10 @@ fork of it carrying Factorio's ids, and the original is still its own released m
 The shape of it
 ---------------
 
-Fourteen mods, each a separate jar with its own permanent id, each usable standalone, glued
+Fifteen mods, each a separate jar with its own permanent id, each usable standalone, glued
 together by `neoforge:mod_loaded` recipe conditions with the dependency arrows pointing one
-way. Ten of them are new.
+way. Twelve of them are new to this pack, seven of those exist so far, and the rest arrive with
+their milestones.
 
 The first milestone is a chest feeding an inserter feeding an assembling machine feeding an
 inserter feeding a chest, burning coal for power. It costs eleven new items. Everything after

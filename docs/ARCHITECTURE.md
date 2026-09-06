@@ -80,6 +80,15 @@ copies outnumbered the reasons; the library is the one copy now. Read `MachineSh
 The belt, if you have to touch it
 ---------------------------------
 
+**A transport line is one object; items are positions on it.** That is how Factorio does it, it is
+where Create arrived —
+`reference/create-src/src/main/java/com/simibubi/create/content/kinetics/belt/transport/`, read for
+the architecture and reimplemented, because Create's is welded to its kinetics framework and its
+assets are All Rights Reserved regardless — and it is what `BeltRun` is. A run ticks once however
+long it is, an item crosses it at the belt's speed rather than at one block a tick, and a belt block
+holds nothing at all. Runs with something on them are ticked and the rest are not visited, so an
+empty base costs nothing and a jammed one costs nearly nothing.
+
 Read `nauvis_logistics/.../belt/` in this order and the whole thing falls out:
 
 | | |
@@ -137,6 +146,57 @@ Four things are load-bearing for anything built on top:
 `BeltLines` also owns the tick of anything that carries items *along* a belt line — the splitter is
 ticked there rather than by a scheduled block tick, because the client simulates belts and a
 scheduled tick is server-only. A machine *beside* a belt schedules ticks like any other machine.
+
+The grid, if you have to touch it
+---------------------------------
+
+`nauvis_power/.../grid/`: `PowerNetwork` is one object per connected network, holding its member
+poles and `BlockCapabilityCache` handles on the producers and consumers at its edges;
+`PowerNetworkManager` owns one per level and is driven by a single `LevelTickEvent.Post`. A network
+ticks once however many poles it has, and one with no producer or no hungry consumer does not tick
+at all. Poles join and leave it rather than driving it. Machines find poles when they are placed
+rather than poles scanning for machines, because a scan must never be per-tick. The graph is
+derivable from block positions, so it is not saved — rebuilding on chunk load is cheaper than
+invalidating a cache that spans one.
+
+**`reference/mods/energizedpower-*.jar` is the reference, and the counter-example.** It is the one
+FE mod on 26.2, it is MIT, and it does the opposite: `CableBlock` registers a ticker so every cable
+ticks, and every cable holds its own copy of the network's producer and consumer maps. Read it for
+what the endpoints look like and how connection changes propagate. Do not copy its tick model —
+non-negotiable #5 is exactly the constraint it does not have.
+
+Two things about the network were not obvious in advance and are worth knowing before changing it:
+
+- **A machine cannot find a pole, so the pole finds the machine.** Non-negotiable #3 forbids
+  `nauvis_machines` from knowing what a pole is, so discovery goes the other way, through
+  `Capabilities.Energy.BLOCK`. The hard part is the trigger for a machine built *later*, two blocks
+  from a pole and in nobody's neighbourhood: `BlockEvent.NeighborNotifyEvent`, which fires for any
+  block placed or broken by any means, pre-filtered by a map of which poles reach into which chunk.
+  A capability listener on all 125 supply positions of every pole is the exact alternative and
+  would cost over a million weak references in a base of ten thousand poles. `API-26.2.md` has both.
+- **Poles are bucketed into 8-block cells**, which is more than the 7.5 wire reach, so two poles
+  that can see each other are always within one cell of each other on every axis. That turns the
+  graph walk a split needs into a constant per pole instead of a 15×15×15 scan, and it is the
+  difference between breaking a pole in a big network being free and being a visible stutter.
+
+**A pole is a true multi-block**, on the same `MachineShape` a boiler is: four blocks for the small
+one, five for the medium, and two-by-two by six — twenty-four blocks — for the big one and the
+substation. Placement refuses unless the whole thing fits, `setPlacedBy` puts the rest in, and one
+`updateShape` rule — a cell whose neighbours are not its machine's other cells turns to air — is the
+entire teardown. Only the foot carries the block entity and only the foot drops the item, so
+breaking any part gives back exactly one pole. A one-block pole read as a fence post; the other way
+to get height, a `VoxelShape` four blocks tall on a single block, has the renderer cull the whole
+thing the moment its one real block leaves the screen.
+
+It is **climbable** (through `minecraft:climbable`, so a datapack can say otherwise) and its
+crossarm has **no collision** — an arm you cannot see, three blocks over your head, that catches you
+as you walk past is worse than no arm at all. And **wires draw themselves**: the network already
+knows which poles can see each other, so it pushes that set to each pole and the client renders a
+sagging line between the heads. No coil, no connectors, nothing for the player to say twice.
+**`reference/ImmersiveEngineering-src`'s `wooden_post` is the reference** for that shape — base
+block holds the logic, dummies above, break one and the whole thing goes. Read and reimplemented,
+not copied; IE's licence permits drawing on it with credit and requires visible source, which this
+is. Its assets were not touched.
 
 The patterns worth copying
 --------------------------
@@ -229,8 +289,10 @@ baked in around the shape. `texture-workshop/make_gui_textures.py` writes the sp
 Facrafting learns rules, not facts
 ----------------------------------
 
-Facrafting is a general mod this pack happens to be built on, so nothing in it may know what
-Factorio is. Four forms of the seam, in increasing strength:
+Facrafting is a general mod this pack happens to be built on. It may name Factorio as the model
+for a convention — its menu dims a smelting recipe the way Factorio's does, and a comment may say
+so — and it may not hold a fact about Factorio's items, recipes or tree. Five forms of the seam, in
+increasing strength:
 
 1. **A rule plus data.** The rule is "a tab's place is the place of the first recipe in it", true of
    any pack; the fact is that Factorio's strip reads Logistics, Production, Intermediate products,
@@ -284,12 +346,35 @@ longest path from a root, so a node sits right of *every* prerequisite; rows are
 barycentre with the tree's own order as the tiebreak. Nothing is authored — there are no
 coordinates in the data files and there must not be.
 
+The hover readout
+-----------------
+
+Jade — `maven.modrinth:jade:${jade_version}` from `https://api.modrinth.com/maven`, `compileOnly`
+in each subsystem mod and `runtimeOnly` in the pack. A `@WailaPlugin` class is loaded only when
+Jade is present, so nothing declares it required. Each mod's readouts live in its `compat/jade/`,
+one class per machine, and `nauvis_lib`'s `MultiblockRedirect` is registered once for every
+machine in every mod, so pointing at any cell of one reads as pointing at its anchor.
+
+Two things about writing a provider, both of which cost a client boot to discover:
+
+- **Everything needs server data.** A boiler's steam and an engine's charge change every tick, and
+  a machine that pushed a block update every tick to animate a bar would be sending packets to
+  everyone in render distance. Jade asks the server only while somebody is looking, which is the
+  right amount. The pole needs it absolutely: a network is a server-side object and the client has
+  no `PowerNetworkManager` at all.
+- **A provider may not be both halves, and needs a config translation.** Both crash rather than
+  degrade — `PITFALLS.md` has each. The shape, theirs and now ours, is an outer data class with a
+  nested `Client`, sharing one uid so a player toggling the readout off turns off both.
+
+The pipe's readout is modelled on Factorio's own — what is in the run and how far it reaches — but
+stops at the extent rather than printing Factorio's `6/320`, because the 320 is its cap on one
+fluid segment and this pack has none. A tooltip is not the place to invent a rule nothing enforces.
+
 Dependencies
 ------------
 
-The look-at readout is Jade — `maven.modrinth:jade:${jade_version}`, `compileOnly` in the subsystem
-mods and `runtimeOnly` in the pack. Its plugin classes load only when it is present, so nothing has
-to declare it required. PLAN.md's section covers the rest.
+Jade is above; `PLAN.md`'s third-party section covers what else was surveyed and why nothing else
+was taken.
 
 **Licences are not a decision point for including or depending on a mod here.** The pack is not
 monetised and ships the way thousands of CurseForge packs do; weigh version support, API shape and
