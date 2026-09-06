@@ -1,5 +1,6 @@
 package com.jaguarm.nauvispower.grid;
 
+import com.jaguarm.nauvislib.transfer.EnergyBuffer;
 import com.jaguarm.nauvislib.transfer.GeneratorAccess;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -35,22 +36,29 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * {@link BlockCapabilityCache} handles, so a transfer is never a capability lookup, and the cache
  * reports a machine being replaced or its chunk cycling without anybody polling.
  *
- * <h2>Producers and consumers are not told apart</h2>
+ * <h2>Producers and consumers are not told apart; batteries are</h2>
  *
  * <p>There is one endpoint table, not two. A steam engine refuses insertion - see
- * {@code GeneratorAccess} - and a machine refuses extraction, so asking every endpoint for both
+ * {@link GeneratorAccess} - and a machine refuses extraction, so asking every endpoint for both
  * costs one virtual call that returns zero, and there is no classification to go stale when a
- * machine is replaced by a different one. It also means an accumulator, when there is one, is an
- * endpoint like any other. The one thing that cannot yet work is <em>discharging</em>: an
- * endpoint that accepts energy is skipped when supply is collected, so a battery will charge but
- * not feed the grid until this grows a third case.
+ * machine is replaced by a different one.
  *
- * <h2>The tick, in two passes</h2>
+ * <p>An accumulator refuses neither, and that is why it is the one endpoint that has to say what
+ * it is: a handler carrying {@link EnergyBuffer} is a <b>battery</b>, and Factorio's rule for a
+ * battery is the third case of the tick. It takes only what the generators leave over once every
+ * machine is fed, and it gives only what the generators cannot cover. Two batteries never trade,
+ * because a battery is never counted as demand and never drawn on for surplus - so a full one and
+ * an empty one on the same network sit still, which is what lets the network sleep.
+ *
+ * <h2>The tick, in three passes</h2>
  *
  * <p>Demand is measured first, in a transaction that is deliberately never committed, and only
- * then is exactly that much pulled from the producers. Doing it the other way round - fill a
- * budget, then find out nobody wants it - would leave energy in hand with nowhere to put it and
- * no way to give it back, because a transaction rolls back whole or not at all.
+ * then is exactly that much pulled from the producers - and from the batteries, for whatever the
+ * producers fell short by. Doing it the other way round - fill a budget, then find out nobody
+ * wants it - would leave energy in hand with nowhere to put it and no way to give it back, because
+ * a transaction rolls back whole or not at all. Then, if the producers covered the demand alone,
+ * whatever they still have goes into the batteries, each in a nested transaction so one that goes
+ * back on its word costs only its own charge.
  */
 public final class PowerNetwork {
 
@@ -72,11 +80,14 @@ public final class PowerNetwork {
     private final Long2ObjectLinkedOpenHashMap<BlockCapabilityCache<EnergyHandler, @Nullable Direction>>
             endpoints = new Long2ObjectLinkedOpenHashMap<>();
 
-    // Scratch, reused every tick. A network ticks twenty times a second; allocating four
+    // Scratch, reused every tick. A network ticks twenty times a second; allocating six
     // collections each time is the sort of garbage that only shows up as a stutter much later.
     private final LongArrayList hungry = new LongArrayList();
     private final IntArrayList wanted = new IntArrayList();
     private final LongOpenHashSet hungrySet = new LongOpenHashSet();
+    private final LongArrayList buffers = new LongArrayList();
+    private final IntArrayList room = new IntArrayList();
+    private final LongOpenHashSet bufferSet = new LongOpenHashSet();
     private final LongArrayList gone = new LongArrayList();
 
     /**
@@ -135,12 +146,49 @@ public final class PowerNetwork {
     }
 
     /**
-     * How many machines this network reaches - machines, not blocks.
+     * How many machines this network reaches - machines, not blocks, and batteries among them.
      *
      * <p>Counted rather than stored, because it is read when a player right-clicks a pole and
      * nowhere else. See {@link #distinct} for why the two numbers differ.
      */
     public int endpointCount() {
+        return distinctHandlers().size();
+    }
+
+    /** How many batteries this network reaches. For the readout, like {@link #endpointCount}. */
+    public int bufferCount() {
+        int count = 0;
+        for (EnergyHandler handler : distinctHandlers()) {
+            if (handler instanceof EnergyBuffer) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** What the network's batteries hold between them. For the readout. */
+    public long storedInBuffers() {
+        long stored = 0;
+        for (EnergyHandler handler : distinctHandlers()) {
+            if (handler instanceof EnergyBuffer) {
+                stored += handler.getAmountAsLong();
+            }
+        }
+        return stored;
+    }
+
+    /** What the network's batteries could hold between them. For the readout. */
+    public long bufferCapacity() {
+        long capacity = 0;
+        for (EnergyHandler handler : distinctHandlers()) {
+            if (handler instanceof EnergyBuffer) {
+                capacity += handler.getCapacityAsLong();
+            }
+        }
+        return capacity;
+    }
+
+    private Set<EnergyHandler> distinctHandlers() {
         Set<EnergyHandler> machines = Collections.newSetFromMap(new IdentityHashMap<>());
         for (var cache : endpoints.values()) {
             EnergyHandler handler = cache.getCapability();
@@ -148,7 +196,7 @@ public final class PowerNetwork {
                 machines.add(handler);
             }
         }
-        return machines.size();
+        return machines;
     }
 
     public boolean hasEndpoint(long pos) {
@@ -202,7 +250,8 @@ public final class PowerNetwork {
     // --- the tick ---------------------------------------------------------------------------
 
     /**
-     * Moves as much energy as the consumers will take and the producers can give.
+     * Moves as much energy as the consumers will take and the producers can give, and banks what
+     * is left over.
      *
      * @return how much moved. Zero means there was nothing to do, and the manager stops ticking
      *         this network every tick until something changes.
@@ -211,15 +260,27 @@ public final class PowerNetwork {
         hungry.clear();
         wanted.clear();
         hungrySet.clear();
+        buffers.clear();
+        room.clear();
+        bufferSet.clear();
         gone.clear();
 
         long demand = measureDemand();
         dropMissing();
-        if (demand <= 0) {
+        if (demand <= 0 && !anyRoom()) {
             return 0;
         }
 
         return deliver((int) Math.min(demand, MAX_TRANSFER));
+    }
+
+    private boolean anyRoom() {
+        for (int i = 0; i < room.size(); i++) {
+            if (room.getInt(i) > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -228,6 +289,9 @@ public final class PowerNetwork {
      * <p>The transaction is never committed, so every insertion below rolls back on the way out
      * of the block. This is the "can I?" half of the pattern the whole pack uses, and it is the
      * same call as the "do it" half, so the two cannot drift.
+     *
+     * <p>A battery is asked the same question and the answer is kept apart: what it would take is
+     * its room for surplus, not demand a generator has to meet.
      */
     private long measureDemand() {
         long demand = 0;
@@ -246,6 +310,12 @@ public final class PowerNetwork {
                     continue;
                 }
                 int want = handler.insert(MAX_TRANSFER, probe);
+                if (handler instanceof EnergyBuffer) {
+                    buffers.add(pos);
+                    room.add(want);
+                    bufferSet.add(pos);
+                    continue;
+                }
                 if (want > 0) {
                     hungry.add(pos);
                     wanted.add(want);
@@ -258,38 +328,29 @@ public final class PowerNetwork {
         return demand;
     }
 
-    /** Pulls up to {@code target} from the producers and hands it out, or does nothing at all. */
+    /**
+     * Pulls up to {@code target} from the producers - and from the batteries for the rest - hands
+     * it out, then banks the producers' surplus in the batteries. Or does nothing at all.
+     */
     private int deliver(int target) {
         try (Transaction transfer = Transaction.openRoot()) {
-            int supply = 0;
-            for (var entry : endpoints.long2ObjectEntrySet()) {
-                if (supply >= target) {
-                    break;
-                }
-                // Skip anything that wanted energy, so two half-full machines cannot spend the
-                // tick passing the same joule back and forth - and anything that is another
-                // block of a machine already dealt with, so one cannot do it to itself.
-                if (hungrySet.contains(entry.getLongKey())
-                        || duplicates.contains(entry.getLongKey())) {
-                    continue;
-                }
-                EnergyHandler handler = entry.getValue().getCapability();
-                if (handler != null) {
-                    supply += handler.extract(target - supply, transfer);
-                }
-            }
+            int supply = drawFromGenerators(target, transfer);
 
-            if (supply <= 0) {
-                return 0;
+            // The shortfall is the batteries' to cover, and only the shortfall: a battery that fed
+            // a machine the generators could have fed would be a battery that never fills.
+            int discharged = 0;
+            for (int i = 0; i < buffers.size() && supply < target; i++) {
+                EnergyHandler battery = handlerAt(buffers.getLong(i));
+                if (battery != null) {
+                    int taken = battery.extract(target - supply, transfer);
+                    supply += taken;
+                    discharged += taken;
+                }
             }
 
             int placed = 0;
             for (int i = 0; i < hungry.size() && placed < supply; i++) {
-                var cache = endpoints.get(hungry.getLong(i));
-                if (cache == null) {
-                    continue;
-                }
-                EnergyHandler handler = cache.getCapability();
+                EnergyHandler handler = handlerAt(hungry.getLong(i));
                 if (handler != null) {
                     placed += handler.insert(Math.min(wanted.getInt(i), supply - placed), transfer);
                 }
@@ -302,9 +363,77 @@ public final class PowerNetwork {
                 return 0;
             }
 
+            // Surplus goes to the batteries, and only when there was one: a tick the batteries
+            // had to help on is a tick the generators had nothing spare.
+            int charged = discharged == 0 ? chargeBuffers(transfer) : 0;
+
+            if (placed + charged <= 0) {
+                return 0;
+            }
             transfer.commit();
-            return placed;
+            return placed + charged;
         }
+    }
+
+    /** Extracts up to {@code target} from everything that is neither hungry nor a battery. */
+    private int drawFromGenerators(int target, Transaction transaction) {
+        int supply = 0;
+        for (var entry : endpoints.long2ObjectEntrySet()) {
+            if (supply >= target) {
+                break;
+            }
+            long pos = entry.getLongKey();
+            // Skip anything that wanted energy, so two half-full machines cannot spend the tick
+            // passing the same joule back and forth; anything that is another block of a machine
+            // already dealt with, so one cannot do it to itself; and every battery, which gives
+            // only into a shortfall and never as a generator.
+            if (hungrySet.contains(pos) || duplicates.contains(pos) || bufferSet.contains(pos)) {
+                continue;
+            }
+            EnergyHandler handler = entry.getValue().getCapability();
+            if (handler != null) {
+                supply += handler.extract(target - supply, transaction);
+            }
+        }
+        return supply;
+    }
+
+    /**
+     * Fills each battery with what the generators still have, one nested transaction a battery.
+     *
+     * <p>Nested so that a battery which takes less than it said costs only its own charge: the
+     * machines have already been fed inside the parent, and a rollback here does not touch them.
+     * The first battery the generators cannot fill ends it - there is nothing left for the rest.
+     */
+    private int chargeBuffers(Transaction parent) {
+        int charged = 0;
+        for (int i = 0; i < buffers.size(); i++) {
+            int want = room.getInt(i);
+            if (want <= 0) {
+                continue;
+            }
+            EnergyHandler battery = handlerAt(buffers.getLong(i));
+            if (battery == null) {
+                continue;
+            }
+            try (Transaction charge = Transaction.open(parent)) {
+                int spare = drawFromGenerators(want, charge);
+                if (spare <= 0) {
+                    break;
+                }
+                if (battery.insert(spare, charge) != spare) {
+                    continue;
+                }
+                charge.commit();
+                charged += spare;
+            }
+        }
+        return charged;
+    }
+
+    private @Nullable EnergyHandler handlerAt(long pos) {
+        var cache = endpoints.get(pos);
+        return cache == null ? null : cache.getCapability();
     }
 
     /**

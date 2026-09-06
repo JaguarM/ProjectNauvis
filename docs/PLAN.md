@@ -256,7 +256,7 @@ with the reason, so `gen_recipes.py` leaves them alone rather than reporting the
 The three tiers of underground belt go with them — nothing else in the recipe graph uses any of the
 four, so dropping them leaves it closed.
 
-### 3 — Research · 15 new · *all but the accumulator*
+### 3 — Research · 15 new · *done*
 
 `lab`, `science-pack-1`, `science-pack-2`, `assembling-machine-2`, `steel-furnace`,
 `solar-panel`, `accumulator`, `medium-electric-pole`, and `steel-plate` / `battery` /
@@ -280,9 +280,11 @@ the plates a furnace makes are what finish `steam-power`.
 That is deliberate and is the same rule as recipes: a technology's cost, its prerequisites and
 its unlocks are identity, they live in world saves, and generating the whole graph from Wube's
 own data costs no more than generating a tenth of it. Most of them unlock items no mod registers
-yet, and simply do nothing until one does. Every item above exists except the accumulator, which
-is five batteries and waits on the refinery; the substation and the electric furnace are built and
-their recipes wait on the advanced circuit, which waits on plastic. All of that is milestone 4.
+yet, and simply do nothing until one does. **The accumulator closed the milestone**, once the
+chemical plant could make a battery: it is the grid's third case - Factorio's rule that a battery
+takes only what the generators leave over and gives only what they cannot cover - and a solar
+field carries a factory through the night with it. The substation and the electric furnace are
+built and gated behind blue science.
 
 ### 4 — Oil · 11 new
 

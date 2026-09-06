@@ -7,8 +7,14 @@ treating it as a bug. `PITFALLS.md` is the other list: things that *are* wrong.
 Power and fluids
 ----------------
 
-- **An accumulator cannot discharge.** `PowerNetwork` collects supply from endpoints that did not
-  want energy, so a battery would charge and never feed the grid. It wants a third case.
+- **An accumulator's rates are per tick because the network asks once a tick.** Forty FE in and
+  forty out are the handler's per-call limits, and `PowerNetwork` makes one call each way at most;
+  a second network cannot reach the same accumulator, since poles that see each other merge. A mod
+  that drove the handler itself every tick could move more, and nothing here stops it.
+- **An accumulator covers the whole shortfall, up to its rate, at any charge level.** Factorio's
+  does the same. There is no reserve, no low-charge cut-off, and no circuit-network reading of it;
+  the readout on a pole says how full the network's accumulators are between them, and that is the
+  only place the number is shown.
 - **A network that moved nothing is re-checked every ten ticks** rather than woken exactly. It hears
   about members and machines the moment they appear, but "a generator elsewhere filled up" is a fact
   about a handler in another mod that owes us no signal.
@@ -21,9 +27,6 @@ Power and fluids
   darkening, which weather is part of. A panel that ignored the rain over it would read as broken
   in Minecraft, so this is a divergence the pack keeps; it is worth a third of the output while it
   rains.
-- **No accumulator yet**, so solar power is daytime power. Factorio's answer to the night is the
-  accumulator, which is behind sulfur and the battery - oil, again - and wants `PowerNetwork`'s
-  third case above. Solar plus a boiler for the night is what Factorio itself does before then.
 - **No pipeline length limit.** Factorio caps a segment at 320 pipes and its tooltip says `6/320`;
   ours says `6 pipes`. Adding the cap is a real gameplay change — refusal to connect, not a number.
 - **A row of boilers levels its water rather than flowing it.** Factorio's boilers pass water

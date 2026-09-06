@@ -40,6 +40,9 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> SOLAR_PANEL =
             ITEMS.registerSimpleBlockItem(ModBlocks.SOLAR_PANEL);
 
+    public static final DeferredItem<BlockItem> ACCUMULATOR =
+            ITEMS.registerSimpleBlockItem(ModBlocks.ACCUMULATOR);
+
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
             "nauvis_power",
             () -> CreativeModeTab.builder()
@@ -53,6 +56,7 @@ public final class ModItems {
                         output.accept(BIG_ELECTRIC_POLE.get());
                         output.accept(SUBSTATION.get());
                         output.accept(SOLAR_PANEL.get());
+                        output.accept(ACCUMULATOR.get());
                     })
                     .build());
 

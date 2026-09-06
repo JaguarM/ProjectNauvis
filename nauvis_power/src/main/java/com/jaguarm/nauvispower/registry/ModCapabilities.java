@@ -13,6 +13,8 @@ import com.jaguarm.nauvispower.generator.SteamEngineBlock;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
 import com.jaguarm.nauvispower.generator.SteamEngineShape;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
+import com.jaguarm.nauvispower.storage.AccumulatorBlock;
+import com.jaguarm.nauvispower.storage.AccumulatorBlockEntity;
 
 import org.jspecify.annotations.Nullable;
 
@@ -84,6 +86,12 @@ public final class ModCapabilities {
         SolarPanelBlock panel = ModBlocks.SOLAR_PANEL.get();
         anywhere(event, Capabilities.Energy.BLOCK, panel,
                 SolarPanelBlockEntity.class, (be, side) -> be.cableView());
+
+        // Both ways, from any of its four blocks, and marked as a battery so the network applies
+        // Factorio's rule to it rather than treating it as a machine and a generator at once.
+        AccumulatorBlock accumulator = ModBlocks.ACCUMULATOR.get();
+        anywhere(event, Capabilities.Energy.BLOCK, accumulator,
+                AccumulatorBlockEntity.class, (be, side) -> be.gridView());
 
         atPort(event, boiler, BoilerShape.STEAM, BoilerBlockEntity.class,
                 BoilerBlockEntity::steamAccess);

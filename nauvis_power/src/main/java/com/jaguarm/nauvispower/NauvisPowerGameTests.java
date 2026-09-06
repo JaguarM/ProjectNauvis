@@ -21,6 +21,9 @@ import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvispower.grid.ElectricPoleBlockEntity;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 import com.jaguarm.nauvispower.registry.ModItems;
+import com.jaguarm.nauvispower.storage.AccumulatorBlockEntity;
+import com.jaguarm.nauvispower.storage.AccumulatorShape;
+import com.jaguarm.nauvislib.transfer.EnergyBuffer;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -59,6 +62,7 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
@@ -127,6 +131,9 @@ public final class NauvisPowerGameTests {
         TEST_TYPES.register("solar_panel_makes_power_by_day", () -> SolarPanelMakesPowerByDayTest.CODEC);
         TEST_TYPES.register("solar_panel_follows_the_sky", () -> SolarPanelFollowsTheSkyTest.CODEC);
         TEST_TYPES.register("solar_panel_needs_the_sky", () -> SolarPanelNeedsTheSkyTest.CODEC);
+        TEST_TYPES.register("accumulator_is_a_buffer", () -> AccumulatorIsABufferTest.CODEC);
+        TEST_TYPES.register("accumulator_charges_from_surplus", () -> AccumulatorChargesFromSurplusTest.CODEC);
+        TEST_TYPES.register("accumulators_do_not_feed_each_other", () -> AccumulatorsDoNotFeedEachOtherTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -178,6 +185,12 @@ public final class NauvisPowerGameTests {
                 SolarPanelMakesPowerByDayTest::new, 100);
         register(event, environment, "solar_panel_follows_the_sky", SolarPanelFollowsTheSkyTest::new, 20);
         registerSunlit(event, environment, "solar_panel_needs_the_sky", SolarPanelNeedsTheSkyTest::new, 100);
+
+        register(event, environment, "accumulator_is_a_buffer", AccumulatorIsABufferTest::new, 20);
+        registerSpaced(event, environment, "accumulator_charges_from_surplus",
+                AccumulatorChargesFromSurplusTest::new, 200);
+        registerSpaced(event, environment, "accumulators_do_not_feed_each_other",
+                AccumulatorsDoNotFeedEachOtherTest::new, 100);
     }
 
     /**
@@ -2172,6 +2185,194 @@ public final class NauvisPowerGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("boilers pass water along");
+        }
+    }
+
+    /**
+     * An accumulator is four blocks, one handler, marked as a battery, and moves forty a tick each way.
+     *
+     * <p>The marker is the assertion that matters: without it the network would treat a battery as
+     * a machine and a generator at once, and {@code accumulators_do_not_feed_each_other} below is
+     * what that would break. The rate is Factorio's 300 kW at the pack's ratio, and it is the
+     * handler's per-call limit, which is a per-tick limit only because the network asks once.
+     */
+    public static class AccumulatorIsABufferTest extends GameTestInstance {
+
+        public static final MapCodec<AccumulatorIsABufferTest> CODEC =
+                RecordCodecBuilder.<AccumulatorIsABufferTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AccumulatorIsABufferTest::info))
+                                .apply(i, AccumulatorIsABufferTest::new));
+
+        private static final BlockPos ACCUMULATOR = new BlockPos(0, 1, 0);
+
+        public AccumulatorIsABufferTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, ACCUMULATOR, ModBlocks.ACCUMULATOR.get());
+            helper.assertValueEqual(AccumulatorShape.SHAPE.width(), 2, "tiles across");
+            helper.assertValueEqual(AccumulatorShape.SHAPE.depth(), 2, "tiles deep");
+
+            int entities = 0;
+            EnergyHandler first = null;
+            for (int part = 0; part < AccumulatorShape.SHAPE.cellCount(); part++) {
+                BlockPos cell = AccumulatorShape.SHAPE.cellPos(ACCUMULATOR, part, Direction.NORTH);
+                helper.assertBlockPresent(ModBlocks.ACCUMULATOR.get(), cell);
+                if (helper.getLevel().getBlockEntity(helper.absolutePos(cell)) != null) {
+                    entities++;
+                }
+                EnergyHandler handler = helper.getLevel()
+                        .getCapability(Capabilities.Energy.BLOCK, helper.absolutePos(cell), null);
+                helper.assertTrue(handler != null, "no energy capability at cell " + part);
+                helper.assertTrue(handler instanceof EnergyBuffer,
+                        "an accumulator's handler is not marked as a battery, so the network would "
+                                + "fill it as a machine and drain it as a generator");
+                if (first == null) {
+                    first = handler;
+                } else {
+                    helper.assertTrue(handler == first,
+                            "cell " + part + " hands out a different handler - the network would "
+                                    + "count one accumulator as several");
+                }
+            }
+            helper.assertValueEqual(entities, 1, "block entities in one accumulator");
+            helper.assertValueEqual((int) first.getCapacityAsLong(), AccumulatorBlockEntity.CAPACITY,
+                    "what an accumulator holds");
+
+            try (Transaction transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(first.insert(1000, transaction), AccumulatorBlockEntity.RATE,
+                        "what an accumulator takes in one go");
+                helper.assertValueEqual(first.extract(1000, transaction), AccumulatorBlockEntity.RATE,
+                        "what an accumulator gives in one go");
+            }
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an accumulator is a buffer");
+        }
+    }
+
+    /**
+     * With an engine on the network and nothing to feed, the surplus goes into the accumulator, at
+     * the accumulator's rate.
+     *
+     * <p>Factorio's first half: a battery takes what the generators leave over. Nothing else wants
+     * power here, so all of the engine's output is surplus, and the accumulator's own rate is what
+     * limits it - the engine makes three times as much.
+     */
+    public static class AccumulatorChargesFromSurplusTest extends GameTestInstance {
+
+        public static final MapCodec<AccumulatorChargesFromSurplusTest> CODEC =
+                RecordCodecBuilder.<AccumulatorChargesFromSurplusTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AccumulatorChargesFromSurplusTest::info))
+                                .apply(i, AccumulatorChargesFromSurplusTest::new));
+
+        private static final BlockPos POLE = new BlockPos(2, 1, 0);
+        /** East of the pole, inside its area, clear of the engine to the west. */
+        private static final BlockPos ACCUMULATOR = new BlockPos(3, 1, 1);
+
+        public AccumulatorChargesFromSurplusTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            buildChain(helper, true);
+            place(helper, POLE, ModBlocks.SMALL_ELECTRIC_POLE.get());
+            place(helper, ACCUMULATOR, ModBlocks.ACCUMULATOR.get());
+
+            helper.runAfterDelay(120, () -> {
+                AccumulatorBlockEntity accumulator =
+                        helper.getBlockEntity(ACCUMULATOR, AccumulatorBlockEntity.class);
+                int stored = accumulator.energyStored();
+                helper.assertTrue(stored >= AccumulatorBlockEntity.RATE * 60,
+                        "an accumulator beside a running engine holds " + stored
+                                + " after six seconds - the surplus is not reaching it");
+                helper.assertTrue(stored <= AccumulatorBlockEntity.RATE * 120,
+                        "an accumulator charged faster than its rate: " + stored);
+                helper.assertTrue(accumulator.flow() > 0, "a charging accumulator reads as idle");
+                PowerNetwork network = requireNetwork(helper, POLE, "the pole has no network");
+                helper.assertValueEqual(network.bufferCount(), 1, "accumulators the network counts");
+                helper.assertValueEqual(network.endpointCount(), 2, "machines on the network, accumulator included");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an accumulator charges from surplus");
+        }
+    }
+
+    /**
+     * Two accumulators, one full and one empty, on a network with nothing else: nothing moves, and
+     * the network sleeps.
+     *
+     * <p>This is the case the {@code EnergyBuffer} marker exists for. Told apart only by what they
+     * refuse, a full battery is a generator and an empty one is a machine, and the network would
+     * pour the one into the other and then - the moment the levels crossed - back again, for ever,
+     * in a base that was supposed to be idle. A battery gives only into a shortfall of the
+     * <em>machines</em> and takes only from the <em>generators</em>, so two of them never meet.
+     */
+    public static class AccumulatorsDoNotFeedEachOtherTest extends GameTestInstance {
+
+        public static final MapCodec<AccumulatorsDoNotFeedEachOtherTest> CODEC =
+                RecordCodecBuilder.<AccumulatorsDoNotFeedEachOtherTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AccumulatorsDoNotFeedEachOtherTest::info))
+                                .apply(i, AccumulatorsDoNotFeedEachOtherTest::new));
+
+        private static final BlockPos POLE = new BlockPos(0, 1, 0);
+        private static final BlockPos FULL = new BlockPos(1, 1, -2);
+        private static final BlockPos EMPTY = new BlockPos(-2, 1, 1);
+
+        public AccumulatorsDoNotFeedEachOtherTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, POLE, ModBlocks.SMALL_ELECTRIC_POLE.get());
+            place(helper, FULL, ModBlocks.ACCUMULATOR.get());
+            place(helper, EMPTY, ModBlocks.ACCUMULATOR.get());
+            AccumulatorBlockEntity full = helper.getBlockEntity(FULL, AccumulatorBlockEntity.class);
+            AccumulatorBlockEntity empty = helper.getBlockEntity(EMPTY, AccumulatorBlockEntity.class);
+            full.setStored(AccumulatorBlockEntity.CAPACITY);
+
+            helper.runAfterDelay(40, () -> {
+                helper.assertValueEqual(full.energyStored(), AccumulatorBlockEntity.CAPACITY,
+                        "charge of the full accumulator - it fed the empty one");
+                helper.assertValueEqual(empty.energyStored(), 0,
+                        "charge of the empty accumulator - it took from the full one");
+                PowerNetwork network = requireNetwork(helper, POLE, "the pole has no network");
+                helper.assertValueEqual(network.bufferCount(), 2, "accumulators the network counts");
+                helper.assertFalse(grid(helper).isActive(network),
+                        "a network of two idle accumulators is still being ticked every tick");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("accumulators do not feed each other");
         }
     }
 }

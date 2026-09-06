@@ -4,6 +4,7 @@ import com.jaguarm.nauvispower.generator.BoilerBlock;
 import com.jaguarm.nauvispower.generator.SolarPanelBlock;
 import com.jaguarm.nauvispower.generator.SteamEngineBlock;
 import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
+import com.jaguarm.nauvispower.storage.AccumulatorBlock;
 
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
@@ -46,6 +47,7 @@ public class NauvisPowerJadePlugin implements IWailaPlugin {
         registration.registerBlockDataProvider(SteamEngineReadout.INSTANCE, SteamEngineBlock.class);
         registration.registerBlockDataProvider(PoleReadout.INSTANCE, ElectricPoleBlock.class);
         registration.registerBlockDataProvider(SolarPanelReadout.INSTANCE, SolarPanelBlock.class);
+        registration.registerBlockDataProvider(AccumulatorReadout.INSTANCE, AccumulatorBlock.class);
     }
 
     @Override
@@ -54,5 +56,6 @@ public class NauvisPowerJadePlugin implements IWailaPlugin {
         registration.registerBlockComponent(SteamEngineReadout.Client.INSTANCE, SteamEngineBlock.class);
         registration.registerBlockComponent(PoleReadout.Client.INSTANCE, ElectricPoleBlock.class);
         registration.registerBlockComponent(SolarPanelReadout.Client.INSTANCE, SolarPanelBlock.class);
+        registration.registerBlockComponent(AccumulatorReadout.Client.INSTANCE, AccumulatorBlock.class);
     }
 }

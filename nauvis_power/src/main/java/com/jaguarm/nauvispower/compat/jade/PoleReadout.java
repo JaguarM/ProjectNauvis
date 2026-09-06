@@ -42,6 +42,9 @@ public class PoleReadout implements IServerDataProvider<BlockAccessor> {
     static final String POLES = "Poles";
     static final String MACHINES = "Machines";
     static final String LIVE = "Live";
+    static final String ACCUMULATORS = "Accumulators";
+    static final String STORED = "Stored";
+    static final String STORAGE = "Storage";
 
     private PoleReadout() {}
 
@@ -60,6 +63,12 @@ public class PoleReadout implements IServerDataProvider<BlockAccessor> {
         data.putInt(POLES, network.poleCount());
         data.putInt(MACHINES, network.endpointCount());
         data.putBoolean(LIVE, manager.isActive(network));
+        int batteries = network.bufferCount();
+        if (batteries > 0) {
+            data.putInt(ACCUMULATORS, batteries);
+            data.putLong(STORED, network.storedInBuffers());
+            data.putLong(STORAGE, network.bufferCapacity());
+        }
     }
 
     /**
@@ -102,6 +111,11 @@ public class PoleReadout implements IServerDataProvider<BlockAccessor> {
             tooltip.add(Component.translatable(data.getBooleanOr(LIVE, false)
                     ? "jade.nauvis_power.network.live"
                     : "jade.nauvis_power.network.idle"));
+            if (data.contains(ACCUMULATORS)) {
+                tooltip.add(Component.translatable("jade.nauvis_power.network.accumulators",
+                        data.getIntOr(ACCUMULATORS, 0), data.getLongOr(STORED, 0),
+                        data.getLongOr(STORAGE, 0)));
+            }
         }
 
         @Override

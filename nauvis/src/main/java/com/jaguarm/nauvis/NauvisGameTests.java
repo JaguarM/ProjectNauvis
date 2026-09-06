@@ -96,6 +96,7 @@ public final class NauvisGameTests {
         TEST_TYPES.register("one_tool_does_everything", () -> OneToolDoesEverythingTest.CODEC);
         TEST_TYPES.register("every_machine_takes_a_pickaxe", () -> EveryMachineTakesAPickaxeTest.CODEC);
         TEST_TYPES.register("timed_recipes_are_timed", () -> TimedRecipesAreTimedTest.CODEC);
+        TEST_TYPES.register("accumulator_carries_the_night", () -> AccumulatorCarriesTheNightTest.CODEC);
     }
 
     /** Called from the mod constructor so the test type registers with everything else. */
@@ -139,6 +140,12 @@ public final class NauvisGameTests {
                 Identifier.fromNamespaceAndPath(Nauvis.MODID, "steam_travels_down_a_pipe"),
                 new SteamTravelsDownAPipeTest(new TestData<>(environment, EMPTY_STRUCTURE, 200, 0,
                         true, Rotation.NONE, false, 1, 1, false, 24)));
+
+        // Sky access, because it runs a solar panel; padded, because it builds a grid.
+        event.registerTest(
+                Identifier.fromNamespaceAndPath(Nauvis.MODID, "accumulator_carries_the_night"),
+                new AccumulatorCarriesTheNightTest(new TestData<>(environment, EMPTY_STRUCTURE, 300, 0,
+                        true, Rotation.NONE, false, 1, 1, true, 24)));
 
         event.registerTest(
                 Identifier.fromNamespaceAndPath(Nauvis.MODID, "vanilla_recipes_are_replaced"),
@@ -735,6 +742,95 @@ public final class NauvisGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("every machine takes a pickaxe");
+        }
+    }
+
+    /**
+     * Solar by day, the accumulator by night: the grid's third case, end to end.
+     *
+     * <p>A panel, a pole and an accumulator, and nothing that wants power: everything the panel
+     * makes is surplus and the accumulator banks it. Then a roof goes over the panel - the
+     * gametest world's sky is noon whatever the clock says, so a roof is the only night there is -
+     * and an assembler is built beside the pole. The panel is dark and empty, so the only thing on
+     * the network with anything to give is the accumulator, and what the assembler gains is exactly
+     * what the accumulator loses.
+     *
+     * <p>Three mods meet here and none compiles against another: the panel and the accumulator are
+     * {@code nauvis_power}'s, the assembler is {@code nauvis_machines}', and the battery says what
+     * it is through {@code nauvis_lib}'s marker.
+     */
+    public static class AccumulatorCarriesTheNightTest extends GameTestInstance {
+
+        public static final MapCodec<AccumulatorCarriesTheNightTest> CODEC =
+                RecordCodecBuilder.<AccumulatorCarriesTheNightTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AccumulatorCarriesTheNightTest::info))
+                                .apply(i, AccumulatorCarriesTheNightTest::new));
+
+        /** The panel's middle; its nine cells reach to x 1, inside the pole's area. */
+        private static final BlockPos PANEL = new BlockPos(0, 1, 0);
+        private static final BlockPos POLE = new BlockPos(3, 1, 0);
+        /** Two by two from its north-west corner, east of the pole. */
+        private static final BlockPos ACCUMULATOR = new BlockPos(4, 1, 1);
+        /** Its middle; its south row is at z -2, the edge of the pole's area. */
+        private static final BlockPos ASSEMBLER = new BlockPos(5, 1, -3);
+        /** Over the panel's middle, which is where it looks for the sky. */
+        private static final BlockPos ROOF = new BlockPos(0, 4, 0);
+
+        public AccumulatorCarriesTheNightTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, PANEL, block(helper, "nauvis_power:solar_panel"));
+            place(helper, POLE, block(helper, "nauvis_power:small_electric_pole"));
+            place(helper, ACCUMULATOR, block(helper, "nauvis_power:accumulator"));
+            int[] peak = new int[1];
+
+            helper.startSequence()
+                    .thenExecuteAfter(60, () -> helper.assertTrue(charge(helper, ACCUMULATOR) > 0,
+                            "an accumulator beside a solar panel at noon, with nothing else on the "
+                                    + "network, took none of the surplus"))
+                    .thenExecute(() -> helper.setBlock(ROOF, Blocks.STONE))
+                    .thenExecuteAfter(40, () -> {
+                        // Dark, and what was left in the panel's own buffer has gone into the
+                        // accumulator: a roofed panel is still a generator with something to give
+                        // until it is empty.
+                        helper.assertValueEqual(charge(helper, PANEL), 0,
+                                "charge left in a roofed panel with an accumulator to take it");
+                        peak[0] = charge(helper, ACCUMULATOR);
+                        place(helper, ASSEMBLER, block(helper, "nauvis_machines:assembling_machine_1"));
+                    })
+                    .thenExecuteAfter(40, () -> {
+                        int assembler = charge(helper, ASSEMBLER);
+                        int accumulator = charge(helper, ACCUMULATOR);
+                        helper.assertTrue(assembler > 0,
+                                "an assembler built at night beside a charged accumulator got "
+                                        + "nothing - the accumulator is not covering the shortfall");
+                        helper.assertTrue(accumulator < peak[0],
+                                "the accumulator gave nothing up while the assembler charged");
+                        helper.assertValueEqual(peak[0] - accumulator, assembler,
+                                "what the accumulator lost, against what the assembler gained from "
+                                        + "the only source on the network");
+                    })
+                    .thenSucceed();
+        }
+
+        private static int charge(GameTestHelper helper, BlockPos pos) {
+            EnergyHandler handler = helper.getLevel()
+                    .getCapability(Capabilities.Energy.BLOCK, helper.absolutePos(pos), null);
+            helper.assertTrue(handler != null, "no energy capability at " + pos);
+            return handler.getAmountAsInt();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an accumulator carries the night");
         }
     }
 }

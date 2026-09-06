@@ -1,4 +1,5 @@
-// 26.2	2026-09-06T20:45:05.3358093	Model Definitions - nauvis_power
+// 26.2	2026-09-06T23:55:11.0668544	Model Definitions - nauvis_power
+5cc45532eb041f492239b2bfe1f3c5d2682fbcc3 assets/nauvis_power/blockstates/accumulator.json
 cd534fa93c7aca6df166d53acb91bb4808240b39 assets/nauvis_power/blockstates/big_electric_pole.json
 5b052ab3681a7e35b21932af4e306426af129aca assets/nauvis_power/blockstates/boiler.json
 d78147a49b953dad155daad0f9ccfaf83cee7f3c assets/nauvis_power/blockstates/medium_electric_pole.json
@@ -6,6 +7,7 @@ d78147a49b953dad155daad0f9ccfaf83cee7f3c assets/nauvis_power/blockstates/medium_
 56cf9cd5c4edc334b02e65e0df3da582c74f7c5e assets/nauvis_power/blockstates/solar_panel.json
 90f53831522683b528f0db6840f5ac6ccce94635 assets/nauvis_power/blockstates/steam_engine.json
 f2227d57678f1074ec79085c09ab3bce171e9f9a assets/nauvis_power/blockstates/substation.json
+71fffa731441483265033858cd469286c25fd521 assets/nauvis_power/items/accumulator.json
 263acaaf8a938cf5405bc753efa6b4a1ef26f8a3 assets/nauvis_power/items/big_electric_pole.json
 563174d4cebe9690e552ded8b6b8f6df87635f81 assets/nauvis_power/items/boiler.json
 27ee68de01235f75fe8e98c6387265172d8fcc25 assets/nauvis_power/items/medium_electric_pole.json
@@ -13,6 +15,8 @@ f2227d57678f1074ec79085c09ab3bce171e9f9a assets/nauvis_power/blockstates/substat
 34c51616e9a4fbe2d80cf3c3bc02592e42c95746 assets/nauvis_power/items/solar_panel.json
 903421e4409e9d29e1a2a5a8edd897ccf669e1bc assets/nauvis_power/items/steam_engine.json
 994ddded2caada41888536da71be24492eb63aea assets/nauvis_power/items/substation.json
+6a6e56d6a31e8f857f2a4a0e9e03b1ff11147368 assets/nauvis_power/models/block/accumulator_cell.json
+274c0f57a4e3fceeb3b229f69682cea99068357d assets/nauvis_power/models/block/accumulator_inventory.json
 fd93e197129b43210bc8d5c4df4a8ccb1eb60705 assets/nauvis_power/models/block/big_electric_pole_foot.json
 ccbbb31d81e82ebaa7b54066c95dc44618eba2b9 assets/nauvis_power/models/block/big_electric_pole_head.json
 193a1530fc9889cacf2b741c12485bf199b1d919 assets/nauvis_power/models/block/big_electric_pole_inventory.json

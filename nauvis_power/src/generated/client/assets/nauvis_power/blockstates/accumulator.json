@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "part=0": {
+      "model": "nauvis_power:block/accumulator_cell"
+    },
+    "part=1": {
+      "model": "nauvis_power:block/accumulator_cell",
+      "y": 90
+    },
+    "part=2": {
+      "model": "nauvis_power:block/accumulator_cell",
+      "y": 180
+    },
+    "part=3": {
+      "model": "nauvis_power:block/accumulator_cell",
+      "y": 270
+    }
+  }
+}

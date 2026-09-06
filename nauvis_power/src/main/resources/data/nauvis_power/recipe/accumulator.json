@@ -1,0 +1,30 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 200,
+  "group": "production",
+  "order": "0062",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:battery",
+      "count": 5
+    },
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 2
+    }
+  ],
+  "result": {
+    "id": "nauvis_power:accumulator",
+    "count": 1
+  }
+}

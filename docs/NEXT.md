@@ -8,13 +8,12 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-Every gametest passes, `./gradlew build` is clean, and the client boots into a world. **Milestone 2
-is closed.** Milestone 3 has its research half and every item but the accumulator — the steel line,
-green science, the four poles, assembling machine 2, the solar panel and the three furnaces; the
-substation's and the electric furnace's recipes wait on the advanced circuit, and the accumulator
-waits on the refinery. **Milestone 4 has begun**: oil wells in the ground, the pumpjack,
-`oil-gathering` and `oil-processing` in the tree, and the five technologies from plastics to the
-substation behind blue science. **The world's water is the pack's own now**, the offshore pump
+Every gametest passes, `./gradlew build` is clean, and the client boots into a world. **Milestones
+2 and 3 are closed**: the steel line, green science, the four poles, assembling machine 2, the
+solar panel, the three furnaces, and the accumulator that carries a solar field through the night.
+**Milestone 4 has begun**: oil wells in the ground, the pumpjack, `oil-gathering` and
+`oil-processing` in the tree, chemical science, and the blue tier of the tree from the electric
+furnace to the modules. **The world's water is the pack's own now**, the offshore pump
 draws from it and from nothing a bucket poured, and the boiler boils it: a new world's first
 factory starts at a shoreline. **Every multi-block machine has a placement ghost**, drawn by the
 library from the machine's own placement rule. **The oil chain's fluids, items and recipes exist**:
@@ -33,7 +32,7 @@ missing from each is `GAPS.md`.
 | `nauvis_machines:assembling_machine_2` | the same at speed 0.75 and 20 FE/t, in blue. Behind `automation-2` |
 | `nauvis_machines:stone_furnace` | 2×2, five blocks; a hearth you walk over and a stack whose mouth is fire while it runs. Smelts Factorio's four recipes at speed 1, burning what a vanilla furnace burns — only while working. **A machine of ours now**, not `minecraft:furnace` |
 | `nauvis_machines:steel_furnace` | the same at speed 2, in iron. Behind `advanced-material-processing` |
-| `nauvis_machines:electric_furnace` | 3×3, ten blocks, speed 2, 24 FE/t, a hood that glows. Recipe in, waiting on the advanced circuit |
+| `nauvis_machines:electric_furnace` | 3×3, ten blocks, speed 2, 24 FE/t, a hood that glows. Behind `advanced-material-processing-2`, blue science |
 | smelting | iron plate, copper plate, steel plate and stone brick are `smelting` recipes: a furnace runs them and the panel never offers them. A furnace asks the tree before smelting steel, and reports every plate it makes, which is what finishes `steam-power` |
 | `nauvis_logistics:transport_belt` | half a block, walked over; a run is one object however long, two lanes, visible items, carries you |
 | a belt line | climbs and descends a step at a time, like rails. The ramp is drawn in the lower block; four quarter-block stairs under a 45° slab, so you walk up it |
@@ -59,8 +58,9 @@ missing from each is `GAPS.md`.
 | `nauvis_power:small_electric_pole` | 1×1×4, wood. Reaches 7.5, supplies 5×5 |
 | `nauvis_power:medium_electric_pole` | 1×1×5, anvil-grey. Reaches 9, supplies 5×5 |
 | `nauvis_power:big_electric_pole` | 2×2×6, iron. Reaches 30, supplies 4×4. Twenty-four blocks, one item |
-| `nauvis_power:substation` | 2×2×5, deepslate. Reaches 18, supplies 18×18. Recipe and technology in, both waiting on the advanced circuit |
+| `nauvis_power:substation` | 2×2×5, deepslate. Reaches 18, supplies 18×18. Behind `electric-energy-distribution-2`, blue science |
 | `nauvis_power:solar_panel` | 3×3, half a block, walked over; 8 FE/t at noon scaled by the sky, nothing at night or under a roof |
+| `nauvis_power:accumulator` | 2×2, a block high, in copper; 13,333 FE held, 40 FE/t in and out. **The grid's third case**: takes only what the generators leave over, gives only what they cannot cover, never trades with another accumulator. Five batteries, behind `electric-energy-accumulators` |
 | `nauvis_research:lab` | 3×3, ten blocks, 8 FE/t; eats one of each pack the world's research asks for |
 | `nauvis_research:science_pack_1` | red science — a copper plate and an iron gear wheel |
 | `nauvis_research:science_pack_2` | green science — an inserter and a belt. The gate in front of the rest of milestone 3 |
@@ -103,14 +103,6 @@ circuit, an electric mining drill and an engine unit - and the tree's blue tier 
 production science, which the pack does not make. What the tier unlocks is mostly not built yet,
 and that is the rest of this job.
 
-- **The accumulator**, `nauvis_power`, 2×2. Five batteries, which a chemical plant makes now.
-  Factorio's numbers: 5 MJ held, 300 kW in and out - at the pack's ratio of 120 FE/t to 900 kW that
-  is 13,333 FE and 40 FE/t. It wants `PowerNetwork`'s **third case**: today a network collects
-  supply from endpoints that did not want energy and gives it to those that did, and a battery is
-  both, so it would charge and never discharge. The case is Factorio's own rule - an accumulator
-  takes only what generators leave over and gives only what generators cannot cover - which is two
-  passes over the endpoints where there is one now. A test with a solar panel, an accumulator and an
-  assembler across a night. This closes milestone 3.
 - **The fast inserter and the stack inserter**, `nauvis_logistics`. `fast-inserter` is in the tree
   already and the item is not registered; a tier is a class with a shorter swing, exactly as the
   belt tiers are. The stack inserter is a tier with a bigger hand. Factorio's rotation speeds are

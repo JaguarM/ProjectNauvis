@@ -5,6 +5,7 @@ import com.jaguarm.nauvispower.generator.BoilerBlockEntity;
 import com.jaguarm.nauvispower.generator.SolarPanelBlockEntity;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
 import com.jaguarm.nauvispower.grid.ElectricPoleBlockEntity;
+import com.jaguarm.nauvispower.storage.AccumulatorBlockEntity;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -43,6 +44,10 @@ public final class ModBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SolarPanelBlockEntity>> SOLAR_PANEL =
             BLOCK_ENTITIES.register("solar_panel",
                     () -> new BlockEntityType<>(SolarPanelBlockEntity::new, ModBlocks.SOLAR_PANEL.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<AccumulatorBlockEntity>> ACCUMULATOR =
+            BLOCK_ENTITIES.register("accumulator",
+                    () -> new BlockEntityType<>(AccumulatorBlockEntity::new, ModBlocks.ACCUMULATOR.get()));
 
     private ModBlockEntities() {}
 }

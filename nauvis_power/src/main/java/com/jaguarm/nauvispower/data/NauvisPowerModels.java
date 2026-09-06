@@ -18,6 +18,7 @@ import com.jaguarm.nauvispower.grid.MediumPoleShape;
 import com.jaguarm.nauvispower.grid.SmallPoleShape;
 import com.jaguarm.nauvispower.grid.SubstationShape;
 import com.jaguarm.nauvispower.registry.ModBlocks;
+import com.jaguarm.nauvispower.storage.AccumulatorShape;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.ItemModelGenerators;
@@ -65,6 +66,13 @@ public class NauvisPowerModels extends ModelProvider {
         // Iron frames under blue glass. A panel has no facing, so it takes the poles' generator.
         turnless(blockModels, ModBlocks.SOLAR_PANEL.get(), SolarPanelShape.SHAPE,
                 TextureMapping.getBlockTexture(Blocks.IRON_BLOCK).sprite(),
+                Identifier.withDefaultNamespace("block/blue_terracotta"));
+
+        // A copper cabinet with the panel's blue on top: a battery, and part of the same solar
+        // field. Named rather than looked up - the copper blocks are a weathering collection
+        // in 26.2, which TextureMapping refuses.
+        turnless(blockModels, ModBlocks.ACCUMULATOR.get(), AccumulatorShape.SHAPE,
+                Identifier.withDefaultNamespace("block/cut_copper"),
                 Identifier.withDefaultNamespace("block/blue_terracotta"));
     }
 

@@ -8,6 +8,7 @@ import com.jaguarm.nauvispower.grid.BigElectricPoleBlock;
 import com.jaguarm.nauvispower.grid.MediumElectricPoleBlock;
 import com.jaguarm.nauvispower.grid.SubstationBlock;
 import com.jaguarm.nauvispower.grid.SmallElectricPoleBlock;
+import com.jaguarm.nauvispower.storage.AccumulatorBlock;
 
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.PushReaction;
@@ -110,6 +111,19 @@ public final class ModBlocks {
                     .strength(2.0F, 6.0F)
                     .sound(SoundType.METAL)
                     .noOcclusion()
+                    .requiresCorrectToolForDrops());
+
+    /**
+     * Two by two and a block high, in copper: a battery for the grid. Behind
+     * {@code electric-energy-accumulators}, which is behind the battery, which is oil.
+     */
+    public static final DeferredBlock<AccumulatorBlock> ACCUMULATOR = BLOCKS.registerBlock(
+            "accumulator",
+            AccumulatorBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .strength(2.0F, 6.0F)
+                    .sound(SoundType.COPPER)
                     .requiresCorrectToolForDrops());
 
     private ModBlocks() {}

@@ -243,6 +243,17 @@ supposed to be asleep. Meeting in the middle converges in one step and then noth
 run needs no such rule, because it pushes into sinks and pulls from sources and a machine is never
 both for one fluid.
 
+**A battery takes only surplus and gives only into a shortfall.** The grid tells its endpoints apart
+by what they refuse - a generator refuses filling, a machine refuses draining - and an accumulator
+refuses neither, so it carries `nauvis_lib`'s `EnergyBuffer` marker and `PowerNetwork` gives it
+Factorio's own rule as a third case of the tick: demand is measured, the generators are drawn on
+for it, the accumulators for whatever the generators fell short by, and then - only on a tick the
+accumulators were not needed - what the generators still have goes into them, one nested
+transaction a battery. Two batteries never trade, because a battery is never demand and never a
+source of surplus, which is what lets a network of full and empty accumulators sleep. The marker is
+in the library for the same reason `FluidBuffer` is: a battery in any mod can say so to the power
+mod without naming it, and any FE storage that says nothing is still what it always was.
+
 **A tank is a length of the pipeline.** A pipe run fills sinks and drains sources, and a storage
 tank is neither: Factorio's fills and empties with the pipes around it. So a handler marked
 `nauvis_lib`'s `FluidBuffer` is left out of both halves of the run's tick and *levelled* instead -
