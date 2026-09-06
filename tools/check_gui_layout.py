@@ -29,21 +29,17 @@ class Screen:
         # (label, x, y, width, height) constant names in the screen class.
         self.bars = bars
 
-    def constant(self, path, name, optional=False):
+    def constant(self, path, name):
         text = (self.dir / path).read_text(encoding='utf-8')
         match = re.search(rf'\b{name}\s*=\s*(\d+)\s*;', text)
         if not match:
-            if optional:
-                return None
             sys.exit(f'{self.name}: could not find {name} in {path}')
         return int(match.group(1))
 
     def boxes(self):
         panel_w = self.constant(self.screen, 'PANEL_WIDTH')
         panel_h = self.constant(self.screen, 'PANEL_HEIGHT')
-        # A screen on vanilla's own texture has no status line: the furnace says why it stopped
-        # in a tooltip over its arrow, because vanilla's furnace panel has no room for a line.
-        status_y = self.constant(self.screen, 'STATUS_Y', optional=True)
+        status_y = self.constant(self.screen, 'STATUS_Y')
 
         boxes = []
 
@@ -72,8 +68,7 @@ class Screen:
             boxes.append((label, x, y, x + w, y + h))
 
         boxes.append(('title', 8, 6, panel_w - 8, 6 + FONT))
-        if status_y is not None:
-            boxes.append(('status line', 8, status_y, panel_w - 8, status_y + FONT))
+        boxes.append(('status line', 8, status_y, panel_w - 8, status_y + FONT))
         # AbstractContainerScreen's default inventoryLabelY.
         inventory_y = panel_h - 94
         boxes.append(('"Inventory"', 8, inventory_y, panel_w - 8, inventory_y + FONT))
@@ -91,9 +86,8 @@ SCREENS = [
               ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT')],
     ),
     Screen(
-        # Vanilla's furnace layout on vanilla's texture. The electric tier's charge bar is not
-        # listed because it stands exactly where the flame does, on a screen that draws one or
-        # the other and never both.
+        # The electric tier's charge bolt is not listed because it stands exactly where the flame
+        # does, on a screen that draws one or the other and never both.
         'furnace',
         'nauvis_machines/src/main/java/com/jaguarm/nauvismachines/machine/furnace',
         'FurnaceMenu.java', 'FurnaceScreen.java',

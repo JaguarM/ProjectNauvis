@@ -42,10 +42,15 @@ public class BoilerMenu extends AbstractContainerMenu {
     private final ContainerData data;
     private final ContainerLevelAccess access;
 
-    /** Client side: there is no boiler here, only the numbers the server sends. */
+    /**
+     * Client side: there is no boiler here, only the numbers the server sends - and the fuel
+     * values, which the server sends too, so the stand-in slot refuses what the real one will
+     * and a shift-clicked stick stays where it was rather than bouncing back a tick later.
+     */
     public BoilerMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory,
-                new BoilerFuel(BoilerBlockEntity.SLOT_COUNT, () -> {}, () -> null),
+                new BoilerFuel(BoilerBlockEntity.SLOT_COUNT, () -> {},
+                        () -> playerInventory.player.level().fuelValues()),
                 new SimpleContainerData(DATA_COUNT),
                 ContainerLevelAccess.NULL);
     }

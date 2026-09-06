@@ -217,10 +217,12 @@ cannot drift apart.
 **One interface.** Facrafting owns the crafting UI and its panel attaches to any container screen;
 machine screens grow out of it rather than sit beside it. Palettes are duplicated per mod rather
 than shared, because a shared base in Facrafting would make these mods require it and kill the
-`*_standalone` recipes that exist for its absence. **And the look is vanilla's**: Yannic has said
-vanilla's interface fits Minecraft's art far better than a flat painted panel, so a screen draws
-on vanilla's own texture where vanilla has one - the furnace is vanilla's furnace screen - and the
-painted ones are the ones still to change.
+`*_standalone` recipes that exist for its absence. **The look is the dark panel with vanilla's
+pixels on it**: Yannic likes the dark painted panel and wants the parts a Minecraft player has
+looked at for years to stay vanilla's, so a slot is vanilla's slot sprite, a fire is vanilla's
+furnace flame, and electricity is a bolt sprite of the pack's own - all three fourteen-pixel meters
+drawn the way vanilla draws its flame, the sprite tinted dark and then lit from the bottom as far
+as it is full. `texture-workshop/make_gui_textures.py` writes the bolt into every mod that draws it.
 
 Facrafting learns rules, not facts
 ----------------------------------

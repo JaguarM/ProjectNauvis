@@ -4,14 +4,19 @@ import java.util.List;
 
 import com.jaguarm.facrafting.client.ClientRecipes;
 import com.jaguarm.facrafting.recipe.FacraftRecipe;
+import com.jaguarm.nauvismachines.NauvisMachines;
 
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -20,12 +25,13 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
 /**
  * The assembler's screen: what it is making, how far along, and the slots either side of that.
  *
- * <p>Painted rather than blitted. There is no background texture, because there is no art yet and
- * a machine drawn in flat colours reads as unfinished on purpose, where a machine drawn on a
- * borrowed vanilla panel reads as finished and slightly wrong. The palette is Facrafting's, so
- * this screen and the panel that opens beside it look like one interface rather than two.
+ * <p>A dark panel, which Yannic likes, with vanilla's own slot sprite in it, which he also likes:
+ * the panel is painted in Facrafting's palette so this screen and the panel that opens beside it
+ * read as one interface, and the slots and the meters are vanilla's pixels so it reads as
+ * Minecraft. Electricity is a bolt drawn the way vanilla's furnace draws its flame - the sprite
+ * dark, then lit from the bottom as far as the buffer is full.
  *
- * <p>No recipe list here either - that is the panel's job. What this screen adds is the half the
+ * <p>No recipe list here - that is the panel's job. What this screen adds is the half the
  * panel cannot know: which slots this particular machine has, what is in them, and how close the
  * current craft is to finishing.
  */
@@ -37,15 +43,17 @@ public class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
     // Facrafting's palette, so the two halves of the interface match.
     private static final int COLOR_FRAME = 0xFF000000;
     private static final int COLOR_BACKGROUND = 0xF0141414;
-    private static final int COLOR_SLOT = 0xFF3B3B3B;
-    /** Darker than the well it frames, or a row of slots renders as one grey slab. */
-    private static final int COLOR_SLOT_EDGE = 0xFF1E1E1E;
     private static final int COLOR_TEXT = 0xFFFFFFFF;
     private static final int COLOR_MUTED = 0xFF909090;
     private static final int COLOR_TRACK = 0xFF2A2A2A;
     private static final int COLOR_FILL = 0xFF55FF55;
-    /** Electricity, in a colour nothing else on this screen uses. */
-    private static final int COLOR_CHARGE = 0xFFFFD24A;
+    /** What a meter's sprite is tinted while it is empty: a silhouette on the panel. */
+    private static final int COLOR_UNLIT = 0xFF3B3B3B;
+
+    /** Vanilla's slot, and this mod's bolt, both from the GUI atlas. */
+    private static final Identifier SLOT_SPRITE = Identifier.withDefaultNamespace("container/slot");
+    private static final Identifier BOLT_SPRITE = Identifier.fromNamespaceAndPath(NauvisMachines.MODID, "charge_bolt");
+    private static final int METER = 14;
 
     /**
      * The progress bar, in the gap between the ingredient block and the result.
@@ -59,17 +67,17 @@ public class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
     private static final int ARROW_HEIGHT = 6;
 
     /**
-     * The charge in the buffer, directly under the progress bar.
+     * The charge, a bolt under the progress bar.
      *
      * <p>An assembler that has stopped for want of electricity is otherwise indistinguishable
      * from one that has stopped for want of ingredients, and the two want completely different
-     * things done about them. y=44..48 is clear: the ingredient block ends at x=61, the output
+     * things done about them. 42..56 is clear: the ingredient block ends at x=61, the output
      * well at y=43, and the status line starts at y=58.
      */
-    private static final int CHARGE_X = 70;
-    private static final int CHARGE_Y = 44;
-    private static final int CHARGE_WIDTH = 34;
-    private static final int CHARGE_HEIGHT = 4;
+    private static final int CHARGE_X = 80;
+    private static final int CHARGE_Y = 42;
+    private static final int CHARGE_WIDTH = 14;
+    private static final int CHARGE_HEIGHT = 14;
 
     /**
      * The status line, clear of both the slots above and vanilla's "Inventory" label below.
@@ -99,30 +107,20 @@ public class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
         graphics.fill(x - 1, y - 1, x + imageWidth + 1, y + imageHeight + 1, COLOR_FRAME);
         graphics.fill(x, y, x + imageWidth, y + imageHeight, COLOR_BACKGROUND);
 
-        // Two passes, because adjacent slots are exactly 18 apart and a well is 18 across: drawn
-        // in one colour they tile into an unbroken rectangle, which is what the first version did
-        // to both the ingredient block and the whole player inventory.
-        for (Slotish slot : slotWells()) {
-            graphics.fill(x + slot.x() - 1, y + slot.y() - 1,
-                    x + slot.x() + 17, y + slot.y() + 17, COLOR_SLOT_EDGE);
-            graphics.fill(x + slot.x(), y + slot.y(),
-                    x + slot.x() + 16, y + slot.y() + 16, COLOR_SLOT);
+        // Vanilla's slot sprite, at every slot the menu has, so the screen cannot disagree with
+        // the menu about where they are. The sprite is the well and its edge in one.
+        for (Slot slot : menu.slots) {
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SLOT_SPRITE,
+                    x + slot.x - 1, y + slot.y - 1, METER + 4, METER + 4);
         }
 
         drawProgress(graphics, x, y);
-        drawCharge(graphics, x, y);
+        meter(graphics, BOLT_SPRITE, x + CHARGE_X, y + CHARGE_Y, menu.charge());
     }
-
-    /** Every slot's well, taken from the menu so the screen cannot disagree about where they are. */
-    private List<Slotish> slotWells() {
-        return menu.slots.stream().map(slot -> new Slotish(slot.x, slot.y)).toList();
-    }
-
-    private record Slotish(int x, int y) {}
 
     /**
      * A bar rather than vanilla's arrow sprite, because there is no sprite to borrow that is not
-     * furnace-shaped. It empties left to right over exactly the recipe's craft time.
+     * furnace-shaped. It fills left to right over exactly the recipe's craft time.
      */
     private void drawProgress(GuiGraphicsExtractor graphics, int originX, int originY) {
         int left = originX + ARROW_X;
@@ -137,17 +135,19 @@ public class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
         }
     }
 
-    /** How full the buffer is. Empty and idle look the same on a machine that has never run. */
-    private void drawCharge(GuiGraphicsExtractor graphics, int originX, int originY) {
-        int left = originX + CHARGE_X;
-        int top = originY + CHARGE_Y;
-
-        graphics.fill(left, top, left + CHARGE_WIDTH, top + CHARGE_HEIGHT, COLOR_TRACK);
-
-        int filled = Math.round(CHARGE_WIDTH * menu.charge());
-        if (filled > 0) {
-            graphics.fill(left, top, left + filled, top + CHARGE_HEIGHT, COLOR_CHARGE);
+    /**
+     * A fourteen-pixel meter drawn the way vanilla's furnace draws its flame: the whole sprite
+     * tinted dark as the empty meter, then the bright sprite over it from the bottom up, as far
+     * as it is full.
+     */
+    private static void meter(GuiGraphicsExtractor graphics, Identifier sprite, int left, int top, float fill) {
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, left, top, METER, METER, COLOR_UNLIT);
+        if (fill <= 0.0f) {
+            return;
         }
+        int lit = Mth.ceil(fill * (METER - 1)) + 1;
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, METER, METER, 0, METER - lit,
+                left, top + METER - lit, METER, lit);
     }
 
     @Override

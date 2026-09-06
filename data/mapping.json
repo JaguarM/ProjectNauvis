@@ -1700,7 +1700,7 @@
       "item": "neoprogressivematerials:steel_plate",
       "category": "smelting",
       "craft": {
-        "time": 35,
+        "time": 16,
         "yield": 1
       }
     },

@@ -1,6 +1,6 @@
 package com.jaguarm.nauvismachines.machine.furnace;
 
-import java.util.List;
+import com.jaguarm.nauvismachines.NauvisMachines;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -9,54 +9,51 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * The furnace's screen, which is vanilla's furnace screen.
+ * The furnace's screen: what goes in, what is burning, what comes out, and how far along.
  *
- * <p>The same panel, the same three slots in the same places, the same flame and the same
- * arrow, from vanilla's own texture and sprites - because a furnace is the one machine here that
- * Minecraft already has a picture of, and Yannic has said vanilla's interface fits Minecraft's
- * art far better than a flat painted panel does. The assembler's screen is still painted, and is
- * the next to change.
- *
- * <p>What vanilla's furnace does not have is a status line, so the reason a furnace has stopped
- * is a tooltip over the arrow rather than a line of text, and the hover readout outside the
- * screen says the same thing. The electric tier has no fuel slot: its well is painted over with a
- * patch of the panel and the flame's place holds a charge bar instead.
+ * <p>The assembler's dark panel, with vanilla's furnace pixels on it: the slot sprite, the
+ * flame and the arrow are vanilla's own, drawn as vanilla's furnace draws them - the flame and
+ * the arrow dark as their empty meters and lit as far as they are full. That is the look Yannic
+ * asked for, the dark panel and the vanilla fire both. The electric tier has no fuel slot and no
+ * flame; in the flame's place it has the bolt every electric machine here draws.
  */
 public class FurnaceScreen extends AbstractContainerScreen<FurnaceMenu> {
 
     private static final int PANEL_WIDTH = 176;
     private static final int PANEL_HEIGHT = 166;
 
-    private static final Identifier TEXTURE = Identifier.withDefaultNamespace("textures/gui/container/furnace.png");
-    private static final Identifier LIT_PROGRESS = Identifier.withDefaultNamespace("container/furnace/lit_progress");
-    private static final Identifier BURN_PROGRESS = Identifier.withDefaultNamespace("container/furnace/burn_progress");
+    private static final int COLOR_FRAME = 0xFF000000;
+    private static final int COLOR_BACKGROUND = 0xF0141414;
+    private static final int COLOR_TEXT = 0xFFFFFFFF;
+    private static final int COLOR_MUTED = 0xFF909090;
+    /** What a meter's sprite is tinted while it is empty: a silhouette on the panel. */
+    private static final int COLOR_UNLIT = 0xFF3B3B3B;
 
-    /** Vanilla's flame, between the input and the fuel slot. */
-    private static final int FLAME_X = 56;
-    private static final int FLAME_Y = 36;
+    private static final Identifier SLOT_SPRITE = Identifier.withDefaultNamespace("container/slot");
+    private static final Identifier FLAME_SPRITE = Identifier.withDefaultNamespace("container/furnace/lit_progress");
+    private static final Identifier ARROW_SPRITE = Identifier.withDefaultNamespace("container/furnace/burn_progress");
+    private static final Identifier BOLT_SPRITE = Identifier.fromNamespaceAndPath(NauvisMachines.MODID, "charge_bolt");
+    private static final int METER = 14;
+
+    /** The flame, beside the fuel slot and under the input: 26..40 is clear of both wells. */
+    private static final int FLAME_X = 26;
+    private static final int FLAME_Y = 35;
     private static final int FLAME_WIDTH = 14;
     private static final int FLAME_HEIGHT = 14;
 
-    /** Vanilla's arrow, filling left to right. */
-    private static final int ARROW_X = 79;
-    private static final int ARROW_Y = 34;
+    /** Vanilla's arrow, between the input column and the output well. */
+    private static final int ARROW_X = 72;
+    private static final int ARROW_Y = 30;
     private static final int ARROW_WIDTH = 24;
     private static final int ARROW_HEIGHT = 16;
 
-    /**
-     * A patch of plain panel from the texture, for covering the fuel well on the electric tier:
-     * the space left of the input slot is background and nothing else.
-     */
-    private static final int PATCH_U = 8;
-    private static final int PATCH_V = 17;
-
-    /** The charge bar, in the flame's place, in the assembler's electricity colour. */
-    private static final int COLOR_TRACK = 0xFF373737;
-    private static final int COLOR_CHARGE = 0xFFFFD24A;
+    /** Clear of the fuel well, which ends at 52, and vanilla's "Inventory" label at 72. */
+    private static final int STATUS_Y = 58;
 
     public FurnaceScreen(FurnaceMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, PANEL_WIDTH, PANEL_HEIGHT);
@@ -74,41 +71,52 @@ public class FurnaceScreen extends AbstractContainerScreen<FurnaceMenu> {
 
         int x = leftPos;
         int y = topPos;
-        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, 0.0F, 0.0F, imageWidth, imageHeight, 256, 256);
 
-        if (menu.isBurner()) {
-            if (menu.isBurning()) {
-                int lit = Mth.ceil(menu.burnProgress() * 13.0F) + 1;
-                graphics.blitSprite(RenderPipelines.GUI_TEXTURED, LIT_PROGRESS, FLAME_WIDTH, FLAME_HEIGHT,
-                        0, FLAME_HEIGHT - lit, x + FLAME_X, y + FLAME_Y + FLAME_HEIGHT - lit, FLAME_WIDTH, lit);
-            }
-        } else {
-            // No fuel slot: the well is painted over, and the flame's place is the charge.
-            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE,
-                    x + FurnaceMenu.FUEL_X - 1, y + FurnaceMenu.FUEL_Y - 1, PATCH_U, PATCH_V, 18, 18, 256, 256);
-            int left = x + FLAME_X;
-            int top = y + FLAME_Y;
-            graphics.fill(left, top, left + FLAME_WIDTH, top + FLAME_HEIGHT, COLOR_TRACK);
-            int height = Math.round(FLAME_HEIGHT * menu.charge());
-            if (height > 0) {
-                graphics.fill(left, top + FLAME_HEIGHT - height, left + FLAME_WIDTH, top + FLAME_HEIGHT, COLOR_CHARGE);
-            }
+        graphics.fill(x - 1, y - 1, x + imageWidth + 1, y + imageHeight + 1, COLOR_FRAME);
+        graphics.fill(x, y, x + imageWidth, y + imageHeight, COLOR_BACKGROUND);
+
+        for (Slot slot : menu.slots) {
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SLOT_SPRITE,
+                    x + slot.x - 1, y + slot.y - 1, METER + 4, METER + 4);
         }
 
+        // The flame, or the bolt in its place: the same meter, drawn the same way.
+        if (menu.isBurner()) {
+            meter(graphics, FLAME_SPRITE, x + FLAME_X, y + FLAME_Y, menu.isBurning() ? menu.burnProgress() : 0.0f);
+        } else {
+            meter(graphics, BOLT_SPRITE, x + FLAME_X, y + FLAME_Y, menu.charge());
+        }
+
+        // Vanilla's arrow: the whole sprite dark, then the lit one over it as far as the smelt is.
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, ARROW_SPRITE,
+                x + ARROW_X, y + ARROW_Y, ARROW_WIDTH, ARROW_HEIGHT, COLOR_UNLIT);
         int filled = Mth.ceil(menu.craftProgress() * ARROW_WIDTH);
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, BURN_PROGRESS, ARROW_WIDTH, ARROW_HEIGHT,
-                0, 0, x + ARROW_X, y + ARROW_Y, filled, ARROW_HEIGHT);
+        if (filled > 0) {
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, ARROW_SPRITE, ARROW_WIDTH, ARROW_HEIGHT,
+                    0, 0, x + ARROW_X, y + ARROW_Y, filled, ARROW_HEIGHT);
+        }
     }
 
-    /** Hovering the arrow says what the furnace is doing, or why it is not. */
-    @Override
-    protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        super.extractTooltip(graphics, mouseX, mouseY);
-        int left = leftPos + ARROW_X;
-        int top = topPos + ARROW_Y;
-        if (mouseX >= left && mouseX < left + ARROW_WIDTH && mouseY >= top && mouseY < top + ARROW_HEIGHT) {
-            graphics.setComponentTooltipForNextFrame(font, List.of(statusLine()), mouseX, mouseY);
+    /**
+     * A fourteen-pixel meter drawn the way vanilla's furnace draws its flame: the whole sprite
+     * tinted dark as the empty meter, then the bright sprite over it from the bottom up, as far
+     * as it is full. A lit flame is never less than a pixel, which is vanilla's rule too.
+     */
+    private static void meter(GuiGraphicsExtractor graphics, Identifier sprite, int left, int top, float fill) {
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, left, top, METER, METER, COLOR_UNLIT);
+        if (fill <= 0.0f) {
+            return;
         }
+        int lit = Mth.ceil(fill * (METER - 1)) + 1;
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, METER, METER, 0, METER - lit,
+                left, top + METER - lit, METER, lit);
+    }
+
+    @Override
+    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        graphics.text(font, title, titleLabelX, titleLabelY, COLOR_TEXT, false);
+        graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, COLOR_MUTED, false);
+        graphics.text(font, statusLine(), 8, STATUS_Y, COLOR_MUTED, false);
     }
 
     /** One line saying what the furnace is doing, or why it is not. The hover readout says the same. */

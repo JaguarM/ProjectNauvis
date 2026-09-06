@@ -2,6 +2,7 @@ package com.jaguarm.nauvismachines.machine.furnace;
 
 import org.jspecify.annotations.Nullable;
 
+import com.jaguarm.nauvismachines.client.ClientSlotRules;
 import com.jaguarm.nauvismachines.registry.ModMenus;
 
 import net.minecraft.core.BlockPos;
@@ -43,16 +44,18 @@ public class FurnaceMenu extends AbstractContainerMenu {
     public static final int DATA_COUNT = 8;
 
     /**
-     * Where the screen expects to find things: vanilla's furnace layout, exactly, because the
-     * screen is vanilla's furnace texture. The input above the flame, the fuel below it, the
-     * output past the arrow.
+     * Where the screen expects to find things. Shared, so the two cannot drift apart.
+     *
+     * <p>Vanilla's furnace has the fuel two rows under the input with the flame between. Here the
+     * fuel sits directly under the input and the flame beside it, which keeps everything above
+     * the status line at 58: two wells stacked take 16..52, and a third row would run through it.
      */
-    public static final int INPUT_X = 56;
+    public static final int INPUT_X = 44;
     public static final int INPUT_Y = 17;
-    public static final int FUEL_X = 56;
-    public static final int FUEL_Y = 53;
+    public static final int FUEL_X = 44;
+    public static final int FUEL_Y = 35;
     public static final int OUTPUT_X = 116;
-    public static final int OUTPUT_Y = 35;
+    public static final int OUTPUT_Y = 26;
 
     private static final int PLAYER_SLOTS = 36;
 
@@ -65,13 +68,27 @@ public class FurnaceMenu extends AbstractContainerMenu {
     /** How many of this menu's slots are the machine's; the player's follow. */
     private final int machineSlots;
 
-    /** Client side: NeoForge's menu factory hands the machine's position across. */
+    /**
+     * Client side: NeoForge's menu factory hands the machine's position across.
+     *
+     * <p>The stand-in inventory is told the same rules the server's has, as far as the client
+     * can know them, so a shift-click is predicted where it will land: coal into the fuel slot,
+     * a stick nowhere. With a permissive stand-in, coal jumped into the input slot and was moved
+     * a tick later when the server's answer arrived. {@link ClientSlotRules} is a client class,
+     * and this constructor is the only thing that runs on a client - the server builds its menu
+     * from the block entity.
+     */
     public FurnaceMenu(int containerId, Inventory playerInventory, BlockPos machinePos) {
         this(containerId, playerInventory,
-                new FurnaceInventory(() -> {}, resource -> true, resource -> true),
+                clientInventory(playerInventory.player.level(), isBurnerAt(playerInventory.player.level(), machinePos)),
                 new SimpleContainerData(DATA_COUNT),
                 machinePos,
                 isBurnerAt(playerInventory.player.level(), machinePos));
+    }
+
+    private static FurnaceInventory clientInventory(Level level, boolean burner) {
+        return new FurnaceInventory(() -> {}, ClientSlotRules.smeltable(level),
+                burner ? ClientSlotRules.fuel(level) : resource -> false);
     }
 
     public FurnaceMenu(int containerId, Inventory playerInventory, FurnaceInventory inventory,

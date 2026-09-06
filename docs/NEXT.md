@@ -57,7 +57,7 @@ How each of these is built is `ARCHITECTURE.md`; what is deliberately missing fr
 | `nauvis_research:lab` | 3×3, ten blocks, 8 FE/t; eats one of each pack the world's research asks for |
 | `nauvis_research:science_pack_1` | red science — a copper plate and an iron gear wheel |
 | `nauvis_research:science_pack_2` | green science — an inserter and a belt. The gate in front of the rest of milestone 3 |
-| `neoprogressivematerials:steel_plate` | five iron plates and thirty-five seconds |
+| `neoprogressivematerials:steel_plate` | five iron plates and sixteen seconds, in a furnace |
 | `nauvis_research:technology` | 216 technologies, a synced datapack registry, generated. 36 are in the tree; two are finished by a trigger a machine fires |
 | the tech screen | **a list and a search box on the left, one technology's neighbourhood in the middle, its cost and unlocks on the right.** Factorio's shape. Clicking a node re-centres the picture on it; the button on the right is what starts a research |
 | a view | the selection, **every** ancestor, and descendants two deep by longest path. A node that needs technologies the picture does not show says so with `+n` in its corner |
@@ -163,11 +163,14 @@ Loose ends — small enough to finish in an afternoon
 - **The furnace's fire is a lava texture on the stack's mouth**, chosen because it is opaque and
   animated and nothing else vanilla ships is both. Whether a brazier on a corner reads as a furnace
   is a judgement for eyes; the boxes are in `FurnaceShape` and `ElectricFurnaceShape`.
-- **The painted screens want vanilla's look.** Yannic has said vanilla's interface fits
-  Minecraft's art far better than the flat panels, and the furnace is on vanilla's furnace texture
-  now. The assembler, the boiler, the lab and the burner inserter are still painted, and so is
-  Facrafting's panel itself; they want the same treatment as one piece, on vanilla's nine-slice
-  sprites where no vanilla screen has the right shape.
+- **Facrafting's panel still paints its recipe grid.** The machine screens are settled: the dark
+  panel Yannic likes, with vanilla's slot sprite where there is a slot, vanilla's furnace flame
+  where there is a fire, and the charge bolt where there is electricity, all drawn the way vanilla
+  draws its flame. The panel's grid of recipe squares is the one painted thing left, and whether
+  it should be vanilla's slot sprite too is a judgement for eyes.
+- **Iron, copper and stone brick are 3.5 seconds in the reference dump and 3.2 in Factorio since
+  0.17**, the same drift that had steel at thirty-five. Steel was corrected at Yannic's word; the
+  other three wait for it, because the dump is Wube's data on his machine and not this repo's.
 
 The playtest, which is still owed
 ---------------------------------
@@ -243,13 +246,16 @@ five stone in the panel, and the only thing that smelts.
   the far end at night — every cell gives light, as vanilla's furnace does;
 - look at the electric furnace's hood glowing. It is the top of a stepped block in lava; whether
   that reads as a furnace or as a lamp is a judgement no test makes;
-- and open one of each. It is vanilla's furnace screen, texture and all, which is what Yannic
-  asked for; the electric one paints over the fuel slot and puts a charge bar where the flame
-  goes, and **whether the patch is invisible is the thing to look at**. Hover the arrow for the
-  status. The panel beside them is the ordinary hand panel, and **the smelting recipes are in it,
-  dimmed, under Intermediate products**: the tooltip should say *Cannot be crafted by hand* and
-  list the three furnaces under *Made in:*, and a click should say so on the action bar and queue
-  nothing. Then put sand in a furnace and expect glass.
+- and open one of each. The dark panel with vanilla's slot sprite, vanilla's flame and vanilla's
+  arrow on it; the electric one has the charge bolt where the flame goes. **Whether the tinted
+  sprites read as empty meters and whether the bolt reads as electricity** are the two things to
+  look at. Shift-click coal and it should land in the fuel slot at once, not in the input and
+  then move. The panel beside them is the ordinary hand panel, and **the smelting recipes are in
+  it, dimmed, under Intermediate products**: the tooltip should say *Cannot be crafted by hand*
+  and list the three furnaces under *Made in:*, and a click should say so on the action bar and
+  queue nothing. Then put sand in a furnace and expect glass;
+- and smelt steel: five iron plates in a stone furnace should take sixteen seconds and eight in a
+  steel or electric one.
 
 **The two new machines.**
 

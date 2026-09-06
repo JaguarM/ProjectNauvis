@@ -40,10 +40,15 @@ public class BurnerInserterMenu extends AbstractContainerMenu {
     private final ContainerData data;
     private final ContainerLevelAccess access;
 
-    /** Client side: there is no inserter here, only the numbers the server sends. */
+    /**
+     * Client side: there is no inserter here, only the numbers the server sends - and the fuel
+     * values, which the server sends too, so the stand-in slot refuses what the real one will
+     * and a shift-clicked stick stays where it was rather than bouncing back a tick later.
+     */
     public BurnerInserterMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory,
-                new InserterFuel(BurnerInserterBlockEntity.SLOT_COUNT, () -> {}, () -> null),
+                new InserterFuel(BurnerInserterBlockEntity.SLOT_COUNT, () -> {},
+                        () -> playerInventory.player.level().fuelValues()),
                 new SimpleContainerData(DATA_COUNT),
                 ContainerLevelAccess.NULL);
     }

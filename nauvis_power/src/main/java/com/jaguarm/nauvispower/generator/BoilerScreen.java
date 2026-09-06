@@ -1,21 +1,23 @@
 package com.jaguarm.nauvispower.generator;
 
-import java.util.List;
-
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 
 /**
  * The boiler's screen: what it is burning, how much is left of it, and how much steam is banked.
  *
- * <p>Painted in the same flat colours as the assembler's and Facrafting's panel, so the interface
- * reads as one thing rather than three. There is no background texture because there is no art
- * yet, and a machine drawn in flat colours reads as unfinished on purpose where a machine drawn on
- * a borrowed vanilla panel reads as finished and slightly wrong.
+ * <p>The same dark panel as the assembler's and Facrafting's panel, so the interface reads as one
+ * thing rather than three, with vanilla's own slot sprite and vanilla's furnace flame on it, drawn
+ * the way vanilla draws them. That mix is the one Yannic asked for: the dark look, and the pixels
+ * a Minecraft player has looked at for years where there is a slot or a fire.
  *
- * <p>The palette and the well-drawing are copied from {@code AssemblerScreen} rather than shared.
+ * <p>The palette and the drawing are copied from {@code AssemblerScreen} rather than shared.
  * Facrafting is the only place shared code may live, and putting a screen base there would make
  * {@code nauvis_power} require it at compile time - which would make {@code boiler_standalone},
  * the recipe that exists precisely for Facrafting being absent, impossible to reach. Sixty
@@ -29,16 +31,17 @@ public class BoilerScreen extends AbstractContainerScreen<BoilerMenu> {
 
     private static final int COLOR_FRAME = 0xFF000000;
     private static final int COLOR_BACKGROUND = 0xF0141414;
-    private static final int COLOR_SLOT = 0xFF3B3B3B;
-    /** Darker than the well it frames, or a row of slots renders as one grey slab. */
-    private static final int COLOR_SLOT_EDGE = 0xFF1E1E1E;
     private static final int COLOR_TEXT = 0xFFFFFFFF;
     private static final int COLOR_MUTED = 0xFF909090;
     private static final int COLOR_TRACK = 0xFF2A2A2A;
-    /** Fire, and the only warm colour on the panel. */
-    private static final int COLOR_FLAME = 0xFFFF9A3C;
+    /** What a meter's sprite is tinted while it is empty: a silhouette on the panel. */
+    private static final int COLOR_UNLIT = 0xFF3B3B3B;
     /** Steam. Pale rather than white, or it reads as an empty bar that is somehow full. */
     private static final int COLOR_STEAM = 0xFFB8D8E8;
+
+    private static final Identifier SLOT_SPRITE = Identifier.withDefaultNamespace("container/slot");
+    private static final Identifier FLAME_SPRITE = Identifier.withDefaultNamespace("container/furnace/lit_progress");
+    private static final int METER = 14;
 
     /**
      * The flame, directly above the fuel slot, burning down as a furnace's does.
@@ -80,38 +83,30 @@ public class BoilerScreen extends AbstractContainerScreen<BoilerMenu> {
         graphics.fill(x - 1, y - 1, x + imageWidth + 1, y + imageHeight + 1, COLOR_FRAME);
         graphics.fill(x, y, x + imageWidth, y + imageHeight, COLOR_BACKGROUND);
 
-        // Two passes, because adjacent slots are exactly 18 apart and a well is 18 across: drawn
-        // in one colour they tile into an unbroken rectangle.
-        for (Slotish slot : slotWells()) {
-            graphics.fill(x + slot.x() - 1, y + slot.y() - 1,
-                    x + slot.x() + 17, y + slot.y() + 17, COLOR_SLOT_EDGE);
-            graphics.fill(x + slot.x(), y + slot.y(),
-                    x + slot.x() + 16, y + slot.y() + 16, COLOR_SLOT);
+        // Vanilla's slot sprite, at every slot the menu has, so the screen cannot disagree with
+        // the menu about where they are. The sprite is the well and its edge in one.
+        for (Slot slot : menu.slots) {
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SLOT_SPRITE,
+                    x + slot.x - 1, y + slot.y - 1, METER + 4, METER + 4);
         }
 
-        drawFlame(graphics, x, y);
+        meter(graphics, FLAME_SPRITE, x + FLAME_X, y + FLAME_Y, menu.isBurning() ? menu.burnProgress() : 0.0f);
         drawSteam(graphics, x, y);
     }
 
-    /** Every slot's well, taken from the menu so the screen cannot disagree about where they are. */
-    private List<Slotish> slotWells() {
-        return menu.slots.stream().map(slot -> new Slotish(slot.x, slot.y)).toList();
-    }
-
-    private record Slotish(int x, int y) {}
-
-    /** Burns downward, so an almost-spent piece of coal is an almost-empty box. */
-    private void drawFlame(GuiGraphicsExtractor graphics, int originX, int originY) {
-        int left = originX + FLAME_X;
-        int top = originY + FLAME_Y;
-
-        graphics.fill(left, top, left + FLAME_WIDTH, top + FLAME_HEIGHT, COLOR_TRACK);
-
-        int height = Math.round(FLAME_HEIGHT * menu.burnProgress());
-        if (height > 0) {
-            graphics.fill(left, top + FLAME_HEIGHT - height, left + FLAME_WIDTH,
-                    top + FLAME_HEIGHT, COLOR_FLAME);
+    /**
+     * A fourteen-pixel meter drawn the way vanilla's furnace draws its flame: the whole sprite
+     * tinted dark as the empty meter, then the bright sprite over it from the bottom up, as far
+     * as it is full. A lit flame is never less than a pixel, which is vanilla's rule too.
+     */
+    private static void meter(GuiGraphicsExtractor graphics, Identifier sprite, int left, int top, float fill) {
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, left, top, METER, METER, COLOR_UNLIT);
+        if (fill <= 0.0f) {
+            return;
         }
+        int lit = Mth.ceil(fill * (METER - 1)) + 1;
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, METER, METER, 0, METER - lit,
+                left, top + METER - lit, METER, lit);
     }
 
     private void drawSteam(GuiGraphicsExtractor graphics, int originX, int originY) {
