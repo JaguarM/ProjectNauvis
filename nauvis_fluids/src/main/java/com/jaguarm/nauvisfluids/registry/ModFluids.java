@@ -1,9 +1,8 @@
 package com.jaguarm.nauvisfluids.registry;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
-import com.jaguarm.nauvisfluids.fluid.CrudeOilFluid;
+import com.jaguarm.nauvisfluids.fluid.ContainedFluid;
 import com.jaguarm.nauvisfluids.fluid.NaturalWaterFluid;
-import com.jaguarm.nauvisfluids.fluid.SteamFluid;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.sounds.SoundEvents;
@@ -17,14 +16,19 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 /**
- * The fluids this mod owns: steam, crude oil, and the water the world is made with.
+ * The fluids this mod owns: steam, the oil chain, and the water the world is made with.
  *
  * <p>A fluid is two registrations: NeoForge's {@link FluidType}, which is everything about how it
  * behaves as a substance, and Minecraft's {@link Fluid}, which is the thing a
- * {@code FluidResource} names. Steam and oil are never in the world, so their types are left almost
- * entirely default - the properties that matter are all about swimming in it, and nobody ever
- * will. Natural water is nothing but in the world, and its type is vanilla water's with one
+ * {@code FluidResource} names. Seven of them are never in the world, so their types are left
+ * almost entirely default - the properties that matter are all about swimming in it, and nobody
+ * ever will. Natural water is nothing but in the world, and its type is vanilla water's with one
  * property turned off.
+ *
+ * <p>Every id here is the one {@code data/mapping.json} gives the Factorio fluid, so it is
+ * identity and not ours to change: {@code heavy_oil}, {@code light_oil}, {@code petroleum_gas},
+ * {@code lubricant}, {@code sulfuric_acid}. Water in a pipe is {@code minecraft:water}, which
+ * the mapping stands in for Factorio's water.
  */
 public final class ModFluids {
 
@@ -34,17 +38,13 @@ public final class ModFluids {
     public static final DeferredRegister<Fluid> FLUIDS =
             DeferredRegister.create(Registries.FLUID, NauvisFluids.MODID);
 
-    public static final DeferredHolder<FluidType, FluidType> STEAM_TYPE = FLUID_TYPES.register(
-            "steam",
-            () -> new FluidType(contained().descriptionId("fluid.nauvis_fluids.steam")));
-
-    /**
-     * Crude oil. Factorio gives it no temperature worth modelling and a viscosity that only
-     * matters to its 2.0 flow model, which this pack's {@code FluidNetwork} does not have.
-     */
-    public static final DeferredHolder<FluidType, FluidType> CRUDE_OIL_TYPE = FLUID_TYPES.register(
-            "crude_oil",
-            () -> new FluidType(contained().descriptionId("fluid.nauvis_fluids.crude_oil")));
+    public static final DeferredHolder<FluidType, FluidType> STEAM_TYPE = contained("steam");
+    public static final DeferredHolder<FluidType, FluidType> CRUDE_OIL_TYPE = contained("crude_oil");
+    public static final DeferredHolder<FluidType, FluidType> HEAVY_OIL_TYPE = contained("heavy_oil");
+    public static final DeferredHolder<FluidType, FluidType> LIGHT_OIL_TYPE = contained("light_oil");
+    public static final DeferredHolder<FluidType, FluidType> PETROLEUM_GAS_TYPE = contained("petroleum_gas");
+    public static final DeferredHolder<FluidType, FluidType> LUBRICANT_TYPE = contained("lubricant");
+    public static final DeferredHolder<FluidType, FluidType> SULFURIC_ACID_TYPE = contained("sulfuric_acid");
 
     /**
      * Natural water: NeoForge's own water type, line for line, with {@code canConvertToSource}
@@ -66,19 +66,31 @@ public final class ModFluids {
                     .canHydrate(true)
                     .isWaterLike(true)));
 
-    /**
-     * The id {@code data/mapping.json} has always named, so it is identity and not ours to change.
-     */
-    public static final DeferredHolder<Fluid, SteamFluid> STEAM =
-            FLUIDS.register("steam", SteamFluid::new);
+    /** Steam, the one substance a boiler makes and a steam engine drinks. */
+    public static final DeferredHolder<Fluid, ContainedFluid> STEAM =
+            FLUIDS.register("steam", () -> new ContainedFluid(STEAM_TYPE));
 
     /**
      * {@code nauvis_fluids:crude_oil} - the same id as the resource block, exactly as Factorio
      * names both its {@code crude-oil} fluid and its {@code crude-oil} resource entity. Different
      * registries, so no clash, and one name for the player to learn.
      */
-    public static final DeferredHolder<Fluid, CrudeOilFluid> CRUDE_OIL =
-            FLUIDS.register("crude_oil", CrudeOilFluid::new);
+    public static final DeferredHolder<Fluid, ContainedFluid> CRUDE_OIL =
+            FLUIDS.register("crude_oil", () -> new ContainedFluid(CRUDE_OIL_TYPE));
+
+    /** The refinery's three, in the order its outputs lie: heavy, light, petroleum gas. */
+    public static final DeferredHolder<Fluid, ContainedFluid> HEAVY_OIL =
+            FLUIDS.register("heavy_oil", () -> new ContainedFluid(HEAVY_OIL_TYPE));
+    public static final DeferredHolder<Fluid, ContainedFluid> LIGHT_OIL =
+            FLUIDS.register("light_oil", () -> new ContainedFluid(LIGHT_OIL_TYPE));
+    public static final DeferredHolder<Fluid, ContainedFluid> PETROLEUM_GAS =
+            FLUIDS.register("petroleum_gas", () -> new ContainedFluid(PETROLEUM_GAS_TYPE));
+
+    /** The chemical plant's two fluids: ten heavy oil make ten lubricant, and acid is sulfur, iron and water. */
+    public static final DeferredHolder<Fluid, ContainedFluid> LUBRICANT =
+            FLUIDS.register("lubricant", () -> new ContainedFluid(LUBRICANT_TYPE));
+    public static final DeferredHolder<Fluid, ContainedFluid> SULFURIC_ACID =
+            FLUIDS.register("sulfuric_acid", () -> new ContainedFluid(SULFURIC_ACID_TYPE));
 
     /**
      * {@code nauvis_fluids:water} - Factorio's {@code water} tile, the still water of every lake
@@ -103,15 +115,19 @@ public final class ModFluids {
                 .explosionResistance(100.0F);
     }
 
-    /** What every fluid that lives only in machines has in common: nothing can happen to you in it. */
-    private static FluidType.Properties contained() {
-        return FluidType.Properties.create()
+    /**
+     * A fluid that lives only in machines, named {@code fluid.nauvis_fluids.<name>}: nothing can
+     * happen to you in it, because you can never be in it.
+     */
+    private static DeferredHolder<FluidType, FluidType> contained(String name) {
+        return FLUID_TYPES.register(name, () -> new FluidType(FluidType.Properties.create()
+                .descriptionId("fluid.nauvis_fluids." + name)
                 .canDrown(false)
                 .canSwim(false)
                 .canPushEntity(false)
                 .canExtinguish(false)
                 .canConvertToSource(false)
-                .supportsBoating(false);
+                .supportsBoating(false)));
     }
 
     private ModFluids() {}

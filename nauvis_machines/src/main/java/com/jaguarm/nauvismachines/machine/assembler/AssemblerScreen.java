@@ -102,7 +102,7 @@ public class AssemblerScreen extends MachineScreen<AssemblerMenu> {
         }
 
         return Component.translatable("screen.nauvis_machines.assembler.making",
-                holder.value().result().create().getHoverName());
+                holder.value().displayName());
     }
 
     /**

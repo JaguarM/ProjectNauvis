@@ -424,6 +424,20 @@ Other confirmed details, second batch
   right-click would build - `new BlockPlaceContext(player, hand, stack, hit)` from
   `Minecraft.hitResult`, through the item's `updatePlacementContext` - so the block's own
   `getStateForPlacement` can be asked on the client what it would do.
+- **`new ItemStackTemplate(Items.AIR)` throws `Item must be non-empty`**, and from a static
+  initialiser that is an `ExceptionInInitializerError` in the middle of registry events, naming
+  neither the class nor the field. There is no empty template; a recipe that may make no item
+  carries an `Optional<ItemStackTemplate>`, with `ByteBufCodecs.optional` for the stream codec.
+- `SizedFluidIngredient` is NeoForge's sized fluid ingredient - `{"ingredient": "<fluid id>",
+  "amount": n}` in JSON, a `HolderSet` string form like an item ingredient's - and a fluid result
+  is a **`FluidStackTemplate`**, `{"id": ..., "amount": ...}`, with `.create()` for the stack.
+  Not `FluidStack.CODEC`: that one validates `areComponentsBound()` on the holder, and
+  `ReloadableServerResources` binds components only *after* the reload, so during recipe parsing
+  it refuses every fluid in the game with `Fluid x does not have components yet`. Same reason
+  vanilla's recipe results are `ItemStackTemplate`. Facrafting's recipe carries both.
+- **Fuel is a data map, not code**: `data/neoforge/data_maps/item/furnace_fuels.json` with
+  `{"values": {"<item>": {"burn_time": <ticks>}}}`. The folder is the map's namespace, whichever
+  mod ships the file. Solid fuel is 4800, three coals, as Factorio's 12 MJ is three of coal's 4.
 - `GameTestHelper.onEachTick(Runnable)` runs something every tick of the test, which is how a
   test in one mod stands in for a machine from another: the power mod's boiler tests top the
   water tank up each tick the way a pipe from an offshore pump would, and never name the pump.

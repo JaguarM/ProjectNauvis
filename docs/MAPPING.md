@@ -71,6 +71,25 @@ fluid's id — `nauvis_fluids:steam`, `nauvis_fluids:crude_oil` — because a pi
 at the fluid capability and a barrel is an item with a row of its own. The barrel shortcut
 `PLAN.md` once prescribed went when the pipe came with steam.
 
+`data/fluid_recipes.json`, the recipes the dump cannot carry
+-------------------------------------------------------------
+
+The dump is keyed by product, one recipe per item, and it names fluids freely as ingredients and
+as products: plastic is coal and petroleum gas, lubricant is heavy oil. What it cannot hold is a
+recipe that is not one item's - the refinery's, which makes three fluids at once, and solid fuel's,
+which three recipes make - and so those are transcribed from Wube's `recipe.lua` into
+`data/fluid_recipes.json`, in the dump's units, with the machine category each belongs to. The
+generator reads both files as one list: an ingredient the dump calls a `Liquid` becomes a
+`fluid_ingredient`, a product that is one becomes a `fluid_result`, and a recipe with any fluid in
+it gets no bench fallback, because a bench has no pipes. The fluid recipes are named after the
+recipe rather than the product - `nauvis_fluids:solid_fuel_from_heavy_oil` - and a technology
+that unlocks one resolves to that key without a line in the `unlocks` table.
+
+`category` grew two values with them: `chemistry` on plastic, sulfur, sulfuric acid, lubricant,
+battery and explosives, which the chemical plant runs, and `oil-processing` on the refinery's.
+Coal liquefaction is left out of the file on purpose: a recipe no technology names is free from
+the first tick, and its technology needs production science, which the tree does not reach.
+
 The `unlocks` table
 -------------------
 

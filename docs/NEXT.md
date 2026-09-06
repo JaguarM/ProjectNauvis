@@ -17,8 +17,12 @@ waits on the refinery. **Milestone 4 has begun**: oil wells in the ground, the p
 substation behind blue science. **The world's water is the pack's own now**, the offshore pump
 draws from it and from nothing a bucket poured, and the boiler boils it: a new world's first
 factory starts at a shoreline. **Every multi-block machine has a placement ghost**, drawn by the
-library from the machine's own placement rule. Every block the pack registers is pickaxe work, but
-for the water. How each of these is built is `ARCHITECTURE.md`; what is deliberately missing
+library from the machine's own placement rule. **The oil chain's fluids, items and recipes exist**:
+heavy and light oil, petroleum gas, lubricant and sulfuric acid; plastic, sulfur, battery, the
+advanced circuit, the engine unit, solid fuel and explosives; and every recipe from basic oil
+processing to cracking, generated with fluid ingredients and results now that Facrafting's recipe
+carries fluids. What is still missing is the machines that run them. Every block the pack registers
+is pickaxe work, but for the water. How each of these is built is `ARCHITECTURE.md`; what is deliberately missing
 from each is `GAPS.md`.
 
 | | |
@@ -132,13 +136,16 @@ whole branch waits on the refinery. The accumulator also wants `PowerNetwork`'s 
   oil *is*, and it needs real capacity and back-pressure, not barrels. `FluidNetwork` already
   carries any fluid, one per run; what it lacks is a tank block and a machine with several fluid
   ports. The `storage-tank` is 3×3 and mapped. `oil-processing` already unlocks both machines.
-- **The oil recipes have no source.** `reference/factorio/recipes.json` carries crude, heavy, light
-  and petroleum as raw inputs with null recipes, and `data/mapping.json` maps the processing recipes
-  to null. Non-negotiable #2 says recipes are generated, so the refinery's and the chemical plant's
-  recipes need a second data source — Wube's `recipe.lua` — and a fluid-aware `gen_recipes.py`.
-  That is the real gap; the machines are the usual work.
-- **Plastics, sulfur and flammables** hang off oil processing and are in the tree; they mean
-  nothing until the refinery makes petroleum gas.
+- **The recipes are there, generated.** `data/fluid_recipes.json` carries what the dump cannot -
+  the refinery's three, the two crackings, the three solid fuels - and `gen_recipes.py` writes
+  fluid ingredients and results into every recipe that has them; Facrafting's recipe carries
+  fluids and may make no item at all. Plastic, sulfur, the battery, the advanced circuit, the engine
+  unit, solid fuel and explosives are registered, with textures from the workshop, and the tree has
+  `advanced-oil-processing`, `lubricant`, `battery` and `explosives`. The panel shows all of it,
+  dimmed, and says no machine makes it yet, which is true.
+- **The chemical plant** is the same shape as the refinery with items as well as fluids: two item
+  slots in, one out, two fluids in, two out, 3×3, 210 kW, and every `chemistry` recipe. Build the
+  two on one base.
 
 ### 3. More removals follow the items
 

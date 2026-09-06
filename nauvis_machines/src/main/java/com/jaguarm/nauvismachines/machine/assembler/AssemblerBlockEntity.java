@@ -311,7 +311,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
             // Factorio's craft-item trigger counts what a machine makes, not only what a hand
             // does: "craft a lab" is finished by an assembler making one. Facrafting carries the
             // news to whoever is counting, and this mod never learns who that is.
-            CraftListeners.fireMachine(level, recipe.result().create());
+            CraftListeners.fireMachine(level, recipe.resultStack());
         }
 
         setChanged();
@@ -349,7 +349,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
                 }
             }
 
-            ItemStack result = recipe.result().create();
+            ItemStack result = recipe.resultStack();
             int stored = inventory.insert(
                     OUTPUT_SLOT, ItemResource.of(result), result.getCount(), transaction);
             if (stored != result.getCount()) {
@@ -382,7 +382,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
     public static @Nullable ResourceKey<Recipe<?>> recipeProducing(ServerLevel level, Item item) {
         for (RecipeHolder<FacraftRecipe> holder
                 : level.getServer().getRecipeManager().recipeMap().byType(ModRecipes.FACRAFT_TYPE.get())) {
-            if (holder.value().result().item().value() == item) {
+            if (holder.value().hasItemResult() && holder.value().resultStack().getItem() == item) {
                 return holder.id();
             }
         }

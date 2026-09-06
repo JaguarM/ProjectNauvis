@@ -25,9 +25,10 @@ import net.neoforged.neoforge.client.fluid.FluidTintSources;
  * {@code Missing FluidModel for fluid} when it happens, and nothing else complains.
  *
  * <p>Vanilla textures, like every other model in this pack: water, tinted. Pale for steam, near
- * black for oil - Factorio's crude oil has a base colour of pure black and a flow colour of grey -
- * and for natural water, water's own three sprites and the biome's colour, which is what makes
- * a swamp's water brown and a warm ocean's turquoise exactly as before.
+ * black for crude - Factorio's crude oil has a base colour of pure black and a flow colour of
+ * grey - Factorio's own colours for the five the refinery and the chemical plant make, and for
+ * natural water, water's own three sprites and the biome's colour, which is what makes a swamp's
+ * water brown and a warm ocean's turquoise exactly as before.
  */
 @Mod(value = NauvisFluids.MODID, dist = Dist.CLIENT)
 @EventBusSubscriber(modid = NauvisFluids.MODID, value = Dist.CLIENT)
@@ -39,12 +40,29 @@ public class NauvisFluidsClient {
     /** Not quite black, so it still reads as a liquid with a surface rather than as a hole. */
     private static final int CRUDE_OIL_TINT = 0xFF1A1418;
 
+    /**
+     * Factorio's base colours for the rest, out of its fluid prototypes: heavy oil
+     * {@code (0.5, 0.13, 0)}, light oil {@code (0.57, 0.33, 0)}, petroleum gas
+     * {@code (0.3, 0.1, 0.3)}, lubricant {@code (0.15, 0.32, 0.03)}, sulfuric acid
+     * {@code (0.75, 0.65, 0.1)}. A tank of each reads as the thing it is in Factorio.
+     */
+    private static final int HEAVY_OIL_TINT = 0xFF802100;
+    private static final int LIGHT_OIL_TINT = 0xFF915400;
+    private static final int PETROLEUM_GAS_TINT = 0xFF4D1A4D;
+    private static final int LUBRICANT_TINT = 0xFF265208;
+    private static final int SULFURIC_ACID_TINT = 0xFFBFA61A;
+
     public NauvisFluidsClient() {}
 
     @SubscribeEvent
     static void registerFluidModels(RegisterFluidModelsEvent event) {
         event.register(water(STEAM_TINT), ModFluids.STEAM.get());
         event.register(water(CRUDE_OIL_TINT), ModFluids.CRUDE_OIL.get());
+        event.register(water(HEAVY_OIL_TINT), ModFluids.HEAVY_OIL.get());
+        event.register(water(LIGHT_OIL_TINT), ModFluids.LIGHT_OIL.get());
+        event.register(water(PETROLEUM_GAS_TINT), ModFluids.PETROLEUM_GAS.get());
+        event.register(water(LUBRICANT_TINT), ModFluids.LUBRICANT.get());
+        event.register(water(SULFURIC_ACID_TINT), ModFluids.SULFURIC_ACID.get());
         // Vanilla's own water model, sprite for sprite: still, flowing, the overlay drawn against
         // glass and leaves, and the biome tint. One model for both halves of the fluid, as
         // vanilla registers its own.

@@ -9,7 +9,9 @@
     "count": 1
   },
   "unlocks": [
+    "nauvis_fluids:basic_oil_processing",
     "nauvis_fluids:chemical_plant",
-    "nauvis_fluids:oil_refinery"
+    "nauvis_fluids:oil_refinery",
+    "nauvis_fluids:solid_fuel_from_petroleum_gas"
   ]
 }

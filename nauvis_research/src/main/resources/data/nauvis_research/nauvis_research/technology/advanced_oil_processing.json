@@ -1,0 +1,21 @@
+{
+  "name": "Advanced oil processing",
+  "order": "0036",
+  "prerequisites": [
+    "nauvis_research:science_pack_3"
+  ],
+  "units": 75,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3"
+  ],
+  "unlocks": [
+    "nauvis_fluids:advanced_oil_processing",
+    "nauvis_fluids:heavy_oil_cracking",
+    "nauvis_fluids:light_oil_cracking",
+    "nauvis_fluids:solid_fuel_from_heavy_oil",
+    "nauvis_fluids:solid_fuel_from_light_oil"
+  ]
+}

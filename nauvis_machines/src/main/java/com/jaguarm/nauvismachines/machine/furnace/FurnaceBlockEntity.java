@@ -315,7 +315,7 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
             if (!wanted.ingredient().test(input) || !RecipeLocks.isUnlocked(level, holder.id())) {
                 return null;
             }
-            return new Smelt(holder.id(), wanted.ingredient(), wanted.count(), facraft.result().create(),
+            return new Smelt(holder.id(), wanted.ingredient(), wanted.count(), facraft.resultStack(),
                     facraft.craftTicks());
         }
         if (recipe instanceof SmeltingRecipe smelting) {

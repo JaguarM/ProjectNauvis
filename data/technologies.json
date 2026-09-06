@@ -826,6 +826,110 @@
     ]
   },
   {
+    "id": "advanced-oil-processing",
+    "prerequisites": [
+      "science-pack-3"
+    ],
+    "cost": {
+      "count": 75,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "advanced-oil-processing",
+      "heavy-oil-cracking",
+      "light-oil-cracking",
+      "solid-fuel-from-heavy-oil",
+      "solid-fuel-from-light-oil"
+    ]
+  },
+  {
+    "id": "lubricant",
+    "prerequisites": [
+      "advanced-oil-processing"
+    ],
+    "cost": {
+      "count": 50,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "lubricant"
+    ]
+  },
+  {
+    "id": "battery",
+    "prerequisites": [
+      "sulfur-processing"
+    ],
+    "cost": {
+      "count": 150,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "battery"
+    ]
+  },
+  {
+    "id": "explosives",
+    "prerequisites": [
+      "sulfur-processing"
+    ],
+    "cost": {
+      "count": 100,
+      "time_seconds": 15,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "explosives"
+    ]
+  },
+  {
     "id": "electric-energy-distribution-2",
     "prerequisites": [
       "science-pack-3",

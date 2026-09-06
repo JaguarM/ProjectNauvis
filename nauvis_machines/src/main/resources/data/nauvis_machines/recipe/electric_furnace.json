@@ -7,10 +7,6 @@
     {
       "type": "neoforge:mod_loaded",
       "modid": "neoprogressivematerials"
-    },
-    {
-      "type": "neoforge:registered",
-      "value": "neoprogressivematerials:advanced_circuit"
     }
   ],
   "type": "facrafting:facraft",

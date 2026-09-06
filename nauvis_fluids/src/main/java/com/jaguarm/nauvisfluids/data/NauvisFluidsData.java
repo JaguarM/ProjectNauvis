@@ -134,9 +134,15 @@ public final class NauvisFluidsData {
             // pump, and the pump is what says so. The fluid type names itself by this key too.
             addBlock(ModBlocks.WATER, "Water");
 
-            // Never in the world, but Jade and any tank screen will name them.
+            // Never in the world, but Jade, the crafting panel and any tank screen will name them.
             add("fluid.nauvis_fluids.steam", "Steam");
             add("fluid.nauvis_fluids.crude_oil", "Crude oil");
+            add("fluid.nauvis_fluids.heavy_oil", "Heavy oil");
+            add("fluid.nauvis_fluids.light_oil", "Light oil");
+            add("fluid.nauvis_fluids.petroleum_gas", "Petroleum gas");
+            add("fluid.nauvis_fluids.lubricant", "Lubricant");
+            add("fluid.nauvis_fluids.sulfuric_acid", "Sulfuric acid");
+            addItem(ModItems.EXPLOSIVES, "Explosives");
 
             // Jade's settings screen lists every provider and asserts if one has no name, and
             // that assert fires from ScreenEvent.Init - a missing key here is not a blank line in

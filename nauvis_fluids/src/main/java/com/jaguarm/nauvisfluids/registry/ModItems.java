@@ -38,6 +38,13 @@ public final class ModItems {
      */
     public static final DeferredItem<BlockItem> CRUDE_OIL = ITEMS.registerSimpleBlockItem(ModBlocks.CRUDE_OIL);
 
+    /**
+     * Sulfur, coal and water in a chemical plant. An item of this mod's because
+     * {@code data/mapping.json} says so; what it is for - cliff explosives, artillery - is
+     * milestones away, so today it is a thing a chemical plant makes and a chest holds.
+     */
+    public static final DeferredItem<Item> EXPLOSIVES = ITEMS.registerSimpleItem("explosives");
+
     // No item for natural water, deliberately. A liquid's item is a bucket, and a bucket of it is
     // vanilla's water bucket - which is the rule that keeps a lake where the world put it. See
     // the water block in ModBlocks. (tools/check_models.py reads this file to learn which blocks
@@ -53,6 +60,7 @@ public final class ModItems {
                         output.accept(OFFSHORE_PUMP.get());
                         output.accept(PUMPJACK.get());
                         output.accept(CRUDE_OIL.get());
+                        output.accept(EXPLOSIVES.get());
                     })
                     .build());
 

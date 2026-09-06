@@ -13,6 +13,7 @@ import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpShape;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
+import com.jaguarm.nauvisfluids.registry.ModItems;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.ItemModelGenerators;
@@ -62,6 +63,9 @@ public class NauvisFluidsModels extends ModelProvider {
     protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {
         pipe(blockModels);
         crudeOil(blockModels);
+
+        // The one flat item. Its art is texture-workshop/make_material_textures.py's.
+        itemModels.generateFlatItem(ModItems.EXPLOSIVES.get(), ModelTemplates.FLAT_ITEM);
 
         // Natural water is drawn by the fluid renderer, not from a model, exactly as vanilla's
         // water is; what a liquid block's model carries is the particle its splashes use. This

@@ -3,8 +3,8 @@
   "_generated_from": "reference/factorio/recipes.json (214 entries)",
   "_size": "Factorio tile footprint [width, depth], for entities larger than one tile. Absent means 1x1. One Minecraft block per tile - see docs/NEXT.md.",
   "_speed": "Factorio belt speed in tiles per second. Identity: it decides what a factory looks like, and throughput follows from it - four items a tile a lane, two lanes, so 1.875 tiles/s is the wiki's 15 items/s. tools/check_models.py holds each belt block's SPEED constant to this.",
-  "_category": "Factorio's recipe category, for a recipe only a machine runs: `smelting` is the four the furnaces do - plates, steel and stone brick - which the character cannot craft by hand. Absent means hand-craftable, which is Factorio's `crafting`. Not in the dump, so entered by hand against the wiki like `size`. gen_recipes.py writes it into the recipe as Facrafting's `category`, and Facrafting keeps such a recipe out of the hand panel; a machine names the category it runs.",
-  "_unlocks": "A technology effect names a *recipe*, and Factorio's recipe names are not always its item names. This maps the ones that differ to the item whose recipe file gen_recipes.py writes - `small-lamp` makes a lamp, `solar-panel-equipment` makes a portable solar panel. null means the pack has no counterpart at all: the oil-processing recipes make fluids that recipes.json carries as raw inputs with no recipe of their own. Any name in neither this table nor `items` is a GenError in tools/gen_technologies.py rather than a silently dropped unlock.",
+  "_category": "Factorio's recipe category, for a recipe only a machine runs: `smelting` is the four the furnaces do - plates, steel and stone brick - `chemistry` is the chemical plant's and `oil-processing` the refinery's. Absent means hand-craftable, which is Factorio's `crafting`. Not in the dump, so entered by hand against the wiki like `size`. gen_recipes.py writes it into the recipe as Facrafting's `category`, and Facrafting keeps such a recipe out of the hand panel; a machine names the category it runs. A recipe that takes or makes a fluid is a machine's whatever its category, and the recipes that make only fluids are in data/fluid_recipes.json.",
+  "_unlocks": "A technology effect names a *recipe*, and Factorio's recipe names are not always its item names. This maps the ones that differ to the item whose recipe file gen_recipes.py writes - `small-lamp` makes a lamp, `solar-panel-equipment` makes a portable solar panel. null means the pack has no counterpart at all. A name in data/fluid_recipes.json needs no line here: it resolves to that recipe's own key. Any name in none of the three is a GenError in tools/gen_technologies.py rather than a silently dropped unlock.",
   "unlocks": {
     "small-lamp": "lamp",
     "shotgun-shell": "shotgun-shells",
@@ -21,14 +21,7 @@
     "personal-roboport-mk2-equipment": "personal-roboport-mk2",
     "fusion-reactor-equipment": "portable-fusion-reactor",
     "solar-panel-equipment": "portable-solar-panel",
-    "basic-oil-processing": null,
-    "advanced-oil-processing": null,
     "coal-liquefaction": null,
-    "heavy-oil-cracking": null,
-    "light-oil-cracking": null,
-    "solid-fuel-from-heavy-oil": null,
-    "solid-fuel-from-light-oil": null,
-    "solid-fuel-from-petroleum-gas": null,
     "fill-water-barrel": "water-barrel",
     "empty-water-barrel": null,
     "fill-crude-oil-barrel": "crude-oil-barrel",
@@ -49,7 +42,10 @@
       "name": "Accumulator",
       "owner": "nauvis_power",
       "item": "nauvis_power:accumulator",
-      "size": [2, 2],
+      "size": [
+        2,
+        2
+      ],
       "craft": {
         "time": 10,
         "yield": 1
@@ -59,7 +55,6 @@
       "name": "Advanced circuit",
       "owner": "neoprogressivematerials",
       "item": "neoprogressivematerials:advanced_circuit",
-      "pending": true,
       "craft": {
         "time": 6,
         "yield": 1
@@ -96,7 +91,10 @@
       "name": "Artillery turret",
       "owner": "nauvis_military",
       "item": "nauvis_military:artillery_turret",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 40,
         "yield": 1
@@ -115,7 +113,10 @@
       "name": "Assembling machine 1",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:assembling_machine_1",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 0.5,
         "yield": 1
@@ -125,7 +126,10 @@
       "name": "Assembling machine 2",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:assembling_machine_2",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 0.5,
         "yield": 1
@@ -135,7 +139,10 @@
       "name": "Assembling machine 3",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:assembling_machine_3",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 0.5,
         "yield": 1
@@ -157,7 +164,8 @@
       "craft": {
         "time": 5,
         "yield": 1
-      }
+      },
+      "category": "chemistry"
     },
     "battery-mk1": {
       "name": "Battery MK1",
@@ -181,7 +189,10 @@
       "name": "Beacon",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:beacon",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 15,
         "yield": 1
@@ -191,7 +202,10 @@
       "name": "Big electric pole",
       "owner": "nauvis_power",
       "item": "nauvis_power:big_electric_pole",
-      "size": [2, 2],
+      "size": [
+        2,
+        2
+      ],
       "craft": {
         "time": 0.5,
         "yield": 1
@@ -209,7 +223,10 @@
       "name": "Boiler",
       "owner": "nauvis_power",
       "item": "nauvis_power:boiler",
-      "size": [3, 2],
+      "size": [
+        3,
+        2
+      ],
       "craft": {
         "time": 0.5,
         "yield": 1
@@ -228,7 +245,10 @@
       "name": "Burner mining drill",
       "owner": "nauvis_mining",
       "item": "nauvis_mining:burner_mining_drill",
-      "size": [2, 2],
+      "size": [
+        2,
+        2
+      ],
       "craft": {
         "time": 4,
         "yield": 1
@@ -265,7 +285,10 @@
       "name": "Centrifuge",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:centrifuge",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 4,
         "yield": 1
@@ -275,7 +298,10 @@
       "name": "Chemical plant",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:chemical_plant",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 5,
         "yield": 1
@@ -480,7 +506,10 @@
       "name": "Electric furnace",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:electric_furnace",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 5,
         "yield": 1
@@ -490,7 +519,10 @@
       "name": "Electric mining drill",
       "owner": "nauvis_mining",
       "item": "nauvis_mining:electric_mining_drill",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 2,
         "yield": 1
@@ -584,14 +616,18 @@
       "craft": {
         "time": 5,
         "yield": 2
-      }
+      },
+      "category": "chemistry"
     },
     "express-splitter": {
       "name": "Express splitter",
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:express_splitter",
       "speed": 5.625,
-      "size": [2, 1],
+      "size": [
+        2,
+        1
+      ],
       "craft": {
         "time": 2,
         "yield": 1
@@ -625,7 +661,10 @@
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:fast_splitter",
       "speed": 3.75,
-      "size": [2, 1],
+      "size": [
+        2,
+        1
+      ],
       "craft": {
         "time": 2,
         "yield": 1
@@ -685,7 +724,10 @@
       "name": "Flamethrower turret",
       "owner": "nauvis_military",
       "item": "nauvis_military:flamethrower_turret",
-      "size": [2, 3],
+      "size": [
+        2,
+        3
+      ],
       "craft": {
         "time": 20,
         "yield": 1
@@ -741,7 +783,10 @@
       "name": "Gun turret",
       "owner": "nauvis_military",
       "item": "nauvis_military:gun_turret",
-      "size": [2, 2],
+      "size": [
+        2,
+        2
+      ],
       "craft": {
         "time": 8,
         "yield": 1
@@ -761,7 +806,10 @@
       "name": "Heat exchanger",
       "owner": "nauvis_power",
       "item": "nauvis_power:heat_exchanger",
-      "size": [3, 2],
+      "size": [
+        3,
+        2
+      ],
       "craft": {
         "time": 3,
         "yield": 1
@@ -877,7 +925,10 @@
       "name": "Lab",
       "owner": "nauvis_research",
       "item": "nauvis_research:lab",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 2,
         "yield": 1
@@ -916,7 +967,10 @@
       "name": "Laser turret",
       "owner": "nauvis_military",
       "item": "nauvis_military:laser_turret",
-      "size": [2, 2],
+      "size": [
+        2,
+        2
+      ],
       "craft": {
         "time": 20,
         "yield": 1
@@ -1031,7 +1085,8 @@
       "craft": {
         "time": 1,
         "yield": 10
-      }
+      },
+      "category": "chemistry"
     },
     "lubricant-barrel": {
       "name": "Lubricant barrel",
@@ -1097,7 +1152,10 @@
       "name": "Nuclear reactor",
       "owner": "nauvis_power",
       "item": "nauvis_power:nuclear_reactor",
-      "size": [5, 5],
+      "size": [
+        5,
+        5
+      ],
       "craft": {
         "time": 8,
         "yield": 1
@@ -1107,7 +1165,10 @@
       "name": "Offshore pump",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:offshore_pump",
-      "size": [1, 2],
+      "size": [
+        1,
+        2
+      ],
       "craft": {
         "time": 0.5,
         "yield": 1
@@ -1117,7 +1178,10 @@
       "name": "Oil refinery",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:oil_refinery",
-      "size": [5, 5],
+      "size": [
+        5,
+        5
+      ],
       "craft": {
         "time": 8,
         "yield": 1
@@ -1209,7 +1273,8 @@
       "craft": {
         "time": 1,
         "yield": 2
-      }
+      },
+      "category": "chemistry"
     },
     "poison-capsule": {
       "name": "Poison capsule",
@@ -1323,7 +1388,10 @@
       "name": "Pump",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:pump",
-      "size": [1, 2],
+      "size": [
+        1,
+        2
+      ],
       "craft": {
         "time": 2,
         "yield": 1
@@ -1333,7 +1401,10 @@
       "name": "Pumpjack",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:pumpjack",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 5,
         "yield": 1
@@ -1343,7 +1414,10 @@
       "name": "Radar",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:radar",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 0.5,
         "yield": 1
@@ -1431,7 +1505,10 @@
       "name": "Roboport",
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:roboport",
-      "size": [4, 4],
+      "size": [
+        4,
+        4
+      ],
       "craft": {
         "time": 5,
         "yield": 1
@@ -1486,7 +1563,10 @@
       "name": "Rocket silo",
       "owner": "nauvis_rocket",
       "item": "nauvis_rocket:rocket_silo",
-      "size": [9, 9],
+      "size": [
+        9,
+        9
+      ],
       "craft": {
         "time": 30,
         "yield": 1
@@ -1568,7 +1648,10 @@
       "name": "Solar panel",
       "owner": "nauvis_power",
       "item": "nauvis_power:solar_panel",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 10,
         "yield": 1
@@ -1621,7 +1704,10 @@
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:splitter",
       "speed": 1.875,
-      "size": [2, 1],
+      "size": [
+        2,
+        1
+      ],
       "craft": {
         "time": 1,
         "yield": 1
@@ -1655,7 +1741,10 @@
       "name": "Steam engine",
       "owner": "nauvis_power",
       "item": "nauvis_power:steam_engine",
-      "size": [5, 3],
+      "size": [
+        5,
+        3
+      ],
       "craft": {
         "time": 0.5,
         "yield": 1
@@ -1665,7 +1754,10 @@
       "name": "Steam turbine",
       "owner": "nauvis_power",
       "item": "nauvis_power:steam_turbine",
-      "size": [5, 3],
+      "size": [
+        5,
+        3
+      ],
       "craft": {
         "time": 3,
         "yield": 1
@@ -1688,7 +1780,10 @@
       "name": "Steel furnace",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:steel_furnace",
-      "size": [2, 2],
+      "size": [
+        2,
+        2
+      ],
       "craft": {
         "time": 3,
         "yield": 1
@@ -1726,7 +1821,10 @@
       "name": "Stone furnace",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:stone_furnace",
-      "size": [2, 2],
+      "size": [
+        2,
+        2
+      ],
       "craft": {
         "time": 0.5,
         "yield": 1
@@ -1746,7 +1844,10 @@
       "name": "Storage tank",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:storage_tank",
-      "size": [3, 3],
+      "size": [
+        3,
+        3
+      ],
       "craft": {
         "time": 3,
         "yield": 1
@@ -1765,7 +1866,10 @@
       "name": "Substation",
       "owner": "nauvis_power",
       "item": "nauvis_power:substation",
-      "size": [2, 2],
+      "size": [
+        2,
+        2
+      ],
       "craft": {
         "time": 0.5,
         "yield": 1
@@ -1778,7 +1882,8 @@
       "craft": {
         "time": 1,
         "yield": 2
-      }
+      },
+      "category": "chemistry"
     },
     "sulfuric-acid": {
       "name": "Sulfuric acid",
@@ -1787,7 +1892,8 @@
       "craft": {
         "time": 1,
         "yield": 50
-      }
+      },
+      "category": "chemistry"
     },
     "sulfuric-acid-barrel": {
       "name": "Sulfuric acid barrel",
@@ -1808,7 +1914,10 @@
       "name": "Train stop",
       "owner": "nauvis_trains",
       "item": "nauvis_trains:train_stop",
-      "size": [2, 2],
+      "size": [
+        2,
+        2
+      ],
       "craft": {
         "time": 0.5,
         "yield": 1

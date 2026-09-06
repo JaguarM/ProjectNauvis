@@ -40,6 +40,17 @@ Four kinds of entry produce nothing, and the summary counts each: items the mapp
 a bench (the facraft recipe is still written, only the fallback is skipped), and
 `uranium-processing`, whose probabilistic output no crafting recipe can express.
 
+Fluids
+------
+
+The dump names fluids as ingredients and as products - plastic is coal and petroleum gas,
+lubricant is heavy oil - and `data/fluid_recipes.json` carries the recipes the dump cannot,
+the ones that make several fluids at once or one thing several ways. An ingredient whose dump
+entry is a `Liquid` becomes a `fluid_ingredient`, a product that is one becomes a
+`fluid_result`, and a recipe with any fluid in it gets no bench fallback, because a bench has
+no pipes. The fluid recipes are named after the recipe rather than the product, which is why
+they exist as a separate file: `solid-fuel-from-heavy-oil` is not an item.
+
 Usage:
     python tools/gen_recipes.py                     summary only, writes nothing
     python tools/gen_recipes.py --check             semantic diff against what is on disk
@@ -58,6 +69,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 RECIPES = REPO / "reference" / "factorio" / "recipes.json"
 MAPPING = REPO / "data" / "mapping.json"
+FLUID_RECIPES = REPO / "data" / "fluid_recipes.json"
 
 TICKS_PER_SECOND = 20
 
@@ -89,10 +101,11 @@ GROUP_BY_CATEGORY = {
 # for a dump several times this size.
 ORDER_DIGITS = 4
 
-# The machine categories the mapping may name. Factorio's list is longer - chemistry,
-# oil-processing, centrifuging - and each joins this set the day a machine runs it; an unknown
-# one is a typo until then, and a typo here is a recipe that quietly vanishes from every panel.
-CATEGORIES = {"smelting"}
+# The machine categories the mapping and the fluid recipes may name. Factorio's list is longer
+# - centrifuging, crafting-with-fluid - and each joins this set the day a machine runs it; an
+# unknown one is a typo until then, and a typo here is a recipe that quietly vanishes from every
+# panel.
+CATEGORIES = {"smelting", "chemistry", "oil-processing"}
 
 # The three released mods live in their own repos beside this one; everything else is a
 # subproject here. Both are resolved to a `src/main/resources` root.
@@ -118,20 +131,85 @@ def mod_resource_root(mod_id: str) -> Path:
     return REPO / mod_id / "src" / "main" / "resources"
 
 
-def load_inputs() -> tuple[dict, dict]:
+def load_inputs() -> tuple[dict, list, dict]:
     if not RECIPES.exists():
         raise GenError(
             f"{RECIPES} is missing. It is Wube's data, gitignored on purpose - see reference/README.md."
         )
     if not MAPPING.exists():
         raise GenError(f"{MAPPING} is missing.")
+    if not FLUID_RECIPES.exists():
+        raise GenError(f"{FLUID_RECIPES} is missing.")
 
     entries = json.loads(RECIPES.read_text(encoding="utf-8"))
-    stamp_order(entries)
+    fluid_recipes = fluid_entries(json.loads(FLUID_RECIPES.read_text(encoding="utf-8")))
+    # Numbered together, so the refinery's recipes sit among the intermediates in the panel.
+    stamp_order(entries + fluid_recipes)
 
     dump = {e["id"]: e for e in entries}
     mapping = json.loads(MAPPING.read_text(encoding="utf-8"))["items"]
-    return dump, mapping
+    return dump, fluid_recipes, mapping
+
+
+def fluid_entries(raw: dict) -> list[dict]:
+    """
+    The fluid recipes in the dump's shape, so that everything downstream reads one kind of entry.
+
+    A dump entry is a product with a recipe; one of these is a recipe with products. The
+    difference is `results`, which a dump entry does not have, and `owner` and `machine`, which
+    it gets from the mapping instead.
+    """
+    entries = []
+    for recipe in raw["recipes"]:
+        for field in ("id", "name", "owner", "category", "time", "ingredients", "results"):
+            if field not in recipe:
+                raise GenError(f"fluid recipe {recipe.get('id', '?')!r} has no {field!r}.")
+        entries.append({
+            "id": recipe["id"],
+            "name": recipe["name"],
+            "type": "Recipe",
+            "category": "Intermediate product",
+            "recipe": {"time": recipe["time"], "yield": None, "ingredients": recipe["ingredients"]},
+            "results": recipe["results"],
+            "owner": recipe["owner"],
+            "machine": recipe["category"],
+        })
+    return entries
+
+
+def is_fluid(factorio_id: str, dump: dict) -> bool:
+    """Whether the dump calls this a liquid: water, steam, and everything the refinery makes."""
+    return dump.get(factorio_id, {}).get("type") == "Liquid"
+
+
+def products_of(entry: dict) -> list[dict]:
+    """What a recipe makes: a dump entry makes itself, a fluid recipe says."""
+    if "results" in entry:
+        return entry["results"]
+    return [{"id": entry["id"], "amount": entry["recipe"]["yield"]}]
+
+
+def owner_of(entry: dict, mapping: dict) -> str:
+    """The mod whose resources the recipe file goes in."""
+    if "owner" in entry:
+        return entry["owner"]
+    owner = mapping[entry["id"]].get("owner")
+    if not owner:
+        raise GenError(f"'{entry['id']}' has no `owner` in the mapping table.")
+    return owner
+
+
+def machine_category(entry: dict, mapping: dict) -> str | None:
+    """The machine category the recipe belongs to, or None for one the hand crafts."""
+    if "machine" in entry:
+        category = entry["machine"]
+        if category not in CATEGORIES:
+            raise GenError(
+                f"'{entry['id']}' has category {category!r}; the ones a machine here runs are "
+                f"{', '.join(sorted(CATEGORIES))}."
+            )
+        return category
+    return category_of(mapping[entry["id"]], entry["id"])
 
 
 def stamp_order(entries: list[dict]) -> None:
@@ -223,14 +301,15 @@ def required_mods(entry: dict, mapping: dict) -> list[str]:
     """
     Which mods have to be present for this recipe to mean anything.
 
-    Facrafting always, plus any mod other than this one supplying an ingredient - a recipe
-    naming `neoprogressivematerials:iron_gear_wheel` is nonsense without that mod loaded.
-    Arrows point one way, so the result's own namespace is never listed.
+    Facrafting always, plus any mod other than this one supplying an ingredient or taking a
+    product - a recipe naming `neoprogressivematerials:iron_gear_wheel` is nonsense without that
+    mod loaded, and so is one making `nauvis:solid_fuel`. Arrows point one way, so the file's
+    own namespace is never listed.
     """
-    own = resolve_item(entry["id"], mapping).split(":")[0]
+    own = owner_of(entry, mapping)
     foreign = {
         resolve_item(i["id"], mapping).split(":")[0]
-        for i in entry["recipe"]["ingredients"]
+        for i in entry["recipe"]["ingredients"] + products_of(entry)
     }
     foreign.discard("minecraft")
     foreign.discard(own)
@@ -271,8 +350,8 @@ def pending_ingredients(entry: dict, mapping: dict) -> list[dict]:
     return conditions
 
 
-def facraft_recipe(entry: dict, mapping: dict) -> dict:
-    """The real recipe: timed, sized ingredients, no grid."""
+def facraft_recipe(entry: dict, mapping: dict, dump: dict) -> dict:
+    """The real recipe: timed, sized ingredients, fluids where the dump says so, no grid."""
     recipe = entry["recipe"]
     out = {
         "neoforge:conditions": [mod_loaded(m) for m in required_mods(entry, mapping)]
@@ -282,15 +361,43 @@ def facraft_recipe(entry: dict, mapping: dict) -> dict:
         "group": group_of(entry),
         "order": entry["order"],
     }
-    category = category_of(mapping[entry["id"]], entry["id"])
+    category = machine_category(entry, mapping)
     if category:
         out["category"] = category
+
     out["ingredients"] = [
         {"ingredient": resolve_item(i["id"], mapping), "count": i["amount"]}
-        for i in recipe["ingredients"]
+        for i in recipe["ingredients"] if not is_fluid(i["id"], dump)
     ]
-    out["result"] = {"id": resolve_item(entry["id"], mapping), "count": recipe["yield"]}
+    fluids_in = [
+        {"ingredient": resolve_item(i["id"], mapping), "amount": i["amount"]}
+        for i in recipe["ingredients"] if is_fluid(i["id"], dump)
+    ]
+    if fluids_in:
+        out["fluid_ingredients"] = fluids_in
+
+    products = products_of(entry)
+    item_results = [r for r in products if not is_fluid(r["id"], dump)]
+    fluid_results = [r for r in products if is_fluid(r["id"], dump)]
+    if len(item_results) > 1:
+        raise GenError(
+            f"'{entry['id']}' makes {len(item_results)} kinds of item, and a recipe here makes one."
+        )
+    if not products:
+        raise GenError(f"'{entry['id']}' makes nothing.")
+    if item_results:
+        out["result"] = {"id": resolve_item(item_results[0]["id"], mapping), "count": item_results[0]["amount"]}
+    if fluid_results:
+        out["fluid_results"] = [
+            {"id": resolve_item(r["id"], mapping), "amount": r["amount"]} for r in fluid_results
+        ]
     return out
+
+
+def touches_fluid(entry: dict, dump: dict) -> bool:
+    """Whether any fluid goes in or comes out, which is what rules a bench out."""
+    return any(is_fluid(i["id"], dump) for i in entry["recipe"]["ingredients"]) \
+        or any(is_fluid(r["id"], dump) for r in products_of(entry))
 
 
 def shapeless_ingredients(entry: dict, mapping: dict) -> list[str] | None:
@@ -364,7 +471,7 @@ def smelting_recipe(entry: dict, mapping: dict, *, without_facrafting: bool) -> 
     }
 
 
-def plan(dump: dict, mapping: dict, only: set[str] | None) -> tuple[dict[str, list], dict]:
+def plan(dump: dict, fluid_recipes: list, mapping: dict, only: set[str] | None) -> tuple[dict[str, list], dict]:
     """
     Work out every file that should exist, without touching the disk.
 
@@ -432,13 +539,13 @@ def plan(dump: dict, mapping: dict, only: set[str] | None) -> tuple[dict[str, li
         out = files.setdefault(owner, [])
 
         out.append((Path("data") / namespace / "recipe" / f"{name}.json",
-                    facraft_recipe(entry, mapping)))
+                    facraft_recipe(entry, mapping, dump)))
 
         standalone = Path("data") / namespace / "recipe" / f"{name}_standalone.json"
         bench = Path("crafting_table") / "data" / namespace / "recipe" / f"{name}.json"
         smelted = (category_of(mapped, factorio_id) == "smelting"
                    and smelting_recipe(entry, mapping, without_facrafting=True))
-        flat = shapeless_ingredients(entry, mapping)
+        flat = None if touches_fluid(entry, dump) else shapeless_ingredients(entry, mapping)
         if smelted:
             out.append((standalone, smelted))
             out.append((bench, smelting_recipe(entry, mapping, without_facrafting=False)))
@@ -448,6 +555,22 @@ def plan(dump: dict, mapping: dict, only: set[str] | None) -> tuple[dict[str, li
             out.append((standalone, shapeless_recipe(entry, mapping, flat, without_facrafting=True)))
             out.append((bench, shapeless_recipe(entry, mapping, flat, without_facrafting=False)))
 
+        report["generated"] += 1
+
+    # The fluid recipes: one file each, named after the recipe, no fallback ever. Their
+    # products are fluids or an item several of them make, so nothing else can name them.
+    for entry in fluid_recipes:
+        owner = entry["owner"]
+        if only and owner not in only:
+            continue
+        name = slug(entry["id"])
+        seen = names_seen.setdefault(owner, {})
+        if name in seen:
+            raise GenError(f"'{entry['id']}' and '{seen[name]}' both resolve to '{name}' in {owner}.")
+        seen[name] = entry["id"]
+        files.setdefault(owner, []).append((
+            Path("data") / owner / "recipe" / f"{name}.json", facraft_recipe(entry, mapping, dump)))
+        report["no_fallback"].append(entry["id"])
         report["generated"] += 1
 
     return files, report
@@ -533,8 +656,8 @@ def main() -> int:
     args = ap.parse_args()
 
     try:
-        dump, mapping = load_inputs()
-        files, report = plan(dump, mapping, set(args.only) or None)
+        dump, fluid_recipes, mapping = load_inputs()
+        files, report = plan(dump, fluid_recipes, mapping, set(args.only) or None)
     except GenError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2

@@ -83,7 +83,16 @@ Oil
   pipe run it is attached to and stops, and says *Full*, which is correct and not a fault.
 - **`oil-processing` unlocks two machines that do not exist.** It is in the tree as Factorio 2.0's
   trigger — pump crude oil once — and finishes correctly; the refinery and the chemical plant it
-  hands over are mapped and not built, so finishing it changes nothing a player can do yet.
+  hands over are mapped and not built, so finishing it changes nothing a player can do yet. The
+  recipes it and its branch unlock are real and show in the panel, dimmed, with no "Made in:"
+  line, because no machine has registered for `oil-processing` or `chemistry`.
+- **No coal liquefaction, and no barrels.** Coal liquefaction's technology needs production
+  science, which the tree does not reach, and a recipe no technology names is free from the first
+  tick, so the recipe is left out of `data/fluid_recipes.json` rather than shipped unlocked. The
+  barrel recipes need a machine that takes and gives fluids in an item, which is Factorio's
+  assembler with fluids, and wait on it.
+- **Explosives do nothing.** The item exists because the chemical plant makes it and the mapping
+  owns it; cliff explosives and artillery are milestones away.
 - **A mine trigger is only heard with Facrafting installed.** The pumpjack reports through
   Facrafting's `MiningListeners`, the one seam two subsystem mods may share; a standalone run of
   `nauvis_research` without it can complete craft triggers from vanilla's own events and mine

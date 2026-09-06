@@ -1,0 +1,30 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 40,
+  "group": "intermediate",
+  "order": "0115",
+  "category": "chemistry",
+  "ingredients": [],
+  "fluid_ingredients": [
+    {
+      "ingredient": "minecraft:water",
+      "amount": 30
+    },
+    {
+      "ingredient": "nauvis_fluids:heavy_oil",
+      "amount": 40
+    }
+  ],
+  "fluid_results": [
+    {
+      "id": "nauvis_fluids:light_oil",
+      "amount": 30
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 100,
+  "group": "intermediate",
+  "order": "0098",
+  "category": "oil-processing",
+  "ingredients": [],
+  "fluid_ingredients": [
+    {
+      "ingredient": "minecraft:water",
+      "amount": 50
+    },
+    {
+      "ingredient": "nauvis_fluids:crude_oil",
+      "amount": 100
+    }
+  ],
+  "fluid_results": [
+    {
+      "id": "nauvis_fluids:heavy_oil",
+      "amount": 25
+    },
+    {
+      "id": "nauvis_fluids:light_oil",
+      "amount": 45
+    },
+    {
+      "id": "nauvis_fluids:petroleum_gas",
+      "amount": 55
+    }
+  ]
+}

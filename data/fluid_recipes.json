@@ -1,0 +1,70 @@
+{
+  "_": "Factorio's recipes that are not named after one item: they make a fluid, several things at once, or one thing that several recipes make. reference/factorio/recipes.json is keyed by product and cannot carry them, so these are transcribed from Wube's data/base/prototypes/recipe.lua, in the same units - time in seconds, amounts in items or fluid units - and every id here is resolved through data/mapping.json's items table exactly as the dump's are. tools/gen_recipes.py turns them into facraft recipes with fluid ingredients and fluid results; tools/gen_technologies.py resolves a technology that unlocks one to its recipe key, <owner>:<id with underscores>. Never edit the numbers: they are the spec, the same as the dump's.",
+  "_category": "Factorio's recipe category, which is the machine that runs it: oil-processing is the refinery's, chemistry the chemical plant's. A recipe here always has one, because every one of them takes or makes a fluid and the hand has no pipes.",
+  "_missing": "coal-liquefaction (10 coal, 25 heavy oil, 50 steam -> 90 heavy oil, 20 light oil, 10 petroleum gas, 5 s) is left out until production science exists: its technology needs it, and a recipe no technology names is free from the first tick. The barrel recipes wait on a machine that fills them.",
+  "recipes": [
+    {
+      "id": "basic-oil-processing",
+      "name": "Basic oil processing",
+      "owner": "nauvis_fluids",
+      "category": "oil-processing",
+      "time": 5,
+      "ingredients": [{"id": "crude-oil", "amount": 100}],
+      "results": [{"id": "petroleum-gas", "amount": 45}]
+    },
+    {
+      "id": "advanced-oil-processing",
+      "name": "Advanced oil processing",
+      "owner": "nauvis_fluids",
+      "category": "oil-processing",
+      "time": 5,
+      "ingredients": [{"id": "water", "amount": 50}, {"id": "crude-oil", "amount": 100}],
+      "results": [{"id": "heavy-oil", "amount": 25}, {"id": "light-oil", "amount": 45}, {"id": "petroleum-gas", "amount": 55}]
+    },
+    {
+      "id": "heavy-oil-cracking",
+      "name": "Heavy oil cracking",
+      "owner": "nauvis_fluids",
+      "category": "chemistry",
+      "time": 2,
+      "ingredients": [{"id": "water", "amount": 30}, {"id": "heavy-oil", "amount": 40}],
+      "results": [{"id": "light-oil", "amount": 30}]
+    },
+    {
+      "id": "light-oil-cracking",
+      "name": "Light oil cracking",
+      "owner": "nauvis_fluids",
+      "category": "chemistry",
+      "time": 2,
+      "ingredients": [{"id": "water", "amount": 30}, {"id": "light-oil", "amount": 30}],
+      "results": [{"id": "petroleum-gas", "amount": 20}]
+    },
+    {
+      "id": "solid-fuel-from-heavy-oil",
+      "name": "Solid fuel from heavy oil",
+      "owner": "nauvis_fluids",
+      "category": "chemistry",
+      "time": 2,
+      "ingredients": [{"id": "heavy-oil", "amount": 20}],
+      "results": [{"id": "solid-fuel", "amount": 1}]
+    },
+    {
+      "id": "solid-fuel-from-light-oil",
+      "name": "Solid fuel from light oil",
+      "owner": "nauvis_fluids",
+      "category": "chemistry",
+      "time": 2,
+      "ingredients": [{"id": "light-oil", "amount": 10}],
+      "results": [{"id": "solid-fuel", "amount": 1}]
+    },
+    {
+      "id": "solid-fuel-from-petroleum-gas",
+      "name": "Solid fuel from petroleum gas",
+      "owner": "nauvis_fluids",
+      "category": "chemistry",
+      "time": 2,
+      "ingredients": [{"id": "petroleum-gas", "amount": 20}],
+      "results": [{"id": "solid-fuel", "amount": 1}]
+    }
+  ]
+}

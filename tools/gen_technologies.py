@@ -142,6 +142,21 @@ def display_name(factorio_id: str) -> str:
     return words[:1].upper() + words[1:]
 
 
+def fluid_recipe_keys() -> dict[str, str]:
+    """
+    The recipe key of every recipe in data/fluid_recipes.json, by its Factorio name.
+
+    The same rule gen_recipes.py names the file by: `<owner>:<id with underscores>`. These are
+    recipes rather than items, so they are not in the mapping's items table and need no alias -
+    a technology that unlocks `basic-oil-processing` unlocks exactly that file.
+    """
+    path = REPO / "data" / "fluid_recipes.json"
+    if not path.exists():
+        raise GenError(f"{path} is missing.")
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return {r["id"]: f"{r['owner']}:{slug(r['id'])}" for r in raw["recipes"]}
+
+
 def load_inputs() -> tuple[list, dict, dict]:
     for path in (TECHNOLOGIES, MAPPING):
         if not path.exists():
@@ -194,8 +209,13 @@ def recipe_key(factorio_item: str, items: dict) -> str | None:
 
 def unlocks_of(technology: dict, items: dict, aliases: dict, report: dict) -> list[str]:
     """The recipe keys this technology hands the player, in the order the tree lists them."""
+    fluid_keys = fluid_recipe_keys()
     keys: list[str] = []
     for name in technology.get("unlock_recipes", []):
+        if name in fluid_keys:
+            if fluid_keys[name] not in keys:
+                keys.append(fluid_keys[name])
+            continue
         if name in aliases:
             # An alias, because Factorio's recipe name is not its item name here. A null says the
             # pack does not model this recipe at all.
@@ -208,7 +228,8 @@ def unlocks_of(technology: dict, items: dict, aliases: dict, report: dict) -> li
         else:
             raise GenError(
                 f"'{technology['id']}' unlocks the recipe '{name}', which is neither an item in "
-                f"the mapping table nor a line in its `unlocks` table. Add it there - with null "
+                f"the mapping table, nor a line in its `unlocks` table, nor a recipe in "
+                f"data/fluid_recipes.json. Add it to one of them - the `unlocks` table with null "
                 f"if the pack does not model that recipe - rather than letting it vanish."
             )
 

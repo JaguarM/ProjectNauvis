@@ -44,6 +44,10 @@ import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.BucketItem;
@@ -131,6 +135,7 @@ public final class NauvisFluidsGameTests {
         TEST_TYPES.register("offshore_pump_stands_only_at_water", () -> OffshorePumpStandsOnlyAtWaterTest.CODEC);
         TEST_TYPES.register("offshore_pump_turns_to_the_water", () -> OffshorePumpTurnsToTheWaterTest.CODEC);
         TEST_TYPES.register("offshore_pump_floats_on_a_lake", () -> OffshorePumpFloatsOnALakeTest.CODEC);
+        TEST_TYPES.register("oil_recipes_load", () -> OilRecipesLoadTest.CODEC);
         TEST_TYPES.register("offshore_pump_pumps_at_factorio_rate", () -> OffshorePumpPumpsAtFactorioRateTest.CODEC);
         TEST_TYPES.register("offshore_pump_fills_a_pipe", () -> OffshorePumpFillsAPipeTest.CODEC);
         TEST_TYPES.register("offshore_pump_sleeps", () -> OffshorePumpSleepsTest.CODEC);
@@ -176,6 +181,7 @@ public final class NauvisFluidsGameTests {
                 OffshorePumpTurnsToTheWaterTest::new, 40, PADDING);
         registerSpaced(event, environment, "offshore_pump_floats_on_a_lake",
                 OffshorePumpFloatsOnALakeTest::new, 40, PADDING);
+        register(event, environment, "oil_recipes_load", OilRecipesLoadTest::new, 20);
         registerSpaced(event, environment, "offshore_pump_pumps_at_factorio_rate",
                 OffshorePumpPumpsAtFactorioRateTest::new, 60, PADDING);
         registerSpaced(event, environment, "offshore_pump_fills_a_pipe", OffshorePumpFillsAPipeTest::new, 100, PADDING);
@@ -537,7 +543,8 @@ public final class NauvisFluidsGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            for (String name : new String[] {"steam", "crude_oil", "water", "flowing_water"}) {
+            for (String name : new String[] {"steam", "crude_oil", "water", "flowing_water",
+                    "heavy_oil", "light_oil", "petroleum_gas", "lubricant", "sulfuric_acid"}) {
                 Identifier id = Identifier.fromNamespaceAndPath(NauvisFluids.MODID, name);
                 helper.assertTrue(BuiltInRegistries.FLUID.getValue(id) != Fluids.EMPTY,
                         "nauvis_fluids:" + name + " is not registered");
@@ -1846,6 +1853,60 @@ public final class NauvisFluidsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("offshore pump floats on a lake");
+        }
+    }
+
+    // --- the oil chain's recipes ------------------------------------------------------------
+
+    /**
+     * Every recipe of the oil chain is in the running recipe manager, as a timed recipe.
+     *
+     * <p>A recipe file that names an unregistered item, a fluid the mod does not have, or a
+     * field the recipe type does not know is not an error anybody sees: it is a line in the log
+     * and a recipe that is simply not there. The refinery's recipes are the first to carry fluid
+     * ingredients and results and the first to make no item at all, and this is what would say
+     * so if the recipe type stopped taking them. Asked of the recipe manager rather than the
+     * files, and by serializer id rather than class, so the mod needs nothing of Facrafting's to
+     * ask.
+     */
+    public static class OilRecipesLoadTest extends GameTestInstance {
+
+        public static final MapCodec<OilRecipesLoadTest> CODEC =
+                RecordCodecBuilder.<OilRecipesLoadTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OilRecipesLoadTest::info))
+                                .apply(i, OilRecipesLoadTest::new));
+
+        private static final Identifier FACRAFT = Identifier.fromNamespaceAndPath("facrafting", "facraft");
+
+        public OilRecipesLoadTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            RecipeManager recipes = helper.getLevel().getServer().getRecipeManager();
+            for (String name : new String[] {"basic_oil_processing", "advanced_oil_processing",
+                    "heavy_oil_cracking", "light_oil_cracking", "solid_fuel_from_heavy_oil",
+                    "solid_fuel_from_light_oil", "solid_fuel_from_petroleum_gas", "lubricant",
+                    "sulfuric_acid", "explosives"}) {
+                ResourceKey<Recipe<?>> key = ResourceKey.create(Registries.RECIPE,
+                        Identifier.fromNamespaceAndPath(NauvisFluids.MODID, name));
+                RecipeHolder<?> holder = recipes.byKey(key).orElse(null);
+                helper.assertTrue(holder != null, "nauvis_fluids:" + name + " did not load");
+                Identifier serializer = BuiltInRegistries.RECIPE_SERIALIZER.getKey(holder.value().getSerializer());
+                helper.assertValueEqual(serializer, FACRAFT, "the recipe type of nauvis_fluids:" + name);
+            }
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("oil recipes load");
         }
     }
 }

@@ -12,7 +12,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 120,
   "group": "intermediate",
-  "order": "0139",
+  "order": "0143",
   "ingredients": [
     {
       "ingredient": "nauvis_logistics:inserter",
