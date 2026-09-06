@@ -62,10 +62,13 @@ public class NauvisFluidsModels extends ModelProvider {
         pipe(blockModels);
         crudeOil(blockModels);
 
-        // Dark metal, with an anvil's top for the decks: a pumpjack is heavy iron standing in oil.
+        // Dark metal, with a blast furnace's top for the decks: a pumpjack is heavy iron standing
+        // in oil. Not the anvil's top, which was the first choice and drew every upward face with
+        // two slits in it - anvil_top.png has three transparent columns down each side, being the
+        // sprite for a block that is not a full cube. tools/check_models.py refuses that now.
         machine(blockModels, ModBlocks.PUMPJACK.get(), PumpjackShape.SHAPE,
                 TextureMapping.getBlockTexture(Blocks.POLISHED_BLACKSTONE).sprite(),
-                TextureMapping.getBlockTexture(Blocks.ANVIL, "_top").sprite());
+                TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite());
     }
 
     /**

@@ -22,6 +22,13 @@ Models, datagen and rendering
   code, looked worse, and was solving the flicker by removing an overlap that was never the
   problem.
 
+- **A vanilla sprite is not always an opaque square.** `anvil_top.png` is the top of a block that is
+  not a cube, and it has three transparent columns down each side. Put on the upward faces of a
+  solid machine it drew a slit through every deck and made the wall tops a ring, in the world and
+  in the item alike. The PNG existed, the model parsed, datagen said nothing, and a screenshot found
+  it. `check_models.py` opens every texture a first-party model names now and refuses a transparent
+  one; `tools/render_model.py` draws the model so the next one is seen before a person has to.
+  **The name of a texture says what block it came from, not whether it covers its square.**
 - **A model file renamed out from under its item.** `CUBE_COLUMN_HORIZONTAL` writes to
   `block/<name>_horizontal`; the item model defaults to `block/<name>`. The block rendered and the
   item was a checkerboard, and datagen reported nothing — both files were written exactly as asked.

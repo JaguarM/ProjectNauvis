@@ -326,6 +326,12 @@ the last four bugs in this pack were found by a person looking at the game; one 
 tests while being visibly wrong from three sides. Nothing in this repo can see a tab strip, a tech
 tree or a corner readout, and nothing ever will — that is a permanent hole, not a gap in the suite.
 
+**A model, though, can now be looked at.** `python tools/render_model.py <model id> out.png` draws
+any block model from the item slot's angle, holes and all, and the picture it gives of the pumpjack
+matched the screenshot that found the anvil-top slits pixel for pixel. Render every new machine's
+`_inventory` model and look at it before asking anybody to boot a client; the boot is still owed,
+for lighting and for how the thing sits in a world.
+
 **The first ten minutes, which is the biggest risk.** There is no hopper, and the furnace and chest
 are Facrafting recipes now at Factorio's prices.
 
@@ -380,9 +386,10 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
   blue as you aim near it and move from well to well as you aim, and go when you look away. Click
   one block off a well: the machine should land centred on it anyway, outlet on the far side.
   **Whether the footprint reads as a placement ghost or as a stray box is the thing to judge**;
-- **look at the pumpjack.** Ten blocks, walkable but for the pump in the middle, a wellhead on the
-  outlet corner. Whether a nodding donkey inside one block reads as a pumpjack at all is a judgement
-  for eyes, and it is boxes in `PumpjackShape`;
+- **look at the pumpjack again.** Its top faces had slits through them - the anvil's top sprite has
+  transparent columns - and the decks are blast-furnace grey now, which is fixed and rendered but not
+  yet seen in a world. Whether a nodding donkey inside one block reads as a pumpjack at all is a
+  judgement for eyes, and it is boxes in `PumpjackShape`;
 - **pipe it and power it.** A pipe at the outlet corner should reach into the machine; one on a
   flank should not. With a pole in range Jade's energy bar fills, the status says *Pumping*, and the
   pipe's readout shows crude oil arriving at ten a second. Nothing consumes it yet, so the run fills
@@ -572,7 +579,8 @@ How to run everything
 | `python tools/gen_recipes.py --check` | the recipe diff, on its own |
 | `python tools/gen_technologies.py --check` | the same for the tree. `--write` to regenerate |
 | `python tools/gen_removals.py --check` | the vanilla recipes taken away. `--write` to regenerate |
-| `python tools/check_models.py` | every model, texture and blockstate reference resolved — and footprints and belt speeds against `data/mapping.json` |
+| `python tools/check_models.py` | every model, texture and blockstate reference resolved — and footprints, belt speeds and texture opacity |
+| `python tools/render_model.py <model> out.png` | **draws a model to a PNG from the item slot's angle**, so a machine can be looked at without a boot. `--view side` or `top` for one cell. Needs Pillow and numpy |
 | `python tools/check_duplicated.py` | the copied packages, against each other. `--sync` to fix |
 | `python tools/check_gametests.py` | every gametest, for a type registered as well as an instance |
 | `python tools/check_gui_layout.py` | every machine screen's boxes, for overlaps |

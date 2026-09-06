@@ -806,6 +806,6 @@
     "bottom": "minecraft:block/polished_blackstone",
     "particle": "minecraft:block/polished_blackstone",
     "side": "minecraft:block/polished_blackstone",
-    "top": "minecraft:block/anvil_top"
+    "top": "minecraft:block/blast_furnace_top"
   }
 }

@@ -33,6 +33,14 @@ And the fourth is rotation. A multi-block turns twice over - each cell has its o
 and the whole machine has a facing - and the model and the collision shape have to add those the
 same way. They did not, for a day: see `check_rotations`.
 
+The fifth is opacity. A machine is solid geometry on vanilla textures, and a vanilla texture is
+not always a full opaque square: `anvil_top.png` is the sprite for a block that is not a cube and
+has three transparent columns down each side, and a pumpjack drawn with it had a slit through every
+upward face. Nothing complained - the PNG exists and the model parses - and a person found it in a
+screenshot. So every texture a first-party model names is opened and has to be opaque, unless it is
+listed in `TRANSPARENT_TEXTURES_ALLOWED` as meant to be see-through. The PNG is read with the
+standard library, because the build runs this and cannot assume Pillow.
+
 Run it as `python tools/check_models.py`; `./gradlew build` runs it too. It reads only files, so
 it is safe to run at any time and needs no client.
 """
@@ -133,6 +141,98 @@ class Assets:
         if self.jar and entry in self.vanilla:
             return json.loads(self.jar.read(entry).decode('utf-8'))
         return None
+
+    def read_bytes(self, namespace, path):
+        key = f'{namespace}:{path}'
+        if key in self.files:
+            return self.files[key].read_bytes()
+        entry = f'assets/{namespace}/{path}'
+        if self.jar and entry in self.vanilla:
+            return self.jar.read(entry)
+        return None
+
+
+# Textures that are meant to be see-through, by id. Empty today: nothing this pack draws is glass,
+# leaves or a grate. Add to it when something is, rather than relaxing the rule.
+TRANSPARENT_TEXTURES_ALLOWED = set()
+
+
+def png_has_transparency(data):
+    """Whether any pixel of a PNG is less than fully opaque, using only the standard library.
+
+    Enough of a decoder for Minecraft's sprites: 8-bit greyscale, RGB, palette, greyscale+alpha
+    and RGBA, non-interlaced. Anything else is reported as opaque with a note, rather than failing a
+    build on a texture this cannot read.
+    """
+    import struct
+    import zlib
+
+    if data[:8] != b'\x89PNG\r\n\x1a\n':
+        return False
+    pos = 8
+    width = height = depth = colour = interlace = None
+    palette_alpha = None
+    idat = []
+    while pos < len(data):
+        length, kind = struct.unpack('>I4s', data[pos:pos + 8])
+        body = data[pos + 8:pos + 8 + length]
+        pos += 12 + length
+        if kind == b'IHDR':
+            width, height, depth, colour, _, _, interlace = struct.unpack('>IIBBBBB', body)
+        elif kind == b'tRNS':
+            palette_alpha = body
+        elif kind == b'IDAT':
+            idat.append(body)
+        elif kind == b'IEND':
+            break
+    if colour in (0, 2) and palette_alpha is None:
+        return False  # greyscale or RGB with no transparent colour: opaque by construction
+    if colour == 3 and palette_alpha is None:
+        return False  # a palette with no tRNS is opaque
+    if depth != 8 or interlace != 0:
+        notes.append(f'a texture with bit depth {depth} / interlace {interlace} was not checked for opacity')
+        return False
+
+    channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}[colour]
+    stride = width * channels
+    raw = zlib.decompress(b''.join(idat))
+    previous = bytearray(stride)
+    offset = 0
+    for _ in range(height):
+        method = raw[offset]
+        line = bytearray(raw[offset + 1:offset + 1 + stride])
+        offset += 1 + stride
+        for i in range(stride):
+            a = line[i - channels] if i >= channels else 0
+            b = previous[i]
+            c = previous[i - channels] if i >= channels else 0
+            if method == 1:
+                line[i] = (line[i] + a) & 0xFF
+            elif method == 2:
+                line[i] = (line[i] + b) & 0xFF
+            elif method == 3:
+                line[i] = (line[i] + (a + b) // 2) & 0xFF
+            elif method == 4:
+                p = a + b - c
+                pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+                line[i] = (line[i] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 0xFF
+        if colour == 3:
+            for i in range(width):
+                index = line[i]
+                if index < len(palette_alpha) and palette_alpha[index] < 255:
+                    return True
+        elif colour in (4, 6):
+            for i in range(channels - 1, stride, channels):
+                if line[i] < 255:
+                    return True
+        elif colour in (0, 2) and palette_alpha is not None:
+            # A single transparent colour. Compare each pixel against it.
+            key = struct.unpack('>' + 'H' * (len(palette_alpha) // 2), palette_alpha)
+            for i in range(0, stride, channels):
+                if tuple(line[i:i + channels]) == tuple(k & 0xFF for k in key):
+                    return True
+        previous = line
+    return False
 
 
 def split(identifier):
@@ -254,6 +354,17 @@ def check_model(assets, identifier, seen, missing, origin):
             texture_ns, texture_name = split(value)
             if assets.exists(texture_ns, f'textures/{texture_name}.png') is False:
                 fail(where, f'texture slot "{slot}" names {value}, and there is no such PNG')
+                continue
+            # A flat item icon is transparent round its shape by nature, and its slots are the
+            # layers of builtin/generated; only geometry has faces to put a hole in.
+            if value in TRANSPARENT_TEXTURES_ALLOWED or slot == 'particle' or re.fullmatch(r'layer\d+', slot):
+                continue
+            png = assets.read_bytes(texture_ns, f'textures/{texture_name}.png')
+            if png is not None and png_has_transparency(png):
+                fail(where, f'texture slot "{slot}" names {value}, which has transparent pixels - '
+                            f'a solid model drawn with it has holes. anvil_top did this to the '
+                            f'pumpjack. Pick an opaque sprite, or list it in '
+                            f'TRANSPARENT_TEXTURES_ALLOWED if it is meant to be see-through')
 
     return textures
 

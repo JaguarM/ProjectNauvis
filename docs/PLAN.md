@@ -454,4 +454,7 @@ Write the test with the block, not after it.
 
 Claude cannot see the game. Textures, GUI layout, whether the assembler screen is usable,
 whether the factory is *fun* — that is Yannic's half, and it is the half that decides whether
-a milestone is actually done.
+a milestone is actually done. What it can see since the pumpjack is a *model*:
+`tools/render_model.py` draws one to a PNG from the item slot's angle, which is enough to catch a
+hole, a missing face or a wrong texture before a boot, and not enough to judge how a machine sits in
+a world.
