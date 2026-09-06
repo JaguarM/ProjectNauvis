@@ -2,6 +2,7 @@ package com.jaguarm.nauvismachines.registry;
 
 import com.jaguarm.nauvismachines.NauvisMachines;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerMenu;
+import com.jaguarm.nauvismachines.machine.furnace.FurnaceMenu;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -23,6 +24,15 @@ public final class ModMenus {
     public static final DeferredHolder<MenuType<?>, MenuType<AssemblerMenu>> ASSEMBLER =
             MENUS.register("assembler", () -> IMenuTypeExtension.create(
                     (windowId, inventory, data) -> new AssemblerMenu(windowId, inventory, data.readBlockPos())));
+
+    /**
+     * The same arrangement for the furnace, for two reasons: the client reads which tier it is
+     * off the block at that position, which decides whether there is a fuel slot, and it reads
+     * what is being smelted off the block entity there.
+     */
+    public static final DeferredHolder<MenuType<?>, MenuType<FurnaceMenu>> FURNACE =
+            MENUS.register("furnace", () -> IMenuTypeExtension.create(
+                    (windowId, inventory, data) -> new FurnaceMenu(windowId, inventory, data.readBlockPos())));
 
     private ModMenus() {}
 }

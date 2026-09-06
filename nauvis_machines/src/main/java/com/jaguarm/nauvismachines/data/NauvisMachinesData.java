@@ -6,6 +6,8 @@ import java.util.concurrent.CompletableFuture;
 
 import com.jaguarm.nauvismachines.NauvisMachines;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
+import com.jaguarm.nauvismachines.machine.furnace.ElectricFurnaceShape;
+import com.jaguarm.nauvismachines.machine.furnace.FurnaceShape;
 import com.jaguarm.nauvismachines.multiblock.MachineShape;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
 import com.jaguarm.nauvismachines.registry.ModItems;
@@ -104,6 +106,9 @@ public final class NauvisMachinesData {
             add("tab.facrafting.group.production", "Production");
             addBlock(ModBlocks.ASSEMBLING_MACHINE_1, "Assembling machine 1");
             addBlock(ModBlocks.ASSEMBLING_MACHINE_2, "Assembling machine 2");
+            addBlock(ModBlocks.STONE_FURNACE, "Stone furnace");
+            addBlock(ModBlocks.STEEL_FURNACE, "Steel furnace");
+            addBlock(ModBlocks.ELECTRIC_FURNACE, "Electric furnace");
 
             // The screen. Its recipe list is Facrafting's panel, so there is very little here.
             // "skips research" is not a caveat, it is the point of the pack and has to be on the
@@ -117,11 +122,24 @@ public final class NauvisMachinesData {
             add("screen.nauvis_machines.assembler.unknown", "Making something this client has not been told about");
             add("screen.nauvis_machines.assembler.no_power", "No power - run a wire to it");
             add("screen.nauvis_machines.assembler.wants", "Wants %s x %s");
+
+            // The furnace's one line, on its screen and in the hover readout alike: what it is
+            // doing, or what it is waiting for. Each is the thing to do about it.
+            add("status.nauvis_machines.furnace.idle", "Nothing to smelt - put ore in");
+            add("status.nauvis_machines.furnace.smelting", "Smelting %s");
+            add("status.nauvis_machines.furnace.unknown", "Smelting");
+            add("status.nauvis_machines.furnace.cannot_smelt", "Cannot smelt that - not a furnace recipe, or not researched yet");
+            add("status.nauvis_machines.furnace.waiting", "Waiting for more of it - the recipe takes several at once");
+            add("status.nauvis_machines.furnace.output_full", "Output full - nothing is taking it away");
+            add("status.nauvis_machines.furnace.no_fuel", "Out of fuel");
+            add("status.nauvis_machines.furnace.no_power", "No power - run a wire to it");
+
             // Jade. The plugin key is not optional decoration: Jade's settings screen asserts on
             // a plugin with no name, and it does it from ScreenEvent.Init - so a missing key is a
-            // crash the moment any screen opens, not a blank line in a menu. This mod registers no
-            // readout of its own, only the multiblock redirect, and the key is cheap either way.
+            // crash the moment any screen opens, not a blank line in a menu. Each provider needs
+            // one too.
             add("config.jade.plugin_nauvis_machines", "Project Nauvis: Machines");
+            add("config.jade.plugin_nauvis_machines.furnace", "Furnace");
         }
     }
 
@@ -147,6 +165,10 @@ public final class NauvisMachinesData {
                     AssemblerShape.SHAPE));
             add(ModBlocks.ASSEMBLING_MACHINE_2.get(), anchorOnly(ModBlocks.ASSEMBLING_MACHINE_2.get(),
                     AssemblerShape.SHAPE));
+            add(ModBlocks.STONE_FURNACE.get(), anchorOnly(ModBlocks.STONE_FURNACE.get(), FurnaceShape.SHAPE));
+            add(ModBlocks.STEEL_FURNACE.get(), anchorOnly(ModBlocks.STEEL_FURNACE.get(), FurnaceShape.SHAPE));
+            add(ModBlocks.ELECTRIC_FURNACE.get(), anchorOnly(ModBlocks.ELECTRIC_FURNACE.get(),
+                    ElectricFurnaceShape.SHAPE));
         }
 
         /**

@@ -227,7 +227,10 @@ Factorio is. Four forms of the seam, in increasing strength:
 
 1. **A rule plus data.** The rule is "a tab's place is the place of the first recipe in it", true of
    any pack; the fact is that Factorio's strip reads Logistics, Production, Intermediate products,
-   Combat, and it lives as the *key order* of `GROUP_BY_CATEGORY` in this repo's generator.
+   Combat, and it lives as the *key order* of `GROUP_BY_CATEGORY` in this repo's generator. The
+   recipe `category` is the same shape: the rule is "a recipe with no category is the hand's, and
+   one with a category belongs to whichever machine names it", and the fact that iron plates are
+   `smelting` lives in `data/mapping.json`.
 2. **A suggestion Facrafting derives.** `RecipeTabs.suggestedMode` counts how many recipes carry a
    `group` rather than being told which mode this pack wants; `FacraftPanel.modeChosen` lets the
    player outrank it until logout.
@@ -259,6 +262,12 @@ Two more seams worth knowing
 **The lab does not know what a technology is.** It asks the world what is being researched, is
 handed a list of packs, takes one of each and reports a unit. Adding the tech tree changed two
 handovers in `LabBlockEntity` — which packs, and how long a unit takes — and not a rewrite.
+
+**Neither does the furnace, and it is the first machine that chooses its own recipe.** It asks
+Facrafting's `RecipeLocks` with the level rather than a player, because nobody clicked anything,
+and reports every plate through `CraftListeners.fireMachine` — the same seam as `MiningListeners`,
+for the other verb. The assembler reports the same way. Research hears both without either mod
+naming the other, which is what lets "craft fifty iron plates" be finished by a furnace.
 
 **The research screen paints and does not decide.** `ResearchScreen` is handed cells and arrows;
 everything checkable — every node right of every prerequisite, no two in one cell, every technology

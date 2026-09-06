@@ -7,6 +7,10 @@
     {
       "type": "neoforge:mod_loaded",
       "modid": "nauvis_fluids"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_machines"
     }
   ],
   "type": "facrafting:facraft",
@@ -19,7 +23,7 @@
       "count": 4
     },
     {
-      "ingredient": "minecraft:furnace",
+      "ingredient": "nauvis_machines:stone_furnace",
       "count": 1
     }
   ],

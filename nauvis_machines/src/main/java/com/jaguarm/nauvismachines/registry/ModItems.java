@@ -27,6 +27,15 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> ASSEMBLING_MACHINE_2 =
             ITEMS.registerSimpleBlockItem(ModBlocks.ASSEMBLING_MACHINE_2);
 
+    public static final DeferredItem<BlockItem> STONE_FURNACE =
+            ITEMS.registerSimpleBlockItem(ModBlocks.STONE_FURNACE);
+
+    public static final DeferredItem<BlockItem> STEEL_FURNACE =
+            ITEMS.registerSimpleBlockItem(ModBlocks.STEEL_FURNACE);
+
+    public static final DeferredItem<BlockItem> ELECTRIC_FURNACE =
+            ITEMS.registerSimpleBlockItem(ModBlocks.ELECTRIC_FURNACE);
+
     /**
      * Its own tab, rather than one shared with the pack mod. A subsystem mod has to be usable
      * on its own, and a tab that only exists when another mod is installed is not that.
@@ -37,6 +46,9 @@ public final class ModItems {
                     .title(Component.translatable("itemGroup.nauvis_machines"))
                     .icon(() -> new ItemStack(ASSEMBLING_MACHINE_1.get()))
                     .displayItems((parameters, output) -> {
+                        output.accept(STONE_FURNACE.get());
+                        output.accept(STEEL_FURNACE.get());
+                        output.accept(ELECTRIC_FURNACE.get());
                         output.accept(ASSEMBLING_MACHINE_1.get());
                         output.accept(ASSEMBLING_MACHINE_2.get());
                     })

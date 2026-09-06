@@ -141,6 +141,21 @@ def load_mirrors() -> dict[str, str]:
     return json.loads(REMOVALS.read_text(encoding="utf-8")).get("mirrors", {})
 
 
+def load_kept() -> dict[str, str]:
+    """
+    Vanilla recipes that make a mapped item and are left alone anyway, each with its reason.
+
+    The conflict check asks "does the pack make this vanilla item, and is Minecraft's recipe for it
+    still there" - and once the pack smelts iron, that question also catches the iron block coming
+    back apart into nine ingots. That is not a second way of making plates, it is iron changing
+    shape; removing it would leave storage blocks a one-way trip. So the check stands down for a
+    listed recipe, and the list carries its reasons the way `mirrors` does.
+    """
+    if not REMOVALS.exists():
+        return {}
+    return json.loads(REMOVALS.read_text(encoding="utf-8")).get("kept", {})
+
+
 def shipped_recipes() -> set[str]:
     """
     Every facraft recipe the pack actually ships, as `<namespace>:<name>`.
@@ -248,24 +263,28 @@ def audit(entries: dict, report: dict) -> None:
                 made_by_pack.add(result)
 
     mirrors = load_mirrors()
-    for recipe in sorted(mirrors):
-        if recipe not in vanilla:
-            raise GenError(f"'{recipe}' is listed as a mirror but Minecraft has no such recipe.")
-        if recipe in entries:
-            raise GenError(
-                f"'{recipe}' is both removed and mirrored. A recipe the pack reproduces is one it "
-                "is not replacing; pick one."
-            )
+    kept = load_kept()
+    for label, listed in (("a mirror", mirrors), ("kept", kept)):
+        for recipe in sorted(listed):
+            if recipe not in vanilla:
+                raise GenError(f"'{recipe}' is listed as {label} but Minecraft has no such recipe.")
+            if recipe in entries:
+                raise GenError(
+                    f"'{recipe}' is both removed and {label}. A recipe the pack leaves alone is "
+                    "one it is not replacing; pick one."
+                )
     report["mirrors"] = len(mirrors)
+    report["kept"] = len(kept)
 
     missing = []
     for recipe, item in sorted(vanilla.items()):
-        if item in made_by_pack and recipe not in entries and recipe not in mirrors:
+        if item in made_by_pack and recipe not in entries and recipe not in mirrors and recipe not in kept:
             missing.append((recipe, item))
     if missing:
         raise GenError(
             "the pack ships its own recipe for these, so Minecraft's has to go too - or, when the "
-            "pack recipe reproduces vanilla's rather than replacing it, add it to `mirrors`:\n    "
+            "pack recipe reproduces vanilla's rather than replacing it, add it to `mirrors`, and "
+            "when vanilla's only changes the item's shape, to `kept`:\n    "
             + "\n    ".join(f"{recipe}  (makes {item})" for recipe, item in missing)
         )
     report["conflicts_checked"] = len(made_by_pack)
@@ -336,6 +355,8 @@ def main() -> int:
         print(f"  {key:32} -> {entry['replaced_by']}")
     if report.get("mirrors"):
         print("  and mirrored rather than removed: " + ", ".join(sorted(load_mirrors())))
+    if report.get("kept"):
+        print("  and kept, though the pack makes the same item: " + ", ".join(sorted(load_kept())))
 
     overridden = neoforge_overrides()
     if overridden:

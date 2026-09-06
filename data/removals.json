@@ -6,6 +6,14 @@
   "mirrors": {
     "minecraft:oak_planks": "nauvis:oak_planks makes four planks from one oak log, which is what vanilla's does. It exists so the whole opening - logs, planks, pickaxe - is in the crafting panel, not so the bench version has to go."
   },
+  "_kept": "Vanilla recipes that make a mapped item out of that same item in another shape - a block back into nine ingots, nine nuggets into one. They are not a second way of making iron plates, they are iron changing shape, and Factorio has no nuggets or storage blocks to have an opinion about. The conflict check stands down for these too; each says why.",
+  "kept": {
+    "minecraft:iron_ingot_from_iron_block": "Nine ingots went in, nine come out. Storage, not smelting.",
+    "minecraft:iron_ingot_from_nuggets": "Nuggets only ever come from ingots or from smelting tools, so this is iron changing shape.",
+    "minecraft:copper_ingot": "The copper block back into nine ingots. Storage, not smelting.",
+    "minecraft:copper_ingot_from_waxed_copper_block": "The same block with wax on it.",
+    "minecraft:copper_ingot_from_nuggets": "Copper nuggets, the same argument as iron's."
+  },
   "recipes": {
     "minecraft:chest": {
       "kind": "conflict",
@@ -13,9 +21,79 @@
       "note": "Factorio's wooden chest is four wood; vanilla's is eight planks. The mapping makes minecraft:chest the wooden chest, so vanilla's price is simply the wrong one."
     },
     "minecraft:furnace": {
+      "kind": "bypass",
+      "replaced_by": "nauvis_machines:stone_furnace",
+      "note": "The stone furnace is a machine of the pack's own now, five stone and two tiles by two, and it smelts Factorio's recipes at Factorio's times. A vanilla furnace beside it would smelt the same ore at vanilla's price and its own pace, and would be the one every Minecraft player reached for first."
+    },
+    "minecraft:iron_ingot_from_smelting_raw_iron": {
       "kind": "conflict",
-      "replaced_by": "nauvis_machines:furnace",
-      "note": "Factorio's stone furnace is five stone; vanilla's is eight cobblestone. Same argument as the chest."
+      "replaced_by": "neoprogressivematerials:iron_ingot",
+      "note": "Iron plate is one iron ore in 3.5 seconds, in a furnace of the pack's. Vanilla's is the same ore in ten."
+    },
+    "minecraft:iron_ingot_from_blasting_raw_iron": {
+      "kind": "conflict",
+      "replaced_by": "neoprogressivematerials:iron_ingot",
+      "note": "The blast furnace's copy of the same recipe."
+    },
+    "minecraft:iron_ingot_from_smelting_iron_ore": {
+      "kind": "conflict",
+      "replaced_by": "neoprogressivematerials:iron_ingot",
+      "note": "The silk-touched ore block. Factorio's iron ore is the raw item, and the pack maps it there; a block that smelts into a plate would be a second ore."
+    },
+    "minecraft:iron_ingot_from_blasting_iron_ore": {
+      "kind": "conflict",
+      "replaced_by": "neoprogressivematerials:iron_ingot",
+      "note": "The blast furnace's copy."
+    },
+    "minecraft:iron_ingot_from_smelting_deepslate_iron_ore": {
+      "kind": "conflict",
+      "replaced_by": "neoprogressivematerials:iron_ingot",
+      "note": "The deepslate ore block, the same argument."
+    },
+    "minecraft:iron_ingot_from_blasting_deepslate_iron_ore": {
+      "kind": "conflict",
+      "replaced_by": "neoprogressivematerials:iron_ingot",
+      "note": "The blast furnace's copy."
+    },
+    "minecraft:copper_ingot_from_smelting_raw_copper": {
+      "kind": "conflict",
+      "replaced_by": "neoprogressivematerials:copper_ingot",
+      "note": "Copper plate, the same as iron's."
+    },
+    "minecraft:copper_ingot_from_blasting_raw_copper": {
+      "kind": "conflict",
+      "replaced_by": "neoprogressivematerials:copper_ingot",
+      "note": "The blast furnace's copy."
+    },
+    "minecraft:copper_ingot_from_smelting_copper_ore": {
+      "kind": "conflict",
+      "replaced_by": "neoprogressivematerials:copper_ingot",
+      "note": "The silk-touched ore block."
+    },
+    "minecraft:copper_ingot_from_blasting_copper_ore": {
+      "kind": "conflict",
+      "replaced_by": "neoprogressivematerials:copper_ingot",
+      "note": "The blast furnace's copy."
+    },
+    "minecraft:copper_ingot_from_smelting_deepslate_copper_ore": {
+      "kind": "conflict",
+      "replaced_by": "neoprogressivematerials:copper_ingot",
+      "note": "The deepslate ore block."
+    },
+    "minecraft:copper_ingot_from_blasting_deepslate_copper_ore": {
+      "kind": "conflict",
+      "replaced_by": "neoprogressivematerials:copper_ingot",
+      "note": "The blast furnace's copy."
+    },
+    "minecraft:stone_bricks": {
+      "kind": "conflict",
+      "replaced_by": "nauvis:stone_bricks",
+      "note": "Factorio smelts two stone into one brick; vanilla crafts four stone into four. Ratios differ, and non-negotiable #1 says which is right."
+    },
+    "minecraft:stone_bricks_from_stone_stonecutting": {
+      "kind": "conflict",
+      "replaced_by": "nauvis:stone_bricks",
+      "note": "The stonecutter's copy of the same recipe."
     },
     "minecraft:hopper": {
       "kind": "bypass",

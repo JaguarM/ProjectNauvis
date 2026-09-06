@@ -163,7 +163,7 @@ models, language and loot tables.
 
 `assembling-machine-1`, `burner-inserter`, `inserter`, `iron-chest`, `boiler`, `steam-engine`,
 `small-electric-pole`, `pipe`, plus intermediates already owned by
-`neoprogressivematerials`. `stone-furnace` and `wooden-chest` are vanilla.
+`neoprogressivematerials`. `wooden-chest` is vanilla; `stone-furnace` was, until milestone 3.
 
 Chest → inserter → assembler → inserter → chest, burning coal. **This is the whole point of
 the pack and it costs eleven items.** Get here fast.
@@ -256,6 +256,15 @@ and `tools/gen_removals.py`, shipped as a built-in datapack that is on by defaul
 recipes long and the rule is why — *a vanilla recipe is removed only when the pack can already do
 that job*, enforced by the build rather than remembered — so it grows with the items rather than
 ahead of them.
+
+**The three furnaces are done, and the stone furnace is a machine of the pack's own.** It stood in
+as `minecraft:furnace` through two milestones, and the steel furnace forced the question: a faster
+vanilla furnace would have smelted vanilla's recipes at vanilla's ratios, and a furnace is where
+every plate in the game comes from. So Factorio's four smelting recipes are Facrafting recipes with
+a `smelting` category - a rule Facrafting learned, and a fact the generator writes - the hand panel
+never offers them, and a furnace chooses among them by what is put into it. Two by two for the
+burner tiers and three by three for the electric one, on the same shell as everything else, and
+the plates a furnace makes are what finish `steam-power`.
 
 **The tree itself is done and is all 216 finite technologies**, not the fifteen items above.
 That is deliberate and is the same rule as recipes: a technology's cost, its prerequisites and

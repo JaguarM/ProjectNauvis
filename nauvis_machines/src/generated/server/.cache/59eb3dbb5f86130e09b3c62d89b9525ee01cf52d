@@ -1,3 +1,6 @@
-// 26.2	2026-09-06T01:09:28.2452874	Loot Tables
+// 26.2	2026-09-06T16:36:00.9861395	Loot Tables
 0b93af34b9d6899c886bb4eccb99370fd86451f9 data/nauvis_machines/loot_table/blocks/assembling_machine_1.json
 92f28d40acbb4efc318788d8ff38061e0411bb6f data/nauvis_machines/loot_table/blocks/assembling_machine_2.json
+09fbc8ba436ff34697d6cb1848f534e1f5649a12 data/nauvis_machines/loot_table/blocks/electric_furnace.json
+964345b0d978cd3f08fd59b648216b9bb59357cd data/nauvis_machines/loot_table/blocks/steel_furnace.json
+a95b4f67f9053202ccdc51530cf80636e2ec960c data/nauvis_machines/loot_table/blocks/stone_furnace.json

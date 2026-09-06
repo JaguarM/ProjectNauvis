@@ -1,7 +1,11 @@
 {
   "block.nauvis_machines.assembling_machine_1": "Assembling machine 1",
   "block.nauvis_machines.assembling_machine_2": "Assembling machine 2",
+  "block.nauvis_machines.electric_furnace": "Electric furnace",
+  "block.nauvis_machines.steel_furnace": "Steel furnace",
+  "block.nauvis_machines.stone_furnace": "Stone furnace",
   "config.jade.plugin_nauvis_machines": "Project Nauvis: Machines",
+  "config.jade.plugin_nauvis_machines.furnace": "Furnace",
   "itemGroup.nauvis_machines": "Project Nauvis: Machines",
   "pack.nauvis_machines.crafting_table": "Nauvis Machines: bench recipes (skips research)",
   "screen.nauvis_machines.assembler.idle": "Idle - pick a recipe on the right",
@@ -9,5 +13,13 @@
   "screen.nauvis_machines.assembler.no_power": "No power - run a wire to it",
   "screen.nauvis_machines.assembler.unknown": "Making something this client has not been told about",
   "screen.nauvis_machines.assembler.wants": "Wants %s x %s",
+  "status.nauvis_machines.furnace.cannot_smelt": "Cannot smelt that - not a furnace recipe, or not researched yet",
+  "status.nauvis_machines.furnace.idle": "Nothing to smelt - put ore in",
+  "status.nauvis_machines.furnace.no_fuel": "Out of fuel",
+  "status.nauvis_machines.furnace.no_power": "No power - run a wire to it",
+  "status.nauvis_machines.furnace.output_full": "Output full - nothing is taking it away",
+  "status.nauvis_machines.furnace.smelting": "Smelting %s",
+  "status.nauvis_machines.furnace.unknown": "Smelting",
+  "status.nauvis_machines.furnace.waiting": "Waiting for more of it - the recipe takes several at once",
   "tab.facrafting.group.production": "Production"
 }

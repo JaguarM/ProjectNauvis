@@ -1,6 +1,7 @@
 package com.jaguarm.nauvismachines;
 
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerScreen;
+import com.jaguarm.nauvismachines.machine.furnace.FurnaceScreen;
 import com.jaguarm.nauvismachines.registry.ModMenus;
 
 import net.neoforged.api.distmarker.Dist;
@@ -10,7 +11,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 /**
- * The client half: one screen, registered against one menu.
+ * The client half: two screens, registered against two menus.
  *
  * <p>Everything else about the interface belongs to Facrafting, whose panel attaches itself to any
  * container screen and, when that screen's menu is a {@code RecipeSelector}, points the machine
@@ -25,5 +26,6 @@ public class NauvisMachinesClient {
     @SubscribeEvent
     static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.ASSEMBLER.get(), AssemblerScreen::new);
+        event.register(ModMenus.FURNACE.get(), FurnaceScreen::new);
     }
 }

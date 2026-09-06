@@ -1,0 +1,30 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 60,
+  "group": "production",
+  "order": "0095",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:steel_plate",
+      "count": 6
+    },
+    {
+      "ingredient": "minecraft:stone_bricks",
+      "count": 10
+    }
+  ],
+  "result": {
+    "id": "nauvis_machines:steel_furnace",
+    "count": 1
+  }
+}

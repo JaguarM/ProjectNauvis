@@ -86,6 +86,16 @@ SCREENS = [
               ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT')],
     ),
     Screen(
+        'furnace',
+        'nauvis_machines/src/main/java/com/jaguarm/nauvismachines/machine/furnace',
+        'FurnaceMenu.java', 'FurnaceScreen.java',
+        slots=[('input', 'INPUT_X', 'INPUT_Y', 1, 1), ('fuel', 'FUEL_X', 'FUEL_Y', 1, 1),
+               ('output', 'OUTPUT_X', 'OUTPUT_Y', 1, 1)],
+        bars=[('progress bar', 'ARROW_X', 'ARROW_Y', 'ARROW_WIDTH', 'ARROW_HEIGHT'),
+              ('flame', 'FLAME_X', 'FLAME_Y', 'FLAME_WIDTH', 'FLAME_HEIGHT'),
+              ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT')],
+    ),
+    Screen(
         'boiler',
         'nauvis_power/src/main/java/com/jaguarm/nauvispower/generator',
         'BoilerMenu.java', 'BoilerScreen.java',

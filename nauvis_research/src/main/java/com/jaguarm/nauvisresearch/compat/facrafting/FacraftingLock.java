@@ -49,6 +49,9 @@ public final class FacraftingLock implements RecipeLock {
         // without this the two triggered technologies that ask for a crafted item, rather than a
         // smelted one, could never fire.
         CraftListeners.add(ResearchTriggers::made);
+        // And a machine's report of the same thing. Iron plates are never crafted by hand, so
+        // "craft fifty iron plates" is heard from the furnace that smelted them or from nothing.
+        CraftListeners.addMachine(ResearchTriggers::made);
 
         // And the other verb. A machine that mines something says so through Facrafting, which
         // is the one mod this one and the machine's may both compile against; oil processing is
@@ -62,6 +65,15 @@ public final class FacraftingLock implements RecipeLock {
             return Research.isUnlocked(level.getServer(), recipe);
         }
         return ClientResearch.isUnlocked(player.level().registryAccess(), recipe);
+    }
+
+    /**
+     * A machine's question - a furnace deciding whether it may smelt steel yet. Research is a
+     * fact about the world, so the answer is the world's, with no player in it.
+     */
+    @Override
+    public boolean isUnlocked(ServerLevel level, ResourceKey<Recipe<?>> recipe) {
+        return Research.isUnlocked(level.getServer(), recipe);
     }
 
     /**

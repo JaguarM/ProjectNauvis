@@ -1008,8 +1008,9 @@ public final class NauvisResearchGameTests {
             // would still pass, because they all begin with a lab already placed.
             for (String[] free : new String[][] {
                     {"nauvis_logistics", "transport_belt"}, {"nauvis_logistics", "burner_inserter"},
-                    {"nauvis_logistics", "chest"}, {"nauvis_machines", "furnace"},
-                    {"neoprogressivematerials", "iron_gear_wheel"}}) {
+                    {"nauvis_logistics", "chest"}, {"nauvis_machines", "stone_furnace"},
+                    {"neoprogressivematerials", "iron_gear_wheel"},
+                    {"neoprogressivematerials", "iron_ingot"}}) {
                 helper.assertTrue(Research.isUnlocked(server, recipe(free[0], free[1])),
                         free[0] + ":" + free[1] + " is gated, but nothing in the tree unlocks it, "
                                 + "so a new world could never craft it at all");

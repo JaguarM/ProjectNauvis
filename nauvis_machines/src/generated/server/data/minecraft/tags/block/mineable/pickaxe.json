@@ -1,6 +1,9 @@
 {
   "values": [
     "nauvis_machines:assembling_machine_1",
-    "nauvis_machines:assembling_machine_2"
+    "nauvis_machines:assembling_machine_2",
+    "nauvis_machines:stone_furnace",
+    "nauvis_machines:steel_furnace",
+    "nauvis_machines:electric_furnace"
   ]
 }

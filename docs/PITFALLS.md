@@ -315,6 +315,11 @@ Screens and config
   and the relaxation is what hides the real one. `base` is now a model reference, and the
   renderer's `texture` is checked against the directory that renderer reads - which is not a
   model's texture slot and so was invisible to everything.
+- **`stillValid(access, player, block)` compares the block at the position with one block.** A menu
+  shared by two tiers passed the first tier's, and the second tier's screen closed on the tick after
+  it opened: the menu was built, the packet went out, and the server shut it again before anyone
+  saw it. Nothing failed, because no test opened a menu on a tier 2. Evaluate the access with an
+  `instanceof` on the tier's base class; `assembler_menu_stays_open_on_tier_2` pins it.
 - **A clickable box drawn through a label reads the click anyway.** The research button was first at
   (116, 16), inside the lab screen's full-width status band. Nothing looked wrong, because the
   status text is usually shorter than that. `check_gui_layout.py` catches this exactly — **but only

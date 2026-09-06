@@ -9,14 +9,19 @@ displayURL="https://github.com/JaguarM/ProjectNauvis"
 issueTrackerURL="https://github.com/JaguarM/ProjectNauvis/issues"
 
 description='''
-Factorio's machines: the assemblers first, then furnaces, modules, the beacon and the radar.
+Factorio's machines: the assemblers and the furnaces, then modules, the beacon and the radar.
 
 An assembling machine is told what to make and then makes it, over and over, out of whatever
-is put into it. Point at it with the item you want and it takes that as its recipe; feed it
-the ingredients and take the results out, by hand or with anything that moves items.
+is put into it. Open it and pick a recipe in the crafting panel beside it; feed it the
+ingredients and take the results out, by hand or with anything that moves items.
+
+A furnace is told nothing. Put ore in and it smelts it: iron and copper plates, steel from
+five plates, stone brick from two stone. The stone and steel furnaces burn what a vanilla
+furnace burns; the electric one runs on the grid.
 
 The recipes are Factorio's own, down to the ingredient counts and the craft times, and they
-are Facrafting recipes - so an assembler is a machine that does the waiting for you.
+are Facrafting recipes - so an assembler is a machine that does the waiting for you, and a
+furnace runs the four recipes no hand can.
 '''
 
 [[dependencies.${mod_id}]]

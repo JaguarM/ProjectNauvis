@@ -66,6 +66,8 @@ dependencies {
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
     runtimeOnly project(':nauvis_fluids')
+    // And the boiler is paid for in a stone furnace, which is a machine of nauvis_machines.
+    runtimeOnly project(':nauvis_machines')
 
     // compileOnly, never implementation: the @WailaPlugin class is only loaded when Jade is
     // there, so this mod still runs standalone without it and nothing has to be declared

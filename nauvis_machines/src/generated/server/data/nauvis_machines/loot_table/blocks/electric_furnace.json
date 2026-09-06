@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "conditions": [
+            {
+              "block": "nauvis_machines:electric_furnace",
+              "condition": "minecraft:block_state_property",
+              "properties": {
+                "part": "8"
+              }
+            }
+          ],
+          "name": "nauvis_machines:electric_furnace"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "nauvis_machines:blocks/electric_furnace"
+}

@@ -105,6 +105,7 @@ public final class NauvisMachinesGameTests {
         TEST_TYPES.register("assembler_stalls_when_full", () -> AssemblerStallsWhenFullTest.CODEC);
         TEST_TYPES.register("assembler_spills_when_broken", () -> AssemblerSpillsWhenBrokenTest.CODEC);
         TEST_TYPES.register("assembler_menu_selects_recipe", () -> AssemblerMenuSelectsRecipeTest.CODEC);
+        TEST_TYPES.register("assembler_menu_stays_open_on_tier_2", () -> AssemblerMenuStaysOpenOnTier2Test.CODEC);
         TEST_TYPES.register("assembler_needs_power", () -> AssemblerNeedsPowerTest.CODEC);
         TEST_TYPES.register("assembler_wakes_when_power_arrives",
                 () -> AssemblerWakesWhenPowerArrivesTest.CODEC);
@@ -137,6 +138,8 @@ public final class NauvisMachinesGameTests {
         register(event, environment, "assembler_stalls_when_full", AssemblerStallsWhenFullTest::new, 100);
         register(event, environment, "assembler_spills_when_broken", AssemblerSpillsWhenBrokenTest::new, 60);
         register(event, environment, "assembler_menu_selects_recipe", AssemblerMenuSelectsRecipeTest::new, 60);
+        register(event, environment, "assembler_menu_stays_open_on_tier_2",
+                AssemblerMenuStaysOpenOnTier2Test::new, 20);
         register(event, environment, "assembler_needs_power", AssemblerNeedsPowerTest::new, 100);
         register(event, environment, "assembler_wakes_when_power_arrives",
                 AssemblerWakesWhenPowerArrivesTest::new, 100);
@@ -643,6 +646,54 @@ public final class NauvisMachinesGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("assembler menu selects recipe");
+        }
+    }
+
+    /**
+     * The second tier's screen stays open.
+     *
+     * <p>It did not. The menu checked itself against the first machine's block, the way vanilla's
+     * one-block helper does, and an assembling machine 2 failed that check on the tick after its
+     * screen opened - the server closed it again before anyone could see. Every other test passed,
+     * because none of them opens a menu on a tier 2, and a client boot is the only other thing
+     * that would have found it.
+     */
+    public static class AssemblerMenuStaysOpenOnTier2Test extends GameTestInstance {
+
+        public static final MapCodec<AssemblerMenuStaysOpenOnTier2Test> CODEC =
+                RecordCodecBuilder.<AssemblerMenuStaysOpenOnTier2Test>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(AssemblerMenuStaysOpenOnTier2Test::info))
+                                .apply(i, AssemblerMenuStaysOpenOnTier2Test::new));
+
+        public AssemblerMenuStaysOpenOnTier2Test(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+            AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+
+            // A mock player is made at the world's origin; the check is a reach check too.
+            Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+            BlockPos beside = helper.absolutePos(MACHINE.offset(2, 1, 0));
+            player.setPos(beside.getX() + 0.5, beside.getY(), beside.getZ() + 0.5);
+
+            AbstractContainerMenu menu = assembler.createMenu(1, player.getInventory(), player);
+            helper.assertTrue(menu.stillValid(player),
+                    "an assembling machine 2's menu reports itself invalid the moment it is built, "
+                            + "so its screen closes on the next tick");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an assembling machine 2's menu stays open");
         }
     }
 

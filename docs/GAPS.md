@@ -171,6 +171,30 @@ Mining
   is a property of the entity. The three items are live ids in the pack's namespace, which is why
   they are the first thing job 1 resolves.
 
+Smelting
+--------
+
+- **A furnace smelts Factorio's four recipes and nothing else.** Iron, copper, steel and stone
+  brick; no glass, no smooth stone, no cooked food. Vanilla's furnace recipe went in milestone 3 and
+  vanilla's smelting went with it, so nothing in the pack cooks. The campfire still does, and is the
+  pack's answer to food until something better is. A vanilla furnace found in a village is a
+  decoration.
+- **A silk-touched ore block smelts into nothing.** Factorio's iron ore is the raw item and the pack
+  maps it there; the ore-block recipes were conflicts and are gone.
+- **Fuel is vanilla's burn time, spent only while working.** A coal is 1600 ticks in a furnace as
+  in a boiler, and a stone furnace takes 70 of them per plate, so a coal is about twenty-three
+  plates where Factorio's is thirteen. The ratio between the tiers is Factorio's - a steel furnace
+  smelts twice as much with the same coal - and the absolute number is not identity.
+- **Steel needs five plates in the slot at once.** A furnace holding three says so and waits,
+  which is what Factorio's does.
+- **A locked recipe is refused at the slot.** Iron plates will not go into a furnace before steel
+  processing is researched, because nothing in it can smelt them yet; the inserter holding them
+  waits. Plates already in when a gamemaster forgets the technology stay there with the furnace
+  saying it cannot smelt them.
+- **The fire is a lava texture.** A furnace's stack, or the electric furnace's hood, draws its top
+  in `lava_still` while lit, because that is the one opaque, animated, fire-coloured sprite vanilla
+  ships. Real art is the same job it is for every other machine.
+
 Crafting and the panel
 ----------------------
 
@@ -228,10 +252,11 @@ Research
 Vanilla, and what is left alone
 -------------------------------
 
-- **Vanilla's own progression is barely touched.** Four recipes are removed. The rule is that
-  nothing is taken away before the pack can do that job, and the pack does twenty jobs. The conflict
-  half of `data/removals.json` is a check rather than a list and will force the rest as items land;
-  the bypass half is a judgement and grows one line at a time.
+- **Vanilla's own progression is barely touched.** Twenty recipes are removed, and fourteen of
+  them are one thing - vanilla smelting iron and copper, which the pack's furnaces do at Factorio's
+  price. The rule is that nothing is taken away before the pack can do that job. The conflict half
+  of `data/removals.json` is a check rather than a list and will force the rest as items land; the
+  bypass half is a judgement and grows one line at a time.
 - **The circuit network's vanilla equivalent is deliberately left alone.** Repeaters, comparators,
   observers and pistons are Minecraft's answer to combinators; removing them now would take away a
   system and offer nothing until milestone 7. The dropper stays too, and a test asserts it, because

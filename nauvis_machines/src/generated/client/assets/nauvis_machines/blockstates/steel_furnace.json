@@ -1,0 +1,40 @@
+{
+  "variants": {
+    "lit=false,part=0": {
+      "model": "nauvis_machines:block/steel_furnace_corner"
+    },
+    "lit=false,part=1": {
+      "model": "nauvis_machines:block/steel_furnace_corner",
+      "y": 90
+    },
+    "lit=false,part=2": {
+      "model": "nauvis_machines:block/steel_furnace_corner",
+      "y": 180
+    },
+    "lit=false,part=3": {
+      "model": "nauvis_machines:block/steel_furnace_corner",
+      "y": 270
+    },
+    "lit=false,part=4": {
+      "model": "nauvis_machines:block/steel_furnace_stack"
+    },
+    "lit=true,part=0": {
+      "model": "nauvis_machines:block/steel_furnace_corner"
+    },
+    "lit=true,part=1": {
+      "model": "nauvis_machines:block/steel_furnace_corner",
+      "y": 90
+    },
+    "lit=true,part=2": {
+      "model": "nauvis_machines:block/steel_furnace_corner",
+      "y": 180
+    },
+    "lit=true,part=3": {
+      "model": "nauvis_machines:block/steel_furnace_corner",
+      "y": 270
+    },
+    "lit=true,part=4": {
+      "model": "nauvis_machines:block/steel_furnace_stack_lit"
+    }
+  }
+}

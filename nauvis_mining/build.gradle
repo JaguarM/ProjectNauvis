@@ -66,6 +66,8 @@ dependencies {
     // gear wheel a drill is paid for in.
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
+    // The burner drill is paid for in a stone furnace, which is a machine of nauvis_machines.
+    runtimeOnly project(':nauvis_machines')
 }
 
 neoForge {

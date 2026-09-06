@@ -5,6 +5,7 @@ import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
 
+import com.jaguarm.facrafting.queue.CraftListeners;
 import com.jaguarm.facrafting.recipe.CraftPlanner;
 import com.jaguarm.facrafting.recipe.FacraftRecipe;
 import com.jaguarm.facrafting.registry.ModRecipes;
@@ -307,6 +308,10 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
                 return;
             }
             progress = 0;
+            // Factorio's craft-item trigger counts what a machine makes, not only what a hand
+            // does: "craft a lab" is finished by an assembler making one. Facrafting carries the
+            // news to whoever is counting, and this mod never learns who that is.
+            CraftListeners.fireMachine(level, recipe.result().create());
         }
 
         setChanged();

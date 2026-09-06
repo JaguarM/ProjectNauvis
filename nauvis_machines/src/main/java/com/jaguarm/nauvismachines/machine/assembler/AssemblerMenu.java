@@ -3,7 +3,6 @@ package com.jaguarm.nauvismachines.machine.assembler;
 import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.facrafting.machine.RecipeSelector;
-import com.jaguarm.nauvismachines.registry.ModBlocks;
 import com.jaguarm.nauvismachines.registry.ModMenus;
 
 import net.minecraft.core.BlockPos;
@@ -186,9 +185,16 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
 
     // ------------------------------------------------------------------------- plumbing
 
+    /**
+     * Any tier, not one block. Vanilla's {@code stillValid(access, player, block)} compares the
+     * block at the position with a single block, and with the first machine's block passed in
+     * an assembling machine 2's screen closed on the tick after it opened. Nothing failed: the
+     * menu was built, the packet went out, and the server shut it again before anyone could see.
+     */
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(access, player, ModBlocks.ASSEMBLING_MACHINE_1.get());
+        return access.evaluate((level, pos) -> level.getBlockState(pos).getBlock() instanceof AssemblerBlock
+                && player.isWithinBlockInteractionRange(pos, 4.0), true);
     }
 
     @Override

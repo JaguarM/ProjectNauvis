@@ -449,14 +449,17 @@ public final class NauvisGameTests {
             // doing a job the pack has its own answer for. See data/removals.json.
             for (String id : List.of("minecraft:chest", "minecraft:furnace",
                     "minecraft:hopper", "minecraft:hopper_minecart",
-                    "minecraft:stone_pickaxe", "minecraft:wooden_pickaxe")) {
+                    "minecraft:stone_pickaxe", "minecraft:wooden_pickaxe",
+                    "minecraft:iron_ingot_from_smelting_raw_iron",
+                    "minecraft:copper_ingot_from_blasting_raw_copper", "minecraft:stone_bricks")) {
                 helper.assertFalse(hasRecipe(helper, id),
                         id + " is still craftable; the removal in the nauvis datapack did nothing");
             }
 
             // And replaced: the pack's own recipe for each thing it took away.
-            for (String id : List.of("nauvis_logistics:chest", "nauvis_machines:furnace",
-                    "nauvis_logistics:burner_inserter", "nauvis:stone_pickaxe")) {
+            for (String id : List.of("nauvis_logistics:chest", "nauvis_machines:stone_furnace",
+                    "nauvis_logistics:burner_inserter", "nauvis:stone_pickaxe",
+                    "neoprogressivematerials:iron_ingot", "nauvis:stone_bricks")) {
                 helper.assertTrue(hasRecipe(helper, id),
                         id + " is missing, so the pack has taken something away and left nothing");
             }
@@ -464,6 +467,12 @@ public final class NauvisGameTests {
             helper.assertTrue(hasRecipe(helper, "minecraft:crafting_table"),
                     "an ordinary vanilla recipe went missing too - the datapack is removing more "
                             + "than data/removals.json names");
+
+            // Kept on purpose, though the pack makes iron ingots: a block coming back apart is
+            // iron changing shape, not a second way of smelting it. See `kept` in removals.json.
+            helper.assertTrue(hasRecipe(helper, "minecraft:iron_ingot_from_iron_block"),
+                    "the iron block no longer comes apart into ingots; storage blocks are a one-way "
+                            + "trip, which no removal was meant to do");
 
             // Planks are the one entry that is *mirrored* rather than replaced: the pack makes
             // them in the crafting panel at vanilla's own rate, and vanilla's recipe stays, so a

@@ -10,7 +10,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 
 /**
- * Factorio's machines: assemblers first, then furnaces, modules, the beacon and the radar.
+ * Factorio's machines: the assemblers and the furnaces, then modules, the beacon and the radar.
  *
  * <p>Ids come from {@code data/mapping.json} and are permanent — {@code assembling_machine_1}
  * is what Factorio calls it, this mod is what the mapping says owns it, and both live in every
@@ -34,5 +34,6 @@ public class NauvisMachines {
         ModMenus.MENUS.register(modEventBus);
         modEventBus.addListener(ModPacks::addPackFinders);
         NauvisMachinesGameTests.register(modEventBus);
+        NauvisMachinesFurnaceGameTests.register(modEventBus);
     }
 }

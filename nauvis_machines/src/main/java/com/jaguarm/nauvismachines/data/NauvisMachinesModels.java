@@ -8,6 +8,9 @@ import com.google.gson.JsonObject;
 
 import com.jaguarm.nauvismachines.NauvisMachines;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
+import com.jaguarm.nauvismachines.machine.furnace.ElectricFurnaceShape;
+import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlock;
+import com.jaguarm.nauvismachines.machine.furnace.FurnaceShape;
 import com.jaguarm.nauvismachines.multiblock.Boxes;
 import com.jaguarm.nauvismachines.multiblock.MachineCell;
 import com.jaguarm.nauvismachines.multiblock.MachineShape;
@@ -29,13 +32,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
 /**
- * Block and item models, generated from the machine's shape rather than written beside it.
+ * Block and item models, generated from each machine's shape rather than written beside it.
  *
  * <p>Textures are placeholders and point at <em>vanilla</em> ones, which is not the same thing as
  * leaving them out. A model naming a texture this mod does not ship renders as the magenta-and-
  * black checkerboard, and that reads as a broken model rather than as art nobody has drawn yet -
  * which matters, because the person judging whether a machine looks right is looking at it in
- * game. A blast furnace body is the nearest vanilla thing to an assembler.
+ * game. A blast furnace body is the nearest vanilla thing to an assembler; a vanilla furnace's
+ * own sides and top are the nearest thing to a stone furnace, iron to a steel one, and polished
+ * deepslate to the electric one, so the three tiers tell apart across a base.
  *
  * <p>Real art is Yannic's half - see {@code texture-workshop/} for the
  * approach that produced the drills - and swapping it in is a one-line change here.
@@ -48,12 +53,19 @@ import net.minecraft.world.level.block.Blocks;
  * is the point of {@link Boxes}: turn the model one way and the shape the other and you get a
  * machine you can see through on one side and walk into on the other, which no test would catch.
  *
+ * <h2>Lit</h2>
+ *
+ * <p>A furnace has vanilla's {@code lit} property on every cell, and one cell - the stack, or
+ * the electric furnace's hood - draws differently when it is on: its top turns to lava. So a
+ * furnace's blockstate dispatches over {@code part} and {@code lit} together, and only the cell
+ * that changes gets a second model; the rest map both values to the one file.
+ *
  * <h2>No template, and no giant model on the middle block</h2>
  *
  * <p>There is no vanilla parent shaped like a machine, so these are written out directly:
  * {@code modelOutput} takes any {@code ModelInstance}, and a {@code ModelInstance} is a
  * {@code Supplier<JsonElement>}. That is what lets the geometry live in exactly one place, in
- * {@code AssemblerShape}, and be read from here.
+ * the shape class, and be read from here.
  *
  * <p>Every cell draws its own block rather than one cell drawing the lot, and that is deliberate.
  * A model may only reach one block in each direction - {@code CuboidModelElement} caps an element
@@ -69,53 +81,37 @@ public class NauvisMachinesModels extends ModelProvider {
 
     @Override
     protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {
+        Identifier blastSide = TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_side").sprite();
+        Identifier metalTop = TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite();
+        Identifier furnaceSide = TextureMapping.getBlockTexture(Blocks.FURNACE, "_side").sprite();
+        Identifier furnaceTop = TextureMapping.getBlockTexture(Blocks.FURNACE, "_top").sprite();
+        Identifier iron = TextureMapping.getBlockTexture(Blocks.IRON_BLOCK).sprite();
+        Identifier deepslate = TextureMapping.getBlockTexture(Blocks.POLISHED_DEEPSLATE).sprite();
+        // Fire, for a lit furnace's mouth. Opaque and animated, and drawn only on upward faces.
+        Identifier lava = Identifier.withDefaultNamespace("block/lava_still");
+
         // A machine body, and machinery on top of it. Two mappings, so the gearbox reads as a
         // moving part rather than as more casing. The first machine is furnace-grey; the second
         // is Factorio's blue, which is how a player tells the tiers apart across a base.
-        Identifier metalTop = TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite();
-        assembler(blockModels, ModBlocks.ASSEMBLING_MACHINE_1.get(), new Textures(
-                TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_side").sprite(), metalTop, metalTop));
-        assembler(blockModels, ModBlocks.ASSEMBLING_MACHINE_2.get(), new Textures(
-                Identifier.withDefaultNamespace("block/light_blue_terracotta"), metalTop, metalTop));
-    }
+        Textures machinery = new Textures(metalTop, metalTop, metalTop);
+        machine(blockModels, ModBlocks.ASSEMBLING_MACHINE_1.get(), AssemblerShape.SHAPE,
+                new Look(new Textures(blastSide, metalTop, metalTop),
+                        Map.of(AssemblerShape.GEARBOX, machinery), Map.of()), false);
+        machine(blockModels, ModBlocks.ASSEMBLING_MACHINE_2.get(), AssemblerShape.SHAPE,
+                new Look(new Textures(Identifier.withDefaultNamespace("block/light_blue_terracotta"), metalTop, metalTop),
+                        Map.of(AssemblerShape.GEARBOX, machinery), Map.of()), false);
 
-    private void assembler(BlockModelGenerators blockModels, Block block, Textures casing) {
-        MachineShape shape = AssemblerShape.SHAPE;
-
-        Textures machinery = new Textures(
-                TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite(),
-                TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite(),
-                TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite());
-
-        // Keyed by model name, not by cell: the four corners are one file between them.
-        Map<String, Identifier> models = new HashMap<>();
-        for (MachineCell cell : shape.cells()) {
-            models.computeIfAbsent(cell.model(), name -> cellModel(blockModels, block, cell,
-                    AssemblerShape.GEARBOX.equals(name) ? machinery : casing));
-        }
-
-        PropertyDispatch.C1<MultiVariant, Integer> dispatch =
-                PropertyDispatch.initial(shape.part());
-        for (int index = 0; index < shape.cellCount(); index++) {
-            MachineCell cell = shape.cell(index);
-            dispatch = dispatch.select(index, BlockModelGenerators
-                    .plainVariant(models.get(cell.model()))
-                    .with(turn(cell.turns())));
-        }
-        blockModels.blockStateOutput.accept(MultiVariantGenerator.dispatch(block).with(dispatch));
-
-        // The whole machine, shrunk into one block. See inventoryModel.
-        blockModels.registerSimpleItemModel(block, inventoryModel(blockModels, block, shape, casing));
-    }
-
-    /** The blockstate rotation matching {@link MachineCell#turns()}, which turns the boxes. */
-    private static VariantMutator turn(int turns) {
-        return switch (Math.floorMod(turns, 4)) {
-            case 1 -> BlockModelGenerators.Y_ROT_90;
-            case 2 -> BlockModelGenerators.Y_ROT_180;
-            case 3 -> BlockModelGenerators.Y_ROT_270;
-            default -> BlockModelGenerators.NOP;
-        };
+        // The furnaces. The stack's top is the fire while it is lit.
+        machine(blockModels, ModBlocks.STONE_FURNACE.get(), FurnaceShape.SHAPE,
+                new Look(new Textures(furnaceSide, furnaceTop, furnaceTop),
+                        Map.of(), Map.of(FurnaceShape.STACK, new Textures(furnaceSide, lava, furnaceTop))), true);
+        machine(blockModels, ModBlocks.STEEL_FURNACE.get(), FurnaceShape.SHAPE,
+                new Look(new Textures(iron, iron, iron),
+                        Map.of(), Map.of(FurnaceShape.STACK, new Textures(iron, lava, iron))), true);
+        machine(blockModels, ModBlocks.ELECTRIC_FURNACE.get(), ElectricFurnaceShape.SHAPE,
+                new Look(new Textures(deepslate, deepslate, deepslate),
+                        Map.of(ElectricFurnaceShape.HOOD, new Textures(iron, iron, iron)),
+                        Map.of(ElectricFurnaceShape.HOOD, new Textures(iron, lava, iron))), true);
     }
 
     /** The three texture slots every model here has. */
@@ -132,9 +128,78 @@ public class NauvisMachinesModels extends ModelProvider {
         }
     }
 
-    private static Identifier cellModel(BlockModelGenerators blockModels, Block block,
+    /**
+     * How a machine is dressed: its casing, any part drawn in something else, and any part that
+     * changes when the machine is lit.
+     */
+    private record Look(Textures casing, Map<String, Textures> parts, Map<String, Textures> lit) {
+
+        Textures of(String model) {
+            return parts.getOrDefault(model, casing);
+        }
+    }
+
+    /**
+     * Every cell of a machine, plus the miniature that goes in the player's hand.
+     *
+     * @param lit whether the block carries {@link FurnaceBlock#LIT}, and so needs a dispatch over
+     *            it. A block without the property cannot be dispatched over it, which is the only
+     *            reason this is a flag rather than a look-up.
+     */
+    private void machine(BlockModelGenerators blockModels, Block block, MachineShape shape, Look look,
+            boolean lit) {
+        // Keyed by model name, not by cell: the four corners are one file between them.
+        Map<String, Identifier> models = new HashMap<>();
+        Map<String, Identifier> litModels = new HashMap<>();
+        for (MachineCell cell : shape.cells()) {
+            models.computeIfAbsent(cell.model(), name -> cellModel(blockModels, block, name, cell, look.of(name)));
+            if (lit && look.lit().containsKey(cell.model())) {
+                litModels.computeIfAbsent(cell.model(), name -> cellModel(
+                        blockModels, block, name + "_lit", cell, look.lit().get(name)));
+            }
+        }
+
+        if (lit) {
+            PropertyDispatch.C2<MultiVariant, Integer, Boolean> dispatch =
+                    PropertyDispatch.initial(shape.part(), FurnaceBlock.LIT);
+            for (int index = 0; index < shape.cellCount(); index++) {
+                MachineCell cell = shape.cell(index);
+                for (boolean on : new boolean[] {false, true}) {
+                    Identifier model = on ? litModels.getOrDefault(cell.model(), models.get(cell.model()))
+                            : models.get(cell.model());
+                    dispatch = dispatch.select(index, on,
+                            BlockModelGenerators.plainVariant(model).with(turn(cell.turns())));
+                }
+            }
+            blockModels.blockStateOutput.accept(MultiVariantGenerator.dispatch(block).with(dispatch));
+        } else {
+            PropertyDispatch.C1<MultiVariant, Integer> dispatch = PropertyDispatch.initial(shape.part());
+            for (int index = 0; index < shape.cellCount(); index++) {
+                MachineCell cell = shape.cell(index);
+                dispatch = dispatch.select(index, BlockModelGenerators
+                        .plainVariant(models.get(cell.model()))
+                        .with(turn(cell.turns())));
+            }
+            blockModels.blockStateOutput.accept(MultiVariantGenerator.dispatch(block).with(dispatch));
+        }
+
+        // The whole machine, shrunk into one block. See inventoryModel.
+        blockModels.registerSimpleItemModel(block, inventoryModel(blockModels, block, shape, look.casing()));
+    }
+
+    /** The blockstate rotation matching {@link MachineCell#turns()}, which turns the boxes. */
+    private static VariantMutator turn(int turns) {
+        return switch (Math.floorMod(turns, 4)) {
+            case 1 -> BlockModelGenerators.Y_ROT_90;
+            case 2 -> BlockModelGenerators.Y_ROT_180;
+            case 3 -> BlockModelGenerators.Y_ROT_270;
+            default -> BlockModelGenerators.NOP;
+        };
+    }
+
+    private static Identifier cellModel(BlockModelGenerators blockModels, Block block, String name,
             MachineCell cell, Textures textures) {
-        Identifier id = ModelLocationUtils.getModelLocation(block, "_" + cell.model());
+        Identifier id = ModelLocationUtils.getModelLocation(block, "_" + name);
         blockModels.modelOutput.accept(id, () -> {
             JsonArray elements = new JsonArray();
             for (float[] box : cell.boxes()) {

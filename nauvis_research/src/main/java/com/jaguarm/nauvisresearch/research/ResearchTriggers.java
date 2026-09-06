@@ -31,8 +31,9 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  * <p>Factorio has one verb for it. Minecraft has four, and the trigger has to hear all of them or
  * it means something different from what it says: <b>iron plates are smelted here, not crafted</b>,
  * so a listener that only heard the crafting grid would leave "craft fifty iron plates" unreachable
- * for ever. So this hears a bench, a furnace, and Facrafting's own panel - which is the one that
- * matters most, since the panel is where this pack does nearly all its crafting.
+ * for ever. So this hears a bench, a vanilla furnace, Facrafting's own panel - which is where this
+ * pack does nearly all its hand crafting - and, through Facrafting's machine listener, the pack's
+ * own furnaces and assemblers, which is where the plates actually come from.
  *
  * <p>What it deliberately does not hear is picking an item up. Mining fifty iron ore and smelting
  * it is the intended route; finding fifty iron ingots in a village chest is not the thing the
@@ -112,7 +113,19 @@ public final class ResearchTriggers {
         // The level rather than the player's type: what this needs is the server's saved data,
         // and anything crafting on the server can reach it. A crafter that is not a networked
         // player has still made the thing.
-        if (stack.isEmpty() || !(player.level() instanceof ServerLevel level)) {
+        if (player.level() instanceof ServerLevel level) {
+            made(level, stack);
+        }
+    }
+
+    /**
+     * The same, from a machine. A furnace has no player, and the plates it smelts are the ones
+     * {@code steam-power} is counting - Factorio's {@code craft-item} trigger counts what a
+     * crafting machine makes as well as what a hand does, which is the only reading under which
+     * a technology that asks for fifty iron plates can ever finish.
+     */
+    public static void made(ServerLevel level, ItemStack stack) {
+        if (stack.isEmpty()) {
             return;
         }
         Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());

@@ -25,6 +25,13 @@ any other mod supplying an ingredient. The standalone copy negates only the Facr
 clause, so it appears when Facrafting is absent but still requires the mods its ingredients
 come from.
 
+A recipe the mapping marks with a `category` is a machine's, not the hand's: Factorio's four
+smelting recipes - the plates, steel and stone brick - are `smelting`, and the character cannot
+craft them. The facraft recipe carries the category and Facrafting keeps it out of the hand
+panel; a furnace runs it. Its bench fallback is a vanilla furnace recipe where one can express it
+- one ingredient, one at a time - and the ordinary shapeless copy where it cannot, because a bench
+is the fallback for a world with no Facrafting and steel has to come from somewhere there.
+
 Craft times need no rounding: every time in the dump is a whole number of ticks once
 multiplied by 20, from 5 (0.25s) to 6000 (300s), and Facrafting accepts 1..12000.
 
@@ -81,6 +88,11 @@ GROUP_BY_CATEGORY = {
 # `order` is zero-padded so a plain string sort is a numeric one, and four digits leaves room
 # for a dump several times this size.
 ORDER_DIGITS = 4
+
+# The machine categories the mapping may name. Factorio's list is longer - chemistry,
+# oil-processing, centrifuging - and each joins this set the day a machine runs it; an unknown
+# one is a typo until then, and a typo here is a recipe that quietly vanishes from every panel.
+CATEGORIES = {"smelting"}
 
 # The three released mods live in their own repos beside this one; everything else is a
 # subproject here. Both are resolved to a `src/main/resources` root.
@@ -179,6 +191,19 @@ def craft_ticks(seconds: float, factorio_id: str) -> int:
     return ticks
 
 
+def category_of(mapped: dict, factorio_id: str) -> str | None:
+    """The machine category the mapping gives this recipe, or None for one the hand crafts."""
+    category = mapped.get("category")
+    if category is None:
+        return None
+    if category not in CATEGORIES:
+        raise GenError(
+            f"'{factorio_id}' has category {category!r}; the ones a machine here runs are "
+            f"{', '.join(sorted(CATEGORIES))}."
+        )
+    return category
+
+
 def group_of(entry: dict) -> str:
     """The crafting-menu tab this recipe belongs on."""
     category = entry.get("category")
@@ -249,19 +274,23 @@ def pending_ingredients(entry: dict, mapping: dict) -> list[dict]:
 def facraft_recipe(entry: dict, mapping: dict) -> dict:
     """The real recipe: timed, sized ingredients, no grid."""
     recipe = entry["recipe"]
-    return {
+    out = {
         "neoforge:conditions": [mod_loaded(m) for m in required_mods(entry, mapping)]
         + pending_ingredients(entry, mapping),
         "type": "facrafting:facraft",
         "craft_ticks": craft_ticks(recipe["time"], entry["id"]),
         "group": group_of(entry),
         "order": entry["order"],
-        "ingredients": [
-            {"ingredient": resolve_item(i["id"], mapping), "count": i["amount"]}
-            for i in recipe["ingredients"]
-        ],
-        "result": {"id": resolve_item(entry["id"], mapping), "count": recipe["yield"]},
     }
+    category = category_of(mapping[entry["id"]], entry["id"])
+    if category:
+        out["category"] = category
+    out["ingredients"] = [
+        {"ingredient": resolve_item(i["id"], mapping), "count": i["amount"]}
+        for i in recipe["ingredients"]
+    ]
+    out["result"] = {"id": resolve_item(entry["id"], mapping), "count": recipe["yield"]}
+    return out
 
 
 def shapeless_ingredients(entry: dict, mapping: dict) -> list[str] | None:
@@ -277,11 +306,11 @@ def shapeless_ingredients(entry: dict, mapping: dict) -> list[str] | None:
     return flat if len(flat) <= GRID_SLOTS else None
 
 
-def shapeless_recipe(entry: dict, mapping: dict, ingredients: list[str], *, without_facrafting: bool) -> dict:
+def fallback_conditions(entry: dict, mapping: dict, *, without_facrafting: bool) -> list[dict]:
     """
-    The bench fallback. Two callers want the same body under opposite conditions: the
-    standalone copy applies when Facrafting is absent, the datapack copy when it is present
-    but the player has chosen to re-enable bench crafting.
+    Two callers want the same fallback body under opposite conditions: the standalone copy
+    applies when Facrafting is absent, the datapack copy when it is present but the player has
+    chosen to re-enable bench crafting.
     """
     mods = required_mods(entry, mapping)
 
@@ -294,10 +323,13 @@ def shapeless_recipe(entry: dict, mapping: dict, ingredients: list[str], *, with
         conditions += [mod_loaded(m) for m in mods if m != "facrafting"]
     else:
         conditions = [mod_loaded(m) for m in mods]
-    conditions += pending_ingredients(entry, mapping)
+    return conditions + pending_ingredients(entry, mapping)
 
+
+def shapeless_recipe(entry: dict, mapping: dict, ingredients: list[str], *, without_facrafting: bool) -> dict:
+    """The bench fallback: the same ingredients, one grid slot each, in no time at all."""
     return {
-        "neoforge:conditions": conditions,
+        "neoforge:conditions": fallback_conditions(entry, mapping, without_facrafting=without_facrafting),
         "type": "minecraft:crafting_shapeless",
         "category": "misc",
         "ingredients": ingredients,
@@ -305,6 +337,30 @@ def shapeless_recipe(entry: dict, mapping: dict, ingredients: list[str], *, with
             "id": resolve_item(entry["id"], mapping),
             "count": entry["recipe"]["yield"],
         },
+    }
+
+
+def smelting_recipe(entry: dict, mapping: dict, *, without_facrafting: bool) -> dict | None:
+    """
+    A vanilla furnace recipe, for a smelting recipe a vanilla furnace can express.
+
+    That is one ingredient, one at a time, one result: iron and copper. Steel is five plates
+    and stone brick is two stone, and a vanilla furnace takes one item, so those keep the
+    shapeless fallback - a bench is the fallback for a world without Facrafting, and steel has to
+    come from somewhere there. The time is Factorio's, so a vanilla furnace in such a world smelts
+    at the rate the pack's own furnace does.
+    """
+    recipe = entry["recipe"]
+    ingredients = recipe["ingredients"]
+    if len(ingredients) != 1 or ingredients[0]["amount"] != 1 or recipe["yield"] != 1:
+        return None
+    return {
+        "neoforge:conditions": fallback_conditions(entry, mapping, without_facrafting=without_facrafting),
+        "type": "minecraft:smelting",
+        "category": "misc",
+        "ingredient": resolve_item(ingredients[0]["id"], mapping),
+        "result": {"id": resolve_item(entry["id"], mapping)},
+        "cookingtime": craft_ticks(recipe["time"], entry["id"]),
     }
 
 
@@ -378,14 +434,19 @@ def plan(dump: dict, mapping: dict, only: set[str] | None) -> tuple[dict[str, li
         out.append((Path("data") / namespace / "recipe" / f"{name}.json",
                     facraft_recipe(entry, mapping)))
 
+        standalone = Path("data") / namespace / "recipe" / f"{name}_standalone.json"
+        bench = Path("crafting_table") / "data" / namespace / "recipe" / f"{name}.json"
+        smelted = (category_of(mapped, factorio_id) == "smelting"
+                   and smelting_recipe(entry, mapping, without_facrafting=True))
         flat = shapeless_ingredients(entry, mapping)
-        if flat is None:
+        if smelted:
+            out.append((standalone, smelted))
+            out.append((bench, smelting_recipe(entry, mapping, without_facrafting=False)))
+        elif flat is None:
             report["no_fallback"].append(factorio_id)
         else:
-            out.append((Path("data") / namespace / "recipe" / f"{name}_standalone.json",
-                        shapeless_recipe(entry, mapping, flat, without_facrafting=True)))
-            out.append((Path("crafting_table") / "data" / namespace / "recipe" / f"{name}.json",
-                        shapeless_recipe(entry, mapping, flat, without_facrafting=False)))
+            out.append((standalone, shapeless_recipe(entry, mapping, flat, without_facrafting=True)))
+            out.append((bench, shapeless_recipe(entry, mapping, flat, without_facrafting=False)))
 
         report["generated"] += 1
 

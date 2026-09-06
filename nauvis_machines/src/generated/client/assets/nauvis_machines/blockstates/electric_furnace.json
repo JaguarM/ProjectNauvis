@@ -1,0 +1,76 @@
+{
+  "variants": {
+    "lit=false,part=0": {
+      "model": "nauvis_machines:block/electric_furnace_corner"
+    },
+    "lit=false,part=1": {
+      "model": "nauvis_machines:block/electric_furnace_corner",
+      "y": 90
+    },
+    "lit=false,part=2": {
+      "model": "nauvis_machines:block/electric_furnace_corner",
+      "y": 180
+    },
+    "lit=false,part=3": {
+      "model": "nauvis_machines:block/electric_furnace_corner",
+      "y": 270
+    },
+    "lit=false,part=4": {
+      "model": "nauvis_machines:block/electric_furnace_edge"
+    },
+    "lit=false,part=5": {
+      "model": "nauvis_machines:block/electric_furnace_edge",
+      "y": 90
+    },
+    "lit=false,part=6": {
+      "model": "nauvis_machines:block/electric_furnace_edge",
+      "y": 180
+    },
+    "lit=false,part=7": {
+      "model": "nauvis_machines:block/electric_furnace_edge",
+      "y": 270
+    },
+    "lit=false,part=8": {
+      "model": "nauvis_machines:block/electric_furnace_deck"
+    },
+    "lit=false,part=9": {
+      "model": "nauvis_machines:block/electric_furnace_hood"
+    },
+    "lit=true,part=0": {
+      "model": "nauvis_machines:block/electric_furnace_corner"
+    },
+    "lit=true,part=1": {
+      "model": "nauvis_machines:block/electric_furnace_corner",
+      "y": 90
+    },
+    "lit=true,part=2": {
+      "model": "nauvis_machines:block/electric_furnace_corner",
+      "y": 180
+    },
+    "lit=true,part=3": {
+      "model": "nauvis_machines:block/electric_furnace_corner",
+      "y": 270
+    },
+    "lit=true,part=4": {
+      "model": "nauvis_machines:block/electric_furnace_edge"
+    },
+    "lit=true,part=5": {
+      "model": "nauvis_machines:block/electric_furnace_edge",
+      "y": 90
+    },
+    "lit=true,part=6": {
+      "model": "nauvis_machines:block/electric_furnace_edge",
+      "y": 180
+    },
+    "lit=true,part=7": {
+      "model": "nauvis_machines:block/electric_furnace_edge",
+      "y": 270
+    },
+    "lit=true,part=8": {
+      "model": "nauvis_machines:block/electric_furnace_deck"
+    },
+    "lit=true,part=9": {
+      "model": "nauvis_machines:block/electric_furnace_hood_lit"
+    }
+  }
+}

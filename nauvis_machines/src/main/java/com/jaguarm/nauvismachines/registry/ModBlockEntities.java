@@ -2,6 +2,7 @@ package com.jaguarm.nauvismachines.registry;
 
 import com.jaguarm.nauvismachines.NauvisMachines;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlockEntity;
+import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlockEntity;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -24,6 +25,16 @@ public final class ModBlockEntities {
                             AssemblerBlockEntity::new,
                             ModBlocks.ASSEMBLING_MACHINE_1.get(),
                             ModBlocks.ASSEMBLING_MACHINE_2.get()));
+
+    /** One type for every furnace: the two burners and the electric one differ by numbers on the block. */
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FurnaceBlockEntity>> FURNACE =
+            BLOCK_ENTITIES.register(
+                    "furnace",
+                    () -> new BlockEntityType<>(
+                            FurnaceBlockEntity::new,
+                            ModBlocks.STONE_FURNACE.get(),
+                            ModBlocks.STEEL_FURNACE.get(),
+                            ModBlocks.ELECTRIC_FURNACE.get()));
 
     private ModBlockEntities() {}
 }

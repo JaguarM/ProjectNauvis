@@ -16,19 +16,23 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and forty gametests pass, `./gradlew build` is clean, and the client boots into a world.
-**Milestone 2 is closed.** Milestone 3 has its research half and eight of its nine items — the
-steel line, green science, the four poles, assembling machine 2 and the solar panel; the substation's
-recipe waits on the advanced circuit, and the steel furnace is the one left, because it wants a
-decision first (job 2). **Milestone 4 has begun**: oil wells in the ground, the pumpjack,
-`oil-gathering` and `oil-processing` in the tree, and the five technologies from plastics to the
-substation behind blue science. Every block the pack registers is pickaxe work. How each of these is
-built is `ARCHITECTURE.md`; what is deliberately missing from each is `GAPS.md`.
+A hundred and fifty-four gametests pass, `./gradlew build` is clean, and the client boots into a
+world. **Milestone 2 is closed.** Milestone 3 has its research half and every item but the
+accumulator — the steel line, green science, the four poles, assembling machine 2, the solar panel
+and the three furnaces; the substation's and the electric furnace's recipes wait on the advanced
+circuit, and the accumulator waits on the refinery. **Milestone 4 has begun**: oil wells in the
+ground, the pumpjack, `oil-gathering` and `oil-processing` in the tree, and the five technologies
+from plastics to the substation behind blue science. Every block the pack registers is pickaxe work.
+How each of these is built is `ARCHITECTURE.md`; what is deliberately missing from each is `GAPS.md`.
 
 | | |
 |---|---|
 | `nauvis_machines:assembling_machine_1` | 3×3, ten blocks; recipe selector, six slots, timed craft at **crafting speed 0.5**, screen, 10 FE/t |
 | `nauvis_machines:assembling_machine_2` | the same at speed 0.75 and 20 FE/t, in blue. Behind `automation-2` |
+| `nauvis_machines:stone_furnace` | 2×2, five blocks; a hearth you walk over and a stack whose mouth is fire while it runs. Smelts Factorio's four recipes at speed 1, burning what a vanilla furnace burns — only while working. **A machine of ours now**, not `minecraft:furnace` |
+| `nauvis_machines:steel_furnace` | the same at speed 2, in iron. Behind `advanced-material-processing` |
+| `nauvis_machines:electric_furnace` | 3×3, ten blocks, speed 2, 24 FE/t, a hood that glows. Recipe in, waiting on the advanced circuit |
+| smelting | iron plate, copper plate, steel plate and stone brick are `smelting` recipes: a furnace runs them and the panel never offers them. A furnace asks the tree before smelting steel, and reports every plate it makes, which is what finishes `steam-power` |
 | `nauvis_logistics:transport_belt` | half a block, walked over; a run is one object however long, two lanes, visible items, carries you |
 | a belt line | climbs and descends a step at a time, like rails. The ramp is drawn in the lower block; four quarter-block stairs under a 45° slab, so you walk up it |
 | `nauvis_logistics:fast_transport_belt` | the same at 3.75 tiles a second, in red. Five gears and a belt, behind `logistics-2` |
@@ -70,9 +74,11 @@ footprints and machine speeds are.
 
 The crafting panel is Factorio's crafting menu — four tabs in Factorio's order, items interleaved
 across mods, no "everything" tab, no grouping button. A new world smelts its way to a boiler on
-triggered technologies, then builds a lab. Four vanilla recipes are removed — chest, furnace, hopper,
-hopper minecart — under the rule that a vanilla recipe goes only when the pack can already do that
-job, which the build enforces.
+triggered technologies, then builds a lab. Twenty vanilla recipes are removed — the chest, the
+furnace, the hopper and its minecart, the two pickaxes, and the fourteen ways vanilla smelts or crafts
+iron, copper and stone brick — under the rule that a vanilla recipe goes only when the pack can
+already do that job, which the build enforces. Blocks and nuggets coming back apart into ingots are
+`kept`, and say why.
 
 The jobs
 --------
@@ -116,20 +122,12 @@ None of the rest is a small change, and none of it is urgent: the drills work, t
 and their recipes and footprints are already Factorio-correct. Do it as one designed piece rather
 than four.
 
-### 2. The steel furnace, which wants a decision first
-
-The last of milestone 3's items, and the one that is not a tier or a shape. The pack has no furnace
-machine at all: `stone-furnace` stands in as `minecraft:furnace`. A steel furnace that is only a
-faster vanilla furnace is a different job from one that is a machine of ours, and **that decision
-is Yannic's and comes before the block.** Behind `advanced-material-processing`, which is in the
-tree.
+### 2. Oil, the rest of it
 
 `sulfur`, `battery` and the `accumulator` cannot be built yet, and it is not the code: sulfur is
 petroleum gas and water, a battery is sulfuric acid, and an accumulator is five batteries — the
 whole branch waits on the refinery. The accumulator also wants `PowerNetwork`'s third case; see
 `GAPS.md`.
-
-### 3. Oil, the rest of it
 
 - **The refinery, which is the hard part.** Three outputs that block each other — heavy, light,
   petroleum — into separate tanks, and a full tank stalls the machine. That is the puzzle Factorio's
@@ -144,7 +142,7 @@ whole branch waits on the refinery. The accumulator also wants `PowerNetwork`'s 
 - **Plastics, sulfur and flammables** hang off oil processing and are in the tree; they mean
   nothing until the refinery makes petroleum gas.
 
-### 4. More removals follow the items
+### 3. More removals follow the items
 
 The conflict half of `data/removals.json` is already waiting: the moment a mod ships a recipe for
 `minecraft:redstone_lamp`, `cobblestone_wall`, `rail` or `iron_door`, the build fails until
@@ -162,6 +160,9 @@ Loose ends — small enough to finish in an afternoon
 - **The pumpjack's pump** is a nodding donkey inside one block, and reads as a small box from the
   item slot. Bigger geometry means a taller head cell; it is boxes in `PumpjackShape`, and
   `render_model.py` shows the result without a boot.
+- **The furnace's fire is a lava texture on the stack's mouth**, chosen because it is opaque and
+  animated and nothing else vanilla ships is both. Whether a brazier on a corner reads as a furnace
+  is a judgement for eyes; the boxes are in `FurnaceShape` and `ElectricFurnaceShape`.
 
 The playtest, which is still owed
 ---------------------------------
@@ -182,11 +183,18 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
 `/research all` opens everything the pack can currently reach; `/research reset` puts it back.
 `/oil field` puts oil where you stand.
 
-**The first ten minutes, which is the biggest risk.** There is no hopper, and the furnace and chest
-are Facrafting recipes now at Factorio's prices.
+**The first ten minutes, which is the biggest risk.** There is no hopper, the chest is a Facrafting
+recipe at Factorio's price, and **the stone furnace is a two-by-two machine of the pack's own** —
+five stone in the panel, and the only thing that smelts.
 
 - gather five cobblestone and see whether making a furnace is **obvious**. If the panel is not the
   first place a Minecraft player looks, the answer is probably a message, not putting the recipe back;
+- place it, open it, and put raw iron and coal in. A plate should come out in three and a half
+  seconds, the stack's mouth should be fire while it works, and the hover should say *Smelting
+  Iron Ingot*. Put a stick in and it should refuse it. Then take the ore out mid-smelt and watch it
+  go dark and keep its coal — a furnace here burns only while it works, which is Factorio's rule;
+- hand it five iron ingots before steel processing is researched: it should say it cannot smelt
+  that yet, and start the moment the technology finishes;
 - build a burner inserter and check it does everything a hopper did — chest into furnace is the case
   every Minecraft player builds. It is behind Automation, so the honest test is the whole opening:
   hand-mine, hand-craft a lab and a boiler, research Automation, *then* automate anything;
@@ -219,6 +227,21 @@ are Facrafting recipes now at Factorio's prices.
   refinery and the chemical plant unlocked — with no lab involved. The tooltip on the node says
   *Mine 1 x Crude oil - 0 done* until then, which is Factorio's own wording for a `mine-entity`
   trigger, and **whether "mine" reads right for pumping oil is a judgement no test makes**.
+
+**The furnaces**, which nobody has seen.
+
+- stand the three in a row. Stone is a vanilla furnace's sides, steel is iron and electric is
+  polished deepslate with an iron hood — **whether they read as three tiers of one machine is the
+  question**, and it was decided in three texture lines;
+- build a furnace column: six stone furnaces in a line with a belt down each side. It should be
+  walkable along the hearths with the stacks two apart, and the lit ones should be obvious from
+  the far end at night — every cell gives light, as vanilla's furnace does;
+- look at the electric furnace's hood glowing. It is the top of a stepped block in lava; whether
+  that reads as a furnace or as a lamp is a judgement no test makes;
+- and open one of each. The burner tiers have a flame beside the fuel slot; the electric one has
+  the assembler's charge bar. The panel beside them is the ordinary hand panel — **no smelting
+  recipe should appear anywhere in it**, on any tab, and steel should still be searchable for
+  where it is used.
 
 **The two new machines.**
 

@@ -42,6 +42,7 @@ Entry shape
 | `item` | the Minecraft item id it resolves to, in recipes and in the world |
 | `craft` | `time` in seconds and `yield`, from the dump. Never edit these — they are the spec |
 | `size` | Factorio's tile footprint, `[width, depth]`. Absent means one tile |
+| `category` | Factorio's recipe category, for a recipe only a machine runs: `smelting` on the four the furnaces do. Absent means the hand crafts it. Not in the dump, entered by hand like `size` |
 | `stand_in` | true when an existing Minecraft item covers it and nothing new is registered |
 | `raw` | true when the dump gives it no recipe: an ore, a fluid, a filled barrel |
 | `skip` | true when it is never registered at all |
@@ -57,6 +58,13 @@ are one tile there and one block here.
 `tools/check_models.py` reads each machine's cells back out of its `*Shape.java` and fails the
 build if they disagree with the number here, the way `checkRecipes` does for craft times. A shape
 opts into that by naming its entry in a `FACTORIO_ID` constant.
+
+`category` is the other field the dump does not carry. Factorio's recipes belong to categories -
+`crafting`, `smelting`, `chemistry`, `oil-processing` - and the character crafts only the first, so
+iron plate, copper plate, steel plate and stone brick are `smelting` here. `gen_recipes.py` writes
+that into the recipe as Facrafting's `category`, Facrafting keeps such a recipe out of the hand
+panel and the hand queue, and a furnace is the machine that names the category it runs. The other
+categories join the generator's list the day a machine runs them.
 
 The `unlocks` table
 -------------------
@@ -123,6 +131,14 @@ panel at vanilla's own rate so the whole opening can be done there, and vanilla'
 a log still becomes planks in the 2x2 inventory grid. Listing it as a removal would take that
 away for nothing; leaving it out would fail the build, which is the check doing its job.
 
+**`kept`** is the fourth, and it exists because the pack smelts iron. Once a pack recipe makes
+`minecraft:iron_ingot`, the conflict check also catches the iron block coming back apart into nine
+ingots and nine nuggets becoming one. Neither is a second way of making a plate - they are iron
+changing shape, which Factorio has no blocks or nuggets to have an opinion about - so they are
+listed with a reason each and the check stands down. What did go is every way vanilla smelts or
+blasts ore into an ingot, raw or as a silk-touched block: those are the recipe, with the wrong
+input or the wrong time.
+
 The opening, and the tool ladder
 ---------------------------------
 
@@ -188,9 +204,11 @@ looking for.
 Stand-ins, for review
 ---------------------
 
-These twenty Factorio items resolve to something vanilla already has, so nothing new gets
+These nineteen Factorio items resolve to something vanilla already has, so nothing new gets
 registered. This is where judgement was applied and where disagreement is most likely — every
-row is a one-word change in `mapping.json`.
+row is a one-word change in `mapping.json`. The stone furnace was the twentieth and is a machine
+of the pack's own now, because a furnace that ran vanilla's recipes at vanilla's pace was not
+Factorio's furnace.
 
 | Factorio | Minecraft | |
 |---|---|---|
@@ -205,7 +223,6 @@ row is a one-word change in `mapping.json`.
 | `stone-brick` | `minecraft:stone_bricks` | ratios differ; Factorio smelts 2 stone, vanilla crafts 4 |
 | `stone-wall` | `minecraft:cobblestone_wall` | |
 | `wooden-chest` | `minecraft:chest` | |
-| `stone-furnace` | `minecraft:furnace` | |
 | `lamp` | `minecraft:redstone_lamp` | |
 | `rail` | `minecraft:rail` | the trains shortcut leans on this |
 | `landfill` | `minecraft:dirt` | |

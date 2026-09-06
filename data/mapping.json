@@ -3,6 +3,7 @@
   "_generated_from": "reference/factorio/recipes.json (214 entries)",
   "_size": "Factorio tile footprint [width, depth], for entities larger than one tile. Absent means 1x1. One Minecraft block per tile - see docs/NEXT.md.",
   "_speed": "Factorio belt speed in tiles per second. Identity: it decides what a factory looks like, and throughput follows from it - four items a tile a lane, two lanes, so 1.875 tiles/s is the wiki's 15 items/s. tools/check_models.py holds each belt block's SPEED constant to this.",
+  "_category": "Factorio's recipe category, for a recipe only a machine runs: `smelting` is the four the furnaces do - plates, steel and stone brick - which the character cannot craft by hand. Absent means hand-craftable, which is Factorio's `crafting`. Not in the dump, so entered by hand against the wiki like `size`. gen_recipes.py writes it into the recipe as Facrafting's `category`, and Facrafting keeps such a recipe out of the hand panel; a machine names the category it runs.",
   "_unlocks": "A technology effect names a *recipe*, and Factorio's recipe names are not always its item names. This maps the ones that differ to the item whose recipe file gen_recipes.py writes - `small-lamp` makes a lamp, `solar-panel-equipment` makes a portable solar panel. null means the pack has no counterpart at all: the oil-processing recipes make fluids that recipes.json carries as raw inputs with no recipe of their own. Any name in neither this table nor `items` is a GenError in tools/gen_technologies.py rather than a silently dropped unlock.",
   "unlocks": {
     "small-lamp": "lamp",
@@ -363,6 +364,7 @@
       "owner": "neoprogressivematerials",
       "item": "minecraft:copper_ingot",
       "stand_in": true,
+      "category": "smelting",
       "craft": {
         "time": 3.5,
         "yield": 1
@@ -847,6 +849,7 @@
       "owner": "neoprogressivematerials",
       "item": "minecraft:iron_ingot",
       "stand_in": true,
+      "category": "smelting",
       "craft": {
         "time": 3.5,
         "yield": 1
@@ -1695,6 +1698,7 @@
       "name": "Steel plate",
       "owner": "neoprogressivematerials",
       "item": "neoprogressivematerials:steel_plate",
+      "category": "smelting",
       "craft": {
         "time": 35,
         "yield": 1
@@ -1712,6 +1716,7 @@
       "owner": "nauvis",
       "item": "minecraft:stone_bricks",
       "stand_in": true,
+      "category": "smelting",
       "craft": {
         "time": 3.5,
         "yield": 1
@@ -1720,9 +1725,8 @@
     "stone-furnace": {
       "name": "Stone furnace",
       "owner": "nauvis_machines",
-      "item": "minecraft:furnace",
+      "item": "nauvis_machines:stone_furnace",
       "size": [2, 2],
-      "stand_in": true,
       "craft": {
         "time": 0.5,
         "yield": 1

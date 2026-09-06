@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "nauvis_machines:block/steel_furnace_inventory"
+  }
+}

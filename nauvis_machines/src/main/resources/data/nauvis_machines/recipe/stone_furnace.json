@@ -16,7 +16,7 @@
     }
   ],
   "result": {
-    "id": "minecraft:furnace",
+    "id": "nauvis_machines:stone_furnace",
     "count": 1
   }
 }
