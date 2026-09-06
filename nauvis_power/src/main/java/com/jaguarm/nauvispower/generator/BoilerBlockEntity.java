@@ -1,11 +1,15 @@
 package com.jaguarm.nauvispower.generator;
 
+import com.jaguarm.nauvislib.multiblock.MachineShape;
+import com.jaguarm.nauvislib.transfer.FluidOutputAccess;
 import com.jaguarm.nauvislib.transfer.MachineAccess;
+import com.jaguarm.nauvislib.transfer.SingleFluidTank;
 import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.nauvispower.registry.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -24,27 +28,41 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
- * A boiler: burns solid fuel and makes steam.
+ * A boiler: burns solid fuel to turn water into steam.
  *
- * <p>Steam is an int, not a fluid. PLAN.md defers fluids to milestone 4 and takes barrels rather
- * than pipes even then, so a boiler that needed water would need a whole subsystem this pack has
- * decided not to build yet. What survives is the shape that matters - fuel goes in one end,
- * steam comes out, and a steam engine turns steam into electricity - and the ratio: this makes
- * {@value #STEAM_PER_TICK} steam a tick and an engine burns {@value SteamEngineBlockEntity#STEAM_PER_TICK},
- * so one boiler feeds two engines exactly as it does in Factorio.
+ * <p>Factorio's boiler takes water in at both ends and gives steam out of the back, one steam for
+ * one water, and does nothing at all without water. This one is the same. The water is real
+ * water - {@code minecraft:water}, which is what an offshore pump puts into a pipe and what
+ * {@code data/mapping.json} maps Factorio's water to - and the steam is a real fluid too, so a
+ * pipe from {@code nauvis_fluids} carries either without this mod compiling against it. The
+ * ratio is what is kept: {@value #STEAM_PER_TICK} steam a tick from as much water, an engine
+ * burns {@value SteamEngineBlockEntity#STEAM_PER_TICK}, and an offshore pump gives forty - so one
+ * boiler feeds two engines and one pump feeds twenty boilers, exactly as in Factorio.
  *
- * <p>What it does <em>not</em> do is push. Engines pull, which is what lets both ends sleep: the
- * boiler only runs when its own buffer has room, and its buffer only gains room when an engine
- * takes some - which happens through {@link SteamAccess}, the extract-only view a pipe or an
- * engine sees.
+ * <h2>Water comes in two ways</h2>
+ *
+ * <p>A pipe run touching either end pushes water in, because {@link #waterAccess} accepts it. And
+ * a boiler standing end to end with another draws from its neighbour's tank, the way an engine
+ * draws steam from the engine before it - so a row of boilers off one pipe is fed along the row,
+ * which is how Factorio's boilers pass water through. Two neighbours level their tanks rather
+ * than one emptying the other, so a row settles and sleeps instead of shuffling one tankful back
+ * and forth for ever.
+ *
+ * <p>What it does <em>not</em> do is push steam. Engines pull, which is what lets both ends
+ * sleep: the boiler only runs when its own buffer has room, and its buffer only gains room when
+ * an engine takes some - which happens through {@link FluidOutputAccess}, the extract-only view
+ * a pipe or an engine sees.
  */
 public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -54,8 +72,14 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
     /** Two a tick against an engine's one: Factorio's one boiler to two engines. */
     public static final int STEAM_PER_TICK = 2;
 
+    /** One water for one steam. Factorio's boiler, and the reason a pump is twenty boilers. */
+    public static final int WATER_PER_TICK = STEAM_PER_TICK;
+
     /** A few seconds of buffer. Big enough to ride out a gap, small enough to be worth refilling. */
     public static final int STEAM_CAPACITY = 200;
+
+    /** Factorio's water box on a boiler holds two hundred. */
+    public static final int WATER_CAPACITY = 200;
 
     private final BoilerFuel fuel = new BoilerFuel(SLOT_COUNT, this::onFuelChanged,
             () -> level == null ? null : level.fuelValues());
@@ -69,6 +93,7 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
                 case BoilerMenu.DATA_BURN_TIME -> burnTime;
                 case BoilerMenu.DATA_BURN_TIME_TOTAL -> burnTimeTotal;
                 case BoilerMenu.DATA_STEAM -> steam();
+                case BoilerMenu.DATA_WATER -> water();
                 default -> 0;
             };
         }
@@ -93,8 +118,18 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
      */
     private final SteamTank steam = new SteamTank(STEAM_CAPACITY, this::onSteamChanged);
 
-    /** What a pipe sees: extraction only, and a wake-up on the way out. */
-    private final ResourceHandler<FluidResource> steamAccess = new SteamAccess(steam, this::wake);
+    /** What a pipe sees at the steam port: extraction only, and a wake-up on the way out. */
+    private final ResourceHandler<FluidResource> steamAccess = new FluidOutputAccess(steam, this::wake);
+
+    /**
+     * The water waiting to be boiled. Vanilla's water and nothing else, so a run of steam or oil
+     * touching the wrong end of a boiler is refused rather than swallowed.
+     */
+    private final SingleFluidTank water = new SingleFluidTank(WATER_CAPACITY, () -> Fluids.WATER, this::onWaterChanged);
+
+    /** The blocks just outside the two water ports, which is where a neighbouring boiler would be. */
+    private @Nullable BlockCapabilityCache<ResourceHandler<FluidResource>, @Nullable Direction> westEnd;
+    private @Nullable BlockCapabilityCache<ResourceHandler<FluidResource>, @Nullable Direction> eastEnd;
 
     private int burnTime;
     private int burnTimeTotal;
@@ -116,9 +151,31 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
         return steam.getAmountAsInt(0);
     }
 
-    /** What pipes and engines draw from. Registered as {@code Capabilities.Fluid.BLOCK}. */
+    /** How much water is waiting. Read by the screen, by Jade, and by tests. */
+    public int water() {
+        return water.getAmountAsInt(0);
+    }
+
+    /** Whether there is water enough for a tick of boiling. What a stopped boiler is asked first. */
+    public boolean hasWater() {
+        return water() >= WATER_PER_TICK;
+    }
+
+    /** What pipes and engines draw from. Registered as {@code Capabilities.Fluid.BLOCK} at the steam port. */
     public ResourceHandler<FluidResource> steamAccess() {
         return steamAccess;
+    }
+
+    /**
+     * What pipes fill and a neighbouring boiler draws from. Registered as
+     * {@code Capabilities.Fluid.BLOCK} at both water ports.
+     *
+     * <p>The tank itself, both ways round: a pipe run pushes into it, which is what makes the run
+     * treat a boiler as a sink and never as a source of water, and the boiler next along takes
+     * from it, which is what makes a row of boilers one line of water.
+     */
+    public ResourceHandler<FluidResource> waterAccess() {
+        return water;
     }
 
     public int burnTime() {
@@ -131,9 +188,21 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
 
     /** Called by {@link BoilerBlock}, and only ever on a tick this boiler asked for. */
     public void serverTick(ServerLevel level) {
-        if (steam() >= STEAM_CAPACITY) {
+        int room = STEAM_CAPACITY - steam();
+        if (room <= 0) {
             // Nothing to do until an engine draws. Burning fuel to make steam that will not fit
             // is how a burner ends up eating a chest of coal while the factory sits idle.
+            return;
+        }
+
+        if (water() < WATER_CAPACITY) {
+            drawWater(level);
+        }
+        if (!hasWater()) {
+            // Dry, and nothing changed, so no setChanged: it would reach this machine's own
+            // cells, whose onNeighborChange wakes the anchor, and a dry boiler would tick for
+            // ever asking itself. Water arriving wakes it through the tank, and the boiler next
+            // along gaining some wakes it through onNeighborChange.
             return;
         }
 
@@ -142,8 +211,10 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         burnTime--;
+        int made = Math.min(STEAM_PER_TICK, Math.min(room, water()));
         try (Transaction transaction = Transaction.openRoot()) {
-            steam.insert(SteamTank.steamResource(), STEAM_PER_TICK, transaction);
+            water.extract(water.resource(), made, transaction);
+            steam.insert(SteamTank.steamResource(), made, transaction);
             transaction.commit();
         }
         setChanged();
@@ -176,6 +247,78 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /**
+     * Levels this tank with whatever is just outside either water port.
+     *
+     * <p>Two faces, not six: a boiler takes water at its ends, which is what makes its facing
+     * mean something and what lets a row of them chain. It reaches through
+     * {@code Capabilities.Fluid.BLOCK}, so the boiler next along and anything else that holds
+     * water are the same thing to it; a pipe run holds its water in the run and not in any block,
+     * so a pipe answers nothing here and pushes instead.
+     *
+     * <p>Half the difference, never the lot. Taking everything a fuller neighbour has would leave
+     * that neighbour emptier than this one, and it would take it all back on its next tick: two
+     * boilers passing one tankful between them for ever, each waking the other. Meeting in the
+     * middle converges in one step and then nothing moves, which is what lets the row sleep.
+     */
+    private void drawWater(ServerLevel level) {
+        if (westEnd == null) {
+            buildCaches(level);
+        }
+        levelWith(westEnd);
+        levelWith(eastEnd);
+    }
+
+    private void levelWith(
+            @Nullable BlockCapabilityCache<ResourceHandler<FluidResource>, @Nullable Direction> cache) {
+        if (cache == null) {
+            return;
+        }
+        ResourceHandler<FluidResource> source = cache.getCapability();
+        if (source == null) {
+            return;
+        }
+
+        FluidResource resource = water.resource();
+        long theirs = 0;
+        for (int index = 0; index < source.size(); index++) {
+            if (source.getResource(index).equals(resource)) {
+                theirs += source.getAmountAsLong(index);
+            }
+        }
+        int take = (int) Math.min(WATER_CAPACITY - water(), (theirs - water()) / 2);
+        if (take <= 0) {
+            return;
+        }
+
+        try (Transaction transaction = Transaction.openRoot()) {
+            int taken = source.extract(resource, take, transaction);
+            if (taken > 0 && water.insert(resource, taken, transaction) == taken) {
+                transaction.commit();
+            }
+        }
+    }
+
+    /**
+     * The two blocks just outside the boiler's water ports.
+     *
+     * <p>Read off {@link BoilerShape} rather than stepping from the middle, so that the ends stay
+     * the ends if the machine is ever reshaped.
+     */
+    private void buildCaches(ServerLevel level) {
+        Direction facing = getBlockState().getValue(BoilerBlock.FACING);
+        westEnd = endCache(level, facing, BoilerShape.WEST_END, Direction.WEST);
+        eastEnd = endCache(level, facing, BoilerShape.EAST_END, Direction.EAST);
+    }
+
+    private BlockCapabilityCache<ResourceHandler<FluidResource>, @Nullable Direction> endCache(
+            ServerLevel level, Direction facing, int end, Direction port) {
+        BlockPos cell = BoilerShape.SHAPE.cellPos(worldPosition, end, facing);
+        Direction out = MachineShape.toWorld(port, facing);
+        return BlockCapabilityCache.create(
+                Capabilities.Fluid.BLOCK, level, cell.relative(out), out.getOpposite());
+    }
+
+    /**
      * A chunk that has just loaded has a boiler that has never been woken.
      *
      * <p>One scheduled tick per boiler per chunk load, paid once. Without it a boiler that slept
@@ -202,8 +345,14 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
         wake();
     }
 
-    /** Room in the tank is the one thing that gives a stopped boiler work again. */
+    /** Room in the tank is one of the things that gives a stopped boiler work again. */
     private void onSteamChanged() {
+        setChanged();
+        wake();
+    }
+
+    /** Water arriving is the other. */
+    private void onWaterChanged() {
         setChanged();
         wake();
     }
@@ -244,6 +393,7 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
         super.saveAdditional(output);
         fuel.serialize(output.child("Fuel"));
         steam.serialize(output.child("Steam"));
+        water.serialize(output.child("Water"));
         output.putInt("BurnTime", burnTime);
         output.putInt("BurnTimeTotal", burnTimeTotal);
     }
@@ -253,6 +403,7 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
         super.loadAdditional(input);
         input.child("Fuel").ifPresent(fuel::deserialize);
         input.child("Steam").ifPresent(steam::deserialize);
+        input.child("Water").ifPresent(water::deserialize);
         burnTime = input.getIntOr("BurnTime", 0);
         burnTimeTotal = input.getIntOr("BurnTimeTotal", 0);
     }

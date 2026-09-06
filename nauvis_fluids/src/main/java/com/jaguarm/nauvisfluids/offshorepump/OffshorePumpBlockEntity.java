@@ -1,7 +1,7 @@
 package com.jaguarm.nauvisfluids.offshorepump;
 
-import com.jaguarm.nauvisfluids.fluid.OutputAccess;
-import com.jaguarm.nauvisfluids.fluid.SingleFluidTank;
+import com.jaguarm.nauvislib.transfer.FluidOutputAccess;
+import com.jaguarm.nauvislib.transfer.SingleFluidTank;
 import com.jaguarm.nauvisfluids.registry.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;
@@ -40,7 +40,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  *
  * <p>No ticker. The machine schedules its own tick while it has water and room, and stops
  * scheduling the moment it lacks either. Both come back from outside: room appears when a pipe
- * draws, which {@link OutputAccess} reports, and water at the intake is a neighbour of the
+ * draws, which {@link FluidOutputAccess} reports, and water at the intake is a neighbour of the
  * intake cell, so {@code neighborChanged} covers it. {@code offshore_pump_sleeps} is the test
  * that fails if either wake stops working.
  *
@@ -61,7 +61,7 @@ public class OffshorePumpBlockEntity extends BlockEntity {
     private final SingleFluidTank tank = new SingleFluidTank(TANK_CAPACITY, () -> Fluids.WATER, this::onTankChanged);
 
     /** What a pipe sees at the outlet: extraction only, and a wake-up on the way out. */
-    private final ResourceHandler<FluidResource> output = new OutputAccess(tank, this::wake);
+    private final ResourceHandler<FluidResource> output = new FluidOutputAccess(tank, this::wake);
 
     private OffshorePumpStatus status = OffshorePumpStatus.NO_WATER;
 
@@ -99,7 +99,7 @@ public class OffshorePumpBlockEntity extends BlockEntity {
 
         int room = TANK_CAPACITY - stored();
         if (room <= 0) {
-            // Full, and nothing is drawing. Sleep until a pipe does - OutputAccess wakes us then.
+            // Full, and nothing is drawing. Sleep until a pipe does - FluidOutputAccess wakes us then.
             settle(OffshorePumpStatus.OUTPUT_FULL);
             return;
         }

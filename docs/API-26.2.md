@@ -409,6 +409,12 @@ Other confirmed details, second batch
 - `BlockPlaceContext(Level, @Nullable Player, InteractionHand, ItemStack, BlockHitResult)` — a null
   player is allowed and `getHorizontalDirection()` then answers north, which is how a gametest
   asks a block what it would place as.
+- `GameTestHelper.onEachTick(Runnable)` runs something every tick of the test, which is how a
+  test in one mod stands in for a machine from another: the power mod's boiler tests top the
+  water tank up each tick the way a pipe from an offshore pump would, and never name the pump.
+- `RegisterCapabilitiesEvent.registerBlock` may be called more than once for one capability and
+  one block; the providers are asked in turn until one answers. A boiler offers steam at one face
+  and water at two others through two registrations of `Capabilities.Fluid.BLOCK`.
 
 A fluid of your own, and what still asks for vanilla's by name
 --------------------------------------------------------------

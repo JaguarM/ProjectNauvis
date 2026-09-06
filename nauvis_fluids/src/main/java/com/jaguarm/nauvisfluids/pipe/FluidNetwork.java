@@ -33,7 +33,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * <h2>Sources and sinks are not told apart</h2>
  *
  * <p>There is one endpoint table and nothing is labelled. A machine is a source if it will not
- * accept back the fluid it is offering: a boiler refuses steam - {@code SteamAccess} is
+ * accept back the fluid it is offering: a boiler refuses steam - {@code FluidOutputAccess} is
  * extract-only - so it gives, and a steam engine accepts it, so it does not. The test is asked of
  * each machine about itself, which is why it still works on the tick a run is empty and has
  * nothing of its own to compare against.
@@ -296,7 +296,7 @@ public final class FluidNetwork {
      * a source.
      *
      * <p>The test is asked of the endpoint about itself: would it accept back the very fluid it is
-     * offering? A boiler says no - {@code SteamAccess} refuses insertion - so it is a source. An
+     * offering? A boiler says no - {@code FluidOutputAccess} refuses insertion - so it is a source. An
      * engine says yes, because an engine is a length of pipe that happens to consume, so it is
      * not. Without that test a pipe run would drain the engines it is supposed to be feeding, and
      * it would do it on exactly the tick the run was empty and had nothing to compare against.

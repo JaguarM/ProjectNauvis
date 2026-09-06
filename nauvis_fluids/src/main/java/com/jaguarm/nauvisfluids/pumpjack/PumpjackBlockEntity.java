@@ -4,8 +4,8 @@ import com.jaguarm.nauvislib.transfer.PowerAccess;
 import com.jaguarm.nauvislib.transfer.MachinePower;
 import org.jspecify.annotations.Nullable;
 
-import com.jaguarm.nauvisfluids.fluid.OutputAccess;
-import com.jaguarm.nauvisfluids.fluid.SingleFluidTank;
+import com.jaguarm.nauvislib.transfer.FluidOutputAccess;
+import com.jaguarm.nauvislib.transfer.SingleFluidTank;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
 import com.jaguarm.nauvisfluids.oil.OilProgress;
 import com.jaguarm.nauvisfluids.registry.ModBlockEntities;
@@ -51,7 +51,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * <p>No ticker. The machine schedules its own tick while it has a well, power and room, and stops
  * scheduling the moment it lacks any of the three. Each of those comes back from outside:
  * electricity arriving reports through {@link MachinePower}, room appearing reports through
- * {@link OutputAccess} when a pipe draws, and the well is a neighbour, so
+ * {@link FluidOutputAccess} when a pipe draws, and the well is a neighbour, so
  * {@code neighborChanged} covers it. {@code pumpjack_sleeps} is the test that fails if any of
  * the three wakes stops working.
  *
@@ -93,7 +93,7 @@ public class PumpjackBlockEntity extends BlockEntity {
     private final SingleFluidTank tank = new SingleFluidTank(TANK_CAPACITY, ModFluids.CRUDE_OIL, this::onTankChanged);
 
     /** What a pipe sees at the outlet: extraction only, and a wake-up on the way out. */
-    private final ResourceHandler<FluidResource> output = new OutputAccess(tank, this::wake);
+    private final ResourceHandler<FluidResource> output = new FluidOutputAccess(tank, this::wake);
 
     /** Ticks into the current cycle. At {@link #CYCLE_TICKS} the cycle is done and waiting to bank. */
     private int progress;
@@ -162,7 +162,7 @@ public class PumpjackBlockEntity extends BlockEntity {
         if (progress >= CYCLE_TICKS) {
             if (!bank(level, well)) {
                 // Finished a cycle and the tank will not take it. Hold the cycle, keep the well as
-                // it is, and sleep until a pipe draws - OutputAccess wakes us then.
+                // it is, and sleep until a pipe draws - FluidOutputAccess wakes us then.
                 settle(PumpjackStatus.OUTPUT_FULL);
                 return;
             }

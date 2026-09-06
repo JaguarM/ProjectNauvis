@@ -106,6 +106,7 @@ SCREENS = [
         'BoilerMenu.java', 'BoilerScreen.java',
         slots=[('fuel', 'FUEL_X', 'FUEL_Y', 1, 1)],
         bars=[('flame', 'FLAME_X', 'FLAME_Y', 'FLAME_WIDTH', 'FLAME_HEIGHT'),
+              ('water bar', 'WATER_X', 'WATER_Y', 'WATER_WIDTH', 'WATER_HEIGHT'),
               ('steam bar', 'STEAM_X', 'STEAM_Y', 'STEAM_WIDTH', 'STEAM_HEIGHT')],
     ),
     Screen(

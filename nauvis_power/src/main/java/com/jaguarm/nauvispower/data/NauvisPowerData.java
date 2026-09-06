@@ -125,6 +125,7 @@ public final class NauvisPowerData {
             // The boiler's screen. Its old right-click strings are gone with the right-click code.
             add("screen.nauvis_power.boiler.burning", "Burning");
             add("screen.nauvis_power.boiler.full", "Full of steam - nothing is drawing it off");
+            add("screen.nauvis_power.boiler.no_water", "No water - pipe it in from an offshore pump");
             add("screen.nauvis_power.boiler.idle", "Out of fuel");
 
             // No screen: the engine has no slot. Its readout is Jade's, below.
@@ -146,8 +147,10 @@ public final class NauvisPowerData {
             add("jade.nauvis_power.network.live", "Carrying power");
             add("jade.nauvis_power.network.idle", "Idle - nothing is drawing");
             add("jade.nauvis_power.steam", "Steam: %s / %s");
+            add("jade.nauvis_power.water", "Water: %s / %s");
             add("jade.nauvis_power.boiler.burning", "Burning");
             add("jade.nauvis_power.boiler.full", "Full - nothing is drawing the steam off");
+            add("jade.nauvis_power.boiler.no_water", "No water");
             add("jade.nauvis_power.boiler.no_fuel", "Out of fuel");
             add("jade.nauvis_power.engine.running", "Making %s FE/t");
             add("jade.nauvis_power.engine.full", "Full - nothing is drawing the power off");

@@ -237,13 +237,14 @@ public final class NauvisGameTests {
     }
 
     /**
-     * <b>Milestone 1, end to end: coal in one place, a machine running in another.</b>
+     * <b>Milestone 1, end to end: coal and a lake in one place, a machine running in another.</b>
      *
-     * <p>A boiler, a steam engine beside it, two poles, and an assembler eight blocks from the
-     * generator. Every join in that chain is between two mods that do not compile against each
-     * other - {@code nauvis_logistics} could feed the boiler, {@code nauvis_power} makes and
-     * carries the electricity, {@code nauvis_machines} spends it - and all of it is held together
-     * by NeoForge's capabilities and nothing else. That is exactly the claim non-negotiable #3
+     * <p>An offshore pump at a block of natural water, a pipe to a boiler, a steam engine beside
+     * it, two poles, and an assembler eight blocks from the generator. Every join in that chain is
+     * between two mods that do not compile against each other - {@code nauvis_fluids} owns the
+     * water and the pipe, {@code nauvis_logistics} could feed the boiler, {@code nauvis_power}
+     * makes and carries the electricity, {@code nauvis_machines} spends it - and all of it is held
+     * together by NeoForge's capabilities and nothing else. That is exactly the claim non-negotiable #3
      * makes and the one place it can actually be checked, which is why this test is in the pack
      * mod rather than in any of them.
      *
@@ -282,13 +283,27 @@ public final class NauvisGameTests {
         private static final BlockPos ASSEMBLER = new BlockPos(5, 1, 11);
         private static final BlockPos UNPOWERED_ASSEMBLER = new BlockPos(5, 8, 11);
 
+        /**
+         * Where the water comes from. A boiler takes water at the ends of its front row, which for
+         * one facing north is the row in front of the anchor; its east end is one block east of
+         * that, and a pipe there reaches an offshore pump facing east, whose outlet is the back
+         * of its body and whose intake hangs over a block of natural water.
+         */
+        private static final BlockPos WATER_PIPE = new BlockPos(2, 1, -1);
+        private static final BlockPos PUMP = new BlockPos(3, 1, -1);
+        private static final BlockPos LAKE = new BlockPos(4, 0, -1);
+
         public PowerReachesAMachineTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
             super(info);
         }
 
         @Override
         public void run(GameTestHelper helper) {
+            // The pipe first, so it re-reads its faces as each machine arrives beside it.
+            place(helper, WATER_PIPE, block(helper, "nauvis_fluids:pipe"));
             place(helper, BOILER, block(helper, "nauvis_power:boiler"));
+            helper.setBlock(LAKE, block(helper, "nauvis_fluids:water"));
+            place(helper, PUMP, block(helper, "nauvis_fluids:offshore_pump"), Direction.EAST);
             // East, so the engine lies along the line to the boiler. A steam engine takes steam
             // through the two faces on its own axis, and the pack mod can say so without knowing
             // the property: setBlock applies a direction to whatever has a horizontal facing.
@@ -307,8 +322,8 @@ public final class NauvisGameTests {
                 transaction.commit();
             }
 
-            // Coal to steam to electricity to two poles to a machine. Forty ticks is generous for
-            // a chain that moves a tick's worth per tick once it is running.
+            // A lake to water to steam to electricity to two poles to a machine. Forty ticks is
+            // generous for a chain that moves a tick's worth per tick once it is running.
             helper.runAfterDelay(40, () -> {
                 helper.assertTrue(charge(helper, ASSEMBLER) > 0,
                         "an assembler two poles from a running steam engine has no charge, so the "
@@ -370,13 +385,21 @@ public final class NauvisGameTests {
         /** Just past the last pipe, laid along the line so its ends face the run. */
         private static final BlockPos ENGINE = new BlockPos(0, 1, PIPES + 3);
 
+        /** The same lake, pump and pipe as {@code power_reaches_a_machine}, at the boiler's east end. */
+        private static final BlockPos WATER_PIPE = new BlockPos(2, 1, -1);
+        private static final BlockPos PUMP = new BlockPos(3, 1, -1);
+        private static final BlockPos LAKE = new BlockPos(4, 0, -1);
+
         public SteamTravelsDownAPipeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
             super(info);
         }
 
         @Override
         public void run(GameTestHelper helper) {
+            place(helper, WATER_PIPE, block(helper, "nauvis_fluids:pipe"));
             place(helper, BOILER, block(helper, "nauvis_power:boiler"));
+            helper.setBlock(LAKE, block(helper, "nauvis_fluids:water"));
+            place(helper, PUMP, block(helper, "nauvis_fluids:offshore_pump"), Direction.EAST);
             for (int z = 1; z <= PIPES; z++) {
                 place(helper, new BlockPos(0, 1, z), block(helper, "nauvis_fluids:pipe"));
             }

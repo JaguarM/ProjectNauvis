@@ -159,6 +159,22 @@ public class BoilerBlock extends BaseEntityBlock implements Multiblock.MachineBl
     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block block,
             @Nullable Orientation orientation, boolean movedByPiston) {
         super.neighborChanged(state, level, pos, block, orientation, movedByPiston);
+        wake(level, state, pos);
+    }
+
+    /**
+     * A neighbouring block <em>entity</em> changed - the boiler next along gaining water, which
+     * this one draws from. The same {@code onNeighborChange} trick the engine and the inserter
+     * use: every {@code setChanged} reaches all six neighbours, and a dry boiler that slept
+     * through the one beside it filling up would never restart.
+     */
+    @Override
+    public void onNeighborChange(BlockState state, LevelReader level, BlockPos pos, BlockPos neighbor) {
+        super.onNeighborChange(state, level, pos, neighbor);
+        wake(level, state, pos);
+    }
+
+    private void wake(LevelReader level, BlockState state, BlockPos pos) {
         BlockPos anchor = Multiblock.anchorPos(this, state, pos);
         if (level.getBlockEntity(anchor) instanceof BoilerBlockEntity boiler) {
             boiler.wake();

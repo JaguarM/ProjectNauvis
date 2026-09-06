@@ -1,11 +1,11 @@
 package com.jaguarm.nauvispower.generator;
 
+import com.jaguarm.nauvislib.transfer.SingleFluidTank;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
-import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 
 /**
  * A tank that holds steam and nothing else.
@@ -20,16 +20,13 @@ import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
  * which is the correct behaviour for a boiler that has nowhere to put steam: {@code nauvis_power}
  * still loads, and its recipes already fall back the same way.
  */
-public class SteamTank extends FluidStacksResourceHandler {
+public class SteamTank extends SingleFluidTank {
 
     public static final Identifier STEAM_ID =
             Identifier.fromNamespaceAndPath("nauvis_fluids", "steam");
 
-    private final Runnable onChanged;
-
     public SteamTank(int capacity, Runnable onChanged) {
-        super(1, capacity);
-        this.onChanged = onChanged;
+        super(capacity, SteamTank::steam, onChanged);
     }
 
     /** The steam fluid, or null when {@code nauvis_fluids} is not installed. */
@@ -39,15 +36,5 @@ public class SteamTank extends FluidStacksResourceHandler {
 
     public static FluidResource steamResource() {
         return FluidResource.of(steam());
-    }
-
-    @Override
-    public boolean isValid(int index, FluidResource resource) {
-        return resource.getFluid() == steam();
-    }
-
-    @Override
-    protected void onContentsChanged(int index, FluidStack previousContents) {
-        onChanged.run();
     }
 }

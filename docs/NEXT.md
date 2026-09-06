@@ -14,9 +14,9 @@ green science, the four poles, assembling machine 2, the solar panel and the thr
 substation's and the electric furnace's recipes wait on the advanced circuit, and the accumulator
 waits on the refinery. **Milestone 4 has begun**: oil wells in the ground, the pumpjack,
 `oil-gathering` and `oil-processing` in the tree, and the five technologies from plastics to the
-substation behind blue science. **The world's water is the pack's own now**, and the offshore pump
-draws from it and from nothing a bucket poured. Every block the pack registers is pickaxe work,
-but for the water. How each of these is built is `ARCHITECTURE.md`; what is deliberately missing
+substation behind blue science. **The world's water is the pack's own now**, the offshore pump
+draws from it and from nothing a bucket poured, and the boiler boils it: a new world's first
+factory starts at a shoreline. Every block the pack registers is pickaxe work, but for the water. How each of these is built is `ARCHITECTURE.md`; what is deliberately missing
 from each is `GAPS.md`.
 
 | | |
@@ -43,7 +43,7 @@ from each is `GAPS.md`.
 | `nauvis_fluids:pumpjack` | 3×3, ten blocks, centred on a well or nowhere; 12 FE/t; 10 × yield a second into a 1000 tank, a cycle capped at the tank; oil leaves the north-east corner's north face and turns with the machine. Snaps to the well, x-rays every well while in hand |
 | `nauvis_fluids:water` | **the water of every lake and sea the world generates**, in place of `minecraft:water`: swum in, boated on and scooped exactly as before, but a bucket of it is a water bucket, a poured bucket is vanilla's water, and two sources never make a third. A lake is as big as the world made it |
 | `nauvis_fluids:offshore_pump` | 1×2, two blocks; body on the shore, intake ahead of it over the water. 40 water a tick into a 200 tank, no power, `minecraft:water` out of the body's back. **Stands only at natural water** - not a puddle, not a flow - and says which when it will not |
-| `nauvis_power:boiler` | 3×2, seven blocks; burns fuel, steam out under the chimney |
+| `nauvis_power:boiler` | 3×2, seven blocks; **boils water**: water in at both ends of the front row, two a tick, two steam out under the chimney, and nothing at all without water. A row of boilers passes water along itself, end to end |
 | `nauvis_power:steam_engine` | 5×3, seventeen blocks; steam in at the open ends of its spine, 120 FE/t out |
 | `nauvis_power:small_electric_pole` | 1×1×4, wood. Reaches 7.5, supplies 5×5 |
 | `nauvis_power:medium_electric_pole` | 1×1×5, anvil-grey. Reaches 9, supplies 5×5 |
@@ -125,13 +125,6 @@ petroleum gas and water, a battery is sulfuric acid, and an accumulator is five 
 whole branch waits on the refinery. The accumulator also wants `PowerNetwork`'s third case; see
 `GAPS.md`.
 
-- **The boiler takes no water.** The offshore pump is built and fills a pipe run with
-  `minecraft:water`, and the boiler still makes steam from fuel alone, so a pipe from a pump
-  reaches a boiler and nothing happens. Factorio's boiler takes one water for every steam, and at
-  the pack's two steam a tick that is two water a tick - twenty boilers to a pump, which is
-  Factorio's ratio and what the pump's forty a tick was chosen for. A water tank, a port and a
-  status line are the usual work; what it changes is every boiler already built, which stops until
-  a pump reaches it. That is a gameplay decision, and Yannic's.
 - **The refinery, which is the hard part.** Three outputs that block each other — heavy, light,
   petroleum — into separate tanks, and a full tank stalls the machine. That is the puzzle Factorio's
   oil *is*, and it needs real capacity and back-pressure, not barrels. `FluidNetwork` already

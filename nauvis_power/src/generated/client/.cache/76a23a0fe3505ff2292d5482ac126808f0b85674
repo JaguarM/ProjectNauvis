@@ -1,6 +1,6 @@
-// 26.2	2026-09-06T01:15:56.0478325	Model Definitions - nauvis_power
+// 26.2	2026-09-06T20:45:05.3358093	Model Definitions - nauvis_power
 cd534fa93c7aca6df166d53acb91bb4808240b39 assets/nauvis_power/blockstates/big_electric_pole.json
-952b1f60e2f3c16a26281e53606f78cd540ecb6f assets/nauvis_power/blockstates/boiler.json
+5b052ab3681a7e35b21932af4e306426af129aca assets/nauvis_power/blockstates/boiler.json
 d78147a49b953dad155daad0f9ccfaf83cee7f3c assets/nauvis_power/blockstates/medium_electric_pole.json
 91b9535b96aa1e63588fd71e9a7bb4b39cb90c49 assets/nauvis_power/blockstates/small_electric_pole.json
 56cf9cd5c4edc334b02e65e0df3da582c74f7c5e assets/nauvis_power/blockstates/solar_panel.json
@@ -21,7 +21,7 @@ c6f91abe8da7dd83c3db4f44001e74360186d2aa assets/nauvis_power/models/block/big_el
 8a924c25681e551d5845c76440c14b27ddfbc316 assets/nauvis_power/models/block/boiler_corner.json
 f2c3555732eb04d1192ded9de11255ce7c4dc743 assets/nauvis_power/models/block/boiler_deck.json
 5456f75f05e02b38313d6ebb577306773f1cb040 assets/nauvis_power/models/block/boiler_edge.json
-788136bb2fad3ad5282cbe79c70890884eecb35b assets/nauvis_power/models/block/boiler_inventory.json
+9031c1bfed1b7727dc2c372e8365adf971b2a12d assets/nauvis_power/models/block/boiler_inventory.json
 c05173cbf3a286ac978777597b46afec6d9e20aa assets/nauvis_power/models/block/medium_electric_pole_foot.json
 a00e1f8b1005aeaaad9360a531dfe5d10874acd5 assets/nauvis_power/models/block/medium_electric_pole_head.json
 aefe75ed49ef72ca4dcc1b87a19f28aa21c5b4a8 assets/nauvis_power/models/block/medium_electric_pole_inventory.json

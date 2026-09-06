@@ -15,6 +15,7 @@
   "jade.nauvis_power.boiler.burning": "Burning",
   "jade.nauvis_power.boiler.full": "Full - nothing is drawing the steam off",
   "jade.nauvis_power.boiler.no_fuel": "Out of fuel",
+  "jade.nauvis_power.boiler.no_water": "No water",
   "jade.nauvis_power.engine.full": "Full - nothing is drawing the power off",
   "jade.nauvis_power.engine.no_steam": "No steam",
   "jade.nauvis_power.engine.running": "Making %s FE/t",
@@ -26,6 +27,7 @@
   "jade.nauvis_power.solar.night": "Dark - waiting for the sun",
   "jade.nauvis_power.solar.no_sky": "Under a roof - it needs open sky",
   "jade.nauvis_power.steam": "Steam: %s / %s",
+  "jade.nauvis_power.water": "Water: %s / %s",
   "nauvis_power.electric_pole.detached": "Not part of a network",
   "nauvis_power.electric_pole.status": "Network: %s poles, %s machines - live",
   "nauvis_power.electric_pole.status_idle": "Network: %s poles, %s machines - idle",
@@ -34,6 +36,7 @@
   "screen.nauvis_power.boiler.burning": "Burning",
   "screen.nauvis_power.boiler.full": "Full of steam - nothing is drawing it off",
   "screen.nauvis_power.boiler.idle": "Out of fuel",
+  "screen.nauvis_power.boiler.no_water": "No water - pipe it in from an offshore pump",
   "tab.facrafting.group.logistics": "Logistics",
   "tab.facrafting.group.production": "Production"
 }

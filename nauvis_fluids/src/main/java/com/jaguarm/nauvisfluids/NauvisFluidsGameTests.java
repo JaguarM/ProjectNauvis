@@ -1616,7 +1616,7 @@ public final class NauvisFluidsGameTests {
      *
      * <p>Non-negotiable #5, asserted through {@code hasScheduledTick} for each of the three
      * reasons the machine can stop and the two ways it can be woken. Delete the wake in
-     * {@code OutputAccess} or the one in {@code neighborChanged} and one of these lines goes red.
+     * {@code FluidOutputAccess} or the one in {@code neighborChanged} and one of these lines goes red.
      */
     public static class OffshorePumpSleepsTest extends GameTestInstance {
 

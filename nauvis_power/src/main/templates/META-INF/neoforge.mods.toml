@@ -11,7 +11,7 @@ issueTrackerURL="https://github.com/JaguarM/ProjectNauvis/issues"
 description='''
 Factorio's power: the boiler and the steam engine first, then solar, accumulators and poles.
 
-Coal goes into a boiler, the boiler makes steam, and a steam engine turns steam into electricity.
+Coal and water go into a boiler, the boiler makes steam, and a steam engine turns steam into electricity.
 Power is Minecraft FE, buffered per machine, so any cable or machine from any mod can draw from
 a steam engine without knowing what one is.
 '''

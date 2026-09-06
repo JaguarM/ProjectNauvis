@@ -14,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 
 /**
- * The boiler's menu: one fuel slot and two numbers.
+ * The boiler's menu: one fuel slot and three numbers.
  *
  * <p>It replaces what used to be right-click handling - coal in hand to fuel it, empty hand to
  * print a line of text. Both were stand-ins for a screen, and a machine you interact with by
@@ -27,11 +27,12 @@ import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
  */
 public class BoilerMenu extends AbstractContainerMenu {
 
-    /** Ticks of fuel left, and what the last item was worth. Enough to draw a flame. */
+    /** Ticks of fuel left, what the last item was worth, and the two tanks. */
     public static final int DATA_BURN_TIME = 0;
     public static final int DATA_BURN_TIME_TOTAL = 1;
     public static final int DATA_STEAM = 2;
-    public static final int DATA_COUNT = 3;
+    public static final int DATA_WATER = 3;
+    public static final int DATA_COUNT = 4;
 
     /** Where the screen expects to find things. Shared, so the two cannot drift apart. */
     public static final int FUEL_X = 26;
@@ -89,6 +90,17 @@ public class BoilerMenu extends AbstractContainerMenu {
     public float steam() {
         return Math.clamp(
                 data.get(DATA_STEAM) / (float) BoilerBlockEntity.STEAM_CAPACITY, 0.0f, 1.0f);
+    }
+
+    /** 0 to 1 across the water tank. */
+    public float water() {
+        return Math.clamp(
+                data.get(DATA_WATER) / (float) BoilerBlockEntity.WATER_CAPACITY, 0.0f, 1.0f);
+    }
+
+    /** Whether there is water enough to boil - the first thing a stopped boiler is short of. */
+    public boolean hasWater() {
+        return data.get(DATA_WATER) >= BoilerBlockEntity.WATER_PER_TICK;
     }
 
     public boolean isBurning() {

@@ -1,7 +1,7 @@
 {
   "variants": {
     "facing=east,part=0": {
-      "model": "nauvis_power:block/boiler_corner",
+      "model": "nauvis_power:block/boiler_edge",
       "y": 90
     },
     "facing=east,part=1": {
@@ -9,8 +9,8 @@
       "y": 90
     },
     "facing=east,part=2": {
-      "model": "nauvis_power:block/boiler_corner",
-      "y": 180
+      "model": "nauvis_power:block/boiler_edge",
+      "y": 90
     },
     "facing=east,part=3": {
       "model": "nauvis_power:block/boiler_corner"
@@ -28,14 +28,13 @@
       "y": 90
     },
     "facing=north,part=0": {
-      "model": "nauvis_power:block/boiler_corner"
+      "model": "nauvis_power:block/boiler_edge"
     },
     "facing=north,part=1": {
       "model": "nauvis_power:block/boiler_edge"
     },
     "facing=north,part=2": {
-      "model": "nauvis_power:block/boiler_corner",
-      "y": 90
+      "model": "nauvis_power:block/boiler_edge"
     },
     "facing=north,part=3": {
       "model": "nauvis_power:block/boiler_corner",
@@ -52,7 +51,7 @@
       "model": "nauvis_power:block/boiler_chimney"
     },
     "facing=south,part=0": {
-      "model": "nauvis_power:block/boiler_corner",
+      "model": "nauvis_power:block/boiler_edge",
       "y": 180
     },
     "facing=south,part=1": {
@@ -60,8 +59,8 @@
       "y": 180
     },
     "facing=south,part=2": {
-      "model": "nauvis_power:block/boiler_corner",
-      "y": 270
+      "model": "nauvis_power:block/boiler_edge",
+      "y": 180
     },
     "facing=south,part=3": {
       "model": "nauvis_power:block/boiler_corner",
@@ -79,7 +78,7 @@
       "y": 180
     },
     "facing=west,part=0": {
-      "model": "nauvis_power:block/boiler_corner",
+      "model": "nauvis_power:block/boiler_edge",
       "y": 270
     },
     "facing=west,part=1": {
@@ -87,7 +86,8 @@
       "y": 270
     },
     "facing=west,part=2": {
-      "model": "nauvis_power:block/boiler_corner"
+      "model": "nauvis_power:block/boiler_edge",
+      "y": 270
     },
     "facing=west,part=3": {
       "model": "nauvis_power:block/boiler_corner",

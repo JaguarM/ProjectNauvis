@@ -26,6 +26,16 @@ Power and fluids
   third case above. Solar plus a boiler for the night is what Factorio itself does before then.
 - **No pipeline length limit.** Factorio caps a segment at 320 pipes and its tooltip says `6/320`;
   ours says `6 pipes`. Adding the cap is a real gameplay change — refusal to connect, not a number.
+- **A row of boilers levels its water rather than flowing it.** Factorio's boilers pass water
+  through end to end by its flow model; here each boiler draws from the one beside it until the
+  two hold the same, half the difference at a time, which converges in a step and lets the row
+  sleep. It means the far end of a long row fills more slowly than the near end, and a row fed at
+  one end only runs as fast as that levelling carries water along it. Pipe the row at both ends,
+  or along its front, and it does not matter.
+- **A boiler holds a tick of water short of full and burns nothing for it.** Fuel is spent per
+  tick of running, and a tick makes as much steam as there is room and water for; a boiler that
+  is one water short makes one steam for a tick of coal. Factorio's does the same in its own
+  units.
 - **A long-handed inserter with power and nothing to do costs one look a second**, because the wake
   signal has a radius of one block and its ends are two away. Every other machine sleeps for free.
   Two things would remove it and neither exists: a hook that fires when the block entity at a
@@ -113,8 +123,8 @@ Water
   200 in Factorio; forty a tick and a tank of 200 here, so that one pump is twenty boilers as it
   is there. The footprint, the recipe, the technology and needing no power are identity.
 - **What the pump gives is `minecraft:water`**, which is what `data/mapping.json` maps Factorio's
-  water to and what any mod's tank understands. Natural water is the thing in the world; water
-  is the thing in the pipe. Nothing takes it yet - see `NEXT.md` on the boiler.
+  water to, what any mod's tank understands, and what the boiler boils. Natural water is the
+  thing in the world; water is the thing in the pipe.
 - **`#nauvis_fluids:offshore_pumpable` is the switch.** A pack that wants Minecraft's infinite
   water back adds `minecraft:water` to it and changes no code.
 

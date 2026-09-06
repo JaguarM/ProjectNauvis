@@ -235,6 +235,14 @@ axis, which is what makes its facing matter and a pipe refuse its flank. *Which 
 *which way the machine looks* are two registrations with two tests — breaking one leaves the
 other's test passing.
 
+**A machine that draws from its neighbour levels with it, never drains it.** A steam engine pulls
+from the engine before it only while that one holds more, and a boiler takes from the boiler at
+its end only half the difference between them. Take the lot and the neighbour takes it back next
+tick, each waking the other, for ever - two machines passing one tankful about in a base that is
+supposed to be asleep. Meeting in the middle converges in one step and then nothing moves. A pipe
+run needs no such rule, because it pushes into sinks and pulls from sources and a machine is never
+both for one fluid.
+
 **A renderer that draws outside its own block has to say so.** `getRenderBoundingBox` defaults to
 the one block, and geometry past it is frustum-culled with no error and nothing in the log. The
 wires between poles hit this exactly. See `API-26.2.md`.

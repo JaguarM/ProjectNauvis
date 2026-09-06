@@ -51,8 +51,8 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
  * because it had one block to offer it from. Now:
  *
  * <ul>
- *   <li>a <b>boiler</b> gives steam at the back face of the block under its chimney, and nowhere
- *       else;
+ *   <li>a <b>boiler</b> gives steam at the back face of the block under its chimney, and takes
+ *       water at the two ends of its front row, and nowhere else;
  *   <li>an <b>engine</b> takes and gives steam at the open ends of its spine - the two blocks the
  *       wall deliberately does not cover - and nowhere along its flanks.
  * </ul>
@@ -87,6 +87,11 @@ public final class ModCapabilities {
 
         atPort(event, boiler, BoilerShape.STEAM, BoilerBlockEntity.class,
                 BoilerBlockEntity::steamAccess);
+        // Both ends of the front row. The same capability on a second set of faces: a pipe run
+        // at an end finds the water tank, a pipe at the back finds the steam, and a pipe on the
+        // flank finds nothing.
+        atPort(event, boiler, BoilerShape.WATER, BoilerBlockEntity.class,
+                BoilerBlockEntity::waterAccess);
         atPort(event, engine, SteamEngineShape.STEAM, SteamEngineBlockEntity.class,
                 SteamEngineBlockEntity::steamAccess);
     }

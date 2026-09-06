@@ -1,5 +1,6 @@
 package com.jaguarm.nauvispower;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jspecify.annotations.Nullable;
@@ -46,6 +47,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -57,6 +59,7 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
@@ -97,6 +100,8 @@ public final class NauvisPowerGameTests {
         TEST_TYPES.register("power_machines_tile_walkably",
                 () -> PowerMachinesTileWalkablyTest.CODEC);
         TEST_TYPES.register("boiler_makes_steam", () -> BoilerMakesSteamTest.CODEC);
+        TEST_TYPES.register("boiler_needs_water", () -> BoilerNeedsWaterTest.CODEC);
+        TEST_TYPES.register("boilers_pass_water_along", () -> BoilersPassWaterAlongTest.CODEC);
         TEST_TYPES.register("steam_engine_makes_power", () -> SteamEngineMakesPowerTest.CODEC);
         TEST_TYPES.register("power_chain_sleeps", () -> PowerChainSleepsTest.CODEC);
         TEST_TYPES.register("steam_engine_takes_no_power", () -> SteamEngineTakesNoPowerTest.CODEC);
@@ -138,6 +143,8 @@ public final class NauvisPowerGameTests {
         register(event, environment, "engine_breaks_as_one", EngineBreaksAsOneTest::new, 40);
         register(event, environment, "power_machines_tile_walkably", PowerMachinesTileWalkablyTest::new, 40);
         register(event, environment, "boiler_makes_steam", BoilerMakesSteamTest::new, 100);
+        register(event, environment, "boiler_needs_water", BoilerNeedsWaterTest::new, 100);
+        registerSpaced(event, environment, "boilers_pass_water_along", BoilersPassWaterAlongTest::new, 100);
         register(event, environment, "steam_engine_makes_power", SteamEngineMakesPowerTest::new, 100);
         register(event, environment, "power_chain_sleeps", PowerChainSleepsTest::new, 400);
         register(event, environment, "steam_engine_takes_no_power", SteamEngineTakesNoPowerTest::new, 60);
@@ -254,7 +261,27 @@ public final class NauvisPowerGameTests {
         placeEngine(helper, ENGINE);
         if (fuelled) {
             insert(helper.getBlockEntity(BOILER, BoilerBlockEntity.class).fuelAccess(), Items.COAL, 1);
+            keepWatered(helper, BOILER);
         }
+    }
+
+    /** Water into a boiler the way a pipe run puts it there: through the handler at its water ports. */
+    private static int water(BoilerBlockEntity boiler, int amount) {
+        try (Transaction transaction = Transaction.openRoot()) {
+            int inserted = boiler.waterAccess().insert(FluidResource.of(Fluids.WATER), amount, transaction);
+            transaction.commit();
+            return inserted;
+        }
+    }
+
+    /**
+     * A lake, as far as a boiler is concerned: its tank topped up every tick, which is what a pipe
+     * from an offshore pump does. The pump is another mod's and this one may not name it; the pack
+     * mod's {@code power_reaches_a_machine} runs the real one.
+     */
+    private static void keepWatered(GameTestHelper helper, BlockPos boiler) {
+        helper.onEachTick(() -> water(helper.getBlockEntity(boiler, BoilerBlockEntity.class),
+                BoilerBlockEntity.WATER_CAPACITY));
     }
 
     private static int insert(ResourceHandler<ItemResource> handler, Item item, int count) {
@@ -368,11 +395,16 @@ public final class NauvisPowerGameTests {
             BoilerBlockEntity boiler = helper.getBlockEntity(BOILER, BoilerBlockEntity.class);
             helper.assertValueEqual(boiler.steam(), 0, "steam in a cold boiler");
             helper.assertValueEqual(insert(boiler.fuelAccess(), Items.COAL, 1), 1, "coal accepted");
+            helper.assertValueEqual(water(boiler, BoilerBlockEntity.WATER_CAPACITY),
+                    BoilerBlockEntity.WATER_CAPACITY, "water accepted");
 
             helper.runAfterDelay(20, () -> {
                 BoilerBlockEntity fired = helper.getBlockEntity(BOILER, BoilerBlockEntity.class);
-                helper.assertTrue(fired.steam() > 0, "a boiler with coal in it made no steam");
+                helper.assertTrue(fired.steam() > 0, "a boiler with coal and water in it made no steam");
                 helper.assertTrue(fired.burnTime() > 0, "it made steam without burning anything");
+                // Factorio's boiler: one water in for one steam out.
+                helper.assertValueEqual(fired.water(), BoilerBlockEntity.WATER_CAPACITY - fired.steam(),
+                        "water left against steam made");
                 helper.succeed();
             });
         }
@@ -1493,6 +1525,7 @@ public final class NauvisPowerGameTests {
         public void run(GameTestHelper helper) {
             place(helper, BOILER, ModBlocks.BOILER.get());
             insert(helper.getBlockEntity(BOILER, BoilerBlockEntity.class).fuelAccess(), Items.COAL, 1);
+            keepWatered(helper, BOILER);
 
             // Across the line rather than along it. The engine sits where a working one would,
             // and is turned a quarter turn - so its two open ends now point east and west, at
@@ -1620,15 +1653,29 @@ public final class NauvisPowerGameTests {
             super(info);
         }
 
-        /** Facing, then the footprint it should occupy around the anchor, then where steam goes. */
+        /**
+         * Facing, then the footprint it should occupy around the anchor, then where steam goes,
+         * then the two blocks and faces water comes in at - the ends of the front row, which is
+         * the row furthest from the steam.
+         */
         private record Turned(Direction facing, int minX, int maxX, int minZ, int maxZ,
-                Direction port) {}
+                Direction port, BlockPos waterA, Direction waterASide, BlockPos waterB,
+                Direction waterBSide) {}
 
         private static final List<Turned> EXPECTED = List.of(
-                new Turned(Direction.NORTH, -1, 1, -1, 0, Direction.SOUTH),
-                new Turned(Direction.EAST, 0, 1, -1, 1, Direction.WEST),
-                new Turned(Direction.SOUTH, -1, 1, 0, 1, Direction.NORTH),
-                new Turned(Direction.WEST, -1, 0, -1, 1, Direction.EAST));
+                new Turned(Direction.NORTH, -1, 1, -1, 0, Direction.SOUTH,
+                        new BlockPos(-1, 0, -1), Direction.WEST, new BlockPos(1, 0, -1), Direction.EAST),
+                new Turned(Direction.EAST, 0, 1, -1, 1, Direction.WEST,
+                        new BlockPos(1, 0, -1), Direction.NORTH, new BlockPos(1, 0, 1), Direction.SOUTH),
+                new Turned(Direction.SOUTH, -1, 1, 0, 1, Direction.NORTH,
+                        new BlockPos(1, 0, 1), Direction.EAST, new BlockPos(-1, 0, 1), Direction.WEST),
+                new Turned(Direction.WEST, -1, 0, -1, 1, Direction.EAST,
+                        new BlockPos(-1, 0, 1), Direction.SOUTH, new BlockPos(-1, 0, -1), Direction.NORTH));
+
+        /** One port, as a string a list can be asked about. */
+        private static String port(BlockPos offset, Direction side) {
+            return offset.toShortString() + " " + side;
+        }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1648,9 +1695,7 @@ public final class NauvisPowerGameTests {
             int minZ = 99;
             int maxZ = -99;
             int blocks = 0;
-            BlockPos steamAt = null;
-            Direction steamSide = null;
-            int ports = 0;
+            List<String> ports = new ArrayList<>();
 
             for (int x = -3; x <= 3; x++) {
                 for (int y = 0; y <= 2; y++) {
@@ -1668,9 +1713,7 @@ public final class NauvisPowerGameTests {
                         for (Direction side : Direction.values()) {
                             if (helper.getLevel().getCapability(Capabilities.Fluid.BLOCK,
                                     helper.absolutePos(pos), side) != null) {
-                                ports++;
-                                steamAt = pos;
-                                steamSide = side;
+                                ports.add(port(new BlockPos(x, y, z), side));
                             }
                         }
                     }
@@ -1684,9 +1727,16 @@ public final class NauvisPowerGameTests {
             helper.assertValueEqual(minZ, expected.minZ(), turned + ": northern edge");
             helper.assertValueEqual(maxZ, expected.maxZ(), turned + ": southern edge");
 
-            helper.assertValueEqual(ports, 1, turned + " offers steam in more than one place");
-            helper.assertValueEqual(steamAt, BOILER, turned + ": which block steam leaves by");
-            helper.assertValueEqual(steamSide, expected.port(), turned + ": which face steam leaves by");
+            helper.assertValueEqual(ports.size(), 3,
+                    turned + " offers fluid at " + ports + ", not at exactly three places");
+            helper.assertTrue(ports.contains(port(BlockPos.ZERO, expected.port())),
+                    turned + ": steam leaves by " + ports + ", not the " + expected.port() + " face of the anchor");
+            helper.assertTrue(ports.contains(port(expected.waterA(), expected.waterASide())),
+                    turned + ": no water port at " + expected.waterA().toShortString() + " "
+                            + expected.waterASide() + ", only " + ports);
+            helper.assertTrue(ports.contains(port(expected.waterB(), expected.waterBSide())),
+                    turned + ": no water port at " + expected.waterB().toShortString() + " "
+                            + expected.waterBSide() + ", only " + ports);
         }
 
         /** The machine from the last facing, out of the way of the next one. */
@@ -2015,6 +2065,113 @@ public final class NauvisPowerGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("solar panel needs the sky");
+        }
+    }
+
+    /**
+     * No water, no steam - and no coal burnt waiting for it. Then water, and one steam for one water.
+     *
+     * <p>Factorio's boiler does nothing without water, and that is the rule that makes the
+     * offshore pump worth building out to. The coal is the detail worth asserting: a boiler that
+     * burnt fuel while dry would eat a chest of it waiting for a pipe, and one that kept asking for
+     * ticks while dry would cost a tick a second for every boiler in a base that has run out.
+     */
+    public static class BoilerNeedsWaterTest extends GameTestInstance {
+
+        public static final MapCodec<BoilerNeedsWaterTest> CODEC =
+                RecordCodecBuilder.<BoilerNeedsWaterTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(BoilerNeedsWaterTest::info))
+                                .apply(i, BoilerNeedsWaterTest::new));
+
+        public BoilerNeedsWaterTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, BOILER, ModBlocks.BOILER.get());
+            BoilerBlockEntity boiler = helper.getBlockEntity(BOILER, BoilerBlockEntity.class);
+            insert(boiler.fuelAccess(), Items.COAL, 1);
+
+            helper.startSequence()
+                    .thenExecuteAfter(20, () -> {
+                        helper.assertValueEqual(boiler.steam(), 0, "steam from a dry boiler");
+                        helper.assertValueEqual(boiler.burnTime(), 0, "a dry boiler lit its coal");
+                        helper.assertFalse(isScheduled(helper, BOILER, ModBlocks.BOILER.get()),
+                                "a dry boiler is still asking for ticks");
+                        water(boiler, BoilerBlockEntity.WATER_CAPACITY);
+                    })
+                    .thenExecuteAfter(20, () -> {
+                        helper.assertTrue(boiler.steam() > 0, "water arriving did not start the boiler");
+                        helper.assertTrue(boiler.burnTime() > 0, "it made steam without burning anything");
+                        helper.assertValueEqual(boiler.water(), BoilerBlockEntity.WATER_CAPACITY - boiler.steam(),
+                                "water left against steam made: Factorio's is one for one");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("boiler needs water");
+        }
+    }
+
+    /**
+     * Boilers pass water along a row: the second is fed through the first.
+     *
+     * <p>Factorio's boilers have a water connection at each end and a row of them is piped once,
+     * at one end. Here the second boiler draws from the first's tank through the face they share,
+     * the way an engine draws steam from the engine before it. Only the first is watered, so the
+     * second's steam can only have come through it.
+     */
+    public static class BoilersPassWaterAlongTest extends GameTestInstance {
+
+        public static final MapCodec<BoilersPassWaterAlongTest> CODEC =
+                RecordCodecBuilder.<BoilersPassWaterAlongTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(BoilersPassWaterAlongTest::info))
+                                .apply(i, BoilersPassWaterAlongTest::new));
+
+        private static final BlockPos FIRST = new BlockPos(0, 1, 0);
+
+        /** End to end with the first: three tiles along, so its west end touches the first's east end. */
+        private static final BlockPos SECOND = new BlockPos(3, 1, 0);
+
+        public BoilersPassWaterAlongTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, FIRST, ModBlocks.BOILER.get());
+            place(helper, SECOND, ModBlocks.BOILER.get());
+            BoilerBlockEntity first = helper.getBlockEntity(FIRST, BoilerBlockEntity.class);
+            BoilerBlockEntity second = helper.getBlockEntity(SECOND, BoilerBlockEntity.class);
+            insert(first.fuelAccess(), Items.COAL, 1);
+            insert(second.fuelAccess(), Items.COAL, 1);
+            keepWatered(helper, FIRST);
+
+            helper.runAfterDelay(60, () -> {
+                helper.assertTrue(second.water() > 0,
+                        "the second boiler in a row got no water through the first");
+                helper.assertTrue(second.steam() > 0,
+                        "the second boiler in a row made no steam, so a row is fed at one end only");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("boilers pass water along");
         }
     }
 }
