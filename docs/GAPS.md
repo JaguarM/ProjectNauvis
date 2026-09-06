@@ -44,9 +44,18 @@ Oil
   `max((1300 + d) / 2600, 1)`, and both are used as written. The density term on top — the spread
   between 90% and 200% at the edge of the starting area — is this pack's, chosen to match what a
   Factorio player finds there, because the real one lives in a noise program this pack has no copy
-  of. Fields per chunk is a rarity of 1200, which is Factorio's 1.8 per square kilometre; wells per
-  field, three to eight; spacing, a 4-block grid. All of that is placement behaviour, and none of it
-  is identity — the yield percentages and what a pumpjack does with them are.
+  of. **Fields are four times as common as Factorio's**: a rarity of 300 per chunk against the 1200
+  that would be its 1.8 per square kilometre, and none within 150 blocks of the origin rather than
+  Factorio's wider starting area. Factorio's oil is rare and easy to find because the map shows it;
+  here the only map is a pumpjack in hand outlining wells within render distance, so the density
+  does the map's job and puts the nearest field typically inside a hundred and fifty blocks. Wells
+  per field, three to eight; spacing, a 4-block grid. All of that is placement behaviour, and none
+  of it is identity — the yield percentages and what a pumpjack does with them are.
+- **A superflat world has no oil, and no trees or ores either.** The default "Classic Flat" preset
+  runs no biome features at all (`features: false`); only the "Overworld" flat preset does. Nothing
+  in a biome modifier can change that. `/oil field` puts a field where you stand, placed by the same
+  code worldgen uses, and `/oil well` puts one well under your feet. Gamemaster only, like
+  `/research`.
 - **Distance is measured from the world origin, not the world spawn.** Factorio measures from the
   starting position, which is its origin. Minecraft's spawn is near 0,0 and can move; a rule that
   read the spawn would make new chunks richer or poorer after `/setworldspawn`.

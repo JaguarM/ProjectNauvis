@@ -16,7 +16,7 @@ stay short and to be edited down as jobs finish. The durable material lives besi
 Where the pack stands
 ---------------------
 
-A hundred and thirty-nine gametests pass, `./gradlew build` is clean, and the client boots into a
+A hundred and forty gametests pass, `./gradlew build` is clean, and the client boots into a
 world. **Milestone 2 is closed**: the red tier is in whole — the fast belt and the fast splitter —
 a belt in hand replaces the one it is clicked on, and **belt lines climb**. Milestone 3 has its
 research half in, and five of its nine items — the steel line, green science and the medium pole,
@@ -175,6 +175,7 @@ is an int like every other machine's.
 | the list | sorted into three blocks and coloured by them — ready in yellow-brown, unreachable in red, researched in green at the bottom. The current research sits above the rest of the first block |
 | research progress | **kept per technology.** Switching away from one and back finds it where it was left, which is Factorio's rule and was not ours |
 | `/research` | grant, forget, start, stop, list, info, all, reset. Gamemaster only. **Grant and forget cascade** — grant brings the prerequisites, forget takes the dependants |
+| `/oil` | `field` puts an oil field where you stand, as worldgen would; `well` puts one well under your feet. Gamemaster only. The tool for a superflat world, which runs no features |
 | `nauvis_mining:burner_mining_drill` | 2×2, five blocks; mines the 2×2 it stands on. Digs down, not across — see below |
 | `nauvis_mining:electric_mining_drill` | 3×3, nine blocks, mining its own 3×3; a half-block deck you walk over |
 
@@ -362,11 +363,13 @@ forwards to it. `/research grant nauvis_research:solar_energy` puts the tree whe
 
 **Oil**, which is brand new and which nothing in this repo can see.
 
-- **find a field.** `/locate` cannot; fly out past two hundred blocks with a pumpjack in hand and
-  look for magenta outlines through the ground. Whether the x-ray reaches far enough to find a
-  field at Factorio's density — one per twelve hundred chunks, so the nearest is typically three or
-  four hundred blocks out — or whether that is a trek nobody will make without a map, is the whole
-  question. The chance is one line in `placed_feature/crude_oil_field.json`;
+- **find a field.** In a superflat world there is nothing to find: the default preset runs no
+  features, so `/oil field` where you stand. In a real world, walk out past a hundred and fifty
+  blocks with a pumpjack in hand and look for magenta outlines through the ground. Fields are four
+  times Factorio's density now — one per three hundred chunks, so the nearest is typically inside a
+  hundred and fifty blocks — because the x-ray is the only map. **Whether that is now easy enough,
+  or has gone too far the other way and oil is everywhere, is the question**; the chance is one
+  line in `placed_feature/crude_oil_field.json`;
 - **look at a field.** Three to eight black-topped blocks four apart on levelled pads, the grass and
   trees cleared over each. Whether the pads read as a field or as a scar is a judgement no test
   makes; `levelAround` in `CrudeOilFieldFeature` is the lever, and on flat ground it does nothing;

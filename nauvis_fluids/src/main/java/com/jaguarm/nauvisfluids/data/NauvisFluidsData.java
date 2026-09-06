@@ -118,6 +118,13 @@ public final class NauvisFluidsData {
             add("jade.nauvis_fluids.crude_oil.yield", "Yield: %s%%");
             add("jade.nauvis_fluids.crude_oil.floor", "At its floor - pumps at this rate for ever");
 
+            // /oil, the map editor's tool for a world that generated none. See OilCommand.
+            add("commands.nauvis_fluids.oil.field", "Placed an oil field of %s wells around %s, %s");
+            add("commands.nauvis_fluids.oil.field.none",
+                    "No well would fit here - a field wants solid ground, not water");
+            add("commands.nauvis_fluids.oil.well", "Placed an oil well at %s %s %s, yield %s%%");
+            add("commands.nauvis_fluids.oil.well.none", "No ground here to put a well in");
+
             // Factorio's pumpjack window: contents, yield, and the status line.
             add("jade.nauvis_fluids.pumpjack.stored", "Crude oil: %s / %s");
             add("jade.nauvis_fluids.pumpjack.pumping", "Pumping");

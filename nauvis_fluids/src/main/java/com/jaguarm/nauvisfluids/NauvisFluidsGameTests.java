@@ -48,6 +48,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.server.MinecraftServer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
@@ -109,6 +110,7 @@ public final class NauvisFluidsGameTests {
         TEST_TYPES.register("oil_field_is_pumpable", () -> OilFieldIsPumpableTest.CODEC);
         TEST_TYPES.register("pumpjack_reports_what_it_mines", () -> PumpjackReportsWhatItMinesTest.CODEC);
         TEST_TYPES.register("pumpjack_caps_a_cycle_at_its_tank", () -> PumpjackCapsACycleTest.CODEC);
+        TEST_TYPES.register("oil_command_places_a_field", () -> OilCommandPlacesAFieldTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -138,6 +140,7 @@ public final class NauvisFluidsGameTests {
         registerSpaced(event, environment, "pumpjack_reports_what_it_mines",
                 PumpjackReportsWhatItMinesTest::new, 100, PADDING);
         registerSpaced(event, environment, "pumpjack_caps_a_cycle_at_its_tank", PumpjackCapsACycleTest::new, 60, PADDING);
+        registerSpaced(event, environment, "oil_command_places_a_field", OilCommandPlacesAFieldTest::new, 40, WIDE_PADDING);
     }
 
     private interface TestFactory {
@@ -1094,6 +1097,65 @@ public final class NauvisFluidsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("pumpjack caps a cycle at its tank");
+        }
+    }
+
+    /**
+     * {@code /oil field} puts a field where the command is run, the way worldgen would have.
+     *
+     * <p>The tool for a superflat world, which runs no features and so has no oil, and for a
+     * playtest. It goes through the dispatcher from a source standing on the platform, so what is
+     * asserted is the command as typed: that it exists, that it needs no arguments, and that a
+     * field of wells is there afterwards on the ground the source stood on.
+     */
+    public static class OilCommandPlacesAFieldTest extends GameTestInstance {
+
+        public static final MapCodec<OilCommandPlacesAFieldTest> CODEC =
+                RecordCodecBuilder.<OilCommandPlacesAFieldTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OilCommandPlacesAFieldTest::info))
+                                .apply(i, OilCommandPlacesAFieldTest::new));
+
+        private static final int SIZE = 24;
+
+        public OilCommandPlacesAFieldTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            for (int x = 0; x < SIZE; x++) {
+                for (int z = 0; z < SIZE; z++) {
+                    helper.setBlock(new BlockPos(x, 1, z), Blocks.GRASS_BLOCK);
+                }
+            }
+            MinecraftServer server = helper.getLevel().getServer();
+            BlockPos standing = helper.absolutePos(new BlockPos(SIZE / 2, 2, SIZE / 2));
+            server.getCommands().performPrefixedCommand(
+                    server.createCommandSourceStack().withLevel(helper.getLevel())
+                            .withPosition(Vec3.atBottomCenterOf(standing)).withSuppressedOutput(),
+                    "oil field");
+
+            int found = 0;
+            for (int x = 0; x < SIZE; x++) {
+                for (int z = 0; z < SIZE; z++) {
+                    if (helper.getBlockState(new BlockPos(x, 1, z)).is(ModBlocks.CRUDE_OIL.get())) {
+                        found++;
+                    }
+                }
+            }
+            helper.assertTrue(found >= CrudeOilFieldFeature.MIN_WELLS,
+                    "/oil field left " + found + " wells in the ground, fewer than a field has");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("oil command places a field");
         }
     }
 }

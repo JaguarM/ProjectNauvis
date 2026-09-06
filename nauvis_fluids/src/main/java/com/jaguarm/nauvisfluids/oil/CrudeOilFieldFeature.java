@@ -25,9 +25,18 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
  * Puts an oil field into the world: a handful of wells, each on its own patch of level ground.
  *
  * <p>Factorio's oil comes as fields of several wells with a few tiles between them, never in the
- * starting area, at about 1.8 fields per square kilometre. The chance per chunk that makes that
- * density is in the placed feature JSON; the starting area is {@link #STARTING_AREA} here, because
- * it is a rule about where a field may begin rather than about how often one is rolled.
+ * starting area, at about 1.8 fields per square kilometre - and it is easy to find, because the
+ * map view shows every field as a magenta blot. This pack has no map, only a pumpjack in hand that
+ * outlines wells within render distance, so the density has to do the map's job: <b>about four
+ * times Factorio's</b>, one field per three hundred chunks, which puts the nearest one typically
+ * inside a hundred and fifty blocks of wherever you stand. The chance per chunk is in the placed
+ * feature JSON; the starting area is {@link #STARTING_AREA} here, because it is a rule about where
+ * a field may begin rather than about how often one is rolled. Placement is behaviour, not
+ * identity - see {@code GAPS.md}.
+ *
+ * <p><b>A superflat world runs none of this.</b> The default "Classic Flat" preset has
+ * {@code features: false} - no trees, no ores, no oil - and only the "Overworld" flat preset turns
+ * them on. {@code /oil field} is for that world, and for a playtest that does not want to walk.
  *
  * <h2>Wells are four blocks apart</h2>
  *
@@ -52,9 +61,11 @@ public class CrudeOilFieldFeature extends Feature<NoneFeatureConfiguration> {
     /**
      * No oil this close to the origin. Factorio's {@code has_starting_area_placement = false}
      * keeps oil out of the starting area, which is a few hundred tiles across on default
-     * settings; the world origin stands in for Factorio's starting position.
+     * settings; the world origin stands in for Factorio's starting position. A hundred and fifty
+     * rather than Factorio's radius, for the same reason the density is higher: there is no map,
+     * and the first field should be reachable on foot from the first furnace.
      */
-    public static final int STARTING_AREA = 200;
+    public static final int STARTING_AREA = 150;
 
     /** Wells per field. */
     public static final int MIN_WELLS = 3;
@@ -117,7 +128,7 @@ public class CrudeOilFieldFeature extends Feature<NoneFeatureConfiguration> {
      * The block a well at this column would replace: the highest solid ground, or null if the
      * column is water or has nothing to stand a machine on.
      */
-    static @Nullable BlockPos ground(WorldGenLevel level, int x, int z) {
+    public static @Nullable BlockPos ground(WorldGenLevel level, int x, int z) {
         // MOTION_BLOCKING rather than a worldgen-only heightmap, because this also runs on a live
         // level - a test builds ground and asks for a field on it - and a live chunk keeps this
         // one up to date where it would have to prime a _WG one on demand. It stops at the first
@@ -162,7 +173,7 @@ public class CrudeOilFieldFeature extends Feature<NoneFeatureConfiguration> {
      * it, up to {@link #HEADROOM}, anything is cleared - plants, leaves, a trunk, or the hillside
      * itself - so the machine's nine ground cells and its head have room.
      */
-    static void levelAround(WorldGenLevel level, BlockPos well) {
+    public static void levelAround(WorldGenLevel level, BlockPos well) {
         BlockState dirt = Blocks.DIRT.defaultBlockState();
         BlockState air = Blocks.AIR.defaultBlockState();
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();

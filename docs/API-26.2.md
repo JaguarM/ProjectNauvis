@@ -356,6 +356,12 @@ is a `MapCodec.unitCodec`, so `"config": {}` is the whole configuration.
   steps are `GenerationStep.Decoration`'s names; `top_layer_modification` runs after trees and
   grass, `underground_ores` before.
 
+**A superflat world runs no features unless its preset says so.** The default "Classic Flat"
+preset - and Bottomless Pit, Redstone Ready, Snowy Kingdom, Water World - has `features: false` in
+`data/minecraft/worldgen/flat_level_generator_preset/`, so no biome feature runs there, vanilla's or
+a biome modifier's: no trees, no ores, no oil. "Overworld", "Desert", "Tunnelers' Dream" and "The
+Void" have it on. A feature that must exist in a test world needs a command as well.
+
 `WorldGenLevel.getHeight(Heightmap.Types, x, z)` primes a missing heightmap on demand, so a `_WG`
 type works on a live `ServerLevel` too — with an `Unprimed heightmap` error logged in a dev run.
 `MOTION_BLOCKING` is kept live and available to worldgen, and stops at leaves and water, which is
