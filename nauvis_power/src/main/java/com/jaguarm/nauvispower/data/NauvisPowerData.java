@@ -12,7 +12,7 @@ import com.jaguarm.nauvispower.grid.BigPoleShape;
 import com.jaguarm.nauvispower.grid.MediumPoleShape;
 import com.jaguarm.nauvispower.grid.SmallPoleShape;
 import com.jaguarm.nauvispower.grid.SubstationShape;
-import com.jaguarm.nauvispower.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 import com.jaguarm.nauvispower.registry.ModItems;
 

@@ -52,6 +52,11 @@ repositories {
 }
 
 dependencies {
+    // The code every machine here is built on: multi-blocks, the views a machine publishes,
+    // the screen it is drawn on. The one compile-time dependency between the pack's own mods,
+    // and it points one way - the library depends on nothing of ours.
+    implementation project(':nauvis_lib')
+
     // compileOnly, never implementation: the @WailaPlugin class is only loaded when Jade is
     // there, so this mod still runs standalone without it. Every other subsystem mod already
     // carries this; the assembler joined them when its Jade plugin was written.

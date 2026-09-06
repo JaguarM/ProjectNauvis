@@ -190,7 +190,7 @@ Gametests
   `crafting_table` pack was on during `runGameTestServer`, and those packs ship a shapeless copy of
   each recipe *under the same id* — so of nineteen timed recipes, **sixteen were not timed recipes
   while the tests ran**. Nothing failed; what it cost was fidelity, and a real world was never
-  affected. **Fixed by not offering the pack at all**: every `ModPacks` returns early when
+  affected. **Fixed by not offering the pack at all**: `nauvis_lib`'s `BenchRecipePacks` returns early when
   `-Djaguarm.benchRecipePacks=false`, which each `gameTestServer` run sets and nothing else does.
   Off is no defence when the thing enabling it never asks whether it was off; the only state vanilla
   cannot override is *absent*. Separate ids for the bench copies was the other fix and would have
@@ -305,7 +305,7 @@ Screens and config
   position is what gets sent to the server for `appendServerData`. Verified against the bytecode
   rather than assumed: `WailaTickHandler` runs the callbacks and *then* calls
   `ObjectDataCenter.set`, so the redirected accessor is the one the server data is fetched for. See
-  any mod's `compat/jade/MultiblockRedirect`.
+  `nauvis_lib`'s `compat/jade/MultiblockRedirect`, registered once for every machine in every mod.
 - **A special item model names no model, and the checker said so for a year.**
   A `minecraft:special` item definition - a chest, a bed, a banner, a shield - puts its *renderer*
   under `"model"` as an object and the model carrying the display transforms under `"base"`, so

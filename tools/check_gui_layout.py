@@ -3,9 +3,10 @@
 The bug the first screenshot showed - a progress bar drawn through a column of slots, and two
 labels drawn through each other - is arithmetic, and arithmetic can be checked without eyes.
 
-Every screen in the pack is listed here. They share a shape: a 176x166 panel, the player's
-inventory in the usual place, a title at the top and a status line above it. What differs is the
-machine's own slots and bars, so that is all each entry has to describe.
+Every screen in the pack is listed here. They share a shape, nauvis_lib's MachineScreen: a
+176x166 panel, the player's inventory in the usual place, a title at the top and a status line
+somewhere on it. What differs is the machine's own slots and bars, so that is all each entry has
+to describe.
 """
 import re
 import sys
@@ -14,6 +15,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 FONT = 9  # Minecraft's line height
+
+# MachineScreen's panel, in nauvis_lib. Every machine screen is drawn on it.
+PANEL_WIDTH, PANEL_HEIGHT = 176, 166
 
 
 class Screen:
@@ -37,8 +41,8 @@ class Screen:
         return int(match.group(1))
 
     def boxes(self):
-        panel_w = self.constant(self.screen, 'PANEL_WIDTH')
-        panel_h = self.constant(self.screen, 'PANEL_HEIGHT')
+        # Every screen extends nauvis_lib's MachineScreen, and the panel is its size.
+        panel_w, panel_h = PANEL_WIDTH, PANEL_HEIGHT
         status_y = self.constant(self.screen, 'STATUS_Y')
 
         boxes = []

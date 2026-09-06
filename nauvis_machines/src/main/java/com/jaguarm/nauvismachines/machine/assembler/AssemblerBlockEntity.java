@@ -1,5 +1,8 @@
 package com.jaguarm.nauvismachines.machine.assembler;
 
+import com.jaguarm.nauvislib.transfer.PowerAccess;
+import com.jaguarm.nauvislib.transfer.MachinePower;
+import com.jaguarm.nauvislib.transfer.MachineAccess;
 import java.util.List;
 import java.util.Objects;
 
@@ -9,9 +12,6 @@ import com.jaguarm.facrafting.queue.CraftListeners;
 import com.jaguarm.facrafting.recipe.CraftPlanner;
 import com.jaguarm.facrafting.recipe.FacraftRecipe;
 import com.jaguarm.facrafting.registry.ModRecipes;
-import com.jaguarm.nauvismachines.machine.MachineAccess;
-import com.jaguarm.nauvismachines.machine.MachinePower;
-import com.jaguarm.nauvismachines.machine.PowerAccess;
 import com.jaguarm.nauvismachines.registry.ModBlockEntities;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;

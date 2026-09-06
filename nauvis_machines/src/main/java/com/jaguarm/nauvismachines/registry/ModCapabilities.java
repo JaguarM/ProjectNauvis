@@ -5,7 +5,7 @@ import java.util.function.Function;
 import com.jaguarm.nauvismachines.NauvisMachines;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlockEntity;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlockEntity;
-import com.jaguarm.nauvismachines.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 
 import org.jspecify.annotations.Nullable;
 

@@ -3,8 +3,8 @@ package com.jaguarm.nauvispower.generator;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jaguarm.nauvispower.multiblock.MachineCell;
-import com.jaguarm.nauvispower.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 /**
  * What a solar panel looks like and how much room it takes: three tiles by three, the size

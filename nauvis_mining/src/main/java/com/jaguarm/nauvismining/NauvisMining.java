@@ -1,5 +1,7 @@
 package com.jaguarm.nauvismining;
 
+import net.neoforged.neoforge.event.AddPackFindersEvent;
+import com.jaguarm.nauvislib.pack.BenchRecipePacks;
 import org.slf4j.Logger;
 
 import com.jaguarm.nauvismining.registry.ModBlockEntities;
@@ -28,7 +30,7 @@ public class NauvisMining {
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
         modEventBus.addListener(ModCapabilities::register);
-        modEventBus.addListener(ModPacks::addPackFinders);
+        modEventBus.addListener((AddPackFindersEvent event) -> BenchRecipePacks.add(event, MODID));
         NauvisMiningGameTests.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);

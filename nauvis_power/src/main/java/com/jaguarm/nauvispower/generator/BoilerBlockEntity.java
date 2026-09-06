@@ -1,5 +1,6 @@
 package com.jaguarm.nauvispower.generator;
 
+import com.jaguarm.nauvislib.transfer.MachineAccess;
 import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.nauvispower.registry.ModBlockEntities;
@@ -58,7 +59,7 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
 
     private final BoilerFuel fuel = new BoilerFuel(SLOT_COUNT, this::onFuelChanged,
             () -> level == null ? null : level.fuelValues());
-    private final ResourceHandler<ItemResource> fuelAccess = new FuelAccess(fuel);
+    private final ResourceHandler<ItemResource> fuelAccess = new MachineAccess(fuel, SLOT_COUNT);
 
     /** What an open screen reads. Ints only, which is all a boiler has to say. */
     private final ContainerData menuData = new ContainerData() {

@@ -1,5 +1,6 @@
 package com.jaguarm.nauvislogistics.transport;
 
+import com.jaguarm.nauvislib.transfer.MachineAccess;
 import com.jaguarm.nauvislogistics.registry.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;
@@ -67,8 +68,8 @@ public class BurnerInserterBlockEntity extends InserterBlockEntity implements Me
         }
     };
 
-    /** What a player or another inserter can put fuel into. Insert-only: see {@link FuelAccess}. */
-    private final ResourceHandler<ItemResource> fuelAccess = new FuelAccess(fuel);
+    /** What a player or another inserter can put fuel into. Insert-only: see {@link MachineAccess}. */
+    private final ResourceHandler<ItemResource> fuelAccess = new MachineAccess(fuel, SLOT_COUNT);
 
     /** Ticks of fuel left. Burns only while actually swinging, so an idle inserter wastes none. */
     private int burnTime;

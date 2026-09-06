@@ -3,7 +3,7 @@ package com.jaguarm.nauvislogistics.belt;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jaguarm.nauvislogistics.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvislogistics.registry.ModBlockEntities;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

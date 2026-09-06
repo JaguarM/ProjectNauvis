@@ -1,6 +1,6 @@
 package com.jaguarm.nauvismining.machine.miner;
 
-import com.jaguarm.nauvismining.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

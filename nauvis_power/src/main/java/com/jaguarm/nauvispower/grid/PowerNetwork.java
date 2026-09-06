@@ -1,5 +1,6 @@
 package com.jaguarm.nauvispower.grid;
 
+import com.jaguarm.nauvislib.transfer.GeneratorAccess;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;

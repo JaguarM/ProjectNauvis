@@ -34,9 +34,5 @@ public class NauvisFluidsJadePlugin implements IWailaPlugin {
         registration.registerBlockComponent(PipeReadout.Client.INSTANCE, PipeBlock.class);
         registration.registerBlockComponent(CrudeOilReadout.Client.INSTANCE, CrudeOilBlock.class);
         registration.registerBlockComponent(PumpjackReadout.Client.INSTANCE, PumpjackBlock.class);
-
-        // A pumpjack is ten blocks with one block entity, and without this its readout - and
-        // Jade's own energy bar - appear on the block under the pump and nowhere else.
-        registration.addRayTraceCallback(new MultiblockRedirect(registration));
     }
 }

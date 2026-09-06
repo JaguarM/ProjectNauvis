@@ -16,7 +16,7 @@ import com.jaguarm.nauvispower.grid.PowerNetwork;
 import com.jaguarm.nauvispower.grid.PowerNetworkManager;
 import com.jaguarm.nauvispower.grid.BigPoleShape;
 import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
-import com.jaguarm.nauvispower.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvispower.grid.ElectricPoleBlockEntity;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 import com.jaguarm.nauvispower.registry.ModItems;

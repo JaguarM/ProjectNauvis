@@ -1,0 +1,112 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '2.0.143'
+    id 'idea'
+}
+
+ext {
+    mod_id = 'nauvis_lib'
+    mod_name = 'Nauvis Library'
+}
+
+version = '0.1.0'
+group = 'com.jaguarm.nauvislib'
+
+base {
+    archivesName = mod_id
+}
+
+// Mojang ships Java 25 to end users, so mods target Java 25.
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+repositories {
+    // See docs/API-26.2.md: the NeoForged mirror intermittently serves zero-byte files with
+    // HTTP 200 for these groups. exclusiveContent makes Central the only source for them.
+    exclusiveContent {
+        forRepository { mavenCentral() }
+        filter {
+            includeGroup 'com.google.errorprone'
+            includeGroup 'com.fasterxml.jackson'
+            includeGroup 'org.apache.logging.log4j'
+        }
+    }
+
+    mavenCentral()
+
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+    }
+}
+
+dependencies {
+    // The library depends on nothing of ours, which is what lets every subsystem mod depend on
+    // it: the arrows still point one way and there is still no cycle. Jade is compileOnly, as
+    // it is everywhere in the pack - the one plugin class here is only loaded when Jade is.
+    compileOnly "maven.modrinth:jade:${jade_version}"
+}
+
+neoForge {
+    version = project.neo_version
+
+    // No run configurations: the library registers no blocks, no items and no tests, and is
+    // only ever run as part of a mod that does. Its code is exercised by every other mod's
+    // gametests, on the pack's classpath and on each mod's own.
+
+    runs {
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+// Expands the properties in src/main/templates into the mod metadata.
+var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : 'MIT',
+            mod_version            : version,
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from 'src/main/templates'
+    into "${layout.buildDirectory.get()}/generated/sources/modMetadata"
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}

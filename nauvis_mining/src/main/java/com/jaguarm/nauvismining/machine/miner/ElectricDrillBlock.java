@@ -1,7 +1,7 @@
 package com.jaguarm.nauvismining.machine.miner;
 
 import com.jaguarm.nauvismining.machine.MachineTier;
-import com.jaguarm.nauvismining.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.world.level.block.BaseEntityBlock;

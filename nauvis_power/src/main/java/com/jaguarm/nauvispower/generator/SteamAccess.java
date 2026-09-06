@@ -1,5 +1,6 @@
 package com.jaguarm.nauvispower.generator;
 
+import com.jaguarm.nauvislib.transfer.GeneratorAccess;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;

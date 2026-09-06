@@ -2,8 +2,8 @@ package com.jaguarm.nauvispower.grid;
 
 import java.util.List;
 
-import com.jaguarm.nauvispower.multiblock.MachineCell;
-import com.jaguarm.nauvispower.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 /**
  * One tile, five blocks tall: the small pole's post with one more shaft in it.

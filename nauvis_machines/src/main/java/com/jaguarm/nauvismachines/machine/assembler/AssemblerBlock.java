@@ -1,7 +1,7 @@
 package com.jaguarm.nauvismachines.machine.assembler;
 
-import com.jaguarm.nauvismachines.multiblock.MachineShape;
-import com.jaguarm.nauvismachines.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.mojang.serialization.MapCodec;
 
 import org.jspecify.annotations.Nullable;

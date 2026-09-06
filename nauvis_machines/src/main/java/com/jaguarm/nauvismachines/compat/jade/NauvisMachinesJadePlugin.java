@@ -19,7 +19,7 @@ import snownee.jade.api.WailaPlugin;
  * The furnace adds the one line they cannot know - what it is smelting, or why it has stopped -
  * and the assembler adds nothing yet. What both need is the redirect: sending Jade to the block
  * entity when a player points at any of the other blocks the machine is made of. See
- * {@link MultiblockRedirect}, which is where that is explained.
+ * {@code MultiblockRedirect} in nauvis_lib, which is where that is explained.
  */
 @WailaPlugin
 public class NauvisMachinesJadePlugin implements IWailaPlugin {
@@ -32,6 +32,5 @@ public class NauvisMachinesJadePlugin implements IWailaPlugin {
     @Override
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(FurnaceReadout.Client.INSTANCE, FurnaceBlock.class);
-        registration.addRayTraceCallback(new MultiblockRedirect(registration));
     }
 }

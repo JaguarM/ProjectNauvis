@@ -4,7 +4,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
-import com.jaguarm.nauvisfluids.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackBlock;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackBlockEntity;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;

@@ -1,7 +1,7 @@
 package com.jaguarm.nauvisfluids.pumpjack;
 
-import com.jaguarm.nauvisfluids.multiblock.MachineShape;
-import com.jaguarm.nauvisfluids.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlock;
 import com.mojang.serialization.MapCodec;
 

@@ -13,9 +13,9 @@ import com.google.gson.JsonObject;
 import com.jaguarm.nauvismining.NauvisMining;
 import com.jaguarm.nauvismining.machine.MachineTier;
 import com.jaguarm.nauvismining.machine.miner.MinerBlock;
-import com.jaguarm.nauvismining.multiblock.Boxes;
-import com.jaguarm.nauvismining.multiblock.MachineCell;
-import com.jaguarm.nauvismining.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Boxes;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvismining.registry.ModBlocks;
 import com.jaguarm.nauvismining.registry.ModItems;
 

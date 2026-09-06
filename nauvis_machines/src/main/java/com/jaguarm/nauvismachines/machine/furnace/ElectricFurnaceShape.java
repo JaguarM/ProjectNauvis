@@ -3,9 +3,9 @@ package com.jaguarm.nauvismachines.machine.furnace;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jaguarm.nauvismachines.multiblock.MachineCell;
-import com.jaguarm.nauvismachines.multiblock.MachineParts;
-import com.jaguarm.nauvismachines.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineParts;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 /**
  * What an electric furnace looks like: three tiles by three, the size Factorio made it, with a

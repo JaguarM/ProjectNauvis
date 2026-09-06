@@ -1,6 +1,6 @@
 package com.jaguarm.nauvispower.grid;
 
-import com.jaguarm.nauvispower.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.world.level.block.BaseEntityBlock;

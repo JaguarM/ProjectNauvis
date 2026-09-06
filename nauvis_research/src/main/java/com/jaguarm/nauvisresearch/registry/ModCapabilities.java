@@ -1,10 +1,11 @@
 package com.jaguarm.nauvisresearch.registry;
 
+import com.jaguarm.nauvislib.transfer.MachineAccess;
 import java.util.function.Function;
 
 import com.jaguarm.nauvisresearch.lab.LabBlock;
 import com.jaguarm.nauvisresearch.lab.LabBlockEntity;
-import com.jaguarm.nauvisresearch.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvisresearch.NauvisResearch;
 
 import org.jspecify.annotations.Nullable;
@@ -19,7 +20,7 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 /**
  * What automation sees when it looks at a lab, from any of the ten blocks it is made of.
  *
- * <p>Science packs go in and nothing comes back out - see {@code LabAccess}. Without that a hopper
+ * <p>Science packs go in and nothing comes back out - see {@code MachineAccess}. Without that a hopper
  * under a lab would pull the packs straight back out of it.
  *
  * <p>Registered against the <em>block</em> rather than the block entity, because a lab is ten

@@ -10,9 +10,9 @@ import com.jaguarm.nauvislogistics.belt.BeltBlock;
 import com.jaguarm.nauvislogistics.belt.BeltShape;
 import com.jaguarm.nauvislogistics.belt.Belts;
 import com.jaguarm.nauvislogistics.belt.SplitterShape;
-import com.jaguarm.nauvislogistics.multiblock.Boxes;
-import com.jaguarm.nauvislogistics.multiblock.MachineCell;
-import com.jaguarm.nauvislogistics.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Boxes;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
 
 import net.minecraft.client.data.models.BlockModelGenerators;

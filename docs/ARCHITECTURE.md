@@ -57,11 +57,11 @@ collision — but for something meant to be walked across, the two agreeing is t
 The multiblock mechanism
 ------------------------
 
-`multiblock/` — `MachineCell`, `MachineShape`, `MachineParts`, `Boxes`, `Multiblock` — is copied
-into every subsystem mod that has machines, and `tools/check_duplicated.py` holds the
-copies byte-identical (`--sync` pushes the original out; the copies are never edited). It is
-one mechanism for every machine *and every pole*. Read `MachineShape` and `Multiblock` and you
-have it.
+`nauvis_lib/.../multiblock/` — `MachineCell`, `MachineShape`, `MachineParts`, `Boxes`,
+`Multiblock` — is one mechanism for every machine *and every pole*, in the library every
+subsystem mod depends on. It was copied into each mod and held identical by a checker until the
+copies outnumbered the reasons; the library is the one copy now. Read `MachineShape` and
+`Multiblock` and you have it.
 
 - one block id, one item, an `IntegerProperty part` on every block, the anchor found by arithmetic
   rather than a lookup — no block entity on the other cells. A big electric pole is twenty-four
@@ -149,8 +149,8 @@ Every machine schedules its own block tick while it has something to do and stop
 does not. Four ways a machine learns it has work again, and one usually needs more than one:
 
 - its own inventory changed (`onContentsChanged`);
-- **electricity or steam arrived** — `MachinePower`, `InserterPower` and `SteamTank` exist only to
-  carry that callback. A machine that ran dry has stopped scheduling ticks, so nothing it does can
+- **electricity or steam arrived** — `nauvis_lib`'s `MachinePower` and the power mod's `SteamTank`
+  exist only to carry that callback. A machine that ran dry has stopped scheduling ticks, so nothing it does can
   restart it; the wake must come from whatever filled the buffer;
 - a *neighbour's* block entity changed (`onNeighborChange`, which every `setChanged()` reaches on
   all six sides). Filter on the `neighbor` position before looking anything up;
@@ -215,16 +215,16 @@ fit rolls back. `commit = false` turns the same method into the simulation, so "
 cannot drift apart.
 
 **One interface.** Facrafting owns the crafting UI and its panel attaches to any container screen;
-machine screens grow out of it rather than sit beside it. Palettes are duplicated per mod rather
-than shared, because a shared base in Facrafting would make these mods require it and kill the
-`*_standalone` recipes that exist for its absence. **The look is the dark panel with vanilla's
-pixels on it**: Yannic likes the dark painted panel and wants the parts a Minecraft player has
+machine screens grow out of it rather than sit beside it. Every machine screen extends
+`nauvis_lib`'s `MachineScreen`, which is where the panel, the slots and the meters are drawn once;
+a screen of its own keeps only its positions and its status line. **The look is the dark panel
+with vanilla's pixels on it**: Yannic likes the dark painted panel and wants the parts a Minecraft player has
 looked at for years to stay vanilla's, so a slot is vanilla's slot sprite, and a fire, an arrow
 and a bolt are sprites of the pack's own in vanilla's pixel idiom - fourteen-pixel meters drawn
 the way vanilla draws its flame, the sprite tinted dark and then lit from the bottom as far as it
 is full. Vanilla's own flame and arrow could not be used: they are opaque, with the panel's grey
-baked in around the shape. `texture-workshop/make_gui_textures.py` writes each sprite into every
-mod that draws it.
+baked in around the shape. `texture-workshop/make_gui_textures.py` writes the sprites into
+`nauvis_lib`.
 
 Facrafting learns rules, not facts
 ----------------------------------

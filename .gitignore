@@ -12,6 +12,11 @@ run/
 build/
 */build/
 
+# IDE output. VS Code's Java tooling compiles into bin/ beside Gradle's build/, and a copy of
+# every resource in there is not a source of anything.
+bin/
+*/bin/
+
 # Python bytecode from tools/
 __pycache__/
 *.pyc

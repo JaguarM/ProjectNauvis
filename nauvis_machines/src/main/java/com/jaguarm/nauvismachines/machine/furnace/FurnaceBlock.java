@@ -1,6 +1,6 @@
 package com.jaguarm.nauvismachines.machine.furnace;
 
-import com.jaguarm.nauvismachines.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 
 import org.jspecify.annotations.Nullable;
 

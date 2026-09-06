@@ -1,5 +1,7 @@
 package com.jaguarm.nauvisfluids;
 
+import net.neoforged.neoforge.event.AddPackFindersEvent;
+import com.jaguarm.nauvislib.pack.BenchRecipePacks;
 import com.jaguarm.nauvisfluids.compat.facrafting.FacraftingProgress;
 import com.jaguarm.nauvisfluids.registry.ModBlockEntities;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
@@ -39,7 +41,7 @@ public class NauvisFluids {
         ModItems.ITEMS.register(modEventBus);
         ModItems.TABS.register(modEventBus);
         ModFeatures.FEATURES.register(modEventBus);
-        modEventBus.addListener(ModPacks::addPackFinders);
+        modEventBus.addListener((AddPackFindersEvent event) -> BenchRecipePacks.add(event, MODID));
         NauvisFluidsGameTests.register(modEventBus);
 
         // Behind a branch, so the class naming Facrafting's types is never loaded without it.

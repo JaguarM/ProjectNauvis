@@ -12,7 +12,7 @@ import com.jaguarm.nauvispower.generator.SolarPanelBlockEntity;
 import com.jaguarm.nauvispower.generator.SteamEngineBlock;
 import com.jaguarm.nauvispower.generator.SteamEngineBlockEntity;
 import com.jaguarm.nauvispower.generator.SteamEngineShape;
-import com.jaguarm.nauvispower.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 
 import org.jspecify.annotations.Nullable;
 

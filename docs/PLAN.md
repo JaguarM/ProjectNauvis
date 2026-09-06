@@ -100,13 +100,14 @@ The mods
 --------
 
 Three already exist in their own repos; Crumbling Ore is released and its ids are permanent.
-Eleven are built here.
+Eleven are built here, on a library that is a twelfth.
 
 | Mod id | Owns | Items |
 |---|---|---|
 | `facrafting` | the timed crafting model | — |
 | `neoprogressivematerials` | intermediate products | 18 |
 | `crumblingore` | ore depletion | — |
+| `nauvis_lib` | the framework: multi-blocks, transfer views, the machine screen, bench packs | — |
 | `nauvis` | pack policy, vanilla replacement, raw resources, terrain | 16 |
 | `nauvis_logistics` | belts, inserters, splitters, chests, robots | 28 |
 | `nauvis_machines` | assemblers, furnaces, modules, beacon, radar | 18 |

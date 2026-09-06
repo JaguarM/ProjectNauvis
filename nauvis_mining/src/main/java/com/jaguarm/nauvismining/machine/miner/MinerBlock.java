@@ -11,8 +11,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import com.jaguarm.nauvismining.multiblock.MachineShape;
-import com.jaguarm.nauvismining.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;

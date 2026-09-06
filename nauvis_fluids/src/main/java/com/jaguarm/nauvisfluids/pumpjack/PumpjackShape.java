@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.jaguarm.nauvisfluids.multiblock.MachineCell;
-import com.jaguarm.nauvisfluids.multiblock.MachineParts;
-import com.jaguarm.nauvisfluids.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineParts;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 import net.minecraft.core.Direction;
 

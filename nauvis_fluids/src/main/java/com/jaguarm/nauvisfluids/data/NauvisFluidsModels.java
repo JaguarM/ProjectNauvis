@@ -7,9 +7,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
-import com.jaguarm.nauvisfluids.multiblock.Boxes;
-import com.jaguarm.nauvisfluids.multiblock.MachineCell;
-import com.jaguarm.nauvisfluids.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Boxes;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
 

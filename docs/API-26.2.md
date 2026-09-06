@@ -88,7 +88,7 @@ Inventories: `ResourceHandler`, and the class that already implements it
   **default methods that walk every index and call the index-addressed overloads**. A wrapper
   that restricts insertion or extraction per slot therefore only has to override the six
   index-addressed methods; the rest inherits the rule. See
-  `nauvis_machines/.../machine/MachineAccess.java`.
+  `nauvis_lib/.../transfer/MachineAccess.java`.
 - `getCapacityAsLong` must return **0** for anything `isValid` rejects. Hoppers use it to
   decide whether to keep trying.
 
@@ -141,8 +141,8 @@ which is the one with no obvious hook.
 **`SimpleEnergyHandler.onEnergyChanged(int previousAmount)` is that hook.** It is called
 immediately for `set()` and at the end of the transaction for `insert`/`extract`, which is exactly
 what a machine that stopped for want of power needs: it is scheduled for nothing, so the wake has
-to arrive from whatever filled the buffer. `MachinePower` and `InserterPower` are both three-line
-subclasses that exist only to carry that callback.
+to arrive from whatever filled the buffer. `nauvis_lib`'s `MachinePower` is a three-line
+subclass that exists only to carry that callback.
 
 Hearing that a *neighbour's* inventory changed
 ----------------------------------------------

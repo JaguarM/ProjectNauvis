@@ -34,6 +34,14 @@ and it goes straight back to sleep when the chest runs dry.
     ordering="NONE"
     side="BOTH"
 
+# The pack's library: multi-block machines, the views a machine publishes, the screens.
+[[dependencies.${mod_id}]]
+    modId="nauvis_lib"
+    type="required"
+    versionRange="[0.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
 # Optional, unlike nauvis_machines' hard dependency on the same mod. An inserter is not a
 # machine that runs recipes - it moves items - so without Facrafting the timed recipes drop
 # out and the plain bench recipes take over, and the inserters themselves work unchanged.

@@ -1,5 +1,7 @@
 package com.jaguarm.nauvislogistics.transport;
 
+import com.jaguarm.nauvislib.transfer.PowerAccess;
+import com.jaguarm.nauvislib.transfer.MachinePower;
 import com.jaguarm.nauvislogistics.registry.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;
@@ -37,7 +39,7 @@ public class ElectricInserterBlockEntity extends InserterBlockEntity {
     public static final int ENERGY_CAPACITY = ElectricInserterBlock.ENERGY_PER_TICK * 200;
 
     /** Unrestricted, because the inserter spends from it. What the grid sees is {@link #gridView}. */
-    private final InserterPower energy = new InserterPower(ENERGY_CAPACITY, this::onSupplyChanged);
+    private final MachinePower energy = new MachinePower(ENERGY_CAPACITY, this::onSupplyChanged);
 
     private final EnergyHandler gridView = new PowerAccess(energy);
 

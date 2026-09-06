@@ -1,53 +1,26 @@
 package com.jaguarm.nauvisresearch.lab;
 
-import com.jaguarm.nauvisresearch.NauvisResearch;
+import com.jaguarm.nauvislib.client.MachineScreen;
 import com.jaguarm.nauvisresearch.client.ResearchScreen;
 import com.jaguarm.nauvisresearch.research.ClientResearch;
 import com.jaguarm.nauvisresearch.research.ModTechnologies;
 import com.jaguarm.nauvisresearch.research.Technology;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.Slot;
 
 /**
  * The lab's screen: what it is working through, how far into a cycle it is, and how much research
  * it has done.
- *
- * <p>The same dark panel as the boiler's, the assembler's and Facrafting's panel, so the interface
- * reads as one thing rather than four, with vanilla's slot sprite in it and electricity drawn as a
- * bolt the way vanilla's furnace draws its flame. That mix is the one Yannic asked for.
- *
- * <p>The palette and the drawing are copied from {@code BoilerScreen} rather than shared, for the
- * reason that file gives: a shared screen base could only live in Facrafting, and that would make
- * this mod require it.
  */
-public class LabScreen extends AbstractContainerScreen<LabMenu> {
+public class LabScreen extends MachineScreen<LabMenu> {
 
-    private static final int PANEL_WIDTH = 176;
-    private static final int PANEL_HEIGHT = 166;
-
-    private static final int COLOR_FRAME = 0xFF000000;
-    private static final int COLOR_BACKGROUND = 0xF0141414;
-    private static final int COLOR_TEXT = 0xFFFFFFFF;
-    private static final int COLOR_MUTED = 0xFF909090;
-    private static final int COLOR_TRACK = 0xFF2A2A2A;
-    /** What a meter's sprite is tinted while it is empty: a silhouette on the panel. */
-    private static final int COLOR_UNLIT = 0xFF3B3B3B;
     /** Research. The one colour on the panel that is not a machine colour. */
     private static final int COLOR_PROGRESS = 0xFF6FC3DF;
-
-    private static final Identifier SLOT_SPRITE = Identifier.withDefaultNamespace("container/slot");
-    private static final Identifier BOLT_SPRITE = Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "charge_bolt");
-    private static final int METER = 14;
 
     /** The cycle bar, filling left to right under the pack slots. */
     private static final int PROGRESS_X = 26;
@@ -88,40 +61,15 @@ public class LabScreen extends AbstractContainerScreen<LabMenu> {
     private static final int RESEARCH_WIDTH = 30;
     private static final int RESEARCH_HEIGHT = 14;
 
-    private static final int COLOR_BUTTON = 0xFF3B3B3B;
-    private static final int COLOR_BUTTON_HOVER = 0xFF6A6A6A;
-
     public LabScreen(LabMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title, PANEL_WIDTH, PANEL_HEIGHT);
+        super(menu, inventory, title);
     }
 
     @Override
-    protected void init() {
-        super.init();
-        titleLabelX = (imageWidth - font.width(title)) / 2;
-    }
-
-    @Override
-    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-            float partialTick) {
-        super.extractBackground(graphics, mouseX, mouseY, partialTick);
-
-        int x = leftPos;
-        int y = topPos;
-
-        graphics.fill(x - 1, y - 1, x + imageWidth + 1, y + imageHeight + 1, COLOR_FRAME);
-        graphics.fill(x, y, x + imageWidth, y + imageHeight, COLOR_BACKGROUND);
-
-        // Vanilla's slot sprite, at every slot the menu has, so the screen cannot disagree with
-        // the menu about where they are. The sprite is the well and its edge in one.
-        for (Slot slot : menu.slots) {
-            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SLOT_SPRITE,
-                    x + slot.x - 1, y + slot.y - 1, METER + 4, METER + 4);
-        }
-
+    protected void paint(GuiGraphicsExtractor graphics, int x, int y, int mouseX, int mouseY) {
         bar(graphics, x + PROGRESS_X, y + PROGRESS_Y, PROGRESS_WIDTH, PROGRESS_HEIGHT,
                 menu.progress(), COLOR_PROGRESS);
-        meter(graphics, BOLT_SPRITE, x + CHARGE_X, y + CHARGE_Y, menu.charge());
+        meter(graphics, BOLT, x + CHARGE_X, y + CHARGE_Y, menu.charge());
 
         boolean hovered = within(mouseX, mouseY, x + RESEARCH_X, y + RESEARCH_Y,
                 RESEARCH_WIDTH, RESEARCH_HEIGHT);
@@ -140,48 +88,19 @@ public class LabScreen extends AbstractContainerScreen<LabMenu> {
         return super.mouseClicked(event, doubleClick);
     }
 
-    private static boolean within(double mouseX, double mouseY, int x, int y, int width, int height) {
-        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
-    }
-
-    private static void bar(GuiGraphicsExtractor graphics, int left, int top, int width, int height,
-            float filled, int colour) {
-        graphics.fill(left, top, left + width, top + height, COLOR_TRACK);
-        int amount = Math.round(width * filled);
-        if (amount > 0) {
-            graphics.fill(left, top, left + amount, top + height, colour);
-        }
-    }
-
-    /**
-     * A fourteen-pixel meter drawn the way vanilla's furnace draws its flame: the whole sprite
-     * tinted dark as the empty meter, then the bright sprite over it from the bottom up, as far
-     * as it is full.
-     */
-    private static void meter(GuiGraphicsExtractor graphics, Identifier sprite, int left, int top, float fill) {
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, left, top, METER, METER, COLOR_UNLIT);
-        if (fill <= 0.0f) {
-            return;
-        }
-        int lit = Mth.ceil(fill * (METER - 1)) + 1;
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, METER, METER, 0, METER - lit,
-                left, top + METER - lit, METER, lit);
-    }
-
     @Override
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        graphics.text(font, title, titleLabelX, titleLabelY, COLOR_TEXT, false);
-
-        // Vanilla's own "Inventory" label sits on a light panel; on this one it would vanish.
-        graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, COLOR_MUTED,
-                false);
-
-        graphics.text(font, statusLine(), 8, STATUS_Y, COLOR_MUTED, false);
+        super.extractLabels(graphics, mouseX, mouseY);
 
         Component open = Component.translatable("screen.nauvis_research.lab.open_research");
         graphics.text(font, open,
                 RESEARCH_X + (RESEARCH_WIDTH - font.width(open)) / 2, RESEARCH_Y + 2,
                 COLOR_TEXT, false);
+    }
+
+    @Override
+    protected int statusY() {
+        return STATUS_Y;
     }
 
     /**
@@ -197,7 +116,8 @@ public class LabScreen extends AbstractContainerScreen<LabMenu> {
      * it is a fact about the world, the client already has it, and a copy in the menu would be a
      * second answer that could disagree.
      */
-    private Component statusLine() {
+    @Override
+    protected Component statusLine() {
         if (!menu.hasPower()) {
             return Component.translatable("screen.nauvis_research.lab.no_power");
         }

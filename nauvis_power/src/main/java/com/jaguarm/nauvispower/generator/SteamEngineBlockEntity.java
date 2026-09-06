@@ -1,8 +1,9 @@
 package com.jaguarm.nauvispower.generator;
 
+import com.jaguarm.nauvislib.transfer.GeneratorAccess;
 import org.jspecify.annotations.Nullable;
 
-import com.jaguarm.nauvispower.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvispower.registry.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;

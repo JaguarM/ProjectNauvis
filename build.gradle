@@ -144,8 +144,7 @@ tasks.register('checkRemovals') {
  * Every visual bug this pack has shipped compiled, passed its tests and passed datagen. What
  * caught them was a person looking at the game, which is not a process. These look at what was
  * actually written rather than at what was asked for, which is where the difference lives - an
- * unresolvable model reference, a screen drawn through itself, or two copies of a package that
- * are meant to be identical and quietly are not.
+ * unresolvable model reference, or a screen drawn through itself.
  *
  * All of them read files and start nothing, so they cost a second and can run on any tree.
  */
@@ -153,10 +152,6 @@ tasks.register('checkRemovals') {
                    'Checks that every gametest has its type registered as well as its instance.',
                    'A gametest is registered to run and its codec is not, so the test passes and ' +
                    'a client cannot serialise it. See tools/check_gametests.py.'],
- 'checkDuplicated': ['tools/check_duplicated.py',
-                    'Diffs the packages that are deliberately copied between mods.',
-                    'Two copies of a package that must be identical have drifted. Fix the ' +
-                    'original and run: python tools/check_duplicated.py --sync'],
  'checkModels': ['tools/check_models.py',
                  'Follows every blockstate, model, parent and texture reference to a real file.',
                  'A model, texture or blockstate the pack names does not exist. Nothing about ' +

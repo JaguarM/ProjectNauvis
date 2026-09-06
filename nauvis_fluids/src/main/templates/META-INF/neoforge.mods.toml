@@ -30,6 +30,14 @@ shortcut this pack does not take.
     ordering="NONE"
     side="BOTH"
 
+# The pack's library: multi-block machines, the views a machine publishes, the screens.
+[[dependencies.${mod_id}]]
+    modId="nauvis_lib"
+    type="required"
+    versionRange="[0.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
 # Optional: without Facrafting the timed recipe drops out and the bench recipe takes over.
 [[dependencies.${mod_id}]]
     modId="facrafting"

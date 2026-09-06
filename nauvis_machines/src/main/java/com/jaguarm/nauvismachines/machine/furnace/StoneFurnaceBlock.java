@@ -1,6 +1,6 @@
 package com.jaguarm.nauvismachines.machine.furnace;
 
-import com.jaguarm.nauvismachines.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.world.level.block.BaseEntityBlock;

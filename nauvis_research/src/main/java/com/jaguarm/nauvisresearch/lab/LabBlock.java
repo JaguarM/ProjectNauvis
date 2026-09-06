@@ -1,7 +1,7 @@
 package com.jaguarm.nauvisresearch.lab;
 
-import com.jaguarm.nauvisresearch.multiblock.MachineShape;
-import com.jaguarm.nauvisresearch.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.mojang.serialization.MapCodec;
 
 import org.jspecify.annotations.Nullable;

@@ -8,7 +8,7 @@ import com.jaguarm.nauvismachines.NauvisMachines;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
 import com.jaguarm.nauvismachines.machine.furnace.ElectricFurnaceShape;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceShape;
-import com.jaguarm.nauvismachines.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
 import com.jaguarm.nauvismachines.registry.ModItems;
 

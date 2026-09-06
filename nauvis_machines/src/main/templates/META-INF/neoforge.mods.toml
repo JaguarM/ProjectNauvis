@@ -38,6 +38,14 @@ furnace runs the four recipes no hand can.
     ordering="NONE"
     side="BOTH"
 
+# The pack's library: multi-block machines, the views a machine publishes, the screens.
+[[dependencies.${mod_id}]]
+    modId="nauvis_lib"
+    type="required"
+    versionRange="[0.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
 # Required, not optional, and the one hard dependency in the pack. An assembler runs timed
 # Facrafting recipes; without Facrafting there is no recipe type for it to run and the machine
 # would be a decorative block. The sibling mods keep this optional because they ship items,

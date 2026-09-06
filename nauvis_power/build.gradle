@@ -52,6 +52,11 @@ repositories {
 }
 
 dependencies {
+    // The code every machine here is built on: multi-blocks, the views a machine publishes,
+    // the screen it is drawn on. The one compile-time dependency between the pack's own mods,
+    // and it points one way - the library depends on nothing of ours.
+    implementation project(':nauvis_lib')
+
     // No compile-time dependency, deliberately. An inserter moves items between whatever is
     // beside it through Capabilities.Item.BLOCK, which is NeoForge's - it never needs to know
     // what a Facrafting recipe is. nauvis_machines is the one mod in the pack that compiles

@@ -3,9 +3,9 @@ package com.jaguarm.nauvismining.machine.miner;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jaguarm.nauvismining.multiblock.MachineCell;
-import com.jaguarm.nauvismining.multiblock.MachineParts;
-import com.jaguarm.nauvismining.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineParts;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 /**
  * Two tiles by two, the size Factorio made the burner mining drill.

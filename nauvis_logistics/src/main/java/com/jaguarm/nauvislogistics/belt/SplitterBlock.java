@@ -1,7 +1,7 @@
 package com.jaguarm.nauvislogistics.belt;
 
-import com.jaguarm.nauvislogistics.multiblock.MachineShape;
-import com.jaguarm.nauvislogistics.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 
 import org.jspecify.annotations.Nullable;
 

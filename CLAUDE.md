@@ -47,9 +47,15 @@ crafting interface, and a subsystem mod may depend on it at compile time: a mach
 Facrafting's panel rather than a second one beside it. Declare it `required` in
 `neoforge.mods.toml` when you do — a mod that cannot work without another must say so.
 
+**`nauvis_lib` is the other exception, and the framework.** It is the code every machine is
+built on — the multi-block mechanism, the views a machine publishes to inserters and poles, the
+screen a machine is drawn on, the bench-recipe datapack — and it depends on nothing of ours, so
+every subsystem mod may depend on it at compile time and declare it `required`. It registers no
+blocks, items or recipes and never will; a thing a player can hold does not belong in it.
+
 Everything else stays coupled by data. No subsystem mod depends on another subsystem mod, and
-the pack mod depends on nothing at compile time; if two subsystems need the same code, either it
-belongs in Facrafting or it gets duplicated. No cycles, ever.
+the pack mod depends on nothing at compile time; if two subsystems need the same code, it belongs
+in Facrafting when it is about crafting and in `nauvis_lib` when it is not. No cycles, ever.
 
 **4. Verify every 26.x API against decompiled sources.**
 Minecraft 26.2 is past the model's training cutoff and renamed a great deal. Guessing has

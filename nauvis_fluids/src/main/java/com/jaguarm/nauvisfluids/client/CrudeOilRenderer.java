@@ -1,7 +1,7 @@
 package com.jaguarm.nauvisfluids.client;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
-import com.jaguarm.nauvisfluids.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackBlock;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;

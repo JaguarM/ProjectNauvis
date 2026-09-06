@@ -39,6 +39,11 @@ includeBuild('../CrumblingOre') {
     }
 }
 
+// The code every machine is built on - multi-blocks, transfer views, the machine screen, the
+// bench-recipe datapack. It depends on nothing of ours and every subsystem mod depends on
+// it, which is the one compile-time arrow between the pack's own mods.
+include 'nauvis_lib'
+
 // Pack policy, vanilla replacement, raw resources, terrain. The other nine subsystem mods
 // join this list as their milestones come up.
 include 'nauvis'

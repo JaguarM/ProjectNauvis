@@ -1,5 +1,8 @@
 package com.jaguarm.nauvisresearch.lab;
 
+import com.jaguarm.nauvislib.transfer.PowerAccess;
+import com.jaguarm.nauvislib.transfer.MachinePower;
+import com.jaguarm.nauvislib.transfer.MachineAccess;
 import java.util.List;
 
 import com.jaguarm.nauvisresearch.registry.ModBlockEntities;
@@ -56,7 +59,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  *
  * <p>No ticker. A lab with no packs, or no power, schedules nothing and costs nothing - see
  * non-negotiable #5. Three things can give it work again, and it needs all three: a pack arriving
- * in its slots, energy arriving in its buffer (which is what {@link LabPower}'s callback is for,
+ * in its slots, energy arriving in its buffer (which is what {@link MachinePower}'s callback is for,
  * because a lab that ran dry has stopped scheduling and cannot notice anything itself), and a
  * neighbour changing, which covers a pole being connected.
  *
@@ -107,10 +110,10 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
     private final LabInventory packs = new LabInventory(SLOT_COUNT, this::onPacksChanged);
 
     /** Packs in, never out. A hopper under a lab must not drain what it was fed. */
-    private final ResourceHandler<ItemResource> automationView = new LabAccess(packs);
+    private final ResourceHandler<ItemResource> automationView = new MachineAccess(packs, SLOT_COUNT);
 
-    private final LabPower energy = new LabPower(ENERGY_CAPACITY, this::wake);
-    private final EnergyHandler gridView = new LabPowerAccess(energy);
+    private final MachinePower energy = new MachinePower(ENERGY_CAPACITY, this::wake);
+    private final EnergyHandler gridView = new PowerAccess(energy);
 
     private int progress;
     private int cycles;
@@ -215,7 +218,7 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
 
         if (energy.getAmountAsInt() < ENERGY_PER_TICK) {
             // Out of power, holding the cycle where it stands rather than losing it. Nothing here
-            // can restart it - see LabPower, which is what hears the grid come back.
+            // can restart it - see MachinePower, which is what hears the grid come back.
             return;
         }
 
@@ -333,7 +336,7 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
     /**
      * Schedules a tick if one is not already coming.
      *
-     * <p>Called from three places, and the one that matters is {@link LabPower}: a lab that
+     * <p>Called from three places, and the one that matters is {@link MachinePower}: a lab that
      * stopped for want of power is not ticking, so nothing it does can restart it. The wake has to
      * come from whatever filled the buffer.
      */

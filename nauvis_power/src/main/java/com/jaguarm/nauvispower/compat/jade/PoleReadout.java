@@ -4,7 +4,7 @@ import com.jaguarm.nauvispower.NauvisPower;
 import com.jaguarm.nauvispower.grid.PowerNetwork;
 import com.jaguarm.nauvispower.grid.PowerNetworkManager;
 import com.jaguarm.nauvispower.grid.ElectricPoleBlock;
-import com.jaguarm.nauvispower.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;

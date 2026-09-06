@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.jspecify.annotations.Nullable;
 
-import com.jaguarm.nauvislogistics.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvislogistics.net.BeltItemAddedPayload;
 import com.jaguarm.nauvislogistics.net.BeltItemRemovedPayload;
 

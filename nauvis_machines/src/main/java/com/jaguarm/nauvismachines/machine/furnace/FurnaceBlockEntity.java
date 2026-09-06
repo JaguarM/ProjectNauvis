@@ -1,5 +1,8 @@
 package com.jaguarm.nauvismachines.machine.furnace;
 
+import com.jaguarm.nauvislib.transfer.PowerAccess;
+import com.jaguarm.nauvislib.transfer.MachinePower;
+import com.jaguarm.nauvislib.transfer.MachineAccess;
 import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
@@ -8,9 +11,6 @@ import com.jaguarm.facrafting.queue.CraftListeners;
 import com.jaguarm.facrafting.recipe.FacraftRecipe;
 import com.jaguarm.facrafting.recipe.RecipeLocks;
 import com.jaguarm.facrafting.registry.ModRecipes;
-import com.jaguarm.nauvismachines.machine.MachineAccess;
-import com.jaguarm.nauvismachines.machine.MachinePower;
-import com.jaguarm.nauvismachines.machine.PowerAccess;
 import com.jaguarm.nauvismachines.registry.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;

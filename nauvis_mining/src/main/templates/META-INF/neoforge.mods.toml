@@ -37,6 +37,14 @@ modules when nauvis_machines ships them.
     ordering="NONE"
     side="BOTH"
 
+# The pack's library: multi-block machines, the views a machine publishes, the screens.
+[[dependencies.${mod_id}]]
+    modId="nauvis_lib"
+    type="required"
+    versionRange="[0.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
 # Optional on purpose. With both present the drills cost gears, circuits and seconds; with
 # either one missing, the conditioned standalone recipes put the original ones back.
 [[dependencies.${mod_id}]]

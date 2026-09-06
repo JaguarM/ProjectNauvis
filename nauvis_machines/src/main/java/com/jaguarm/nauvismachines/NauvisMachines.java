@@ -1,5 +1,7 @@
 package com.jaguarm.nauvismachines;
 
+import net.neoforged.neoforge.event.AddPackFindersEvent;
+import com.jaguarm.nauvislib.pack.BenchRecipePacks;
 import com.jaguarm.facrafting.machine.MachineCategories;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlockEntity;
 import com.jaguarm.nauvismachines.registry.ModBlockEntities;
@@ -34,7 +36,7 @@ public class NauvisMachines {
         ModItems.TABS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
-        modEventBus.addListener(ModPacks::addPackFinders);
+        modEventBus.addListener((AddPackFindersEvent event) -> BenchRecipePacks.add(event, MODID));
         NauvisMachinesGameTests.register(modEventBus);
         NauvisMachinesFurnaceGameTests.register(modEventBus);
 

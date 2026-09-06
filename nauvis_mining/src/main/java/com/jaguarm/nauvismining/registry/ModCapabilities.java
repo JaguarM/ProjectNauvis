@@ -2,7 +2,7 @@ package com.jaguarm.nauvismining.registry;
 
 import com.jaguarm.nauvismining.machine.miner.MinerBlock;
 import com.jaguarm.nauvismining.machine.miner.MinerBlockEntity;
-import com.jaguarm.nauvismining.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 
 import org.jspecify.annotations.Nullable;
 

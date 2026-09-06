@@ -2,7 +2,7 @@ package com.jaguarm.nauvismining.machine.miner;
 
 import com.jaguarm.nauvismining.Config;
 import com.jaguarm.nauvismining.NauvisMining;
-import com.jaguarm.nauvismining.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.Minecraft;

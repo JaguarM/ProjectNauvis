@@ -42,22 +42,20 @@ repositories {
     }
 
     mavenCentral()
-
-    // Jade, for the look-at readout. See docs/PLAN.md - it is the one mod in the ecosystem
-    // actually on 26.2, and its plugin classes only load when it is present.
-    maven {
-        name = 'Modrinth'
-        url = 'https://api.modrinth.com/maven'
-    }
 }
 
 dependencies {
+    // The code every machine here is built on: multi-blocks, the views a machine publishes,
+    // the screen it is drawn on. The one compile-time dependency between the pack's own mods,
+    // and it points one way - the library depends on nothing of ours.
+    implementation project(':nauvis_lib')
+
     // Facrafting is compileOnly as well as runtimeOnly, and it is the only mod here that is.
     // The reason is compat/facrafting/FacraftingLock: gating recipes behind research means
     // naming a Facrafting type, because the hook is Facrafting's. It stays *optional* in
-    // neoforge.mods.toml - the class is only loaded behind a ModList check, exactly like the
-    // Jade plugins below, so this mod still runs standalone and its bench recipes still exist
-    // for that case.
+    // neoforge.mods.toml - the class is only loaded behind a ModList check, the way a Jade
+    // plugin is, so this mod still runs standalone and its bench recipes still exist for that
+    // case.
     //
     // Everything else is runtime only. A lab consumes science packs through
     // Capabilities.Item.BLOCK and takes power through Capabilities.Energy.BLOCK, both
@@ -66,11 +64,6 @@ dependencies {
     compileOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
-
-    // compileOnly, never implementation: the @WailaPlugin class is only loaded when Jade is
-    // there, so this mod still runs standalone without it and nothing has to be declared
-    // required in neoforge.mods.toml.
-    compileOnly "maven.modrinth:jade:${jade_version}"
 }
 
 neoForge {

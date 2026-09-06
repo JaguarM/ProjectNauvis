@@ -23,9 +23,9 @@ filled pixel with nothing to its right or below is the dark edge, one with nothi
 its left is the highlight, and the rest is the body - which is how vanilla shades its own small
 sprites. The flame names its colours, because a flame is a gradient and not a bevel.
 
-Every PNG is written into every mod that draws it. A subsystem mod may not depend on another and
-a sprite is not code, so a sprite cannot live in one place; generating each copy from one map is
-what keeps them from drifting, the same argument that keeps the belt tiers on one map.
+Every PNG is written into `nauvis_lib`, the library every machine screen is drawn from, and the
+sprite ids are `nauvis_lib:<name>`. They were once copied into each mod that drew them; the
+library is the one copy now.
 """
 
 import os
@@ -37,10 +37,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, os.pardir)
 
 
-def sprites_dir(mod):
-    """Where a GUI sprite lives in a mod. The gui atlas takes `textures/gui/sprites/<name>.png`
-    from any namespace, so the sprite id is `<mod>:<name>`."""
-    return os.path.join(ROOT, mod, "src", "main", "resources", "assets", mod, "textures", "gui", "sprites")
+# Where a GUI sprite lives. The gui atlas takes `textures/gui/sprites/<name>.png` from any
+# namespace, so the sprite id is `nauvis_lib:<name>`.
+OUT = os.path.join(ROOT, "nauvis_lib", "src", "main", "resources", "assets", "nauvis_lib",
+                   "textures", "gui", "sprites")
 
 
 AIR = (0, 0, 0, 0)
@@ -155,28 +155,24 @@ def render_palette(rows, palette):
     return img
 
 
-# name -> (image, the mods whose screens draw it)
 SPRITES = {
-    "charge_bolt": (render_shaded(parse(BOLT), BOLT_TONES), ["nauvis_machines", "nauvis_research"]),
-    "meter_flame": (render_palette(parse(FLAME), FLAME_PALETTE),
-                    ["nauvis_machines", "nauvis_power", "nauvis_logistics"]),
-    "meter_arrow": (render_shaded(parse(ARROW), ARROW_TONES), ["nauvis_machines"]),
+    "charge_bolt": render_shaded(parse(BOLT), BOLT_TONES),
+    "meter_flame": render_palette(parse(FLAME), FLAME_PALETTE),
+    "meter_arrow": render_shaded(parse(ARROW), ARROW_TONES),
 }
 
 
 def main():
-    for name, (img, mods) in SPRITES.items():
-        for mod in mods:
-            directory = sprites_dir(mod)
-            os.makedirs(directory, exist_ok=True)
-            path = os.path.join(directory, name + ".png")
-            img.save(path)
-            print("wrote", os.path.relpath(path, ROOT))
+    os.makedirs(OUT, exist_ok=True)
+    for name, img in SPRITES.items():
+        path = os.path.join(OUT, name + ".png")
+        img.save(path)
+        print("wrote", os.path.relpath(path, ROOT))
 
     if "--preview" in sys.argv:
         scale = 8
         pad = 8
-        images = [img for img, _ in SPRITES.values()]
+        images = list(SPRITES.values())
         width = sum(img.width * scale for img in images) + pad * (len(images) + 1)
         height = max(img.height * scale for img in images) + 2 * pad
         sheet = Image.new("RGBA", (width, height), (20, 20, 20, 255))

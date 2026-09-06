@@ -1,5 +1,7 @@
 package com.jaguarm.nauvisresearch;
 
+import net.neoforged.neoforge.event.AddPackFindersEvent;
+import com.jaguarm.nauvislib.pack.BenchRecipePacks;
 import com.jaguarm.nauvisresearch.compat.facrafting.FacraftingLock;
 import com.jaguarm.nauvisresearch.research.ModTechnologies;
 import com.jaguarm.nauvisresearch.registry.ModBlockEntities;
@@ -39,7 +41,7 @@ public class NauvisResearch {
         ModItems.TABS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
-        modEventBus.addListener(ModPacks::addPackFinders);
+        modEventBus.addListener((AddPackFindersEvent event) -> BenchRecipePacks.add(event, MODID));
         modEventBus.addListener(ModTechnologies::register);
         NauvisResearchGameTests.register(modEventBus);
 

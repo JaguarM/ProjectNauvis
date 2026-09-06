@@ -1,0 +1,32 @@
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="JaguarM"
+displayURL="https://github.com/JaguarM/ProjectNauvis"
+issueTrackerURL="https://github.com/JaguarM/ProjectNauvis/issues"
+
+description='''
+The code every Project Nauvis machine is built on, and nothing a player ever sees.
+
+Multi-block machines on a shared shell, the views a machine publishes to inserters and poles,
+the screens the machines are drawn on, and the bench-recipe datapack each mod ships. It adds
+no blocks, no items and no recipes; it exists so that the pack's mods can share these without
+depending on each other.
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"

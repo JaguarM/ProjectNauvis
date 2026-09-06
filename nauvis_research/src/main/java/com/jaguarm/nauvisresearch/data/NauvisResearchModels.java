@@ -8,9 +8,9 @@ import com.google.gson.JsonObject;
 
 import com.jaguarm.nauvisresearch.NauvisResearch;
 import com.jaguarm.nauvisresearch.lab.LabShape;
-import com.jaguarm.nauvisresearch.multiblock.Boxes;
-import com.jaguarm.nauvisresearch.multiblock.MachineCell;
-import com.jaguarm.nauvisresearch.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Boxes;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvisresearch.registry.ModBlocks;
 import com.jaguarm.nauvisresearch.registry.ModItems;
 

@@ -11,9 +11,9 @@ import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
 import com.jaguarm.nauvismachines.machine.furnace.ElectricFurnaceShape;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlock;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceShape;
-import com.jaguarm.nauvismachines.multiblock.Boxes;
-import com.jaguarm.nauvismachines.multiblock.MachineCell;
-import com.jaguarm.nauvismachines.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Boxes;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
 
 import net.minecraft.client.data.models.BlockModelGenerators;

@@ -1,5 +1,7 @@
 package com.jaguarm.nauvisfluids.pumpjack;
 
+import com.jaguarm.nauvislib.transfer.PowerAccess;
+import com.jaguarm.nauvislib.transfer.MachinePower;
 import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
@@ -46,7 +48,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  *
  * <p>No ticker. The machine schedules its own tick while it has a well, power and room, and stops
  * scheduling the moment it lacks any of the three. Each of those comes back from outside:
- * electricity arriving reports through {@link PumpjackPower}, room appearing reports through
+ * electricity arriving reports through {@link MachinePower}, room appearing reports through
  * {@link OutputAccess} when a pipe draws, and the well is a neighbour, so
  * {@code neighborChanged} covers it. {@code pumpjack_sleeps} is the test that fails if any of
  * the three wakes stops working.
@@ -81,7 +83,7 @@ public class PumpjackBlockEntity extends BlockEntity {
     public static final long UNIT_DIVISOR = CrudeOilBlockEntity.NORMAL / UNITS_PER_CYCLE_AT_NORMAL;
 
     /** Unrestricted, because the machine spends from it. What the grid sees is {@link #gridView}. */
-    private final PumpjackPower energy = new PumpjackPower(ENERGY_CAPACITY, this::onPowerChanged);
+    private final MachinePower energy = new MachinePower(ENERGY_CAPACITY, this::onPowerChanged);
 
     /** Insert only: a machine is not a battery, and a grid must not be able to drain one. */
     private final EnergyHandler gridView = new PowerAccess(energy);
@@ -147,7 +149,7 @@ public class PumpjackBlockEntity extends BlockEntity {
         if (progress < CYCLE_TICKS) {
             if (energy.getAmountAsInt() < ENERGY_PER_TICK) {
                 // Out of power, holding the cycle where it stands. Nothing here can wake it - the
-                // grid can, and PumpjackPower is what tells us it has.
+                // grid can, and MachinePower is what tells us it has.
                 settle(PumpjackStatus.NO_POWER);
                 return;
             }

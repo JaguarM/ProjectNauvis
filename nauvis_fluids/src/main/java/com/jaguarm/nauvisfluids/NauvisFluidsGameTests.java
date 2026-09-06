@@ -5,8 +5,8 @@ import java.util.List;
 
 import org.jspecify.annotations.Nullable;
 
-import com.jaguarm.nauvisfluids.multiblock.MachineShape;
-import com.jaguarm.nauvisfluids.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
 import com.jaguarm.nauvisfluids.oil.CrudeOilField;
 import com.jaguarm.nauvisfluids.oil.CrudeOilFieldFeature;

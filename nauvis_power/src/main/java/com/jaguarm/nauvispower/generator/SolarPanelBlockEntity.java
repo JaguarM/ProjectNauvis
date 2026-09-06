@@ -1,5 +1,6 @@
 package com.jaguarm.nauvispower.generator;
 
+import com.jaguarm.nauvislib.transfer.GeneratorAccess;
 import com.jaguarm.nauvispower.registry.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;

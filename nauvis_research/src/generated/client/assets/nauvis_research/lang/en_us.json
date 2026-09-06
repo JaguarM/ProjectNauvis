@@ -33,7 +33,6 @@
   "commands.nauvis_research.research.state.locked": "locked",
   "commands.nauvis_research.research.stopped": "Stopped researching",
   "commands.nauvis_research.research.unknown": "No technology called %s",
-  "config.jade.plugin_nauvis_research": "Project Nauvis: Research",
   "hud.nauvis_research.no_research": "Press %s to start a new research.",
   "item.nauvis_research.science_pack_1": "Automation science pack",
   "item.nauvis_research.science_pack_2": "Logistic science pack",

@@ -15,7 +15,7 @@ import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
  * block entity, which is the one that can ask the recipe manager; an electric furnace hands in a
  * fuel rule that refuses everything, and its fuel slot is simply a slot nothing can go in. The
  * output slot takes anything, because the machine writes to it; automation is kept out of it by
- * {@link com.jaguarm.nauvismachines.machine.MachineAccess}.
+ * {@link com.jaguarm.nauvislib.transfer.MachineAccess}.
  *
  * <p>{@code ResourceHandlerSlot} reads {@link #isValid} for {@code mayPlace} and the handler
  * reports zero capacity for what it rejects, so one override closes the screen, the hopper and

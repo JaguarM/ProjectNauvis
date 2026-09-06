@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 
 import com.jaguarm.nauvislogistics.NauvisLogistics;
 import com.jaguarm.nauvislogistics.belt.SplitterShape;
-import com.jaguarm.nauvislogistics.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
 import com.jaguarm.nauvislogistics.registry.ModItems;
 

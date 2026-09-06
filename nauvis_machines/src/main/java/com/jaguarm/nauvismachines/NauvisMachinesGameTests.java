@@ -1,5 +1,6 @@
 package com.jaguarm.nauvismachines;
 
+import com.jaguarm.nauvislib.transfer.MachinePower;
 import java.util.List;
 
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlock;
@@ -7,8 +8,8 @@ import com.jaguarm.nauvismachines.machine.assembler.AssemblingMachine2Block;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlockEntity;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerMenu;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
-import com.jaguarm.nauvismachines.multiblock.MachineShape;
-import com.jaguarm.nauvismachines.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
 import com.jaguarm.nauvismachines.registry.ModItems;
 import com.mojang.serialization.MapCodec;
@@ -324,7 +325,7 @@ public final class NauvisMachinesGameTests {
      *
      * <p>The asymmetry is the point. A hopper under an assembler must take the product and not
      * drain the ingredients it was just fed, and that rule lives in
-     * {@link com.jaguarm.nauvismachines.machine.MachineAccess} rather than in the inventory.
+     * {@link com.jaguarm.nauvislib.transfer.MachineAccess} rather than in the inventory.
      */
     public static class AssemblerHoldsItemsTest extends GameTestInstance {
 

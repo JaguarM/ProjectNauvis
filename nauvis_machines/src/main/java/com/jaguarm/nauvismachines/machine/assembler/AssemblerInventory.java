@@ -8,7 +8,7 @@ import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
  * results after them.
  *
  * <p>Deliberately unrestricted — any slot will take anything. Restricting is
- * {@link com.jaguarm.nauvismachines.machine.MachineAccess}'s job, on the view published to
+ * {@link com.jaguarm.nauvislib.transfer.MachineAccess}'s job, on the view published to
  * automation; the machine itself has to be able to spend from its inputs and write to its
  * output. Filtering inputs by the selected recipe, the way Factorio does, belongs with the
  * per-ingredient buffers that replace this whole class later.

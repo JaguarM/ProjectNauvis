@@ -1,12 +1,13 @@
 package com.jaguarm.nauvisresearch;
 
+import com.jaguarm.nauvislib.transfer.MachinePower;
 import java.util.List;
 import java.util.Set;
 
 import com.jaguarm.nauvisresearch.lab.LabBlock;
 import com.jaguarm.nauvisresearch.lab.LabBlockEntity;
 import com.jaguarm.nauvisresearch.lab.LabShape;
-import com.jaguarm.nauvisresearch.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvisresearch.registry.ModBlocks;
 import com.jaguarm.nauvisresearch.registry.ModItems;
 import com.jaguarm.nauvisresearch.research.ModTechnologies;
@@ -452,7 +453,7 @@ public final class NauvisResearchGameTests {
      *
      * <p>Non-negotiable #5, and the half that is easy to get wrong: a lab that stopped for want of
      * power is not ticking, so it cannot notice the grid coming back by itself. The wake comes
-     * from {@code LabPower}, on whatever thread of control filled the buffer. Delete that callback
+     * from {@code MachinePower}, on whatever thread of control filled the buffer. Delete that callback
      * and this is the test that goes red.
      */
     public static class LabSleepsTest extends GameTestInstance {
@@ -484,7 +485,7 @@ public final class NauvisResearchGameTests {
 
                     charge(lab);
                     helper.assertTrue(isScheduled(helper),
-                            "power arriving did not wake the lab - see LabPower");
+                            "power arriving did not wake the lab - see MachinePower");
                     helper.succeed();
                 });
             });

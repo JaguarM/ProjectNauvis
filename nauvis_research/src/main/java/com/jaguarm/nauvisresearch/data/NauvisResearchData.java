@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 
 import com.jaguarm.nauvisresearch.NauvisResearch;
 import com.jaguarm.nauvisresearch.lab.LabShape;
-import com.jaguarm.nauvisresearch.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvisresearch.registry.ModBlocks;
 import com.jaguarm.nauvisresearch.registry.ModItems;
 
@@ -209,11 +209,6 @@ public final class NauvisResearchData {
                     "Everything this world has researched");
             add("advancements.nauvis_research.researched", "Research complete");
             add("key.categories.nauvis_research.nauvis", "Project Nauvis");
-            // Jade. The plugin key is not optional decoration: Jade's settings screen asserts on
-            // a plugin with no name, and it does it from ScreenEvent.Init - so a missing key is a
-            // crash the moment any screen opens, not a blank line in a menu. This mod registers no
-            // readout of its own, only the multiblock redirect, and the key is cheap either way.
-            add("config.jade.plugin_nauvis_research", "Project Nauvis: Research");
         }
     }
 

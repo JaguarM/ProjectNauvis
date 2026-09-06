@@ -1,5 +1,7 @@
 package com.jaguarm.nauvislogistics;
 
+import net.neoforged.neoforge.event.AddPackFindersEvent;
+import com.jaguarm.nauvislib.pack.BenchRecipePacks;
 import com.jaguarm.nauvislogistics.registry.ModBlockEntities;
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
 import com.jaguarm.nauvislogistics.registry.ModItems;
@@ -30,7 +32,7 @@ public class NauvisLogistics {
         ModItems.TABS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
-        modEventBus.addListener(ModPacks::addPackFinders);
+        modEventBus.addListener((AddPackFindersEvent event) -> BenchRecipePacks.add(event, MODID));
         NauvisLogisticsGameTests.register(modEventBus);
         NauvisLogisticsBeltGameTests.register(modEventBus);
     }

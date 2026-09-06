@@ -1,6 +1,6 @@
 package com.jaguarm.nauvispower.grid;
 
-import com.jaguarm.nauvispower.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.IdentityHashMap;

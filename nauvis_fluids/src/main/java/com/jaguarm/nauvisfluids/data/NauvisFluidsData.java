@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
-import com.jaguarm.nauvisfluids.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
 import com.jaguarm.nauvisfluids.registry.ModItems;

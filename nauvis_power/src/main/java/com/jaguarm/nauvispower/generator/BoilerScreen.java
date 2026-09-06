@@ -1,51 +1,18 @@
 package com.jaguarm.nauvispower.generator;
 
-import com.jaguarm.nauvispower.NauvisPower;
+import com.jaguarm.nauvislib.client.MachineScreen;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.Slot;
 
 /**
  * The boiler's screen: what it is burning, how much is left of it, and how much steam is banked.
- *
- * <p>The same dark panel as the assembler's and Facrafting's panel, so the interface reads as one
- * thing rather than three, with vanilla's own slot sprite on it and a flame in vanilla's pixel
- * idiom, drawn the way vanilla's furnace draws its flame. That mix is the one Yannic asked for:
- * the dark look, and the pixels a Minecraft player has looked at for years where there is a slot
- * or a fire. The flame is the pack's own sprite, because vanilla's carries the panel's grey behind
- * it and is a box on a dark panel.
- *
- * <p>The palette and the drawing are copied from {@code AssemblerScreen} rather than shared.
- * Facrafting is the only place shared code may live, and putting a screen base there would make
- * {@code nauvis_power} require it at compile time - which would make {@code boiler_standalone},
- * the recipe that exists precisely for Facrafting being absent, impossible to reach. Sixty
- * duplicated lines is the cheaper of the two wrong answers; see {@code FuelAccess}, duplicated for
- * the same reason.
  */
-public class BoilerScreen extends AbstractContainerScreen<BoilerMenu> {
+public class BoilerScreen extends MachineScreen<BoilerMenu> {
 
-    private static final int PANEL_WIDTH = 176;
-    private static final int PANEL_HEIGHT = 166;
-
-    private static final int COLOR_FRAME = 0xFF000000;
-    private static final int COLOR_BACKGROUND = 0xF0141414;
-    private static final int COLOR_TEXT = 0xFFFFFFFF;
-    private static final int COLOR_MUTED = 0xFF909090;
-    private static final int COLOR_TRACK = 0xFF2A2A2A;
-    /** What a meter's sprite is tinted while it is empty: a silhouette on the panel. */
-    private static final int COLOR_UNLIT = 0xFF3B3B3B;
     /** Steam. Pale rather than white, or it reads as an empty bar that is somehow full. */
     private static final int COLOR_STEAM = 0xFFB8D8E8;
-
-    private static final Identifier SLOT_SPRITE = Identifier.withDefaultNamespace("container/slot");
-    private static final Identifier FLAME_SPRITE = Identifier.fromNamespaceAndPath(NauvisPower.MODID, "meter_flame");
-    private static final int METER = 14;
 
     /**
      * The flame, directly above the fuel slot, burning down as a furnace's does.
@@ -68,71 +35,18 @@ public class BoilerScreen extends AbstractContainerScreen<BoilerMenu> {
     private static final int STATUS_Y = 58;
 
     public BoilerScreen(BoilerMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title, PANEL_WIDTH, PANEL_HEIGHT);
+        super(menu, inventory, title);
     }
 
     @Override
-    protected void init() {
-        super.init();
-        titleLabelX = (imageWidth - font.width(title)) / 2;
+    protected void paint(GuiGraphicsExtractor graphics, int x, int y, int mouseX, int mouseY) {
+        meter(graphics, FLAME, x + FLAME_X, y + FLAME_Y, menu.isBurning() ? menu.burnProgress() : 0.0f);
+        bar(graphics, x + STEAM_X, y + STEAM_Y, STEAM_WIDTH, STEAM_HEIGHT, menu.steam(), COLOR_STEAM);
     }
 
     @Override
-    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        super.extractBackground(graphics, mouseX, mouseY, partialTick);
-
-        int x = leftPos;
-        int y = topPos;
-
-        graphics.fill(x - 1, y - 1, x + imageWidth + 1, y + imageHeight + 1, COLOR_FRAME);
-        graphics.fill(x, y, x + imageWidth, y + imageHeight, COLOR_BACKGROUND);
-
-        // Vanilla's slot sprite, at every slot the menu has, so the screen cannot disagree with
-        // the menu about where they are. The sprite is the well and its edge in one.
-        for (Slot slot : menu.slots) {
-            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SLOT_SPRITE,
-                    x + slot.x - 1, y + slot.y - 1, METER + 4, METER + 4);
-        }
-
-        meter(graphics, FLAME_SPRITE, x + FLAME_X, y + FLAME_Y, menu.isBurning() ? menu.burnProgress() : 0.0f);
-        drawSteam(graphics, x, y);
-    }
-
-    /**
-     * A fourteen-pixel meter drawn the way vanilla's furnace draws its flame: the whole sprite
-     * tinted dark as the empty meter, then the bright sprite over it from the bottom up, as far
-     * as it is full. A lit flame is never less than a pixel, which is vanilla's rule too.
-     */
-    private static void meter(GuiGraphicsExtractor graphics, Identifier sprite, int left, int top, float fill) {
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, left, top, METER, METER, COLOR_UNLIT);
-        if (fill <= 0.0f) {
-            return;
-        }
-        int lit = Mth.ceil(fill * (METER - 1)) + 1;
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, METER, METER, 0, METER - lit,
-                left, top + METER - lit, METER, lit);
-    }
-
-    private void drawSteam(GuiGraphicsExtractor graphics, int originX, int originY) {
-        int left = originX + STEAM_X;
-        int top = originY + STEAM_Y;
-
-        graphics.fill(left, top, left + STEAM_WIDTH, top + STEAM_HEIGHT, COLOR_TRACK);
-
-        int width = Math.round(STEAM_WIDTH * menu.steam());
-        if (width > 0) {
-            graphics.fill(left, top, left + width, top + STEAM_HEIGHT, COLOR_STEAM);
-        }
-    }
-
-    @Override
-    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        graphics.text(font, title, titleLabelX, titleLabelY, COLOR_TEXT, false);
-
-        // Vanilla's own "Inventory" label sits on a light panel; on this one it would vanish.
-        graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, COLOR_MUTED, false);
-
-        graphics.text(font, statusLine(), 8, STATUS_Y, COLOR_MUTED, false);
+    protected int statusY() {
+        return STATUS_Y;
     }
 
     /**
@@ -141,7 +55,8 @@ public class BoilerScreen extends AbstractContainerScreen<BoilerMenu> {
      * <p>Full and out of fuel look identical otherwise, and they want completely different things
      * done about them: one needs coal, the other needs somebody to draw the steam off.
      */
-    private Component statusLine() {
+    @Override
+    protected Component statusLine() {
         if (menu.isBurning()) {
             return Component.translatable("screen.nauvis_power.boiler.burning");
         }

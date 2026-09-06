@@ -15,7 +15,7 @@ import com.jaguarm.nauvislogistics.belt.SplitterBlock;
 import com.jaguarm.nauvislogistics.belt.SplitterBlockEntity;
 import com.jaguarm.nauvislogistics.belt.SplitterShape;
 import com.jaguarm.nauvislogistics.belt.TransportBeltBlock;
-import com.jaguarm.nauvislogistics.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvislogistics.registry.ModBlocks;
 import com.jaguarm.nauvislogistics.registry.ModItems;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlockEntity;

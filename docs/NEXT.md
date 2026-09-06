@@ -154,7 +154,7 @@ Loose ends — small enough to finish in an afternoon
 ---------------------------------------------------
 
 - **`MachineParts` wants refinement** so the machines read as one family. Yannic has said so, and
-  it is one file — but it is duplicated, so edit the original and run `check_duplicated.py --sync`.
+  it is one file now, in `nauvis_lib`.
 - **The long-handed inserter's model** is a smoker-coloured cube — the third furnace body on a belt
   line. Telling the three inserters apart at a glance is the thing to fix.
 - **The pumpjack's pump** is a nodding donkey inside one block, and reads as a small box from the
@@ -292,7 +292,7 @@ five stone in the panel, and the only thing that smelts.
   energy bar, the same lines;
 - and check the two-block machines the same way: a splitter from either half, a pole from any
   height. **If a readout is missing on one block of a machine, the redirect is not seeing that
-  block** and `MultiblockRedirect` is where to look.
+  block** and `nauvis_lib`'s `MultiblockRedirect` is where to look.
 
 **The drills**, whose dig area is now the machine itself.
 
@@ -409,13 +409,12 @@ How to run everything
 | `./gradlew :nauvis:runClient` | the whole pack. **Boot it after any model, fluid or plugin change** |
 | `./gradlew :<mod>:runGameTestServer` | one mod alone, to prove it still stands alone |
 | `./gradlew :<mod>:runClientData` / `runServerData` | models and language / loot and tags |
-| `./gradlew build` | everything, including the seven checks |
+| `./gradlew build` | everything, including the six checks |
 | `python tools/gen_recipes.py --check` | the recipe diff, on its own |
 | `python tools/gen_technologies.py --check` | the same for the tree. `--write` to regenerate |
 | `python tools/gen_removals.py --check` | the vanilla recipes taken away. `--write` to regenerate |
 | `python tools/check_models.py` | every model, texture and blockstate reference resolved — and footprints, belt speeds and texture opacity |
 | `python tools/render_model.py <model> out.png` | **draws a model to a PNG from the item slot's angle**, so a machine can be looked at without a boot. `--view side` or `top` for one cell. Needs Pillow and numpy |
-| `python tools/check_duplicated.py` | the copied packages, against each other. `--sync` to fix |
 | `python tools/check_gametests.py` | every gametest, for a type registered as well as an instance |
 | `python tools/check_gui_layout.py` | every machine screen's boxes, for overlaps |
 | `python texture-workshop/make_belt_textures.py` | the belt's art, from ASCII maps. `--preview` for a sheet |
@@ -423,19 +422,20 @@ How to run everything
 | `python texture-workshop/make_material_textures.py` | Neo Progressive Materials' item art |
 | `./gradlew :nauvis:packConfig` | the pack's config over `run/config`. Every run task depends on it |
 
-The seven checks — `checkRecipes`, `checkTechnologies`, `checkRemovals`, `checkModels`,
-`checkDuplicated`, `checkGameTests`, `checkGuiLayout` — are in the root `build.gradle` and hang off
+The six checks — `checkRecipes`, `checkTechnologies`, `checkRemovals`, `checkModels`,
+`checkGameTests`, `checkGuiLayout` — are in the root `build.gradle` and hang off
 `:nauvis:check`. They read files and start nothing, so they cost a second between them.
 `checkTechnologies` is the strict one: it fails on a file the generator **no longer produces**, not
 only on one that differs, because a stale technology would still load and answer to nothing.
 
 **A gametest run sees the recipes the pack ships.** `GameTestServer` force-enables every datapack
 it can see, bench-recipe packs included, so each `gameTestServer` run passes
-`-Djaguarm.benchRecipePacks=false` and every `ModPacks` declines to offer its pack under it — the
+`-Djaguarm.benchRecipePacks=false` and `nauvis_lib`'s `BenchRecipePacks` offers no pack under it — the
 one state vanilla cannot override is absent. `nauvis:timed_recipes_are_timed` holds it there.
 
 **Adding a subsystem mod** is routine: a subproject in `settings.gradle`, a `build.gradle` with the
-ids changed, a `src/main/templates/META-INF/neoforge.mods.toml`, and two lines in
+ids changed and `implementation project(':nauvis_lib')` in it, a
+`src/main/templates/META-INF/neoforge.mods.toml` declaring `nauvis_lib` required, and two lines in
 `nauvis/build.gradle` — the `runtimeOnly project(':...')` and its namespace in
 `pack_gametest_namespaces`. `nauvis_power/` is the fullest template; `nauvis_research/` is the
 newest written from scratch and was made by following exactly that list, so its diff is what
@@ -444,8 +444,8 @@ adding a mod costs.
 **Bringing a sibling repo in as a subproject** costs that list plus six more places, which
 `nauvis_mining` is the worked example of: the `includeBuild` and its `dependencySubstitution` go
 from `settings.gradle`, its version from `gradle.properties`, and it stops being a special case
-in `check_models.py`'s `MODS`, `check_gametests.py`'s namespaces, `check_duplicated.py`'s copy
-list and `gen_recipes.py`/`gen_removals.py`'s `SIBLING_REPOS` — that last one silently resolves
+in `check_models.py`'s `MODS`, `check_gametests.py`'s namespaces and
+`gen_recipes.py`/`gen_removals.py`'s `SIBLING_REPOS` — that last one silently resolves
 to `../<mod_id>` if you leave the entry in, and the recipe check reports the mod's files as
 *missing* rather than failing.
 

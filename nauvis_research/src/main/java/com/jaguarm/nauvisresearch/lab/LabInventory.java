@@ -12,7 +12,7 @@ import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
  * add later, because a slot count is in every saved lab.
  *
  * <p>Unrestricted: the lab has to be able to spend from its own slots. What automation sees is
- * {@link LabAccess}, which takes packs in and never lets them back out.
+ * {@link MachineAccess}, which takes packs in and never lets them back out.
  */
 public class LabInventory extends ItemStacksResourceHandler {
 

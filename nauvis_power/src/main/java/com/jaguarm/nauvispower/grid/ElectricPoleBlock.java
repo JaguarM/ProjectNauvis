@@ -1,7 +1,7 @@
 package com.jaguarm.nauvispower.grid;
 
-import com.jaguarm.nauvispower.multiblock.MachineShape;
-import com.jaguarm.nauvispower.multiblock.Multiblock;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 
 import org.jspecify.annotations.Nullable;
 

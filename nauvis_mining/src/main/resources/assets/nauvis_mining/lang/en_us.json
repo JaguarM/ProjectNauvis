@@ -2,7 +2,6 @@
   "pack.nauvis_mining.crafting_table": "Nauvis Mining: bench recipes (skips research)",
   "tab.facrafting.group.production": "Production",
 
-  "config.jade.plugin_nauvis_mining": "Project Nauvis: Mining",
   "itemGroup.nauvis_mining": "Project Nauvis: Mining",
   "block.nauvis_mining.burner_mining_drill": "Burner Mining Drill",
   "block.nauvis_mining.electric_mining_drill": "Electric Mining Drill",

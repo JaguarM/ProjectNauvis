@@ -3,8 +3,8 @@ package com.jaguarm.nauvislogistics.belt;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jaguarm.nauvislogistics.multiblock.MachineCell;
-import com.jaguarm.nauvislogistics.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 /**
  * What a splitter looks like and how much room it takes: two tiles wide by one tile deep.

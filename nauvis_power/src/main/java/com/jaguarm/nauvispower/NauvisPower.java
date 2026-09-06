@@ -1,5 +1,7 @@
 package com.jaguarm.nauvispower;
 
+import net.neoforged.neoforge.event.AddPackFindersEvent;
+import com.jaguarm.nauvislib.pack.BenchRecipePacks;
 import com.jaguarm.nauvispower.registry.ModBlockEntities;
 import com.jaguarm.nauvispower.registry.ModBlocks;
 import com.jaguarm.nauvispower.registry.ModItems;
@@ -31,7 +33,7 @@ public class NauvisPower {
         ModItems.TABS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
-        modEventBus.addListener(ModPacks::addPackFinders);
+        modEventBus.addListener((AddPackFindersEvent event) -> BenchRecipePacks.add(event, MODID));
         NauvisPowerGameTests.register(modEventBus);
     }
 }

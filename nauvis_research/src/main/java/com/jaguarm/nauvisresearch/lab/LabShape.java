@@ -3,9 +3,9 @@ package com.jaguarm.nauvisresearch.lab;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jaguarm.nauvisresearch.multiblock.MachineCell;
-import com.jaguarm.nauvisresearch.multiblock.MachineParts;
-import com.jaguarm.nauvisresearch.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineParts;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 /**
  * What a lab looks like and how much room it takes: three tiles by three, the size Factorio made

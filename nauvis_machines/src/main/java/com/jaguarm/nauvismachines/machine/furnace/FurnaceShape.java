@@ -3,9 +3,9 @@ package com.jaguarm.nauvismachines.machine.furnace;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jaguarm.nauvismachines.multiblock.MachineCell;
-import com.jaguarm.nauvismachines.multiblock.MachineParts;
-import com.jaguarm.nauvismachines.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineParts;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 /**
  * What a burner furnace looks like and how much room it takes: two tiles by two, the size

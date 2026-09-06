@@ -3,8 +3,8 @@ package com.jaguarm.nauvismining.machine.miner;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jaguarm.nauvismining.multiblock.MachineCell;
-import com.jaguarm.nauvismining.multiblock.MachineShape;
+import com.jaguarm.nauvislib.multiblock.MachineCell;
+import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 /**
  * Three tiles by three, the size Factorio made the electric mining drill.
