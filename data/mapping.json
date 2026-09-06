@@ -101,13 +101,8 @@
       }
     },
     "artillery-wagon": {
-      "name": "Artillery wagon",
-      "owner": "nauvis_trains",
-      "item": "nauvis_trains:artillery_wagon",
-      "craft": {
-        "time": 4,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
     },
     "assembling-machine-1": {
       "name": "Assembling machine 1",
@@ -273,13 +268,8 @@
       }
     },
     "cargo-wagon": {
-      "name": "Cargo wagon",
-      "owner": "nauvis_trains",
-      "item": "nauvis_trains:cargo_wagon",
-      "craft": {
-        "time": 1,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
     },
     "centrifuge": {
       "name": "Centrifuge",
@@ -734,13 +724,8 @@
       }
     },
     "fluid-wagon": {
-      "name": "Fluid wagon",
-      "owner": "nauvis_trains",
-      "item": "nauvis_trains:fluid_wagon",
-      "craft": {
-        "time": 1.5,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
     },
     "flying-robot-frame": {
       "name": "Flying robot frame",
@@ -998,13 +983,8 @@
       "raw": true
     },
     "locomotive": {
-      "name": "Locomotive",
-      "owner": "nauvis_trains",
-      "item": "nauvis_trains:locomotive",
-      "craft": {
-        "time": 4,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
     },
     "logistic-chest-active-provider": {
       "name": "Active provider chest",
@@ -1385,17 +1365,8 @@
       }
     },
     "pump": {
-      "name": "Pump",
-      "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:pump",
-      "size": [
-        1,
-        2
-      ],
-      "craft": {
-        "time": 2,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: the pump exists to load and unload fluid wagons, and trains are struck (Yannic, 2026-09-06). A tank empties into whatever its run feeds."
     },
     "pumpjack": {
       "name": "Pumpjack",
@@ -1424,32 +1395,16 @@
       }
     },
     "rail": {
-      "name": "Rail",
-      "owner": "nauvis_trains",
-      "item": "minecraft:rail",
-      "stand_in": true,
-      "craft": {
-        "time": 0.5,
-        "yield": 2
-      }
+      "skip": true,
+      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
     },
     "rail-chain-signal": {
-      "name": "Rail chain signal",
-      "owner": "nauvis_trains",
-      "item": "nauvis_trains:rail_chain_signal",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
     },
     "rail-signal": {
-      "name": "Rail signal",
-      "owner": "nauvis_trains",
-      "item": "nauvis_trains:rail_signal",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
     },
     "raw-fish": {
       "name": "Raw fish",
@@ -1911,17 +1866,8 @@
       }
     },
     "train-stop": {
-      "name": "Train stop",
-      "owner": "nauvis_trains",
-      "item": "nauvis_trains:train_stop",
-      "size": [
-        2,
-        2
-      ],
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: trains are struck (Yannic, 2026-09-06). A Minecraft world has a Y axis and vanilla minecarts, and the railway would mostly exist to feed a pump."
     },
     "transport-belt": {
       "name": "Transport belt",

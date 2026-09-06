@@ -90,7 +90,71 @@ already do that job, which the build enforces. Blocks and nuggets coming back ap
 The jobs
 --------
 
-### 1. Make the drills Factorio's drills
+**Oil is played and works** - Yannic ran the chain on 2026-09-06 - and the pump and the trains are
+struck; see `PLAN.md`. The jobs below are in the order to do them. The first is the next part.
+
+### 1. Blue science, and what it buys
+
+Chemical science is the gate in front of everything the oil chain was for, and every one of its
+ingredients exists now: two advanced circuits, an engine unit and a sulfur, in an assembler. The
+item is the only thing missing, and behind it a tier of the tree that is transcription plus a few
+machines that are mostly built.
+
+- **`nauvis_research:science_pack_3`.** An item, its generated recipe, the lang line, a creative
+  tab entry, and a gametest that a lab spends it on a technology that asks for it. The lab already
+  takes whatever packs the world's research asks for, so no lab code changes. The five technologies
+  in the tree that already cost blue science - `advanced-oil-processing`, `lubricant`, `battery`,
+  `explosives`, `electric-energy-distribution-2` - become researchable the moment the item exists.
+- **The tree's blue tier**, transcribed into `data/technologies.json` from `reference/factorio/`
+  as the earlier ones were, in Wube's names: `advanced-material-processing-2` (the electric furnace,
+  which is built and whose recipe is live now that the advanced circuit exists), `stack-inserter`,
+  `electric-engine`, `modules` with `speed-module`, `effectivity-module` and `productivity-module`,
+  `electric-energy-accumulators` (red and green, the accumulator). Not `logistics-3`,
+  `automation-3` or `effect-transmission`: those cost production science, which the pack does not
+  make. The generator reports a missing prerequisite, and a technology whose unlock the pack cannot
+  build is still worth having in the tree for the reason `GAPS.md` gives.
+- **The accumulator**, `nauvis_power`, 2×2. Five batteries, which a chemical plant makes now.
+  Factorio's numbers: 5 MJ held, 300 kW in and out - at the pack's ratio of 120 FE/t to 900 kW that
+  is 13,333 FE and 40 FE/t. It wants `PowerNetwork`'s **third case**: today a network collects
+  supply from endpoints that did not want energy and gives it to those that did, and a battery is
+  both, so it would charge and never discharge. The case is Factorio's own rule - an accumulator
+  takes only what generators leave over and gives only what generators cannot cover - which is two
+  passes over the endpoints where there is one now. A test with a solar panel, an accumulator and an
+  assembler across a night. This closes milestone 3.
+- **The fast inserter and the stack inserter**, `nauvis_logistics`. `fast-inserter` is in the tree
+  already and the item is not registered; a tier is a class with a shorter swing, exactly as the
+  belt tiers are. The stack inserter is a tier with a bigger hand. Factorio's rotation speeds are
+  the identity - an inserter turns at 302°/s, a fast one at 864°/s, a stack one at 864°/s with a
+  hand that grows with `inserter-capacity-bonus`, whose first two levels are already in the tree
+  doing nothing. Filter inserters wait on a filter screen and are not in this job.
+- **`electric_engine_unit`** in Neo Progressive Materials: an engine unit, an electronic circuit
+  and twenty lubricant. It is the first item made in an *assembler* from a fluid, and so it waits
+  on job 3; register nothing for it until then.
+
+### 2. Modules
+
+Speed, effectivity and productivity, tier one - `nauvis_machines` owns them per `PLAN.md`, and
+`nauvis_mining`'s three NPA modules (`speed`, `efficiency`, `range`) are ids in the pack's
+namespace that have to be resolved first; `range` has no counterpart at all. A module is a slot
+on a machine and three numbers the machine reads each craft: a speed multiplier, an energy
+multiplier, and a productivity bonus that banks a free craft every so many. The assemblers, the
+furnaces, the drills, the refinery and the chemical plant all take them in Factorio, with
+Factorio's slot counts, and the base classes are where the numbers are read - one place per
+machine kind, the same shape as `craftingSpeed`. The beacon is not in this job: `effect-transmission`
+costs production science.
+
+### 3. An assembler with a fluid port
+
+Factorio's assembling machine 2 and 3 take one fluid ingredient - the electric engine unit's
+lubricant, the processing unit's sulfuric acid - through a fluid box on one side, and the barrel
+recipes are the same machine giving a fluid back. `ProcessingBlockEntity` already has the tank, the
+port and the recipe-order assignment; what the assembler needs is one input port on its shell, the
+`PortTank` behind it, and the fluid half of `craft` - which is the argument for the assembler
+growing out of the processing base rather than the other way round. Assembling machine 1 has no
+fluid box, which is Factorio's rule and the reason there are tiers. Barrels come with it and are
+milestone 4's last item.
+
+### 4. Make the drills Factorio's drills
 
 **`nauvis_mining` is a fork of Neo Progressive Automation**, taken so the drills could have
 Factorio's ids: `nauvis_mining:burner_mining_drill` and `nauvis_mining:electric_mining_drill`,
@@ -129,31 +193,25 @@ None of the rest is a small change, and none of it is urgent: the drills work, t
 and their recipes and footprints are already Factorio-correct. Do it as one designed piece rather
 than four.
 
-### 2. Oil, what is left
+### 5. Military and pollution
 
-The chain runs end to end - well, pumpjack, refinery, chemical plant, plastic - and every recipe on
-the branch is a real one a machine makes. What is still mapped and not built:
+Milestone 5, and the first milestone that is design before it is code: a `nauvis_military` mod
+that does not exist, pollution that nothing emits, and biters that are vanilla hostiles drawn
+towards a factory. `PLAN.md`'s shortcut is *vanilla hostiles plus per-chunk pollution raising the
+spawn rate near the factory*, and the eight items are the pistol, the submachine gun, the two
+magazines, the gun turret, the stone wall, light armour and military science. Write the design into
+`PLAN.md` before the first block - what pollution is stored on, what a machine emits, what a spawn
+rate is in Minecraft's terms, and what a turret shoots at - and ask Yannic the questions that are
+his: whether biters are vanilla mobs with a reason to come, or something of the pack's own.
 
-- **A client boot to look at the three machines.** The refinery's column, the tank's drum and the
-  chemical plant's vat are boxes chosen without eyes, on vanilla textures; `render_model.py` shows
-  them without a boot, and a boot shows the two screens, whose bars are in the fluids' own
-  colours. Nothing has been looked at.
-- **The pump and pipe-to-ground.** Factorio's `pump` is 1×2, moves 1200 a second one way and is
-  the only way to empty a tank on purpose; `pipe-to-ground` is two blocks with up to ten of nothing
-  between them. Both are mapped to `nauvis_fluids` and behind `fluid-handling`, which is in the
-  tree and unlocks a storage tank a player can already build.
-- **The accumulator.** A battery is buildable now - sulfuric acid, iron and copper in a chemical
-  plant - so five of them are, and what the accumulator waits on is `PowerNetwork`'s third case;
-  see `GAPS.md`.
-- **Barrels**, which are Factorio's assembler taking and giving a fluid in an item. See `GAPS.md`.
-
-### 3. More removals follow the items
+### 6. More removals follow the items
 
 The conflict half of `data/removals.json` is already waiting: the moment a mod ships a recipe for
-`minecraft:redstone_lamp`, `cobblestone_wall`, `rail` or `iron_door`, the build fails until
-vanilla's is removed — and three of the four are gated behind a technology in Factorio, so each is a
-real research unlock. None can be done yet: the lamp needs an iron stick, the rail and the gate need
-steel, and the wall belongs to `nauvis_military`, which does not exist.
+`minecraft:redstone_lamp`, `cobblestone_wall` or `iron_door`, the build fails until vanilla's is
+removed — and each is gated behind a technology in Factorio, so each is a real research unlock.
+None can be done yet: the lamp needs an iron stick, the gate needs steel, and the wall belongs to
+`nauvis_military`, which does not exist. The rail is off the list: trains are struck and vanilla's
+rail stays.
 
 Loose ends — small enough to finish in an afternoon
 ---------------------------------------------------

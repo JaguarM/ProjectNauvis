@@ -13,7 +13,6 @@
   ],
   "unlocks": [
     "nauvis_fluids:storage_tank",
-    "nauvis_fluids:pump",
     "nauvis_fluids:empty_barrel"
   ]
 }

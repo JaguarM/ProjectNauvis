@@ -96,8 +96,11 @@ Oil
 - **No modules, no pollution, no brownout on the refinery and the chemical plant**, as for the
   pumpjack and the assemblers. The refinery is the plain 420 kW machine and the plant the 210 kW one.
 - **The storage tank has no window.** Factorio's shows a bar; the hover readout says the same
-  line. And nothing empties a tank on purpose: with no pump built, what leaves a tank is what its
-  run's sinks draw, so a tank of the wrong fluid on a run is emptied by breaking it.
+  line. And nothing empties a tank on purpose: there is no pump, by decision - see `PLAN.md` - so
+  what leaves a tank is what its run's sinks draw, and a tank of the wrong fluid on a run is
+  emptied by breaking it.
+- **No trains, and no pump**, by decision rather than by schedule: `PLAN.md` has it. Vanilla's rail
+  and minecarts stay, and the `rail` removal `data/removals.json` was waiting for never comes.
 - **A tank on two runs is levelled by each in turn**, one tick apart, rather than as one segment.
   It converges within a few ticks and then sleeps, which is close enough to be indistinguishable at
   the readout, and not Factorio's single fluid segment.

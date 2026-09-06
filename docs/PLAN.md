@@ -10,8 +10,16 @@ Read `../CLAUDE.md` first. The five non-negotiables there govern everything belo
 Settled decisions — do not re-litigate
 --------------------------------------
 
-**Scope is the whole game, rocket included.** Oil, trains, circuit network, pollution and
-biters, rocket launch. Chosen knowingly as a multi-year plan.
+**Scope is the whole game, rocket included.** Oil, circuit network, pollution and biters,
+rocket launch. Chosen knowingly as a multi-year plan.
+
+**No trains, and no pump.** Yannic's call after the oil playtest, 2026-09-06. Factorio's railway
+moves ore and oil across a flat map, and its pump exists to load and unload fluid wagons; this
+pack has a Y axis, vanilla minecarts and rails, and pipes that already carry everything. Milestone
+6 is struck, `nauvis_trains` is never built, and the pump, the rail, the signals, the stop, the
+locomotive and the three wagons are `skip` in `data/mapping.json` with the reason. Vanilla's rail
+recipe stays. The car is the one item that was the trains mod's on paper and is not a train; where
+it goes, if anywhere, is Yannic's.
 
 **Power is Minecraft FE, buffered per machine.** Explicitly chosen over a first-party grid
 with a global satisfaction ratio, so third-party cables keep working. Brownouts are
@@ -299,11 +307,13 @@ the refinery and the chemical plant it unlocks, and a fluid-aware recipe generat
 source for the oil recipes.
 
 ### 5 — Military and pollution · 8 new
-### 6 — Trains · 6 new
+### 6 — Trains · *struck*
+
+See the settled decisions. Vanilla minecarts are the railway, and nothing is built.
 ### 7 — Circuit network and robots · 12 new
 ### 8 — Rocket · 14 new
 
-Those eight milestones reach **89 of 214 items** — the critical path. The remaining 125 are
+Those milestones reach **89 of 214 items** — the critical path, less the trains. The remaining 125 are
 breadth: tier-2 and tier-3 variants, nuclear, armour, artillery, logistic chests. They are
 cheap once their tier-1 exists and get added alongside whichever milestone owns them.
 
@@ -319,7 +329,7 @@ Shortcuts, and what they defer
 | Poles | FE cables with a wide connection radius | unchanged |
 | Research | ~~lab consumes packs, grants vanilla advancements~~ **rejected — advancements are per player and research belongs to the world.** Shipped instead: the real model, on a `SavedData`, drawn as Factorio's own screen — a list, one technology's neighbourhood, pan and zoom | the modifiers — research speed, mining speed, damage — which are transcribed and dropped |
 | Oil | ~~barrels as items, no pipes at all~~ **superseded — the pipe network came with steam, and the well and pumpjack are the real ones.** One tank per run, no flow model | segments and throughput, if ever |
-| Trains | vanilla minecarts and chest minecarts | locomotives, wagons, signals, schedules |
+| Trains | vanilla minecarts and chest minecarts | ~~locomotives, wagons, signals, schedules~~ **struck** — the minecarts are the railway |
 | Biters | vanilla hostiles + per-chunk pollution raising spawn rate near the factory | nests, expansion, evolution factor |
 | Rocket | silo consumes 100 rocket parts, plays a launch, grants the advancement | satellite, cargo, space science loop |
 
