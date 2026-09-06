@@ -14,5 +14,11 @@
   ],
   "unlocks": [
     "nauvis_logistics:stack_inserter"
+  ],
+  "modifiers": [
+    {
+      "type": "bulk-inserter-capacity-bonus",
+      "modifier": 1
+    }
   ]
 }

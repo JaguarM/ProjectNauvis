@@ -98,6 +98,8 @@ public final class NauvisLogisticsData {
             addBlock(ModBlocks.BURNER_INSERTER, "Burner inserter");
             addBlock(ModBlocks.INSERTER, "Inserter");
             addBlock(ModBlocks.LONG_HANDED_INSERTER, "Long handed inserter");
+            addBlock(ModBlocks.FAST_INSERTER, "Fast inserter");
+            addBlock(ModBlocks.STACK_INSERTER, "Stack inserter");
             addBlock(ModBlocks.IRON_CHEST, "Iron chest");
             addBlock(ModBlocks.STEEL_CHEST, "Steel chest");
             addBlock(ModBlocks.TRANSPORT_BELT, "Transport belt");
@@ -146,6 +148,8 @@ public final class NauvisLogisticsData {
             dropSelf(ModBlocks.BURNER_INSERTER.get());
             dropSelf(ModBlocks.INSERTER.get());
             dropSelf(ModBlocks.LONG_HANDED_INSERTER.get());
+            dropSelf(ModBlocks.FAST_INSERTER.get());
+            dropSelf(ModBlocks.STACK_INSERTER.get());
             dropSelf(ModBlocks.IRON_CHEST.get());
             dropSelf(ModBlocks.STEEL_CHEST.get());
             dropSelf(ModBlocks.TRANSPORT_BELT.get());

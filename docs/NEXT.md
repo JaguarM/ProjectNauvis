@@ -41,8 +41,11 @@ missing from each is `GAPS.md`.
 | `nauvis_logistics:splitter` | 2×1 and directional; 50/50 per lane, overflows to the open side, sleeps when empty |
 | `nauvis_logistics:fast_splitter` | the same at the red belt's speed, so a red line is not throttled where it splits |
 | `nauvis_logistics:burner_inserter` | takes behind, gives in front, 30-tick swing, fuel slot. Fuels itself off the belt it unloads |
-| `nauvis_logistics:inserter` | the same on 2 FE/t and a 24-tick swing. No slot, so no screen |
+| `nauvis_logistics:inserter` | the same on 2 FE/t and a 24-tick swing. No slot, so no screen. Its hand holds one, two after `inserter-capacity-bonus-2` |
 | `nauvis_logistics:long_handed_inserter` | the same arm reaching two blocks. 3 FE/t, 17-tick swing, the only block that does not sleep perfectly |
+| `nauvis_logistics:fast_inserter` | the same arm at 864°/s: a 9-tick swing on 6 FE/t, in blue. Behind `fast-inserter` |
+| `nauvis_logistics:stack_inserter` | the fast swing with a hand that grows: two when built, five after the three capacity levels the tree reaches. 22 FE/t, in green. Behind `stack-inserter` |
+| an inserter's look | a plate, a post and an arm to the front edge, coloured by tier - grey, yellow, red, blue, green - so a belt line reads at a glance |
 | `nauvis_logistics:iron_chest` | 36 slots on vanilla's four-row screen. A `ChestBlock`, so it has vanilla's lid and opens like one |
 | `nauvis_logistics:steel_chest` | the same again at 54 slots and six rows, in lighter metal. Neither pairs |
 | `nauvis_fluids:pipe` / `steam` / `crude_oil` | a run is one object however long; steam and crude oil are real fluids, so pipes and machines meet at the capability |
@@ -70,6 +73,7 @@ missing from each is `GAPS.md`.
 | a view | the selection, **every** ancestor, and descendants two deep by longest path. A node that needs technologies the picture does not show says so with `+n` in its corner |
 | the list | sorted into three blocks and coloured by them — ready in yellow-brown, unreachable in red, researched in green at the bottom. The current research sits above the rest of the first block |
 | research progress | **kept per technology.** Switching away from one and back finds it where it was left, which is Factorio's rule |
+| a technology's modifiers | in the tree and summed by the world: research speed shortens a lab's unit, the two inserter capacity bonuses grow hands. Any mod asks through `nauvis_lib`'s `Bonuses`; the screen lists each modifier beside the unlocks and says which do nothing yet |
 | `/research` | grant, forget, start, stop, list, info, all, reset. Gamemaster only. **Grant and forget cascade** — grant brings the prerequisites, forget takes the dependants |
 | `/oil` | `field` puts an oil field where you stand, as worldgen would; `well` puts one well under your feet. Gamemaster only. The tool for a superflat world, which runs no features |
 | `nauvis_mining:burner_mining_drill` | 2×2, five blocks; mines the 2×2 it stands on. Digs down, not across — job 1 |
@@ -103,12 +107,6 @@ circuit, an electric mining drill and an engine unit - and the tree's blue tier 
 production science, which the pack does not make. What the tier unlocks is mostly not built yet,
 and that is the rest of this job.
 
-- **The fast inserter and the stack inserter**, `nauvis_logistics`. `fast-inserter` is in the tree
-  already and the item is not registered; a tier is a class with a shorter swing, exactly as the
-  belt tiers are. The stack inserter is a tier with a bigger hand. Factorio's rotation speeds are
-  the identity - an inserter turns at 302°/s, a fast one at 864°/s, a stack one at 864°/s with a
-  hand that grows with `inserter-capacity-bonus`, whose first two levels are already in the tree
-  doing nothing. Filter inserters wait on a filter screen and are not in this job.
 - **`electric_engine_unit`** in Neo Progressive Materials: an engine unit, an electronic circuit
   and twenty lubricant. It is the first item made in an *assembler* from a fluid, and so it waits
   on job 3; register nothing for it until then.
@@ -199,8 +197,6 @@ Loose ends — small enough to finish in an afternoon
 
 - **`MachineParts` wants refinement** so the machines read as one family. Yannic has said so, and
   it is one file now, in `nauvis_lib`.
-- **The long-handed inserter's model** is a smoker-coloured cube — the third furnace body on a belt
-  line. Telling the three inserters apart at a glance is the thing to fix.
 - **The pumpjack's pump** is a nodding donkey inside one block, and reads as a small box from the
   item slot. Bigger geometry means a taller head cell; it is boxes in `PumpjackShape`, and
   `render_model.py` shows the result without a boot.

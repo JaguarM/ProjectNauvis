@@ -191,6 +191,25 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
         return cycleTicks > 0 ? cycleTicks : IDLE_TICKS_PER_CYCLE;
     }
 
+    /**
+     * Factorio's modifier for how much faster every lab works: {@code research-speed-1} and
+     * {@code -2} grant a fifth and then three tenths more, and the tree stops there.
+     */
+    public static final String LABORATORY_SPEED = "laboratory-speed";
+
+    /**
+     * How long a unit of this technology takes in this world: the technology's own time, divided
+     * by one plus every laboratory-speed bonus researched.
+     *
+     * <p>Factorio's rule exactly - a research speed bonus is a multiplier on the lab's speed, so
+     * plus fifty per cent makes a thirty-second unit a twenty-second one. Rounded to a whole tick
+     * and never below one.
+     */
+    public static int cycleTicksFor(Technology technology, ServerLevel level) {
+        double speed = 1 + Research.bonus(level.getServer(), LABORATORY_SPEED);
+        return Math.max(1, (int) Math.round(technology.ticksPerUnit() / speed));
+    }
+
     /** True while the lab has everything it needs to be working. */
     public boolean isResearching(ServerLevel level) {
         return energy.getAmountAsInt() >= ENERGY_PER_TICK && wanted(level) != null;
@@ -223,7 +242,7 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         Holder.Reference<Technology> technology = Research.current(level.getServer());
-        cycleTicks = technology == null ? IDLE_TICKS_PER_CYCLE : technology.value().ticksPerUnit();
+        cycleTicks = technology == null ? IDLE_TICKS_PER_CYCLE : cycleTicksFor(technology.value(), level);
 
         try (Transaction transaction = Transaction.openRoot()) {
             energy.extract(ENERGY_PER_TICK, transaction);

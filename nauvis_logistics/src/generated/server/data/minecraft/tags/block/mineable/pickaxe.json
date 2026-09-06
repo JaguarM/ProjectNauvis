@@ -3,6 +3,8 @@
     "nauvis_logistics:burner_inserter",
     "nauvis_logistics:inserter",
     "nauvis_logistics:long_handed_inserter",
+    "nauvis_logistics:fast_inserter",
+    "nauvis_logistics:stack_inserter",
     "nauvis_logistics:iron_chest",
     "nauvis_logistics:steel_chest",
     "nauvis_logistics:transport_belt",

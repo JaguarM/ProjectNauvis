@@ -9,7 +9,9 @@ import com.jaguarm.nauvislogistics.storage.IronChestBlock;
 import com.jaguarm.nauvislogistics.storage.SteelChestBlock;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterBlock;
 import com.jaguarm.nauvislogistics.transport.ElectricInserterBlock;
+import com.jaguarm.nauvislogistics.transport.FastInserterBlock;
 import com.jaguarm.nauvislogistics.transport.LongHandedInserterBlock;
+import com.jaguarm.nauvislogistics.transport.StackInserterBlock;
 
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.MapColor;
@@ -28,6 +30,7 @@ public final class ModBlocks {
                     .mapColor(MapColor.METAL)
                     .strength(2.0F, 6.0F)
                     .sound(SoundType.METAL)
+                    .noOcclusion()
                     .requiresCorrectToolForDrops());
 
     /**
@@ -44,6 +47,7 @@ public final class ModBlocks {
                     .mapColor(MapColor.METAL)
                     .strength(2.0F, 6.0F)
                     .sound(SoundType.METAL)
+                    .noOcclusion()
                     .requiresCorrectToolForDrops());
 
     /**
@@ -60,6 +64,35 @@ public final class ModBlocks {
                     .mapColor(MapColor.METAL)
                     .strength(2.0F, 6.0F)
                     .sound(SoundType.METAL)
+                    .noOcclusion()
+                    .requiresCorrectToolForDrops());
+
+    /**
+     * The fast inserter: the basic arm at nearly three times the speed, behind {@code fast-inserter}.
+     * Two circuits, two plates and an inserter, which is Factorio's recipe.
+     */
+    public static final DeferredBlock<FastInserterBlock> FAST_INSERTER = BLOCKS.registerBlock(
+            "fast_inserter",
+            FastInserterBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.COLOR_BLUE)
+                    .strength(2.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()
+                    .requiresCorrectToolForDrops());
+
+    /**
+     * The stack inserter: the fast inserter's swing with a hand that holds several, and grows with
+     * research. Behind {@code stack-inserter}, which is behind the advanced circuit.
+     */
+    public static final DeferredBlock<StackInserterBlock> STACK_INSERTER = BLOCKS.registerBlock(
+            "stack_inserter",
+            StackInserterBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.COLOR_GREEN)
+                    .strength(2.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()
                     .requiresCorrectToolForDrops());
 
     /**

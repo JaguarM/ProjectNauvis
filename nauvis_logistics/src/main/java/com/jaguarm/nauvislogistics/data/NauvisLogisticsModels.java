@@ -273,54 +273,68 @@ public class NauvisLogisticsModels extends ModelProvider {
         super(output, NauvisLogistics.MODID);
     }
 
+    /**
+     * An inserter: a plate on the ground, a post on it, and an arm reaching from the post to the
+     * front edge of the block with a hand on the end. The plate and the post are iron; the arm and
+     * the hand carry the tier's colour. The hand is at the front - the side the inserter gives to -
+     * so the one thing the model has to say, which way it points, it says with the part that moves.
+     *
+     * <p>Written out as elements rather than from a template, the way the machines are: no vanilla
+     * parent is shaped like an arm. The model faces north and the blockstate turns it, and
+     * {@code InserterBlock}'s collision boxes are the same numbers turned the same way. Nothing
+     * leaves its block, and no two boxes share a face, so nothing flickers and nothing needs a uv.
+     */
+    private static void inserter(BlockModelGenerators blockModels, Block block, String colour) {
+        Identifier id = ModelLocationUtils.getModelLocation(block);
+        blockModels.modelOutput.accept(id, () -> {
+            JsonArray elements = new JsonArray();
+            elements.add(inserterElement(new float[] {2, 0, 2, 14, 2, 14}, "#base"));
+            elements.add(inserterElement(new float[] {6, 2, 6, 10, 9, 10}, "#base"));
+            elements.add(inserterElement(new float[] {7, 9, 3, 9, 11, 10}, "#arm"));
+            elements.add(inserterElement(new float[] {5, 8, 0, 11, 12, 3}, "#arm"));
+
+            JsonObject textures = new JsonObject();
+            textures.addProperty("base", "minecraft:block/iron_block");
+            textures.addProperty("arm", "minecraft:" + colour);
+            textures.addProperty("particle", "minecraft:" + colour);
+
+            JsonObject model = new JsonObject();
+            model.addProperty("parent", "minecraft:block/block");
+            model.add("textures", textures);
+            model.add("elements", elements);
+            return model;
+        });
+        blockModels.blockStateOutput.accept(
+                MultiVariantGenerator.dispatch(block, BlockModelGenerators.plainVariant(id))
+                        .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
+        blockModels.registerSimpleItemModel(block, id);
+    }
+
+    private static JsonObject inserterElement(float[] box, String texture) {
+        JsonObject element = new JsonObject();
+        element.add("from", vector(box[0], box[1], box[2]));
+        element.add("to", vector(box[3], box[4], box[5]));
+        JsonObject faces = new JsonObject();
+        for (Direction direction : Direction.values()) {
+            JsonObject face = new JsonObject();
+            face.addProperty("texture", texture);
+            faces.add(direction.getSerializedName(), face);
+        }
+        element.add("faces", faces);
+        return element;
+    }
+
     @Override
     protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {
-        Identifier model = ModelTemplates.CUBE_ORIENTABLE.create(
-                ModBlocks.BURNER_INSERTER.get(),
-                new TextureMapping()
-                        .put(TextureSlot.FRONT, TextureMapping.getBlockTexture(Blocks.FURNACE, "_front"))
-                        .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(Blocks.FURNACE, "_side"))
-                        .put(TextureSlot.TOP, TextureMapping.getBlockTexture(Blocks.FURNACE, "_top")),
-                blockModels.modelOutput);
-
-        blockModels.blockStateOutput.accept(
-                MultiVariantGenerator.dispatch(ModBlocks.BURNER_INSERTER.get(), BlockModelGenerators.plainVariant(model))
-                        .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
-
-        // The same furnace body, in blast-furnace colours: the two inserters have to be told
-        // apart on a belt line at a glance, and the front face still has to say which way it
-        // points, which is the one thing the model genuinely has to communicate.
-        Identifier electric = ModelTemplates.CUBE_ORIENTABLE.create(
-                ModBlocks.INSERTER.get(),
-                new TextureMapping()
-                        .put(TextureSlot.FRONT, TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_front"))
-                        .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_side"))
-                        .put(TextureSlot.TOP, TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top")),
-                blockModels.modelOutput);
-
-        blockModels.blockStateOutput.accept(
-                MultiVariantGenerator.dispatch(ModBlocks.INSERTER.get(), BlockModelGenerators.plainVariant(electric))
-                        .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
-
-        // And once more in smoker colours, for the long arm. Three inserters on one belt line
-        // have to be told apart at a glance - the two electric ones do the same job at different
-        // reaches, so mistaking one for the other is a line that silently misses a machine.
-        //
-        // Nothing here says the arm is longer, which is the one thing this model ought to
-        // communicate and the one thing a borrowed cube cannot. Real art is Yannic's half.
-        Identifier longHanded = ModelTemplates.CUBE_ORIENTABLE.create(
-                ModBlocks.LONG_HANDED_INSERTER.get(),
-                new TextureMapping()
-                        .put(TextureSlot.FRONT, TextureMapping.getBlockTexture(Blocks.SMOKER, "_front"))
-                        .put(TextureSlot.SIDE, TextureMapping.getBlockTexture(Blocks.SMOKER, "_side"))
-                        .put(TextureSlot.TOP, TextureMapping.getBlockTexture(Blocks.SMOKER, "_top")),
-                blockModels.modelOutput);
-
-        blockModels.blockStateOutput.accept(
-                MultiVariantGenerator.dispatch(
-                                ModBlocks.LONG_HANDED_INSERTER.get(),
-                                BlockModelGenerators.plainVariant(longHanded))
-                        .with(BlockModelGenerators.ROTATION_HORIZONTAL_FACING));
+        // Five inserters, one shape, five colours, and the colours are Factorio's: a dark burner
+        // arm, the basic arm in yellow, the long one in red, the fast one in blue and the stack
+        // one in green. Five furnace-coloured cubes on one belt line could not be told apart, and
+        // an inserter line is read by colour before anything else. See inserter().
+        inserter(blockModels, ModBlocks.BURNER_INSERTER.get(), "block/gray_terracotta");
+        inserter(blockModels, ModBlocks.INSERTER.get(), "block/yellow_terracotta");
+        inserter(blockModels, ModBlocks.LONG_HANDED_INSERTER.get(), "block/red_terracotta");
+        inserter(blockModels, ModBlocks.FAST_INSERTER.get(), "block/blue_terracotta");
+        inserter(blockModels, ModBlocks.STACK_INSERTER.get(), "block/green_terracotta");
 
         // The belts: a bottom slab each, because they are half a block high and you walk over
         // them. Two tiers, one call apiece - a belt tier is a name and a palette, and the tread's

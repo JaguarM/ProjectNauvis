@@ -1,5 +1,7 @@
 package com.jaguarm.nauvisresearch.research;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
@@ -220,6 +222,40 @@ public final class Research {
         return revision;
     }
 
+    /** The earned modifiers summed by type, and the state they were summed from. */
+    private static @Nullable Map<String, Double> bonusCache;
+    private static @Nullable Registry<Technology> bonusFor;
+    private static int bonusRevision = -1;
+
+    /**
+     * How much of a Factorio modifier the world has researched: the sum over every completed
+     * technology's {@link Technology.Modifier}s of that type.
+     *
+     * <p>This is what {@code nauvis_lib}'s {@code Bonuses} answers with, for any machine in any
+     * mod - an inserter asking how big its hand is, a lab asking how fast it works. Zero for a type
+     * no technology has granted, which is also what a type nobody has ever heard of gets. Cached
+     * like the locked set, on the same revision, since both move only when a technology does.
+     */
+    public static double bonus(MinecraftServer server, String effect) {
+        Registry<Technology> technologies = ModTechnologies.registry(server.registryAccess());
+        if (bonusCache == null || bonusFor != technologies || bonusRevision != revision) {
+            Map<String, Double> sums = new HashMap<>();
+            ResearchState state = state(server);
+            for (Holder.Reference<Technology> holder : technologies.listElements().toList()) {
+                if (!state.isCompleted(holder.key())) {
+                    continue;
+                }
+                for (Technology.Modifier modifier : holder.value().modifiers()) {
+                    sums.merge(modifier.type(), modifier.modifier(), Double::sum);
+                }
+            }
+            bonusCache = sums;
+            bonusFor = technologies;
+            bonusRevision = revision;
+        }
+        return bonusCache.getOrDefault(effect, 0.0);
+    }
+
     /**
      * Records that something moved: drop the cache, move the revision, tell every client.
      *
@@ -231,6 +267,7 @@ public final class Research {
     static void changed(MinecraftServer server) {
         revision++;
         lockedCache = null;
+        bonusCache = null;
         ResearchNetwork.sendToAll(server);
         // Awarding one that is already awarded is a no-op, so this needs no notion of what is
         // new - which is what makes it correct for a player who was offline when it finished.
@@ -254,6 +291,9 @@ public final class Research {
         lockedCache = null;
         cachedFor = null;
         cachedRevision = -1;
+        bonusCache = null;
+        bonusFor = null;
+        bonusRevision = -1;
         revision++;
     }
 

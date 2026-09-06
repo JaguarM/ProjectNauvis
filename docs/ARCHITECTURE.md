@@ -415,6 +415,16 @@ and reports every plate through `CraftListeners.fireMachine` — the same seam a
 for the other verb. The assembler reports the same way. Research hears both without either mod
 naming the other, which is what lets "craft fifty iron plates" be finished by a furnace.
 
+**A machine asks the world how much it has earned, and never who is answering.** A technology's
+other kind of effect - a bigger hand, a faster lab, a harder bullet - is a `Modifier` on the
+technology, Factorio's own type name and a number, and `Research.bonus` sums the earned ones by
+type. `nauvis_lib`'s `Bonuses` is the hook: research installs itself as the one `Source`, an
+inserter in the logistics mod asks `Bonuses.count(level, "inserter-stack-size-bonus")` at the
+start of each swing, and a mod running without research gets zero, which is what every machine
+had before. The names are typed where they are used - on the machine that reads them and in the
+tree that grants them - and nowhere in the library, which has no opinion about what any of them
+means. A gametest that needs a bonus installs a stand-in `Source` and puts the real one back.
+
 **The research screen paints and does not decide.** `ResearchScreen` is handed cells and arrows;
 everything checkable — every node right of every prerequisite, no two in one cell, every technology
 placed once, every arrow drawn, and the same tree laid out the same way twice — lives in

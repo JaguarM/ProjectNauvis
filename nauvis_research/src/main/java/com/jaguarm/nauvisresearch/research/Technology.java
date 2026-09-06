@@ -56,7 +56,47 @@ public record Technology(
         int ticksPerUnit,
         List<Identifier> packs,
         Optional<Trigger> trigger,
-        List<ResourceKey<Recipe<?>>> unlocks) {
+        List<ResourceKey<Recipe<?>>> unlocks,
+        List<Modifier> modifiers) {
+
+    /**
+     * An effect that is not a recipe: so much more of some named thing, once this is researched.
+     *
+     * <p>Factorio's modifier types, by their own names - {@code inserter-stack-size-bonus},
+     * {@code laboratory-speed}, {@code ammo-damage} - and the world's answer to "how much of this
+     * has been earned" is the sum over every completed technology, which {@link Research#bonus}
+     * keeps and {@code nauvis_lib}'s {@code Bonuses} hands to whatever machine asks. The two kinds
+     * Factorio qualifies carry the qualifier as {@code target}: a damage bonus is per ammo
+     * category and a turret bonus per turret.
+     *
+     * <p>A type nothing reads is a number nobody asks for. Most of the tree's are in that state,
+     * and the screen says so beside them rather than hiding them.
+     */
+    public record Modifier(String type, Optional<String> target, double modifier) {
+
+        public static final Codec<Modifier> CODEC = RecordCodecBuilder.create(i -> i.group(
+                Codec.STRING.fieldOf("type").forGetter(Modifier::type),
+                Codec.STRING.optionalFieldOf("target").forGetter(Modifier::target),
+                Codec.DOUBLE.fieldOf("modifier").forGetter(Modifier::modifier))
+                .apply(i, Modifier::new));
+
+        /**
+         * What the screen says for it: a whole number as a count, a fraction as a percentage.
+         *
+         * <p>The key is {@code modifier.nauvis_research.<type>} with the amount and the target as
+         * its arguments; the fallback is the type's own words, so a modifier the lang file has
+         * never heard of still reads as something rather than as a key.
+         */
+        public Component describe() {
+            boolean whole = modifier == Math.rint(modifier);
+            String amount = (modifier >= 0 ? "+" : "")
+                    + (whole ? String.valueOf((long) modifier) : Math.round(modifier * 100) + "%");
+            String fallback = type.replace('-', ' ') + " " + amount
+                    + target.map(t -> " (" + t + ")").orElse("");
+            return Component.translatableWithFallback("modifier.nauvis_research." + type, fallback,
+                    amount, target.orElse(""));
+        }
+    }
 
     /**
      * Finish this technology when the world has done something {@code count} times over.
@@ -120,7 +160,9 @@ public record Technology(
             Identifier.CODEC.listOf().optionalFieldOf("packs", List.of()).forGetter(Technology::packs),
             Trigger.CODEC.optionalFieldOf("trigger").forGetter(Technology::trigger),
             ResourceKey.codec(net.minecraft.core.registries.Registries.RECIPE).listOf()
-                    .optionalFieldOf("unlocks", List.of()).forGetter(Technology::unlocks))
+                    .optionalFieldOf("unlocks", List.of()).forGetter(Technology::unlocks),
+            Modifier.CODEC.listOf().optionalFieldOf("modifiers", List.of())
+                    .forGetter(Technology::modifiers))
             .apply(i, Technology::new));
 
     /**

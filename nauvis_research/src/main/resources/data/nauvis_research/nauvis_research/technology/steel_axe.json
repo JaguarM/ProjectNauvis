@@ -8,5 +8,11 @@
     "item": "neoprogressivematerials:steel_plate",
     "count": 50
   },
-  "unlocks": []
+  "unlocks": [],
+  "modifiers": [
+    {
+      "type": "character-mining-speed",
+      "modifier": 1
+    }
+  ]
 }

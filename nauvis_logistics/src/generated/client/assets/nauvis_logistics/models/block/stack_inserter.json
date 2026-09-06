@@ -131,8 +131,8 @@
     }
   ],
   "textures": {
-    "arm": "minecraft:block/yellow_terracotta",
+    "arm": "minecraft:block/green_terracotta",
     "base": "minecraft:block/iron_block",
-    "particle": "minecraft:block/yellow_terracotta"
+    "particle": "minecraft:block/green_terracotta"
   }
 }

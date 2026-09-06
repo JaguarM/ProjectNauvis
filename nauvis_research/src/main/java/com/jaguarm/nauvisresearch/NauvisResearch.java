@@ -1,9 +1,11 @@
 package com.jaguarm.nauvisresearch;
 
 import net.neoforged.neoforge.event.AddPackFindersEvent;
+import com.jaguarm.nauvislib.bonus.Bonuses;
 import com.jaguarm.nauvislib.pack.BenchRecipePacks;
 import com.jaguarm.nauvisresearch.compat.facrafting.FacraftingLock;
 import com.jaguarm.nauvisresearch.research.ModTechnologies;
+import com.jaguarm.nauvisresearch.research.Research;
 import com.jaguarm.nauvisresearch.registry.ModBlockEntities;
 import com.jaguarm.nauvisresearch.registry.ModBlocks;
 import com.jaguarm.nauvisresearch.registry.ModItems;
@@ -44,6 +46,12 @@ public class NauvisResearch {
         modEventBus.addListener((AddPackFindersEvent event) -> BenchRecipePacks.add(event, MODID));
         modEventBus.addListener(ModTechnologies::register);
         NauvisResearchGameTests.register(modEventBus);
+
+        // The other kind of effect a technology has. A recipe unlock goes through Facrafting's
+        // lock below; a modifier - a bigger inserter hand, a faster lab - goes through the
+        // library's Bonuses, which any machine mod may ask without naming this one. The library
+        // is required, so this needs no ModList check.
+        Bonuses.install((level, effect) -> Research.bonus(level.getServer(), effect));
 
         // Only touched when Facrafting is there. The class names Facrafting types, and the JVM
         // resolves that reference the first time this call runs - so with Facrafting absent it

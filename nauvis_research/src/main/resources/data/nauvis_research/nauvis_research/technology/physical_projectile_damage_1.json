@@ -9,5 +9,22 @@
   "packs": [
     "nauvis_research:science_pack_1"
   ],
-  "unlocks": []
+  "unlocks": [],
+  "modifiers": [
+    {
+      "type": "ammo-damage",
+      "modifier": 0.1,
+      "target": "bullet"
+    },
+    {
+      "type": "turret-attack",
+      "modifier": 0.1,
+      "target": "gun-turret"
+    },
+    {
+      "type": "ammo-damage",
+      "modifier": 0.1,
+      "target": "shotgun-shell"
+    }
+  ]
 }

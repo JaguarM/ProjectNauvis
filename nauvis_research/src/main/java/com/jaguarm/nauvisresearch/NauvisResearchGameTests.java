@@ -1,5 +1,6 @@
 package com.jaguarm.nauvisresearch;
 
+import com.jaguarm.nauvislib.bonus.Bonuses;
 import com.jaguarm.nauvislib.transfer.MachinePower;
 import java.util.List;
 import java.util.Set;
@@ -115,6 +116,7 @@ public final class NauvisResearchGameTests {
         TEST_TYPES.register("technology_layout_is_sound", () -> TechnologyLayoutTest.CODEC);
         TEST_TYPES.register("research_keeps_its_progress", () -> ResearchKeepsItsProgressTest.CODEC);
         TEST_TYPES.register("a_lab_spends_blue_science", () -> LabSpendsBlueScienceTest.CODEC);
+        TEST_TYPES.register("bonuses_reach_the_world", () -> BonusesReachTheWorldTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -166,6 +168,7 @@ public final class NauvisResearchGameTests {
         // Alone in their batch. See above.
         register(event, alone, "research_command_moves_the_tree", ResearchCommandTest::new, 20);
         register(event, alone, "research_keeps_its_progress", ResearchKeepsItsProgressTest::new, 20);
+        register(event, alone, "bonuses_reach_the_world", BonusesReachTheWorldTest::new, 20);
 
         /*
          * A third batch, for the two tests that complete oil gathering's whole chain and hold it
@@ -1851,6 +1854,101 @@ public final class NauvisResearchGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a lab spends blue science");
+        }
+    }
+
+    /**
+     * A technology's modifiers are summed for the world, and reach a machine through the library.
+     *
+     * <p>Two research-speed technologies at a fifth and three tenths are half again as fast, and a
+     * lab's unit is shorter by exactly that. The inserter capacity line is the other one anything
+     * reads: the stack inserter's technology and its first two bonus levels make three, and the
+     * ordinary inserter's single bonus arrives with the second level and not before.
+     *
+     * <p>Asked through {@code Bonuses} as well as {@code Research}, because the wiring between the
+     * two is a line in the mod constructor that nothing else here would notice going missing - and
+     * with it gone every inserter in the pack would hold one item for ever, saying nothing.
+     *
+     * <p>Alone in its batch: it completes chains that run back through automation, which is the
+     * technology the lab tests point their labs at. Puts the tree back exactly afterwards.
+     */
+    public static class BonusesReachTheWorldTest extends GameTestInstance {
+
+        public static final MapCodec<BonusesReachTheWorldTest> CODEC =
+                RecordCodecBuilder.<BonusesReachTheWorldTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(BonusesReachTheWorldTest::info))
+                                .apply(i, BonusesReachTheWorldTest::new));
+
+        public BonusesReachTheWorldTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            MinecraftServer server = helper.getLevel().getServer();
+            ResearchState state = Research.state(server);
+            Set<ResourceKey<Technology>> before = Set.copyOf(state.completed());
+            ResourceKey<Technology> current = state.current();
+            try {
+                helper.assertTrue(Bonuses.installed(),
+                        "nothing has installed itself as the world's bonuses - see NauvisResearch");
+
+                state.forget(ModTechnologies.key("research_speed_1"));
+                state.forget(ModTechnologies.key("research_speed_2"));
+                state.forget(ModTechnologies.key("inserter_capacity_bonus_2"));
+                Research.changedExternally(server);
+                helper.assertTrue(Research.bonus(server, LabBlockEntity.LABORATORY_SPEED) == 0,
+                        "research speed with neither speed technology researched");
+                helper.assertValueEqual(Bonuses.count(helper.getLevel(), "inserter-stack-size-bonus"), 0,
+                        "an ordinary inserter's bonus with nothing researched");
+
+                finish(server, state, ModTechnologies.key("research_speed_2"), false);
+                Research.changedExternally(server);
+                double speed = Research.bonus(server, LabBlockEntity.LABORATORY_SPEED);
+                helper.assertTrue(Math.abs(speed - 0.5) < 1e-9,
+                        "research speed after both speed technologies: " + speed + ", not 0.5");
+                helper.assertTrue(Math.abs(Bonuses.of(helper.getLevel(), LabBlockEntity.LABORATORY_SPEED) - 0.5) < 1e-9,
+                        "the library answers differently from research - the hook is not wired");
+                Technology engine = technology(helper, "electric_engine");
+                helper.assertValueEqual(LabBlockEntity.cycleTicksFor(engine, helper.getLevel()), 400,
+                        "ticks a 600-tick unit takes at half again the research speed");
+
+                // Stack inserter, capacity 1, capacity 2: one from each for the stack inserter's
+                // hand, and the ordinary inserter's single bonus from the second level only.
+                finish(server, state, ModTechnologies.key("inserter_capacity_bonus_1"), false);
+                Research.changedExternally(server);
+                helper.assertValueEqual(Bonuses.count(helper.getLevel(), "bulk-inserter-capacity-bonus"), 2,
+                        "stack inserter bonus after its technology and the first capacity level");
+                helper.assertValueEqual(Bonuses.count(helper.getLevel(), "inserter-stack-size-bonus"), 0,
+                        "an ordinary inserter's bonus before the second capacity level");
+
+                finish(server, state, ModTechnologies.key("inserter_capacity_bonus_2"), false);
+                Research.changedExternally(server);
+                helper.assertValueEqual(Bonuses.count(helper.getLevel(), "bulk-inserter-capacity-bonus"), 3,
+                        "stack inserter bonus after the second capacity level");
+                helper.assertValueEqual(Bonuses.count(helper.getLevel(), "inserter-stack-size-bonus"), 1,
+                        "an ordinary inserter's bonus after the second capacity level");
+            } finally {
+                for (ResourceKey<Technology> key : List.copyOf(state.completed())) {
+                    if (!before.contains(key)) {
+                        state.forget(key);
+                    }
+                }
+                before.forEach(state::complete);
+                state.setCurrent(current);
+                Research.changedExternally(server);
+            }
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("bonuses reach the world");
         }
     }
 }

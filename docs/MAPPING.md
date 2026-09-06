@@ -134,6 +134,11 @@ machine that took it, through Facrafting's `MiningListeners`. The generator writ
 `"trigger": {"item": ...}` and the second as `"trigger": {"mine": ...}`, and refuses any other
 type by name rather than dropping it.
 
+A technology's `modifiers` go through whole - `{"type": "laboratory-speed", "modifier": 0.2}` -
+with an `ammo_category` or `turret_id` folded into a `target`. The research mod sums the earned
+ones by type and answers any machine through `nauvis_lib`'s `Bonuses`; the generator's summary
+counts them by type so it is visible which types nothing reads yet.
+
 `data/removals.json`, and the rule it enforces
 ---------------------------------------------
 

@@ -214,6 +214,11 @@ public final class ResearchCommand {
                         : Component.literal(String.join(", ",
                                 technology.unlocks().stream()
                                         .map(r -> r.identifier().toString()).toList()))), false);
+        if (!technology.modifiers().isEmpty()) {
+            source.sendSuccess(() -> Component.translatable(key("info.modifiers"),
+                    ComponentUtils.join(technology.modifiers().stream()
+                            .map(Technology.Modifier::describe).toList())), false);
+        }
         return 1;
     }
 

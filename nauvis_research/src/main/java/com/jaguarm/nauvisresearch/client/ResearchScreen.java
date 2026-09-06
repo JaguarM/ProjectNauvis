@@ -771,11 +771,22 @@ public class ResearchScreen extends Screen {
         return cost(technology);
     }
 
+    /**
+     * What a technology hands over: the items its recipes make, then its modifiers.
+     *
+     * <p>A recipe for an item no mod registers is left out - it hands over nothing here - but a
+     * modifier is always listed, whether or not anything reads it yet: a bigger inserter hand is a
+     * fact about the tree whichever machines exist, and the lang file says beside the ones nothing
+     * reads that they do nothing yet.
+     */
     private List<Component> unlocksOf(Technology technology) {
         List<Component> unlocks = new ArrayList<>();
         for (ResourceKey<Recipe<?>> recipe : technology.unlocks()) {
             BuiltInRegistries.ITEM.getOptional(recipe.identifier())
                     .ifPresent(item -> unlocks.add(new ItemStack(item).getHoverName()));
+        }
+        for (Technology.Modifier modifier : technology.modifiers()) {
+            unlocks.add(modifier.describe());
         }
         return unlocks;
     }

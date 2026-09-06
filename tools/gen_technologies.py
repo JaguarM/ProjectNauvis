@@ -50,10 +50,13 @@ Exactly one of the two, and the generator refuses anything with both or neither.
 What is dropped, and why each is a decision rather than an omission
 ------------------------------------------------------------------
 
-**Effects that are not `unlock_recipes`.** Damage bonuses, laboratory speed, mining speed. Every
-one of them modifies a mechanic this pack does not have yet, so the technology is written without
-them rather than not written; the summary counts them by type, so the day a mechanic lands the
-technologies that feed it are already there.
+**Nothing, any more, of the modifiers - but most of them still do nothing.** A technology's other
+effects - a bigger inserter hand, a faster lab, a harder-hitting bullet - are written into the
+file as `modifiers`, each a Factorio modifier type and a number, and the research mod sums the
+earned ones by type and answers whatever machine asks through `nauvis_lib`'s `Bonuses`. A type no
+machine reads is a number nobody asks for; the summary counts them by type so it is visible how
+much is waiting on a mechanic. `ammo-damage` and `turret-attack` keep their category or turret as
+`target`, since one bullet bonus is not another.
 
 **Technologies whose prerequisites are not in the tree.** The tree is a graph and a dangling edge
 is a technology nobody can ever start - it would sit in the list looking perfectly normal. They
@@ -296,6 +299,26 @@ def cost_of(technology: dict, items: dict) -> dict:
     return {"units": cost["count"], "ticks_per_unit": int(ticks), "packs": packs}
 
 
+def modifier_of(modifier: dict, technology_id: str) -> dict:
+    """
+    One effect that is not a recipe, as the research mod reads it: a type, a number, and for the
+    two kinds Factorio qualifies - a damage bonus is per ammo category, a turret bonus per turret -
+    the qualifier as `target`. Anything else on the modifier is dropped here on purpose: the type
+    names are Wube's, and a machine that reads one names the same string.
+    """
+    kind = modifier.get("type")
+    if not kind:
+        raise GenError(f"'{technology_id}' has a modifier with no type.")
+    amount = modifier.get("modifier")
+    if not isinstance(amount, (int, float)) or isinstance(amount, bool):
+        raise GenError(f"'{technology_id}' has a {kind!r} modifier with no number on it.")
+    out = {"type": kind, "modifier": amount}
+    target = modifier.get("ammo_category") or modifier.get("turret_id")
+    if target:
+        out["target"] = target
+    return out
+
+
 def reachable(tree: list, items: dict, aliases: dict) -> set[str]:
     """
     Every technology a new world could eventually get to, walked from an empty one.
@@ -375,6 +398,9 @@ def plan(tree: list, items: dict, aliases: dict) -> tuple[list, dict]:
         }
         entry.update(cost_of(technology, items))
         entry["unlocks"] = recipes
+        modifiers = [modifier_of(m, technology["id"]) for m in technology.get("modifiers", [])]
+        if modifiers:
+            entry["modifiers"] = modifiers
         files.append((REGISTRY_PATH / f"{slug(technology['id'])}.json", entry))
         files.append((ADVANCEMENT_PATH / f"{slug(technology['id'])}.json",
                       advancement(technology["id"], entry, items, tree)))
@@ -538,7 +564,7 @@ def main() -> int:
         print(f"  dropped, prerequisites not in the tree       : {report['dropped']}")
     if report["modifiers"]:
         kinds = ", ".join(f"{k} x{v}" for k, v in sorted(report["modifiers"].items()))
-        print(f"  effects this pack has no mechanic for: {kinds}")
+        print(f"  modifiers, by type, for whatever machine reads them: {kinds}")
     for label, bucket in (("recipes the pack does not model", report["unmodelled"]),
                           ("items the mapping skips or calls raw", report["not_registered"])):
         if bucket:

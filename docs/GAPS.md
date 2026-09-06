@@ -303,9 +303,13 @@ Research
   world saves; a tree that grew later would move under a player who had researched past it. The
   mitigation is presentation and is built: a node whose unlock list comes out empty says **no effect
   yet** in its tooltip where the others list what they hand over.
-- **A technology's modifiers do nothing** — damage, laboratory speed, mining speed are transcribed
-  and dropped. The generator counts them by type so it is visible how much is waiting. Research
-  speed is the one that would be felt first: `research-speed-1` and `-2` change nothing.
+- **Most of a technology's modifiers still do nothing, and the screen says which.** Every
+  modifier is in the tree now - a type and a number, summed over what is researched and
+  answered through `nauvis_lib`'s `Bonuses` - and three types are read: `laboratory-speed` by
+  the lab, `inserter-stack-size-bonus` by every inserter, `bulk-inserter-capacity-bonus` by the
+  stack inserter. Damage bonuses and mining speed are summed and asked for by nothing, and their
+  lines on the technology screen say *does nothing yet*. Wire a mechanic to one and the lang
+  line is what changes.
 - **Nothing gates a vanilla bench recipe.** The `crafting_table` datapacks ship a shapeless copy of
   every recipe, off by default, and a vanilla crafting recipe never goes near Facrafting, where the
   gate lives. There is no hook that would let it, so the labels read **"(skips research)"** — not a

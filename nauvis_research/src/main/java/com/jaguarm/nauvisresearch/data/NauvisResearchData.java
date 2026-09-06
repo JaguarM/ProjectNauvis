@@ -186,6 +186,17 @@ public final class NauvisResearchData {
                     "Not researchable: a science pack it wants is not a registered item");
             add("commands.nauvis_research.research.info.prerequisites", "Needs: %s");
             add("commands.nauvis_research.research.info.unlocks", "Unlocks: %s");
+            add("commands.nauvis_research.research.info.modifiers", "Effects: %s");
+
+            // A technology's other kind of effect, as the screen and /research word it. The
+            // amount comes first, the target second. The ones no machine reads say so: a player
+            // deciding what to research next should not pay for a bonus that is not there yet.
+            add("modifier.nauvis_research.inserter-stack-size-bonus", "Inserter hand size %s");
+            add("modifier.nauvis_research.bulk-inserter-capacity-bonus", "Stack inserter hand size %s");
+            add("modifier.nauvis_research.laboratory-speed", "Research speed %s");
+            add("modifier.nauvis_research.character-mining-speed", "Mining speed %s (does nothing yet)");
+            add("modifier.nauvis_research.ammo-damage", "%2$s damage %1$s (does nothing yet)");
+            add("modifier.nauvis_research.turret-attack", "%2$s damage %1$s (does nothing yet)");
             add("commands.nauvis_research.research.info.none", "nothing");
             add("commands.nauvis_research.research.granted", "Researched %s and what it needed (%s technologies)");
             add("commands.nauvis_research.research.already", "%s and everything it needs are already researched");

@@ -11,8 +11,11 @@ import com.jaguarm.nauvislogistics.transport.BurnerInserterBlockEntity;
 import com.jaguarm.nauvislogistics.transport.BurnerInserterMenu;
 import com.jaguarm.nauvislogistics.transport.ElectricInserterBlock;
 import com.jaguarm.nauvislogistics.transport.ElectricInserterBlockEntity;
+import com.jaguarm.nauvislogistics.transport.FastInserterBlock;
 import com.jaguarm.nauvislogistics.transport.InserterBlockEntity;
 import com.jaguarm.nauvislogistics.transport.LongHandedInserterBlock;
+import com.jaguarm.nauvislogistics.transport.StackInserterBlock;
+import com.jaguarm.nauvislib.bonus.Bonuses;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -113,6 +116,8 @@ public final class NauvisLogisticsGameTests {
         TEST_TYPES.register("long_handed_inserter_ignores_its_neighbours",
                 () -> LongHandedIgnoresNeighboursTest.CODEC);
         TEST_TYPES.register("long_handed_inserter_looks_again", () -> LongHandedLooksAgainTest.CODEC);
+        TEST_TYPES.register("fast_inserter_swings_faster", () -> FastInserterSwingsFasterTest.CODEC);
+        TEST_TYPES.register("stack_inserter_moves_a_handful", () -> StackInserterMovesAHandfulTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -145,6 +150,8 @@ public final class NauvisLogisticsGameTests {
                 LongHandedIgnoresNeighboursTest::new, 100);
         register(event, environment, "long_handed_inserter_looks_again",
                 LongHandedLooksAgainTest::new, 200);
+        register(event, environment, "fast_inserter_swings_faster", FastInserterSwingsFasterTest::new, 100);
+        register(event, environment, "stack_inserter_moves_a_handful", StackInserterMovesAHandfulTest::new, 100);
     }
 
     private interface TestFactory {
@@ -1028,6 +1035,130 @@ public final class NauvisLogisticsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("long-handed inserter looks again");
+        }
+    }
+
+    /** Chest, an electric tier of choice, chest - charged, so what differs is the arm alone. */
+    private static void buildTierLine(GameTestHelper helper, ElectricInserterBlock tier) {
+        helper.setBlock(SOURCE, Blocks.CHEST);
+        helper.setBlock(DESTINATION, Blocks.CHEST);
+        helper.setBlock(INSERTER, tier.defaultBlockState().setValue(InserterBlock.FACING, Direction.EAST));
+        charge(helper.getBlockEntity(INSERTER, ElectricInserterBlockEntity.class));
+    }
+
+    /**
+     * A fast inserter delivers in nine ticks, where the basic arm would still be swinging.
+     *
+     * <p>Factorio's fast inserter turns at 864 degrees a second against the basic arm's 302, and
+     * the tick counts follow: a fast swing is over well before a basic one is half done. Both
+     * halves are asserted - not yet at six ticks, done by twelve - because a tier that swung at
+     * the basic speed would pass a test that only waited long enough.
+     */
+    public static class FastInserterSwingsFasterTest extends GameTestInstance {
+
+        public static final MapCodec<FastInserterSwingsFasterTest> CODEC =
+                RecordCodecBuilder.<FastInserterSwingsFasterTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(FastInserterSwingsFasterTest::info))
+                                .apply(i, FastInserterSwingsFasterTest::new));
+
+        public FastInserterSwingsFasterTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            buildTierLine(helper, ModBlocks.FAST_INSERTER.get());
+            helper.assertValueEqual(insert(container(helper, SOURCE), Items.IRON_INGOT, 1), 1,
+                    "iron accepted by the source chest");
+
+            helper.startSequence()
+                    .thenExecuteAfter(FastInserterBlock.SWING_TICKS - 3, () -> helper.assertValueEqual(
+                            countIn(container(helper, DESTINATION), Items.IRON_INGOT), 0,
+                            "iron delivered before a fast swing could have finished"))
+                    .thenExecuteAfter(6, () -> {
+                        helper.assertValueEqual(countIn(container(helper, DESTINATION), Items.IRON_INGOT), 1,
+                                "iron delivered by a fast inserter twelve ticks after it was given - "
+                                        + "a basic arm would still be swinging");
+                        helper.assertTrue(
+                                helper.getBlockEntity(INSERTER, ElectricInserterBlockEntity.class).energyStored()
+                                        <= ElectricInserterBlockEntity.ENERGY_CAPACITY
+                                                - FastInserterBlock.ENERGY_PER_TICK * FastInserterBlock.SWING_TICKS,
+                                "a fast inserter swung for less than its own draw");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("fast inserter swings faster");
+        }
+    }
+
+    /**
+     * A stack inserter moves as many items in one swing as the world's research says its hand holds.
+     *
+     * <p>The hand size is a question to the world through the library's {@code Bonuses}, and this
+     * mod runs without the mod that answers it, so the test stands in as the world: four bonus
+     * levels, a hand of five. Twelve items in the chest behind, five in the chest in front after
+     * one swing and not more - and the basic inserter's own bonus, which the stand-in leaves at
+     * zero, is not what the stack inserter read. The stand-in is taken down again whatever happens,
+     * because the answerer is one per game.
+     */
+    public static class StackInserterMovesAHandfulTest extends GameTestInstance {
+
+        public static final MapCodec<StackInserterMovesAHandfulTest> CODEC =
+                RecordCodecBuilder.<StackInserterMovesAHandfulTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(StackInserterMovesAHandfulTest::info))
+                                .apply(i, StackInserterMovesAHandfulTest::new));
+
+        private static final int BONUS = 4;
+
+        public StackInserterMovesAHandfulTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            Bonuses.Source world = Bonuses.source();
+            Bonuses.install((level, effect) -> StackInserterBlock.CAPACITY_BONUS.equals(effect) ? BONUS : 0);
+
+            helper.assertValueEqual(
+                    ModBlocks.STACK_INSERTER.get().handSize(helper.getLevel()), 1 + BONUS,
+                    "a stack inserter's hand with four capacity bonuses researched");
+            helper.assertValueEqual(ModBlocks.INSERTER.get().handSize(helper.getLevel()), 1,
+                    "an ordinary inserter's hand, which the stack inserter's bonus does not grow");
+
+            buildTierLine(helper, ModBlocks.STACK_INSERTER.get());
+            helper.assertValueEqual(insert(container(helper, SOURCE), Items.IRON_INGOT, 12), 12,
+                    "iron accepted by the source chest");
+
+            helper.startSequence()
+                    .thenExecuteAfter(StackInserterBlock.SWING_TICKS + 3, () -> {
+                        try {
+                            helper.assertValueEqual(countIn(container(helper, DESTINATION), Items.IRON_INGOT),
+                                    1 + BONUS, "iron delivered by one swing of a stack inserter");
+                            helper.assertValueEqual(countIn(container(helper, SOURCE), Items.IRON_INGOT),
+                                    12 - 1 - BONUS, "iron left behind after one swing");
+                        } finally {
+                            Bonuses.install(world);
+                        }
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("stack inserter moves a handful");
         }
     }
 }

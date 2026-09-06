@@ -10,5 +10,15 @@
     "nauvis_research:science_pack_1",
     "nauvis_research:science_pack_2"
   ],
-  "unlocks": []
+  "unlocks": [],
+  "modifiers": [
+    {
+      "type": "inserter-stack-size-bonus",
+      "modifier": 1
+    },
+    {
+      "type": "bulk-inserter-capacity-bonus",
+      "modifier": 1
+    }
+  ]
 }

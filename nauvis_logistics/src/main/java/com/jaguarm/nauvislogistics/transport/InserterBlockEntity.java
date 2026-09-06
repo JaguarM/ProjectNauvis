@@ -32,9 +32,10 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * worth building before belts: one block makes every container in the game automatable.
  *
  * <p>What differs between tiers is the drive - {@link BurnerInserterBlockEntity} burns coal,
- * {@link ElectricInserterBlockEntity} draws from the grid - how fast it swings, and how far it
- * reaches. None of those is a different block entity: the numbers live on the block, which is
- * what a tier actually is. Filters and stack size will join them the same way.
+ * {@link ElectricInserterBlockEntity} draws from the grid - how fast it swings, how far it
+ * reaches, and how many it holds. None of those is a different block entity: the numbers live on
+ * the block, which is what a tier actually is, and the hand size is the block asking the world
+ * what has been researched. Filters will join them the same way.
  *
  * <h2>Sleeping, and how it hears about work</h2>
  *
@@ -167,7 +168,8 @@ public abstract class InserterBlockEntity extends BlockEntity {
 
         // Whether there is anything to move is asked once, as a swing starts. Checking it every
         // tick would be a simulated transaction per inserter per tick across a whole base.
-        if (swing == 0 && !move(false)) {
+        int hand = tier().handSize(level);
+        if (swing == 0 && !move(hand, false)) {
             lookAgainIfOutOfEarshot(level);
             return;
         }
@@ -176,7 +178,7 @@ public abstract class InserterBlockEntity extends BlockEntity {
         swing++;
 
         if (swing >= swingTicks()) {
-            if (!move(true)) {
+            if (!move(hand, true)) {
                 // The item went away mid-swing, or the destination filled up. Hold the swing and
                 // sleep; either side changing wakes it again - unless it reaches too far to hear
                 // either side, which is what the re-check is for.
@@ -205,15 +207,22 @@ public abstract class InserterBlockEntity extends BlockEntity {
     }
 
     /**
-     * Moves one item from the block behind to the block in front, all or nothing.
+     * Moves a handful of one item from the block behind to the block in front, all or nothing.
      *
      * <p>One transaction spans both halves, so an item that cannot be delivered is never taken.
      * Without that, an inserter aimed at a full chest would destroy one item per swing.
      *
+     * <p>The hand takes up to {@code hand} of one kind from one slot, and as many of those as the
+     * far side has room for: a nested transaction asks how many fit and is rolled back, and the
+     * move proper then takes exactly that many. Factorio's inserter holds the rest in its hand
+     * until there is room; here it leaves them where they were, which comes to the same thing a
+     * swing later.
+     *
+     * @param hand   how many items the tier's hand holds this swing. See {@link InserterBlock#handSize}.
      * @param commit false to ask whether a move is possible without performing it.
-     * @return whether an item was, or would have been, moved.
+     * @return whether anything was, or would have been, moved.
      */
-    private boolean move(boolean commit) {
+    private boolean move(int hand, boolean commit) {
         ResourceHandler<ItemResource> from = handler(source);
         ResourceHandler<ItemResource> to = handler(destination);
         if (from == null || to == null) {
@@ -226,11 +235,18 @@ public abstract class InserterBlockEntity extends BlockEntity {
                 continue;
             }
             try (Transaction transaction = Transaction.openRoot()) {
-                if (from.extract(index, item, 1, transaction) != 1) {
+                int fits;
+                try (Transaction probe = Transaction.open(transaction)) {
+                    int taken = from.extract(index, item, hand, probe);
+                    fits = taken == 0 ? 0 : to.insert(item, taken, probe);
+                    // Deliberately not committed: the probe only measured.
+                }
+                if (fits == 0) {
                     continue;
                 }
-                if (to.insert(item, 1, transaction) != 1) {
-                    // Rolls back on the way out of the block: the item is still in the source.
+                if (from.extract(index, item, fits, transaction) != fits
+                        || to.insert(item, fits, transaction) != fits) {
+                    // Rolls back on the way out of the block: everything is still in the source.
                     continue;
                 }
                 if (commit) {

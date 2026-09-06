@@ -1,0 +1,38 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "logistics",
+  "order": "0051",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:advanced_circuit",
+      "count": 1
+    },
+    {
+      "ingredient": "neoprogressivematerials:electronic_circuit",
+      "count": 15
+    },
+    {
+      "ingredient": "nauvis_logistics:fast_inserter",
+      "count": 1
+    },
+    {
+      "ingredient": "neoprogressivematerials:iron_gear_wheel",
+      "count": 15
+    }
+  ],
+  "result": {
+    "id": "nauvis_logistics:stack_inserter",
+    "count": 1
+  }
+}

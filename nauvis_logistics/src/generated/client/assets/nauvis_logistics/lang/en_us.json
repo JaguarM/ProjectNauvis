@@ -1,11 +1,13 @@
 {
   "block.nauvis_logistics.burner_inserter": "Burner inserter",
+  "block.nauvis_logistics.fast_inserter": "Fast inserter",
   "block.nauvis_logistics.fast_splitter": "Fast splitter",
   "block.nauvis_logistics.fast_transport_belt": "Fast transport belt",
   "block.nauvis_logistics.inserter": "Inserter",
   "block.nauvis_logistics.iron_chest": "Iron chest",
   "block.nauvis_logistics.long_handed_inserter": "Long handed inserter",
   "block.nauvis_logistics.splitter": "Splitter",
+  "block.nauvis_logistics.stack_inserter": "Stack inserter",
   "block.nauvis_logistics.steel_chest": "Steel chest",
   "block.nauvis_logistics.transport_belt": "Transport belt",
   "config.jade.plugin_nauvis_logistics": "Project Nauvis: Logistics",
