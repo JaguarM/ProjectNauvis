@@ -1,6 +1,7 @@
 package com.jaguarm.nauvisfluids.registry;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
+import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlockEntity;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
 import com.jaguarm.nauvisfluids.pipe.PipeBlockEntity;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackBlockEntity;
@@ -28,6 +29,10 @@ public final class ModBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PumpjackBlockEntity>> PUMPJACK =
             BLOCK_ENTITIES.register("pumpjack",
                     () -> new BlockEntityType<>(PumpjackBlockEntity::new, ModBlocks.PUMPJACK.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<OffshorePumpBlockEntity>> OFFSHORE_PUMP =
+            BLOCK_ENTITIES.register("offshore_pump",
+                    () -> new BlockEntityType<>(OffshorePumpBlockEntity::new, ModBlocks.OFFSHORE_PUMP.get()));
 
     private ModBlockEntities() {}
 }

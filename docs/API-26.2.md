@@ -410,6 +410,56 @@ Other confirmed details, second batch
   player is allowed and `getHorizontalDirection()` then answers north, which is how a gametest
   asks a block what it would place as.
 
+A fluid of your own, and what still asks for vanilla's by name
+--------------------------------------------------------------
+
+`BaseFlowingFluid.Source` and `.Flowing` over one `BaseFlowingFluid.Properties(type, still,
+flowing)` - `.bucket(...)` and `.block(...)` are suppliers, so the bucket can be vanilla's and the
+block can be `new LiquidBlock(fluid, props)` registered later. Registries fire in vanilla's order,
+fluids before blocks, so `ModFluids.WATER.get()` is safe inside a block's factory. Neither half
+answers "can this make a source" itself: that is `FluidType.Properties.canConvertToSource`, and
+NeoForge's own water type is `NeoForgeMod.WATER_TYPE` - copy its properties line for line.
+**`isWaterLike(true)` is load-bearing**: `Entity.wasEyeInWater` reads `FluidType.getIsWaterLike`,
+so a fluid without it never drowns anybody and never darkens the screen.
+
+Three things a flowing fluid does that the base class does not: `canBeReplacedWith` is "replaced
+from above by anything that is not me", where water's is "not `#minecraft:water`" - the difference
+is whether a poured bucket bores a hole through a lake; `animateTick` and `getDripParticle` are
+water's bubbles and drips; `entityInside` applies `InsideBlockEffectType.EXTINGUISH`.
+`nauvis_fluids/.../fluid/NaturalWaterFluid.java` carries all three.
+
+The model is `FluidModel.Unbaked(still, flowing, overlay, FluidTintSources.water())`, registered
+for both fluids with the two-fluid overload of `RegisterFluidModelsEvent.register`; the overlay is
+`block/water_overlay`, drawn against glass. `FluidStateModelSet` is vanilla's registration to
+copy. The layer is chosen from the sprites' transparency, so water's sprites make it translucent
+with nothing said.
+
+Tags: `FluidTagsProvider(output, lookup, modId)` and `tag(...).add(ResourceKey...)` -
+`DeferredHolder.getKey()`. `#minecraft:water` covers swimming, drowning, boats, fire, farmland,
+sugar cane, sponges, guardians, drowned and axolotls; `supports_lily_pad`, `supports_frogspawn`
+and `bubble_column_can_occupy` name the source alone.
+
+**What asks for the block by name, and so does not see a fluid of yours in the tag** - verified by
+grepping the 26.2 sources for `Blocks.WATER` and `Fluids.WATER`: every water animal's spawn rule
+(`WaterAnimal`, `AgeableWaterCreature`, `TropicalFish`, `GlowSquid` and `AbstractNautilus` all
+check `getBlockState(pos.above()).is(Blocks.WATER)`); kelp, seagrass and sea pickle growth; bone
+meal on water; the fishing bobber's splash particles (the catch itself is by tag);
+`IceBlock.meltsInto`; frost walker; `Biome.shouldFreeze`; and **every waterloggable block**, whose
+`getStateForPlacement` sets `WATERLOGGED` from `fluidState.is(Fluids.WATER)` and whose
+`SimpleWaterloggedBlock.canPlaceLiquid` is `type == Fluids.WATER`. Spawning is answered with
+`RegisterSpawnPlacementsEvent.register(type, predicate)` - the two-argument form ORs your predicate
+with vanilla's; `EntityTypes.COD` is where `EntityType.COD` went, and
+`SpawnPlacements.SpawnPredicate` takes a `ServerLevelAccessor`. The rest is left, and listed in
+`GAPS.md`.
+
+Worldgen, in bulk: a placed feature with `"placement": []` lands once per chunk at the chunk's
+origin, and `context.level().getChunk(x, z)` hands over the generating `ChunkAccess`.
+`LevelChunkSection.maybeHas(predicate)` is a palette check, and
+`section.setBlockState(x, y, z, state)` writes without heightmaps or light - right when the swap
+changes neither, which two liquids with the same properties do not.
+`LevelChunk.postProcessGeneration` ticks every fluid the generator marked, reading the state that
+is there by then, so a swapped fluid still flows.
+
 Time is a world clock, and the gametest world's sky ignores it
 --------------------------------------------------------------
 

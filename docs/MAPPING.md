@@ -234,7 +234,7 @@ Factorio's furnace.
 | `concrete` | `minecraft:gray_concrete` | |
 | `hazard-concrete` | `minecraft:yellow_concrete` | |
 | `gate` | `minecraft:iron_door` | weakest of the nineteen; a real wall gate may be worth building |
-| `water` | `minecraft:water` | a fluid, not an item; the one fluid vanilla already has |
+| `water` | `minecraft:water` | a fluid, not an item; the one fluid vanilla already has. In the world it is `nauvis_fluids:water`, which a bucket and an offshore pump both turn into this |
 | `raw-fish` | `minecraft:cod` | |
 
 Skipped outright

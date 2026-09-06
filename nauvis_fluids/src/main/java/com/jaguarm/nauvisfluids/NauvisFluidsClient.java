@@ -17,7 +17,7 @@ import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.client.fluid.FluidTintSources;
 
 /**
- * The client half: what steam and crude oil look like, and the oil x-ray.
+ * The client half: what steam, crude oil and natural water look like, and the oil x-ray.
  *
  * <p>Every registered fluid needs a {@link FluidModel} in 26.2 - this is not optional and not
  * skippable for a fluid that is never placed in the world. Without one you get the
@@ -26,7 +26,9 @@ import net.neoforged.neoforge.client.fluid.FluidTintSources;
  * {@code Missing FluidModel for fluid} when it happens, and nothing else complains.
  *
  * <p>Vanilla textures, like every other model in this pack: water, tinted. Pale for steam, near
- * black for oil - Factorio's crude oil has a base colour of pure black and a flow colour of grey.
+ * black for oil - Factorio's crude oil has a base colour of pure black and a flow colour of grey -
+ * and for natural water, water's own three sprites and the biome's colour, which is what makes
+ * a swamp's water brown and a warm ocean's turquoise exactly as before.
  */
 @Mod(value = NauvisFluids.MODID, dist = Dist.CLIENT)
 @EventBusSubscriber(modid = NauvisFluids.MODID, value = Dist.CLIENT)
@@ -44,6 +46,15 @@ public class NauvisFluidsClient {
     static void registerFluidModels(RegisterFluidModelsEvent event) {
         event.register(water(STEAM_TINT), ModFluids.STEAM.get());
         event.register(water(CRUDE_OIL_TINT), ModFluids.CRUDE_OIL.get());
+        // Vanilla's own water model, sprite for sprite: still, flowing, the overlay drawn against
+        // glass and leaves, and the biome tint. One model for both halves of the fluid, as
+        // vanilla registers its own.
+        event.register(new FluidModel.Unbaked(
+                new Material(Identifier.withDefaultNamespace("block/water_still")),
+                new Material(Identifier.withDefaultNamespace("block/water_flow")),
+                new Material(Identifier.withDefaultNamespace("block/water_overlay")),
+                FluidTintSources.water()),
+                ModFluids.WATER.get(), ModFluids.FLOWING_WATER.get());
     }
 
     private static FluidModel.Unbaked water(int tint) {

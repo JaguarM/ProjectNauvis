@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "nauvis_fluids:block/offshore_pump_inventory"
+  }
+}

@@ -259,6 +259,18 @@ first time anything asks. Worldgen then only places blocks — a block entity in
 thing to avoid having opinions about — and a resource placed by hand in creative is exactly as rich
 as a generated one there would have been. `CrudeOilField.initialAmount` is the pattern.
 
+**A resource the player must go to is a fluid of the world's own.** Factorio's water is a tile, and
+the offshore pump is the only thing that does anything with it; Minecraft's water is a bucket away
+from anywhere. So worldgen's water is `nauvis_fluids:water` - vanilla's block on a fluid of ours,
+in the water tag, drawn with water's sprites - with the two rules that make a lake a place: a
+bucket of it is vanilla's water bucket, so what you carry away is ordinary water and what you pour
+out is ordinary water, and it never makes a new source, so a lake is as big as the world made it.
+The pump asks a tag rather than a fluid, so a pack can put vanilla water back. The swap is a
+feature in the last decoration step that reads the chunk back and swaps every water block in its
+sections - `NaturalWaterFeature`, whose javadoc says why it touches neither heightmaps nor light.
+The two things that stopped working because vanilla names the block rather than the tag - fish
+spawning, and the pump's own rule - are answered in `water/`.
+
 **A machine that must stand on something snaps to it.** `Multiblock.getStateForPlacement` takes the
 cell that lands on the click, and `PumpjackBlock.snapPart` chooses it so the centre lands over the
 well nearest the click. The client's outline renderer asks the same method the same question, so

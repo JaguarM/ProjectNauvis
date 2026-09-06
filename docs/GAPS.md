@@ -80,6 +80,44 @@ Oil
   triggers from nothing. The pack always ships Facrafting, so this is a fact about the seam rather
   than a hole a player meets.
 
+Water
+-----
+
+- **Every lake and sea is `nauvis_fluids:water`, and a bucket turns it into `minecraft:water`.**
+  That is the design, not a hole: Factorio's water is where the map put it, and Minecraft's two
+  buckets make a spring anywhere. Natural water is scooped as a water bucket, poured back as
+  vanilla water, and never makes a new source - and an offshore pump draws from natural water and
+  nothing else. What follows is what that costs.
+- **Chunks generated before this stay vanilla.** The swap runs as the last step of a chunk's
+  generation; a world made earlier keeps the water it has, and a pump finds nothing in it.
+- **Natural water waterlogs nothing.** Waterlogging is hard-coded to vanilla's fluid, block by
+  block: a slab, a stair or a fence placed in a lake goes in dry, and natural water will not flow
+  into one. The water inside kelp, seagrass, coral and a shipwreck's stairs is vanilla's for the
+  same reason, and breaking one leaves a block of vanilla water standing in the sea. It is scooped
+  as before and pumped by nothing, so the rule holds; it just looks like a block of water.
+- **Fish, squid, dolphins, glow squid and the nautilus spawn by a rule of ours.** Vanilla's asks
+  for the water block by name; `NaturalWaterSpawns` adds the same rule reading ours, alongside
+  vanilla's rather than in place of it. Anything else that names the block - kelp and seagrass
+  growing, bone meal on water, frost walker, a fishing bobber's splash particles, a frozen lake
+  refreezing, ice melting back to vanilla water, a turtle's way to the sea - does not apply in
+  natural water, and is left alone until somebody misses it.
+- **A neighbouring chunk can put a little vanilla water back.** A feature that reaches over a
+  chunk border - a lush cave's clay pool, an iceberg - may write vanilla water into a chunk that
+  was already made natural. Rare, at the edges, and harmless: it is not pumpable and it cannot
+  spread into natural water.
+- **An offshore pump's intake reaches four blocks: under it and to its three open sides.** Not the
+  block the intake itself replaced, so a pump set down in a one-deep puddle of natural water
+  finds the puddle gone. Still water only: the flowing skirt where a lake spills into a dug
+  channel is not a lake, and a channel does not bring the sea inland.
+- **Its numbers are the pack's ratio, not Factorio's units.** 1200 a second and a fluid box of
+  200 in Factorio; forty a tick and a tank of 200 here, so that one pump is twenty boilers as it
+  is there. The footprint, the recipe, the technology and needing no power are identity.
+- **What the pump gives is `minecraft:water`**, which is what `data/mapping.json` maps Factorio's
+  water to and what any mod's tank understands. Natural water is the thing in the world; water
+  is the thing in the pipe. Nothing takes it yet - see `NEXT.md` on the boiler.
+- **`#nauvis_fluids:offshore_pumpable` is the switch.** A pack that wants Minecraft's infinite
+  water back adds `minecraft:water` to it and changes no code.
+
 Belts
 -----
 

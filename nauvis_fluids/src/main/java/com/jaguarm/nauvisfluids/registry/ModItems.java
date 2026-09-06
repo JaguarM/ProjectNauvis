@@ -23,6 +23,8 @@ public final class ModItems {
 
     public static final DeferredItem<BlockItem> PIPE = ITEMS.registerSimpleBlockItem(ModBlocks.PIPE);
 
+    public static final DeferredItem<BlockItem> OFFSHORE_PUMP = ITEMS.registerSimpleBlockItem(ModBlocks.OFFSHORE_PUMP);
+
     public static final DeferredItem<BlockItem> PUMPJACK = ITEMS.registerSimpleBlockItem(ModBlocks.PUMPJACK);
 
     /**
@@ -31,6 +33,11 @@ public final class ModItems {
      */
     public static final DeferredItem<BlockItem> CRUDE_OIL = ITEMS.registerSimpleBlockItem(ModBlocks.CRUDE_OIL);
 
+    // No item for natural water, deliberately. A liquid's item is a bucket, and a bucket of it is
+    // vanilla's water bucket - which is the rule that keeps a lake where the world put it. See
+    // the water block in ModBlocks. (tools/check_models.py reads this file to learn which blocks
+    // have items, so the block's constant is not named here.)
+
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
             "nauvis_fluids",
             () -> CreativeModeTab.builder()
@@ -38,6 +45,7 @@ public final class ModItems {
                     .icon(() -> new ItemStack(PUMPJACK.get()))
                     .displayItems((parameters, output) -> {
                         output.accept(PIPE.get());
+                        output.accept(OFFSHORE_PUMP.get());
                         output.accept(PUMPJACK.get());
                         output.accept(CRUDE_OIL.get());
                     })

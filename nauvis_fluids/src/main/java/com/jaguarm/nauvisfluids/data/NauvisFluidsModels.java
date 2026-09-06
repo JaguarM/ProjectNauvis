@@ -10,6 +10,7 @@ import com.jaguarm.nauvisfluids.NauvisFluids;
 import com.jaguarm.nauvislib.multiblock.Boxes;
 import com.jaguarm.nauvislib.multiblock.MachineCell;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
+import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpShape;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
 
@@ -62,12 +63,24 @@ public class NauvisFluidsModels extends ModelProvider {
         pipe(blockModels);
         crudeOil(blockModels);
 
+        // Natural water is drawn by the fluid renderer, not from a model, exactly as vanilla's
+        // water is; what a liquid block's model carries is the particle its splashes use. This
+        // is vanilla's own water model, sprite for sprite.
+        blockModels.createAirLikeBlock(ModBlocks.WATER.get(),
+                new Material(Identifier.withDefaultNamespace("block/water_still")));
+
         // Dark metal, with a blast furnace's top for the decks: a pumpjack is heavy iron standing
         // in oil. Not the anvil's top, which was the first choice and drew every upward face with
         // two slits in it - anvil_top.png has three transparent columns down each side, being the
         // sprite for a block that is not a full cube. tools/check_models.py refuses that now.
         machine(blockModels, ModBlocks.PUMPJACK.get(), PumpjackShape.SHAPE,
                 TextureMapping.getBlockTexture(Blocks.POLISHED_BLACKSTONE).sprite(),
+                TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite());
+
+        // The offshore pump is mostly pipe, so it is the pipe's iron, with the same top as the
+        // pumpjack so the two read as one family of machines.
+        machine(blockModels, ModBlocks.OFFSHORE_PUMP.get(), OffshorePumpShape.SHAPE,
+                TextureMapping.getBlockTexture(Blocks.IRON_BLOCK).sprite(),
                 TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite());
     }
 

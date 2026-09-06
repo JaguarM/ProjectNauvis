@@ -100,7 +100,7 @@ public final class FluidNetworkManager {
         }
 
         network.removePipe(key);
-        dropUnreachedEndpoints(network, key);
+        reattachEndpoints(network, key);
 
         if (network.pipes().isEmpty()) {
             networks.remove(network);
@@ -155,7 +155,8 @@ public final class FluidNetworkManager {
             for (Direction side : Direction.values()) {
                 long neighbour = pos.relative(side).asLong();
                 if (!networkByPipe.containsKey(neighbour)) {
-                    network.addEndpoint(neighbour);
+                    // Through the face of the neighbour this pipe lies on, and no other.
+                    network.addEndpoint(neighbour, side.getOpposite());
                 }
             }
             wake(network);
@@ -308,13 +309,27 @@ public final class FluidNetworkManager {
         return false;
     }
 
-    /** Forgets the machines the pipe at {@code removed} was the last one touching. */
-    private void dropUnreachedEndpoints(FluidNetwork network, long removed) {
+    /**
+     * Works out afresh how the run reaches each machine the pipe at {@code removed} was touching.
+     *
+     * <p>An endpoint is reached through one face, the face of the first pipe that found a port
+     * there. Take that pipe away and the machine may still be touched by another pipe of the run
+     * on another face - which may be a port, or may not. Forgetting the machine and asking again
+     * from every pipe still beside it is the one rule that answers both.
+     */
+    private void reattachEndpoints(FluidNetwork network, long removed) {
         BlockPos pos = BlockPos.of(removed);
         for (Direction side : Direction.values()) {
             long neighbour = pos.relative(side).asLong();
-            if (!touches(network, neighbour)) {
-                network.removeEndpoint(neighbour);
+            if (networkByPipe.containsKey(neighbour)) {
+                continue;  // a pipe, not a machine
+            }
+            network.removeEndpoint(neighbour);
+            BlockPos machine = BlockPos.of(neighbour);
+            for (Direction face : Direction.values()) {
+                if (network.pipes().contains(machine.relative(face).asLong())) {
+                    network.addEndpoint(neighbour, face);
+                }
             }
         }
     }

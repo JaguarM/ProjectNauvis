@@ -1,19 +1,19 @@
-package com.jaguarm.nauvisfluids.pumpjack;
+package com.jaguarm.nauvisfluids.fluid;
 
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
- * A pumpjack's tank as a pipe may use it: take, never give.
+ * A machine's tank as a pipe may use it: take, never give.
  *
- * <p>A pumpjack makes crude oil; it is not somewhere to put it. Letting a pipe push oil back in
- * would make the machine a tank for the rest of the system to dump into, and would let two
- * pumpjacks shuffle the same oil between each other for ever. The same argument, and the same
- * shape, as the boiler's {@code SteamAccess} in {@code nauvis_power}, duplicated rather than shared
- * for the reason non-negotiable #3 gives.
+ * <p>A pumpjack makes crude oil and an offshore pump makes water; neither is somewhere to put
+ * either. Letting a pipe push fluid back in would make the machine a tank for the rest of the
+ * system to dump into, and would let two pumps shuffle the same fluid between each other for ever.
+ * The same argument, and the same shape, as the boiler's {@code SteamAccess} in
+ * {@code nauvis_power}, duplicated rather than shared for the reason non-negotiable #3 gives.
  *
- * <p>The wake-up is the other half. A pumpjack whose tank is full has stopped, and the only thing
+ * <p>The wake-up is the other half. A machine whose tank is full has stopped, and the only thing
  * that can give it work again is somebody drawing - which happens right here. It is also what the
  * pipe run reads as "this is a source": a handler that refuses insertion gives and never takes.
  */

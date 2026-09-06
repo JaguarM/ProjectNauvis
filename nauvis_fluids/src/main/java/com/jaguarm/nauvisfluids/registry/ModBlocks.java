@@ -1,10 +1,12 @@
 package com.jaguarm.nauvisfluids.registry;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
+import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlock;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlock;
 import com.jaguarm.nauvisfluids.pipe.PipeBlock;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackBlock;
 
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
@@ -16,7 +18,7 @@ public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(NauvisFluids.MODID);
 
     /**
-     * A length of pipe, which carries steam - and now crude oil.
+     * A length of pipe, which carries steam - and now crude oil, and water.
      *
      * <p>It began as an ingredient that happened to be placeable - the boiler costs four of them -
      * and PLAN.md put moving fluid in milestone 4. Steam brought it forward, because a boiler and
@@ -55,6 +57,39 @@ public final class ModBlocks {
     public static final DeferredBlock<PumpjackBlock> PUMPJACK = BLOCKS.registerBlock(
             "pumpjack",
             PumpjackBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops());
+
+    /**
+     * The water in every lake and sea the world generates: Factorio's water tile.
+     *
+     * <p>Vanilla's water block with the fluid swapped, property for property - vanilla's own
+     * {@code LiquidBlock} on our {@code NaturalWaterFluid}, so a bucket lifts it the way a bucket
+     * lifts water and gets a water bucket for it. Worldgen puts it down in place of every
+     * {@code minecraft:water} it made - see {@code NaturalWaterFeature} - and nothing else does:
+     * there is no item, because a liquid's item is a bucket and this one's bucket is vanilla's.
+     * A test world gets a lake from {@code /fill}, the way it gets a well from {@code /oil}.
+     */
+    public static final DeferredBlock<LiquidBlock> WATER = BLOCKS.registerBlock(
+            "water",
+            properties -> new LiquidBlock(ModFluids.WATER.get(), properties),
+            properties -> properties
+                    .mapColor(MapColor.WATER)
+                    .replaceable()
+                    .noCollision()
+                    .strength(100.0F)
+                    .pushReaction(PushReaction.DESTROY)
+                    .noLootTable()
+                    .liquid()
+                    .sound(SoundType.EMPTY));
+
+    /** One by two at the water's edge, in iron. See {@link OffshorePumpBlock}. */
+    public static final DeferredBlock<OffshorePumpBlock> OFFSHORE_PUMP = BLOCKS.registerBlock(
+            "offshore_pump",
+            OffshorePumpBlock::new,
             properties -> properties
                     .mapColor(MapColor.METAL)
                     .strength(3.0F, 6.0F)

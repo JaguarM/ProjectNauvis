@@ -22,11 +22,14 @@ import net.neoforged.fml.common.Mod;
  * milestone 4. Registering the pipe with the right id and the right recipe cost nothing and kept
  * non-negotiable #1 honest.
  *
- * <p>The pipe carries steam, and now crude oil. Oil starts here: oil wells in the ground, placed by
- * worldgen in fields and never moved, and the pumpjack that stands over one and draws from it at
- * Factorio's rate. PLAN.md's shortcut for the rest of milestone 4 is barrels as items; the pipe
- * network that steam brought forward means oil can already flow, and what barrels still defer is
- * the refinery and its tanks.
+ * <p>The pipe carries steam, crude oil, and water. Oil starts here: oil wells in the ground, placed
+ * by worldgen in fields and never moved, and the pumpjack that stands over one and draws from it at
+ * Factorio's rate. So does water: every lake and sea the world generates is
+ * {@code nauvis_fluids:water}, Factorio's water tile - scooped as a water bucket, poured back as
+ * vanilla's, never making a new source - and the offshore pump is the one thing that draws from
+ * it. PLAN.md's shortcut for the rest of milestone 4 is barrels as items; the pipe network that
+ * steam brought forward means oil can already flow, and what barrels still defer is the refinery
+ * and its tanks.
  */
 @Mod(NauvisFluids.MODID)
 public class NauvisFluids {

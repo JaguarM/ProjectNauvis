@@ -690,6 +690,9 @@ public final class NauvisGameTests {
                 if (state.getDestroySpeed(helper.getLevel(), helper.absolutePos(BlockPos.ZERO)) < 0) {
                     continue;  // unbreakable on purpose
                 }
+                if (state.liquid()) {
+                    continue;  // natural water: a bucket's work, as every liquid is
+                }
                 helper.assertTrue(pickaxe.isCorrectToolForDrops(state),
                         id + " does not drop when mined with a pickaxe - it is in no mineable/ tag, "
                                 + "so its mod is missing the tag provider every other mod has");

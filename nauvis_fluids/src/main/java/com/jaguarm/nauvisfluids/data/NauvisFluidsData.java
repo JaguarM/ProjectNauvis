@@ -6,16 +6,21 @@ import java.util.concurrent.CompletableFuture;
 
 import com.jaguarm.nauvisfluids.NauvisFluids;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
+import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpShape;
 import com.jaguarm.nauvisfluids.pumpjack.PumpjackShape;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
+import com.jaguarm.nauvisfluids.registry.ModFluids;
 import com.jaguarm.nauvisfluids.registry.ModItems;
+import com.jaguarm.nauvisfluids.registry.ModTags;
 
 import net.minecraft.advancements.predicates.StatePropertiesPredicate;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.data.loot.LootTableProvider;
+import net.minecraft.data.tags.FluidTagsProvider;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.storage.loot.LootPool;
@@ -51,15 +56,17 @@ public final class NauvisFluidsData {
                         List.of(new LootTableProvider.SubProviderEntry(BlockLoot::new, LootContextParamSets.BLOCK)),
                         lookup));
         event.createProvider(BlockTagsData::new);
+        event.createProvider(FluidTagsData::new);
     }
 
     /**
      * Which tool mines what.
      *
-     * <p>The pipe and the pumpjack both require the correct tool for their drops, and the tool
+     * <p>The pipe and the two pumps all require the correct tool for their drops, and the tool
      * that is correct is decided by this tag and nothing else - a block that requires a tool and
      * is in no {@code mineable/} tag has no correct tool, and never drops. The oil well is not
-     * here: it is unbreakable, and has no drops to protect.
+     * here: it is unbreakable, and has no drops to protect. Nor is water, for the reason water
+     * never is.
      */
     private static class BlockTagsData extends BlockTagsProvider {
 
@@ -71,7 +78,34 @@ public final class NauvisFluidsData {
         protected void addTags(HolderLookup.Provider registries) {
             tag(BlockTags.MINEABLE_WITH_PICKAXE)
                     .add(ModBlocks.PIPE.getKey())
+                    .add(ModBlocks.OFFSHORE_PUMP.getKey())
                     .add(ModBlocks.PUMPJACK.getKey());
+        }
+    }
+
+    /**
+     * What natural water is, as far as everything else is concerned.
+     *
+     * <p>It is water: swimming, drowning, boats, fire, farmland, sugar cane and a hundred other
+     * checks ask {@code #minecraft:water}, and both halves of the fluid are in it. Its still half
+     * is also in the three vanilla tags that name water's source by itself - a lily pad floats on
+     * it, frogs lay in it, a magma block under it makes a bubble column - and in the one tag of
+     * this mod's own, which is what an offshore pump may stand at. That last one holds natural
+     * water and nothing else: a bucket's water is not on the list, and that is the whole rule.
+     */
+    private static class FluidTagsData extends FluidTagsProvider {
+
+        FluidTagsData(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
+            super(output, lookup, NauvisFluids.MODID);
+        }
+
+        @Override
+        protected void addTags(HolderLookup.Provider registries) {
+            tag(FluidTags.WATER).add(ModFluids.WATER.getKey(), ModFluids.FLOWING_WATER.getKey());
+            tag(FluidTags.SUPPORTS_LILY_PAD).add(ModFluids.WATER.getKey());
+            tag(FluidTags.SUPPORTS_FROGSPAWN).add(ModFluids.WATER.getKey());
+            tag(FluidTags.BUBBLE_COLUMN_CAN_OCCUPY).add(ModFluids.WATER.getKey());
+            tag(ModTags.OFFSHORE_PUMPABLE).add(ModFluids.WATER.getKey());
         }
     }
 
@@ -93,6 +127,11 @@ public final class NauvisFluidsData {
             addBlock(ModBlocks.PIPE, "Pipe");
             addBlock(ModBlocks.CRUDE_OIL, "Crude oil");
             addBlock(ModBlocks.PUMPJACK, "Pumpjack");
+            addBlock(ModBlocks.OFFSHORE_PUMP, "Offshore pump");
+            // "Water", exactly as a bucket's is. The world's water and a poured puddle look the
+            // same and are scooped the same; the one thing that tells them apart is an offshore
+            // pump, and the pump is what says so. The fluid type names itself by this key too.
+            addBlock(ModBlocks.WATER, "Water");
 
             // Never in the world, but Jade and any tank screen will name them.
             add("fluid.nauvis_fluids.steam", "Steam");
@@ -105,6 +144,7 @@ public final class NauvisFluidsData {
             add("config.jade.plugin_nauvis_fluids.pipe", "Pipe");
             add("config.jade.plugin_nauvis_fluids.crude_oil", "Oil well");
             add("config.jade.plugin_nauvis_fluids.pumpjack", "Pumpjack");
+            add("config.jade.plugin_nauvis_fluids.offshore_pump", "Offshore pump");
 
             // Factorio's pipe tooltip, as near as is honest. It says "Pipeline extent: 6/320";
             // the 320 is its cap on one fluid segment and this pack has none, so ours stops at
@@ -132,6 +172,15 @@ public final class NauvisFluidsData {
             add("jade.nauvis_fluids.pumpjack.no_power", "No power");
             add("jade.nauvis_fluids.pumpjack.no_well", "Not on an oil well");
 
+            // The offshore pump's: contents and the status line. The last one is the line a
+            // player reads when a bucket's puddle turns out not to be a lake.
+            add("jade.nauvis_fluids.offshore_pump.stored", "Water: %s / %s");
+            add("jade.nauvis_fluids.offshore_pump.pumping", "Pumping");
+            add("jade.nauvis_fluids.offshore_pump.full", "Full - nothing is drawing the water off");
+            add("jade.nauvis_fluids.offshore_pump.no_water", "No water at the intake");
+            add("jade.nauvis_fluids.offshore_pump.wrong_water",
+                    "This water cannot be pumped - an offshore pump draws from the still water of a lake or the sea");
+
             // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the
             // only place a timed craft happens; a vanilla bench recipe goes nowhere near it and
@@ -151,12 +200,13 @@ public final class NauvisFluidsData {
         @Override
         protected void generate() {
             dropSelf(ModBlocks.PIPE.get());
-            // One pumpjack, not ten. The other cells are torn down by the block itself, with
-            // drops enabled - that is what hands the player their machine back whichever cell
-            // they hit - so only the anchor may carry a drop.
+            // One machine, not two or ten. The other cells are torn down by the block itself,
+            // with drops enabled - that is what hands the player their machine back whichever
+            // cell they hit - so only the anchor may carry a drop.
             add(ModBlocks.PUMPJACK.get(), anchorOnly(ModBlocks.PUMPJACK.get(), PumpjackShape.SHAPE));
-            // The oil well has no table at all: noLootTable() in its properties, so it is skipped
-            // here and drops nothing if anything ever manages to break it.
+            add(ModBlocks.OFFSHORE_PUMP.get(), anchorOnly(ModBlocks.OFFSHORE_PUMP.get(), OffshorePumpShape.SHAPE));
+            // The oil well and the water have no table at all: noLootTable() in their properties,
+            // so they are skipped here and drop nothing if anything ever manages to break one.
         }
 
         /**

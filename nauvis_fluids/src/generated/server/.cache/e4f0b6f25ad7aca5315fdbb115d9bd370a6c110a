@@ -1,0 +1,6 @@
+// 26.2	2026-09-06T20:11:53.7457835	Tags for minecraft:fluid mod id nauvis_fluids
+04524ecfcacf1b452aeccb0144c471945f2f9eec data/minecraft/tags/fluid/bubble_column_can_occupy.json
+04524ecfcacf1b452aeccb0144c471945f2f9eec data/minecraft/tags/fluid/supports_frogspawn.json
+04524ecfcacf1b452aeccb0144c471945f2f9eec data/minecraft/tags/fluid/supports_lily_pad.json
+fb3e22a02c77eeb287d1dbfef5d5b5101d2334f4 data/minecraft/tags/fluid/water.json
+04524ecfcacf1b452aeccb0144c471945f2f9eec data/nauvis_fluids/tags/fluid/offshore_pumpable.json

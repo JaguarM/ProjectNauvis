@@ -9,11 +9,11 @@ displayURL="https://github.com/JaguarM/ProjectNauvis"
 issueTrackerURL="https://github.com/JaguarM/ProjectNauvis/issues"
 
 description='''
-Factorio's fluids: barrels first, then pipes, oil, chemistry and nuclear.
+Factorio's fluids: pipes, oil wells and the pumpjack, the world's water and the offshore pump.
 
-Almost none of that is here yet. The mod exists this early because the boiler and the steam
-engine are both paid for in pipes, and an ingredient with the wrong id is the one kind of
-shortcut this pack does not take.
+Every lake and sea generates as water of this mod's own - a bucket of it is an ordinary water
+bucket, and it never makes a new source - and the offshore pump is the one thing that draws from
+it. The refinery, the chemical plant and the storage tank are next.
 '''
 
 [[dependencies.${mod_id}]]

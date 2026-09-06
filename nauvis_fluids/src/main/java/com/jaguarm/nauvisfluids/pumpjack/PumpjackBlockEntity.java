@@ -4,6 +4,8 @@ import com.jaguarm.nauvislib.transfer.PowerAccess;
 import com.jaguarm.nauvislib.transfer.MachinePower;
 import org.jspecify.annotations.Nullable;
 
+import com.jaguarm.nauvisfluids.fluid.OutputAccess;
+import com.jaguarm.nauvisfluids.fluid.SingleFluidTank;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
 import com.jaguarm.nauvisfluids.oil.OilProgress;
 import com.jaguarm.nauvisfluids.registry.ModBlockEntities;
@@ -88,7 +90,7 @@ public class PumpjackBlockEntity extends BlockEntity {
     /** Insert only: a machine is not a battery, and a grid must not be able to drain one. */
     private final EnergyHandler gridView = new PowerAccess(energy);
 
-    private final CrudeOilTank tank = new CrudeOilTank(TANK_CAPACITY, this::onTankChanged);
+    private final SingleFluidTank tank = new SingleFluidTank(TANK_CAPACITY, ModFluids.CRUDE_OIL, this::onTankChanged);
 
     /** What a pipe sees at the outlet: extraction only, and a wake-up on the way out. */
     private final ResourceHandler<FluidResource> output = new OutputAccess(tank, this::wake);
@@ -187,7 +189,7 @@ public class PumpjackBlockEntity extends BlockEntity {
         int units = capped ? TANK_CAPACITY : (int) (due / UNIT_DIVISOR);
         if (units > 0) {
             try (Transaction transaction = Transaction.openRoot()) {
-                if (tank.insert(FluidResource.of(ModFluids.CRUDE_OIL.get()), units, transaction) != units) {
+                if (tank.insert(tank.resource(), units, transaction) != units) {
                     return false;
                 }
                 transaction.commit();

@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=east,part=0": {
+      "model": "nauvis_fluids:block/offshore_pump_inlet",
+      "y": 90
+    },
+    "facing=east,part=1": {
+      "model": "nauvis_fluids:block/offshore_pump_body",
+      "y": 90
+    },
+    "facing=north,part=0": {
+      "model": "nauvis_fluids:block/offshore_pump_inlet"
+    },
+    "facing=north,part=1": {
+      "model": "nauvis_fluids:block/offshore_pump_body"
+    },
+    "facing=south,part=0": {
+      "model": "nauvis_fluids:block/offshore_pump_inlet",
+      "y": 180
+    },
+    "facing=south,part=1": {
+      "model": "nauvis_fluids:block/offshore_pump_body",
+      "y": 180
+    },
+    "facing=west,part=0": {
+      "model": "nauvis_fluids:block/offshore_pump_inlet",
+      "y": 270
+    },
+    "facing=west,part=1": {
+      "model": "nauvis_fluids:block/offshore_pump_body",
+      "y": 270
+    }
+  }
+}

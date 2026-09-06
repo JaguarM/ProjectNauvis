@@ -64,6 +64,17 @@ Blocks and multi-blocks
   Every block publishes the energy capability so a pole can supply a machine whose middle is out of
   range, so a network must reduce endpoints by *identity* rather than position, or one engine is
   charged several times a tick.
+- **A capability asked for with no side answers for every side.** `MachineShape.hasPort` says yes
+  to a null side on purpose - that is NeoForge's "from nowhere in particular", and a hopper wants
+  it - and the fluid run asked for its endpoints with null. So every face of every machine was an
+  outlet as far as a pipe run was concerned, and the only thing saying a steam engine's flank
+  offered nothing was the pipe's drawn connection. `pumpjack_feeds_a_pipe` asserted the flank run
+  held nothing and passed, by timing: a run that moved nothing is re-checked every ten ticks, and
+  the test's fifty never landed on one with oil in the tank. The offshore pump's twin test failed
+  on its first run, with a hundred water in a pipe that was not connected. A run asks through the
+  face its pipe lies on now - `FluidNetwork.addEndpoint` takes the face - which is the question
+  `PipeBlock.connects` was already asking. **Anything that resolves a sided capability has to say
+  which side, or it is asking a different question from the one it draws.**
 - **A machine spills its inventory from `BlockEntity#preRemoveSideEffects`**, not from
   `Block#affectNeighborsAfterRemoval`. The base implementation drops contents only for a
   `Container`, so a capability inventory — a `ResourceHandler` — that does not override it eats

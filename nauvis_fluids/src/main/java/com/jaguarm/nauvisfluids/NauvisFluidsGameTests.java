@@ -1,12 +1,17 @@
 package com.jaguarm.nauvisfluids;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.jspecify.annotations.Nullable;
 
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
+import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlock;
+import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlockEntity;
+import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpStatus;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
 import com.jaguarm.nauvisfluids.oil.CrudeOilField;
 import com.jaguarm.nauvisfluids.oil.CrudeOilFieldFeature;
@@ -21,6 +26,7 @@ import com.jaguarm.nauvisfluids.pumpjack.PumpjackStatus;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
 import com.jaguarm.nauvisfluids.registry.ModFluids;
 import com.jaguarm.nauvisfluids.registry.ModItems;
+import com.jaguarm.nauvisfluids.water.NaturalWaterFeature;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -38,12 +44,18 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
@@ -111,6 +123,13 @@ public final class NauvisFluidsGameTests {
         TEST_TYPES.register("pumpjack_reports_what_it_mines", () -> PumpjackReportsWhatItMinesTest.CODEC);
         TEST_TYPES.register("pumpjack_caps_a_cycle_at_its_tank", () -> PumpjackCapsACycleTest.CODEC);
         TEST_TYPES.register("oil_command_places_a_field", () -> OilCommandPlacesAFieldTest.CODEC);
+        TEST_TYPES.register("natural_water_is_bucketed_as_water", () -> NaturalWaterIsBucketedAsWaterTest.CODEC);
+        TEST_TYPES.register("natural_water_makes_no_new_source", () -> NaturalWaterMakesNoNewSourceTest.CODEC);
+        TEST_TYPES.register("worldgen_water_becomes_natural", () -> WorldgenWaterBecomesNaturalTest.CODEC);
+        TEST_TYPES.register("offshore_pump_stands_only_at_water", () -> OffshorePumpStandsOnlyAtWaterTest.CODEC);
+        TEST_TYPES.register("offshore_pump_pumps_at_factorio_rate", () -> OffshorePumpPumpsAtFactorioRateTest.CODEC);
+        TEST_TYPES.register("offshore_pump_fills_a_pipe", () -> OffshorePumpFillsAPipeTest.CODEC);
+        TEST_TYPES.register("offshore_pump_sleeps", () -> OffshorePumpSleepsTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -141,6 +160,18 @@ public final class NauvisFluidsGameTests {
                 PumpjackReportsWhatItMinesTest::new, 100, PADDING);
         registerSpaced(event, environment, "pumpjack_caps_a_cycle_at_its_tank", PumpjackCapsACycleTest::new, 60, PADDING);
         registerSpaced(event, environment, "oil_command_places_a_field", OilCommandPlacesAFieldTest::new, 40, WIDE_PADDING);
+        registerSpaced(event, environment, "natural_water_is_bucketed_as_water",
+                NaturalWaterIsBucketedAsWaterTest::new, 20, PADDING);
+        registerSpaced(event, environment, "natural_water_makes_no_new_source",
+                NaturalWaterMakesNoNewSourceTest::new, 100, PADDING);
+        registerSpaced(event, environment, "worldgen_water_becomes_natural",
+                WorldgenWaterBecomesNaturalTest::new, 20, PADDING);
+        registerSpaced(event, environment, "offshore_pump_stands_only_at_water",
+                OffshorePumpStandsOnlyAtWaterTest::new, 40, PADDING);
+        registerSpaced(event, environment, "offshore_pump_pumps_at_factorio_rate",
+                OffshorePumpPumpsAtFactorioRateTest::new, 60, PADDING);
+        registerSpaced(event, environment, "offshore_pump_fills_a_pipe", OffshorePumpFillsAPipeTest::new, 100, PADDING);
+        registerSpaced(event, environment, "offshore_pump_sleeps", OffshorePumpSleepsTest::new, 100, PADDING);
     }
 
     private interface TestFactory {
@@ -227,6 +258,54 @@ public final class NauvisFluidsGameTests {
             amount -= CrudeOilBlockEntity.DEPLETION;
         }
         return (int) (due / PumpjackBlockEntity.UNIT_DIVISOR);
+    }
+
+    /** Where the offshore pump tests put the shore, the machine, and the water its intake reaches. */
+    private static final BlockPos PUMP = new BlockPos(2, 2, 3);
+    private static final BlockPos INTAKE_WATER = new BlockPos(2, 1, 2);
+
+    /** Natural water: the still water the world makes, and the only kind an offshore pump draws. */
+    private static BlockState naturalWater() {
+        return ModBlocks.WATER.get().defaultBlockState();
+    }
+
+    /** A stone platform at y 1, so a machine has something to stand on and water something to lie in. */
+    private static void platform(GameTestHelper helper, int size) {
+        for (int x = 0; x < size; x++) {
+            for (int z = 0; z < size; z++) {
+                helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+            }
+        }
+    }
+
+    /** An offshore pump anchored at {@code anchor}, facing north: its intake is one block north, its outlet the body's south face. */
+    private static OffshorePumpBlockEntity offshorePump(GameTestHelper helper, BlockPos anchor) {
+        OffshorePumpBlock block = ModBlocks.OFFSHORE_PUMP.get();
+        Multiblock.place(block, helper.getLevel(), helper.absolutePos(anchor),
+                block.defaultBlockState().setValue(OffshorePumpBlock.FACING, Direction.NORTH));
+        return helper.getBlockEntity(anchor, OffshorePumpBlockEntity.class);
+    }
+
+    /** Takes water off the pump the way a pipe would: through the extract-only outlet view. */
+    private static int drawWater(OffshorePumpBlockEntity pump, int amount) {
+        try (Transaction transaction = Transaction.openRoot()) {
+            int taken = pump.output().extract(FluidResource.of(Fluids.WATER), amount, transaction);
+            transaction.commit();
+            return taken;
+        }
+    }
+
+    /**
+     * What the offshore pump would place as if a player clicked the top of {@code ground}, asked
+     * exactly the way a right-click asks it. No player, so the facing is north and the intake
+     * lands one block north of the body.
+     */
+    private static @Nullable BlockState pumpPlacement(GameTestHelper helper, BlockPos ground) {
+        BlockPos below = helper.absolutePos(ground);
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(below), Direction.UP, below, false);
+        BlockPlaceContext context = new BlockPlaceContext(helper.getLevel(), null,
+                InteractionHand.MAIN_HAND, new ItemStack(ModItems.OFFSHORE_PUMP.get()), hit);
+        return ModBlocks.OFFSHORE_PUMP.get().getStateForPlacement(context);
     }
 
     private static boolean isScheduled(GameTestHelper helper, BlockPos pos, Block block) {
@@ -436,12 +515,12 @@ public final class NauvisFluidsGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            for (String name : new String[] {"steam", "crude_oil"}) {
+            for (String name : new String[] {"steam", "crude_oil", "water", "flowing_water"}) {
                 Identifier id = Identifier.fromNamespaceAndPath(NauvisFluids.MODID, name);
                 helper.assertTrue(BuiltInRegistries.FLUID.getValue(id) != Fluids.EMPTY,
                         "nauvis_fluids:" + name + " is not registered");
             }
-            for (String name : new String[] {"pipe", "crude_oil", "pumpjack"}) {
+            for (String name : new String[] {"pipe", "crude_oil", "pumpjack", "water", "offshore_pump"}) {
                 Block block = BuiltInRegistries.BLOCK.getValue(
                         Identifier.fromNamespaceAndPath(NauvisFluids.MODID, name));
                 helper.assertTrue(block != Blocks.AIR, "nauvis_fluids:" + name + " is not registered");
@@ -1156,6 +1235,446 @@ public final class NauvisFluidsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("oil command places a field");
+        }
+    }
+
+    // --- natural water --------------------------------------------------------------------
+
+    /**
+     * A bucket lifts natural water as water, and pours it back as vanilla's.
+     *
+     * <p>The rule that makes a lake a place rather than a supply: what you carry away is
+     * ordinary water, what you pour out is ordinary water, and neither is what an offshore pump
+     * draws from. Water on the move is not lifted at all, exactly as vanilla's is not.
+     */
+    public static class NaturalWaterIsBucketedAsWaterTest extends GameTestInstance {
+
+        public static final MapCodec<NaturalWaterIsBucketedAsWaterTest> CODEC =
+                RecordCodecBuilder.<NaturalWaterIsBucketedAsWaterTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(NaturalWaterIsBucketedAsWaterTest::info))
+                                .apply(i, NaturalWaterIsBucketedAsWaterTest::new));
+
+        public NaturalWaterIsBucketedAsWaterTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            platform(helper, 5);
+            BlockPos at = new BlockPos(2, 2, 2);
+            BlockPos absolute = helper.absolutePos(at);
+            LiquidBlock water = ModBlocks.WATER.get();
+
+            helper.setBlock(at, naturalWater());
+            ItemStack lifted = water.pickupBlock(null, helper.getLevel(), absolute, helper.getBlockState(at));
+            helper.assertTrue(lifted.is(Items.WATER_BUCKET),
+                    "a bucket of natural water is " + lifted + ", not a water bucket");
+            helper.assertTrue(helper.getBlockState(at).isAir(), "the water was lifted and is still there");
+
+            ((BucketItem) Items.WATER_BUCKET).emptyContents(null, helper.getLevel(), absolute, null);
+            helper.assertTrue(helper.getBlockState(at).is(Blocks.WATER),
+                    "a poured bucket put down " + helper.getBlockState(at) + ", not vanilla's water");
+
+            helper.setBlock(at, naturalWater().setValue(LiquidBlock.LEVEL, 2));
+            helper.assertTrue(water.pickupBlock(null, helper.getLevel(), absolute, helper.getBlockState(at)).isEmpty(),
+                    "flowing natural water was lifted by a bucket");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("natural water is bucketed as water");
+        }
+    }
+
+    /**
+     * Two natural sources a block apart never make a third; two of vanilla's do.
+     *
+     * <p>Minecraft's infinite water is this one rule, and it is the rule Factorio does not have:
+     * water is where the map put it. Both troughs are built the same and only the water differs,
+     * so the vanilla one is the control - if the game rule ever stopped vanilla water converting,
+     * the natural trough would pass for the wrong reason and the control would say so.
+     */
+    public static class NaturalWaterMakesNoNewSourceTest extends GameTestInstance {
+
+        public static final MapCodec<NaturalWaterMakesNoNewSourceTest> CODEC =
+                RecordCodecBuilder.<NaturalWaterMakesNoNewSourceTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(NaturalWaterMakesNoNewSourceTest::info))
+                                .apply(i, NaturalWaterMakesNoNewSourceTest::new));
+
+        private static final int NATURAL_ROW = 1;
+        private static final int VANILLA_ROW = 5;
+
+        public NaturalWaterMakesNoNewSourceTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            trough(helper, NATURAL_ROW, naturalWater());
+            trough(helper, VANILLA_ROW, Blocks.WATER.defaultBlockState());
+
+            helper.runAfterDelay(40, () -> {
+                FluidState natural = helper.getLevel().getFluidState(helper.absolutePos(new BlockPos(2, 2, NATURAL_ROW)));
+                helper.assertTrue(natural.getType() == ModFluids.FLOWING_WATER.get(),
+                        "the gap between two natural sources holds " + natural.getType() + ", not flowing natural water");
+                helper.assertFalse(natural.isSource(),
+                        "natural water made a new source, which is the one thing it must never do");
+
+                FluidState vanilla = helper.getLevel().getFluidState(helper.absolutePos(new BlockPos(2, 2, VANILLA_ROW)));
+                helper.assertTrue(vanilla.isSource() && vanilla.getType() == Fluids.WATER,
+                        "vanilla water no longer makes a source between two, so the comparison proves nothing");
+                helper.succeed();
+            });
+        }
+
+        /** A stone channel three long at y 2, a source at each end and air between. */
+        private static void trough(GameTestHelper helper, int row, BlockState water) {
+            for (int x = 0; x < 5; x++) {
+                for (int z = row - 1; z <= row + 1; z++) {
+                    helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+                    helper.setBlock(new BlockPos(x, 2, z), Blocks.STONE);
+                }
+            }
+            helper.setBlock(new BlockPos(2, 2, row), Blocks.AIR);
+            helper.setBlock(new BlockPos(1, 2, row), water);
+            helper.setBlock(new BlockPos(3, 2, row), water);
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("natural water makes no new source");
+        }
+    }
+
+    /**
+     * Worldgen's water becomes natural water, level for level, and nothing else is touched.
+     *
+     * <p>The feature is handed a live chunk rather than a generating one - the sections are the
+     * same objects - holding what a sea floor holds: still water, a flow, a fall, a waterlogged
+     * block and ice. The three waters change block and keep their level; the slab keeps the
+     * vanilla water inside it, because that water is the slab's and not the world's; the ice
+     * stays ice.
+     */
+    public static class WorldgenWaterBecomesNaturalTest extends GameTestInstance {
+
+        public static final MapCodec<WorldgenWaterBecomesNaturalTest> CODEC =
+                RecordCodecBuilder.<WorldgenWaterBecomesNaturalTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(WorldgenWaterBecomesNaturalTest::info))
+                                .apply(i, WorldgenWaterBecomesNaturalTest::new));
+
+        private static final BlockPos SOURCE = new BlockPos(1, 2, 1);
+        private static final BlockPos FLOW = new BlockPos(2, 2, 1);
+        private static final BlockPos FALL = new BlockPos(3, 2, 1);
+        private static final BlockPos SLAB = new BlockPos(1, 2, 3);
+        private static final BlockPos ICE = new BlockPos(2, 2, 3);
+
+        public WorldgenWaterBecomesNaturalTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            // A basin: a floor, a ring of stone at water level, and the contents.
+            for (int x = 0; x < 5; x++) {
+                for (int z = 0; z < 5; z++) {
+                    helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+                    if (x == 0 || x == 4 || z == 0 || z == 4) {
+                        helper.setBlock(new BlockPos(x, 2, z), Blocks.STONE);
+                    }
+                }
+            }
+            helper.setBlock(SOURCE, Blocks.WATER.defaultBlockState());
+            helper.setBlock(FLOW, Blocks.WATER.defaultBlockState().setValue(LiquidBlock.LEVEL, 3));
+            helper.setBlock(FALL, Blocks.WATER.defaultBlockState().setValue(LiquidBlock.LEVEL, 8));
+            helper.setBlock(SLAB, Blocks.OAK_SLAB.defaultBlockState().setValue(BlockStateProperties.WATERLOGGED, true));
+            helper.setBlock(ICE, Blocks.ICE.defaultBlockState());
+
+            // The basin may straddle a chunk border; every chunk it touches gets the treatment,
+            // as every chunk does in a generating world.
+            Set<ChunkAccess> chunks = new HashSet<>();
+            for (BlockPos pos : List.of(SOURCE, FLOW, FALL, SLAB, ICE)) {
+                chunks.add(helper.getLevel().getChunk(helper.absolutePos(pos)));
+            }
+            int replaced = 0;
+            for (ChunkAccess chunk : chunks) {
+                replaced += NaturalWaterFeature.replace(chunk);
+            }
+            helper.assertValueEqual(replaced, 3, "water blocks the feature reported replacing");
+
+            LiquidBlock natural = ModBlocks.WATER.get();
+            helper.assertTrue(helper.getBlockState(SOURCE).is(natural), "a source stayed " + helper.getBlockState(SOURCE));
+            helper.assertValueEqual(helper.getBlockState(SOURCE).getValue(LiquidBlock.LEVEL), 0, "a source's level");
+            helper.assertTrue(helper.getBlockState(FLOW).is(natural), "a flow stayed " + helper.getBlockState(FLOW));
+            helper.assertValueEqual(helper.getBlockState(FLOW).getValue(LiquidBlock.LEVEL), 3, "a flow's level");
+            helper.assertTrue(helper.getBlockState(FALL).is(natural), "a fall stayed " + helper.getBlockState(FALL));
+            helper.assertValueEqual(helper.getBlockState(FALL).getValue(LiquidBlock.LEVEL), 8, "a fall's level");
+            helper.assertTrue(helper.getBlockState(SLAB).is(Blocks.OAK_SLAB)
+                            && helper.getBlockState(SLAB).getValue(BlockStateProperties.WATERLOGGED),
+                    "a waterlogged slab became " + helper.getBlockState(SLAB));
+            helper.assertTrue(helper.getBlockState(ICE).is(Blocks.ICE), "ice became " + helper.getBlockState(ICE));
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("worldgen water becomes natural");
+        }
+    }
+
+    // --- the offshore pump ----------------------------------------------------------------
+
+    /**
+     * An offshore pump stands where its intake finds still natural water, and nowhere else.
+     *
+     * <p>Not on dry land, not at a bucket's water, and not at the flowing edge of a lake - the
+     * three ways a player would otherwise get infinite water back. Under the intake counts, and
+     * so does beside it: a pump on a beach reaches down, a pump in the shallows reaches sideways.
+     */
+    public static class OffshorePumpStandsOnlyAtWaterTest extends GameTestInstance {
+
+        public static final MapCodec<OffshorePumpStandsOnlyAtWaterTest> CODEC =
+                RecordCodecBuilder.<OffshorePumpStandsOnlyAtWaterTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OffshorePumpStandsOnlyAtWaterTest::info))
+                                .apply(i, OffshorePumpStandsOnlyAtWaterTest::new));
+
+        public OffshorePumpStandsOnlyAtWaterTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            platform(helper, 6);
+            BlockPos shore = PUMP.below();
+            BlockPos beside = INTAKE_WATER.above().west();
+
+            helper.assertTrue(pumpPlacement(helper, shore) == null, "an offshore pump stands on dry land");
+
+            helper.setBlock(INTAKE_WATER, naturalWater());
+            BlockState placed = pumpPlacement(helper, shore);
+            helper.assertTrue(placed != null, "an offshore pump refuses a shore with natural water ahead of it");
+            helper.assertValueEqual(placed.getValue(OffshorePumpBlock.FACING), Direction.NORTH,
+                    "the way a pump placed with no player faces");
+
+            helper.setBlock(INTAKE_WATER, Blocks.WATER.defaultBlockState());
+            helper.assertTrue(pumpPlacement(helper, shore) == null,
+                    "an offshore pump accepts a bucket's water, so water is infinite again");
+
+            helper.setBlock(INTAKE_WATER, naturalWater().setValue(LiquidBlock.LEVEL, 3));
+            helper.assertTrue(pumpPlacement(helper, shore) == null, "an offshore pump accepts water on the move");
+
+            helper.setBlock(INTAKE_WATER, Blocks.STONE);
+            helper.setBlock(beside, naturalWater());
+            helper.assertTrue(pumpPlacement(helper, shore) != null,
+                    "an offshore pump refuses natural water beside its intake");
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("offshore pump stands only at water");
+        }
+    }
+
+    /**
+     * Forty water a tick, for nothing.
+     *
+     * <p>Factorio's pump gives twenty boilers' worth and needs no power, and both are asserted:
+     * the tank rises by exactly two ticks' worth between two readings taken two ticks apart,
+     * from a machine that has been given no electricity and no fuel because it has nowhere to
+     * put either.
+     */
+    public static class OffshorePumpPumpsAtFactorioRateTest extends GameTestInstance {
+
+        public static final MapCodec<OffshorePumpPumpsAtFactorioRateTest> CODEC =
+                RecordCodecBuilder.<OffshorePumpPumpsAtFactorioRateTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OffshorePumpPumpsAtFactorioRateTest::info))
+                                .apply(i, OffshorePumpPumpsAtFactorioRateTest::new));
+
+        private int firstReading;
+
+        public OffshorePumpPumpsAtFactorioRateTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            platform(helper, 5);
+            helper.setBlock(INTAKE_WATER, naturalWater());
+            OffshorePumpBlockEntity pump = offshorePump(helper, PUMP);
+
+            helper.startSequence()
+                    .thenExecuteAfter(2, () -> firstReading = pump.stored())
+                    .thenExecuteAfter(2, () -> {
+                        helper.assertValueEqual(pump.stored() - firstReading, 2 * OffshorePumpBlockEntity.WATER_PER_TICK,
+                                "water banked over two ticks");
+                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.PUMPING, "status while pumping");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("offshore pump pumps at Factorio's rate");
+        }
+    }
+
+    /**
+     * What comes out of the back is water - vanilla's, the water of the pipes - and only the back
+     * offers it.
+     *
+     * <p>A pipe at the outlet reaches into the machine and its run fills with
+     * {@code minecraft:water} until run and tank are both full and the pump reports so. A pipe on
+     * the flank connects to nothing and carries nothing.
+     */
+    public static class OffshorePumpFillsAPipeTest extends GameTestInstance {
+
+        public static final MapCodec<OffshorePumpFillsAPipeTest> CODEC =
+                RecordCodecBuilder.<OffshorePumpFillsAPipeTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OffshorePumpFillsAPipeTest::info))
+                                .apply(i, OffshorePumpFillsAPipeTest::new));
+
+        public OffshorePumpFillsAPipeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            platform(helper, 5);
+            BlockPos outletPipe = PUMP.south();
+            BlockPos flankPipe = PUMP.east();
+
+            // Pipes first, for the reason the pumpjack test gives: a block put down by anything
+            // but a player never runs getStateForPlacement, so a pipe placed beside a machine
+            // already there would show no connection.
+            pipe(helper, outletPipe);
+            pipe(helper, flankPipe);
+            helper.setBlock(INTAKE_WATER, naturalWater());
+            OffshorePumpBlockEntity pump = offshorePump(helper, PUMP);
+
+            helper.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertTrue(helper.getBlockState(outletPipe).getValue(PipeBlock.NORTH),
+                                "a pipe at the outlet does not reach into the offshore pump");
+                        helper.assertFalse(helper.getBlockState(flankPipe).getValue(PipeBlock.WEST),
+                                "a pipe on the flank connects to an offshore pump, so the outlet means nothing");
+                    })
+                    .thenExecuteAfter(40, () -> {
+                        FluidNetwork run = networkAt(helper, outletPipe, "the outlet pipe has no run");
+                        helper.assertValueEqual(run.fluid().getFluid(), Fluids.WATER,
+                                "what the outlet pipe is carrying");
+                        helper.assertValueEqual(run.amount(), run.capacity(), "a run fed by an offshore pump fills up");
+                        helper.assertValueEqual(pump.stored(), OffshorePumpBlockEntity.TANK_CAPACITY,
+                                "the tank behind a full run");
+                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.OUTPUT_FULL,
+                                "status with a full tank and a full run");
+                        helper.assertValueEqual(networkAt(helper, flankPipe, "the flank pipe has no run").amount(), 0,
+                                "what a pipe on the flank carries");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("offshore pump fills a pipe");
+        }
+    }
+
+    /**
+     * A full offshore pump asks for no ticks; a draw wakes it; the water going, or turning out to
+     * be a bucket's, stops it again; the lake coming back restarts it.
+     *
+     * <p>Non-negotiable #5, asserted through {@code hasScheduledTick} for each of the three
+     * reasons the machine can stop and the two ways it can be woken. Delete the wake in
+     * {@code OutputAccess} or the one in {@code neighborChanged} and one of these lines goes red.
+     */
+    public static class OffshorePumpSleepsTest extends GameTestInstance {
+
+        public static final MapCodec<OffshorePumpSleepsTest> CODEC =
+                RecordCodecBuilder.<OffshorePumpSleepsTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(OffshorePumpSleepsTest::info))
+                                .apply(i, OffshorePumpSleepsTest::new));
+
+        public OffshorePumpSleepsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            platform(helper, 5);
+            helper.setBlock(INTAKE_WATER, naturalWater());
+            OffshorePumpBlockEntity pump = offshorePump(helper, PUMP);
+            Block block = ModBlocks.OFFSHORE_PUMP.get();
+
+            helper.startSequence()
+                    .thenExecuteAfter(15, () -> {
+                        helper.assertValueEqual(pump.stored(), OffshorePumpBlockEntity.TANK_CAPACITY, "a tank left alone");
+                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.OUTPUT_FULL, "status when full");
+                        helper.assertFalse(isScheduled(helper, PUMP, block), "a full offshore pump is still asking for ticks");
+                        drawWater(pump, 50);
+                        helper.assertTrue(isScheduled(helper, PUMP, block), "drawing from a full offshore pump did not wake it");
+                    })
+                    .thenExecuteAfter(10, () -> {
+                        helper.assertValueEqual(pump.stored(), OffshorePumpBlockEntity.TANK_CAPACITY, "the tank after a draw");
+                        helper.assertFalse(isScheduled(helper, PUMP, block), "a refilled offshore pump is still asking for ticks");
+                        helper.setBlock(INTAKE_WATER, Blocks.STONE);
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.NO_WATER, "status with the lake gone");
+                        helper.assertFalse(isScheduled(helper, PUMP, block), "an offshore pump with no water is still asking for ticks");
+                        helper.setBlock(INTAKE_WATER, Blocks.WATER.defaultBlockState());
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.WRONG_WATER, "status at a bucket's water");
+                        helper.assertFalse(isScheduled(helper, PUMP, block), "an offshore pump at the wrong water is still asking for ticks");
+                        drawWater(pump, OffshorePumpBlockEntity.TANK_CAPACITY);
+                        helper.setBlock(INTAKE_WATER, naturalWater());
+                    })
+                    .thenExecuteAfter(3, () -> {
+                        helper.assertTrue(pump.stored() > 0, "the lake coming back did not restart the pump");
+                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.PUMPING, "status with the lake back");
+                    })
+                    .thenSucceed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("offshore pump sleeps");
         }
     }
 }

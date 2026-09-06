@@ -401,23 +401,37 @@ def check_references(assets):
 
 
 def check_registrations(assets):
-    """Every registered block has a blockstate, and every one of those has an item definition.
+    """Every registered block has a blockstate, and every one with an item has an item definition.
 
     The bug this is for: a block registered and never given a model is not a missing file anyone
-    notices, it is a magenta cube in a world.
+    notices, it is a magenta cube in a world - and an item registered for it and never given a
+    model is the same cube in a hand.
+
+    Whether a block has an item is read from ModItems.java: a block whose constant is never named
+    there has none, and is held to the blockstate only. Natural water is that block - a liquid's
+    item is a bucket, and its bucket is vanilla's - and it is the one case, so a block that
+    cannot be matched to a constant is still held to both files rather than let off.
     """
     for mod in MODS:
         source = ROOT / mod / 'src' / 'main' / 'java'
         if not source.is_dir():
             continue
+        items = ''.join(path.read_text(encoding='utf-8') for path in source.rglob('ModItems.java'))
         for path in source.rglob('ModBlocks.java'):
             text = path.read_text(encoding='utf-8')
             names = re.findall(r'registerBlock\(\s*"([a-z0-9_]+)"', text)
+            constants = dict(re.findall(
+                r'(\w+)\s*=\s*BLOCKS\.registerBlock\(\s*"([a-z0-9_]+)"', text))
+            constant_of = {name: constant for constant, name in constants.items()}
             if not names:
                 notes.append(f'{mod}: no block ids found in {path.name} - ids are not literals '
                              f'there, so its blocks are unchecked')
             for name in names:
-                for kind in ('blockstates', 'items'):
+                constant = constant_of.get(name)
+                has_item = constant is None or re.search(rf'ModBlocks\.{constant}\b', items)
+                if not has_item:
+                    notes.append(f'{mod}:{name} has no item, so only its blockstate is checked')
+                for kind in (('blockstates', 'items') if has_item else ('blockstates',)):
                     if assets.exists(mod, f'{kind}/{name}.json') is not True:
                         fail(f'{mod}:{name}', f'is registered and has no {kind} file')
 

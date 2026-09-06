@@ -1,6 +1,7 @@
 {
   "values": [
     "nauvis_fluids:pipe",
+    "nauvis_fluids:offshore_pump",
     "nauvis_fluids:pumpjack"
   ]
 }

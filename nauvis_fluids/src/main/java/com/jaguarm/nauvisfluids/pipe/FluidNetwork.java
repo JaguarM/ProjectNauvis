@@ -56,7 +56,10 @@ public final class FluidNetwork {
     /** Member pipes, packed. A pipe is a position and nothing else. */
     private final LongOpenHashSet pipes = new LongOpenHashSet();
 
-    /** Machines touching a member pipe. Linked, so a shortfall is met in a stable order. */
+    /**
+     * Machines touching a member pipe, each reached through the face a pipe lies on. Linked, so a
+     * shortfall is met in a stable order.
+     */
     private final Long2ObjectLinkedOpenHashMap<BlockCapabilityCache<ResourceHandler<FluidResource>, @Nullable Direction>>
             endpoints = new Long2ObjectLinkedOpenHashMap<>();
 
@@ -139,8 +142,19 @@ public final class FluidNetwork {
         return contents;
     }
 
-    /** Starts watching a machine at {@code pos}, if there is one there to watch. */
-    void addEndpoint(long pos) {
+    /**
+     * Starts watching the machine at {@code pos} through {@code face}, the side of it a pipe of
+     * this run touches - if there is a machine there, and it offers anything on that side.
+     *
+     * <p>The face is not optional. A machine's ports are sided - a boiler gives steam at its
+     * back, a pumpjack at one corner - and a capability asked for with no side answers for every
+     * side, which is NeoForge's convention and the right one for a hopper. For a run it meant
+     * that every face of every machine was an outlet, and the only thing saying otherwise was
+     * the pipe's drawn connection. The face a pipe actually lies on is the question a run has
+     * to ask, and it is what {@code PipeBlock.connects} asks too, so what is drawn and what flows
+     * agree.
+     */
+    void addEndpoint(long pos, Direction face) {
         if (endpoints.containsKey(pos)) {
             return;
         }
@@ -148,10 +162,10 @@ public final class FluidNetwork {
         // isLoaded first, and not as an optimisation: asking for a capability in an unloaded
         // chunk loads it.
         if (!level.isLoaded(blockPos)
-                || level.getCapability(Capabilities.Fluid.BLOCK, blockPos, null) == null) {
+                || level.getCapability(Capabilities.Fluid.BLOCK, blockPos, face) == null) {
             return;
         }
-        endpoints.put(pos, BlockCapabilityCache.create(Capabilities.Fluid.BLOCK, level, blockPos, null));
+        endpoints.put(pos, BlockCapabilityCache.create(Capabilities.Fluid.BLOCK, level, blockPos, face));
     }
 
     void removeEndpoint(long pos) {
