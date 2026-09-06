@@ -284,17 +284,27 @@ cell that lands on the click, and `PumpjackBlock.snapPart` chooses it so the cen
 well nearest the click. The client's outline renderer asks the same method the same question, so
 the footprint drawn is the footprint placed and there is no second copy of the rule.
 
-**A machine that must stand beside something turns to it, and shows where it will go.** The offshore
-pump tries the player's facing and then the other three, and the first whose intake finds natural
-water is the way it goes - `OffshorePumpBlock.aim` - so a beach is walked with pumps looking out to
-sea. A click on the lake is lifted to the air over the surface by the pump's own `BlockItem`, through
-`updatePlacementContext`, because a block in hand looks through water and would otherwise land on the
-bed. Water has no block entity to hang a renderer on, so the ghost is two client events -
-`ExtractLevelRenderStateEvent` to work out the placement once a frame and `SubmitCustomGeometryEvent`
-to draw it - asking those same two methods, blue when it will go and red when it will not, with the
-water it would draw from marked. And when it will not go, the block says why on the action bar,
-from the server, to the player who clicked: no water, or a bucket's water. A refusal that says
-nothing is a rule nobody can learn.
+**Every machine has a ghost, and no machine draws it.** With any multi-block machine in hand,
+`nauvis_lib`'s `MachineGhost` draws it where a click would put it - the machine's own outline, cell by
+cell, blue if it will go and red if it will not - by building the click a right-click would build and
+asking the block the questions placement asks: `placementFacing`, `placementPart` and then
+`getStateForPlacement` itself, through `Multiblock.ghost`. A machine that decides its own placement
+answers those two hooks and uses them in its own `getStateForPlacement`, so there is one copy of the
+rule and what is drawn is what will happen: the boiler faces the player, the pumpjack snaps to a well,
+the offshore pump turns to the water. A machine that uses something in particular says so through
+`placementMarks` and the ghost marks it - the well, the water. The ghost is two client events rather
+than a renderer, because it belongs to no block entity: `ExtractLevelRenderStateEvent` works out the
+placement once a frame and `SubmitCustomGeometryEvent` draws it, with `NauvisLibClient.XRAY`, so a
+machine behind a bank is still shown.
+
+**A machine that must stand beside something turns to it.** The offshore pump tries the player's
+facing and then the other three, and the first whose intake finds natural water is the way it goes -
+`OffshorePumpBlock.aim` - so a beach is walked with pumps looking out to sea. A click on the lake is
+lifted to the air over the surface by the pump's own `BlockItem`, through `updatePlacementContext`,
+because a block in hand looks through water and would otherwise land on the bed. And when it will not
+go, the block says why on the action bar, from the server, to the player who clicked: no water, or a
+bucket's water. A refusal that says nothing is a rule nobody can learn - and the action bar neither
+wraps nor scrolls, so it says it in a handful of words.
 
 **An x-ray is a block entity renderer with the depth test off.** The wells light up while a pumpjack
 is in hand because every well has a block entity, so every loaded well has a renderer visited for

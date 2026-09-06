@@ -182,12 +182,11 @@ public final class NauvisFluidsData {
             add("jade.nauvis_fluids.offshore_pump.wrong_water",
                     "This water cannot be pumped - an offshore pump draws from the still water of a lake or the sea");
 
-            // The action bar, when a pump will not go where it was clicked. The second is the
-            // one that teaches the rule: a bucket's water is not a lake.
-            add(OffshorePumpBlock.NO_WATER_KEY,
-                    "No water here - an offshore pump stands at the edge of a lake or the sea");
-            add(OffshorePumpBlock.WRONG_WATER_KEY,
-                    "This water cannot be pumped - an offshore pump draws from the still water of a lake or the sea, not a bucket's");
+            // The action bar, when a pump will not go where it was clicked. Short, because the
+            // action bar neither wraps nor scrolls and a long line is cut off at both ends at
+            // any GUI scale above the smallest. The second is the one that teaches the rule.
+            add(OffshorePumpBlock.NO_WATER_KEY, "No water here to pump");
+            add(OffshorePumpBlock.WRONG_WATER_KEY, "Only a lake or the sea can be pumped");
 
             // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the

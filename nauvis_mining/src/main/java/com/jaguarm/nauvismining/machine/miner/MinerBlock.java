@@ -97,8 +97,13 @@ public abstract class MinerBlock extends BaseEntityBlock implements Multiblock.M
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         return Multiblock.getStateForPlacement(this,
-                defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite()),
-                context);
+                defaultBlockState().setValue(FACING, placementFacing(context)), context);
+    }
+
+    /** The front looks back at whoever placed it. */
+    @Override
+    public Direction placementFacing(BlockPlaceContext context) {
+        return context.getHorizontalDirection().getOpposite();
     }
 
     /** Only the anchor has one; the rest of the drill is structure. */

@@ -315,11 +315,15 @@ public final class NauvisFluidsGameTests {
      * lands one block north of the body.
      */
     private static @Nullable BlockState pumpPlacement(GameTestHelper helper, BlockPos ground) {
+        return ModBlocks.OFFSHORE_PUMP.get().getStateForPlacement(pumpClick(helper, ground));
+    }
+
+    /** The click itself: the top of {@code ground}, with an offshore pump in hand and no player. */
+    private static BlockPlaceContext pumpClick(GameTestHelper helper, BlockPos ground) {
         BlockPos below = helper.absolutePos(ground);
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(below), Direction.UP, below, false);
-        BlockPlaceContext context = new BlockPlaceContext(helper.getLevel(), null,
+        return new BlockPlaceContext(helper.getLevel(), null,
                 InteractionHand.MAIN_HAND, new ItemStack(ModItems.OFFSHORE_PUMP.get()), hit);
-        return ModBlocks.OFFSHORE_PUMP.get().getStateForPlacement(context);
     }
 
     private static boolean isScheduled(GameTestHelper helper, BlockPos pos, Block block) {
@@ -331,11 +335,15 @@ public final class NauvisFluidsGameTests {
      * exactly the way a right-click asks it. No player, so the facing is north.
      */
     private static @Nullable BlockState placement(GameTestHelper helper, BlockPos ground) {
+        return ModBlocks.PUMPJACK.get().getStateForPlacement(pumpjackClick(helper, ground));
+    }
+
+    /** The click itself: the top of {@code ground}, with a pumpjack in hand and no player. */
+    private static BlockPlaceContext pumpjackClick(GameTestHelper helper, BlockPos ground) {
         BlockPos below = helper.absolutePos(ground);
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(below), Direction.UP, below, false);
-        BlockPlaceContext context = new BlockPlaceContext(helper.getLevel(), null,
+        return new BlockPlaceContext(helper.getLevel(), null,
                 InteractionHand.MAIN_HAND, new ItemStack(ModItems.PUMPJACK.get()), hit);
-        return ModBlocks.PUMPJACK.get().getStateForPlacement(context);
     }
 
     // --- pipes --------------------------------------------------------------------------------
@@ -714,6 +722,15 @@ public final class NauvisFluidsGameTests {
                     "a pumpjack accepts a block two away from the well, which is not over one");
             helper.assertTrue(placement(helper, new BlockPos(5, 1, 5)) == null,
                     "a pumpjack accepts plain ground");
+
+            // The ghost asks the same questions, so it snaps where the click will and says no
+            // where the click would.
+            Multiblock.Ghost ghost = Multiblock.ghost(ModBlocks.PUMPJACK.get(), pumpjackClick(helper, diagonal));
+            helper.assertTrue(ghost.allowed(), "the ghost of a pumpjack clicked one block off the well says it will not go");
+            helper.assertValueEqual(ghost.anchor(), helper.absolutePos(PUMPJACK),
+                    "where the ghost of a pumpjack clicked one block off the well stands");
+            helper.assertFalse(Multiblock.ghost(ModBlocks.PUMPJACK.get(), pumpjackClick(helper, new BlockPos(5, 1, 5))).allowed(),
+                    "the ghost of a pumpjack on plain ground says it will go");
             helper.succeed();
         }
 
@@ -1726,8 +1743,22 @@ public final class NauvisFluidsGameTests {
         public void run(GameTestHelper helper) {
             platform(helper, 6);
             BlockPos shore = PUMP.below();
+
+            // Dry: the ghost stands where the click would have put it, the player's way, refused.
+            Multiblock.Ghost dry = Multiblock.ghost(ModBlocks.OFFSHORE_PUMP.get(), pumpClick(helper, shore));
+            helper.assertFalse(dry.allowed(), "the ghost of a pump on dry land says it will go");
+            helper.assertValueEqual(dry.facing(), Direction.NORTH, "the way a refused pump's ghost faces");
+            helper.assertValueEqual(dry.anchor(), helper.absolutePos(PUMP), "where a refused pump's ghost stands");
+
             // Under where an east-facing intake would hang, and nowhere a north-facing one reaches.
             helper.setBlock(PUMP.east().below(), naturalWater());
+
+            Multiblock.Ghost turned = Multiblock.ghost(ModBlocks.OFFSHORE_PUMP.get(), pumpClick(helper, shore));
+            helper.assertTrue(turned.allowed(), "the ghost of a pump beside a lake says it will not go");
+            helper.assertValueEqual(turned.facing(), Direction.EAST, "the way a pump's ghost turns to find water");
+            helper.assertValueEqual(
+                    ModBlocks.OFFSHORE_PUMP.get().placementMarks(helper.getLevel(), turned.anchor(), turned.facing()),
+                    List.of(helper.absolutePos(PUMP.east().below())), "what a pump's ghost marks");
 
             BlockState placed = pumpPlacement(helper, shore);
             helper.assertTrue(placed != null, "an offshore pump facing away from a lake beside it will not turn to it");

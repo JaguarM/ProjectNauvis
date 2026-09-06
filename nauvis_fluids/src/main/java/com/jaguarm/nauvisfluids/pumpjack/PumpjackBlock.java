@@ -1,5 +1,7 @@
 package com.jaguarm.nauvisfluids.pumpjack;
 
+import java.util.List;
+
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlock;
@@ -43,8 +45,9 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * <p>Factorio's placement ghost snaps a pumpjack to the well under the cursor. Here the same
  * thing is done in {@link #getStateForPlacement}: whichever of the nine blocks over a well the
  * player clicks, the machine lands centred on the well. Click a block that is not over a well and
- * nothing is placed, exactly as Factorio refuses. {@link #snapPart} is the rule, and the client's
- * outline renderer asks it the same question so what is drawn is what will happen.
+ * nothing is placed, exactly as Factorio refuses. {@link #snapPart} is the rule, and it is answered
+ * through {@link #placementPart} so that {@code nauvis_lib}'s ghost asks the same question and
+ * what is drawn is what will happen.
  *
  * <h2>Facing</h2>
  *
@@ -111,13 +114,31 @@ public class PumpjackBlock extends BaseEntityBlock implements Multiblock.Machine
      */
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
-        Direction facing = context.getHorizontalDirection();
-        int part = snapPart(context.getLevel(), context.getClickedPos(), facing);
+        Direction facing = placementFacing(context);
+        int part = placementPart(context, facing);
         if (part < 0) {
             return null;
         }
         return Multiblock.getStateForPlacement(this,
                 defaultBlockState().setValue(FACING, facing), context, part);
+    }
+
+    /** Outlet away from the player, so the pipe runs off rather than back through their legs. */
+    @Override
+    public Direction placementFacing(BlockPlaceContext context) {
+        return context.getHorizontalDirection();
+    }
+
+    /** Whichever cell puts the centre over a well, or none. See {@link #snapPart}. */
+    @Override
+    public int placementPart(BlockPlaceContext context, Direction facing) {
+        return snapPart(context.getLevel(), context.getClickedPos(), facing);
+    }
+
+    /** The well it would stand on, for the ghost to mark. */
+    @Override
+    public List<BlockPos> placementMarks(LevelReader level, BlockPos anchor, Direction facing) {
+        return List.of(anchor.below());
     }
 
     /**

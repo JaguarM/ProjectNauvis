@@ -1,5 +1,7 @@
 package com.jaguarm.nauvislib.multiblock;
 
+import java.util.List;
+
 import org.jspecify.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
@@ -61,6 +63,54 @@ public final class Multiblock {
         default Direction facing(BlockState state) {
             return Direction.NORTH;
         }
+
+        /**
+         * The way a machine placed from this click would face. North for a machine with none; a
+         * boiler faces the player and a steam engine faces away from them. A block's
+         * {@code getStateForPlacement} and its ghost both ask this, so a facing is decided once.
+         */
+        default Direction placementFacing(BlockPlaceContext context) {
+            return Direction.NORTH;
+        }
+
+        /**
+         * Which cell lands on the clicked block for a machine turned this way, or -1 when none
+         * may - a pumpjack with no well under any of its cells. The shape's usual cell for a
+         * machine that does not snap to anything.
+         */
+        default int placementPart(BlockPlaceContext context, Direction facing) {
+            return shape().placement();
+        }
+
+        /**
+         * The blocks a placement ghost marks as what the machine will use: the well a pumpjack
+         * centres on, the water an offshore pump draws from. Empty for a machine that uses
+         * nothing in particular, which is most of them.
+         */
+        default List<BlockPos> placementMarks(LevelReader level, BlockPos anchor, Direction facing) {
+            return List.of();
+        }
+    }
+
+    /** Where a machine would go from this click and whether it will: what a placement ghost draws. */
+    public record Ghost(BlockPos anchor, Direction facing, boolean allowed) {}
+
+    /**
+     * Asks a block the questions placement asks, in the order placement asks them, and says what
+     * would happen - which is what {@code nauvis_lib}'s {@code MachineGhost} draws under the
+     * crosshair for every machine, with no code of the machine's own.
+     *
+     * <p>A machine refused for want of a cell to pin - a pumpjack off any well - is placed at the
+     * shape's usual cell, so the player sees where it would have gone as well as that it will not.
+     */
+    public static Ghost ghost(MachineBlock block, BlockPlaceContext context) {
+        MachineShape shape = block.shape();
+        Direction facing = block.placementFacing(context);
+        int part = block.placementPart(context, facing);
+        boolean pinned = part >= 0;
+        BlockPos anchor = shape.anchorPos(context.getClickedPos(), pinned ? part : shape.placement(), facing);
+        boolean allowed = pinned && ((Block) block).getStateForPlacement(context) != null;
+        return new Ghost(anchor, facing, allowed);
     }
 
     /** Which cell of its machine this block is. */

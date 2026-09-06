@@ -110,8 +110,13 @@ public class BoilerBlock extends BaseEntityBlock implements Multiblock.MachineBl
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         return Multiblock.getStateForPlacement(this,
-                defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite()),
-                context);
+                defaultBlockState().setValue(FACING, placementFacing(context)), context);
+    }
+
+    /** The furnace's rule: the front looks back at whoever placed it. */
+    @Override
+    public Direction placementFacing(BlockPlaceContext context) {
+        return context.getHorizontalDirection().getOpposite();
     }
 
     @Override

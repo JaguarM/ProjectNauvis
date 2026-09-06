@@ -32,8 +32,8 @@
   "jade.nauvis_fluids.pumpjack.no_well": "Not on an oil well",
   "jade.nauvis_fluids.pumpjack.pumping": "Pumping",
   "jade.nauvis_fluids.pumpjack.stored": "Crude oil: %s / %s",
-  "nauvis_fluids.offshore_pump.no_water": "No water here - an offshore pump stands at the edge of a lake or the sea",
-  "nauvis_fluids.offshore_pump.wrong_water": "This water cannot be pumped - an offshore pump draws from the still water of a lake or the sea, not a bucket's",
+  "nauvis_fluids.offshore_pump.no_water": "No water here to pump",
+  "nauvis_fluids.offshore_pump.wrong_water": "Only a lake or the sea can be pumped",
   "pack.nauvis_fluids.crafting_table": "Nauvis Fluids: bench recipes (skips research)",
   "tab.facrafting.group.logistics": "Logistics",
   "tab.facrafting.group.production": "Production"

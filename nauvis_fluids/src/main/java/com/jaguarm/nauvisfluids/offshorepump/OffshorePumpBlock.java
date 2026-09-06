@@ -62,8 +62,9 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * they were looking. And a click on the lake itself, which lands on the lake bed because a block
  * in hand looks through water, is lifted by {@link OffshorePumpItem} to the air just over the
  * surface: the pump floats there, intake over the water, as Factorio 2.0's does.
- * {@code client/OffshorePumpGhost} draws the answer to the same two questions under the crosshair
- * while the pump is in hand, so what is shown is what will happen.
+ * {@code nauvis_lib}'s ghost draws the answer to the same two questions under the crosshair while
+ * the pump is in hand, through {@link #placementFacing} and {@link #placementPart}, so what is
+ * shown is what will happen.
  *
  * <p>When no facing finds water the placement is refused, and the player is told why on the
  * action bar: that there is no water here, or - the case worth a sentence - that the water here is
@@ -150,6 +151,26 @@ public class OffshorePumpBlock extends BaseEntityBlock implements Multiblock.Mac
             return null;
         }
         return Multiblock.getStateForPlacement(this, defaultBlockState().setValue(FACING, facing), context);
+    }
+
+    /** The way {@link #aim} finds, or the player's own when it finds none - which is how the refusal is drawn. */
+    @Override
+    public Direction placementFacing(BlockPlaceContext context) {
+        Direction aimed = aim(context.getLevel(), context.getClickedPos(), context.getHorizontalDirection());
+        return aimed != null ? aimed : context.getHorizontalDirection();
+    }
+
+    /** The body on the click when the intake finds water this way; none when it does not. */
+    @Override
+    public int placementPart(BlockPlaceContext context, Direction facing) {
+        return waterAt(context.getLevel(), context.getClickedPos(), facing) != null ? shape().placement() : -1;
+    }
+
+    /** The water it would draw from, for the ghost to mark. */
+    @Override
+    public List<BlockPos> placementMarks(LevelReader level, BlockPos anchor, Direction facing) {
+        BlockPos water = waterAt(level, anchor, facing);
+        return water == null ? List.of() : List.of(water);
     }
 
     /** Why a pump would not go here, to the player who tried, on the server that decided. */

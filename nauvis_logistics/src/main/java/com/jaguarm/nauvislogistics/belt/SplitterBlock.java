@@ -98,8 +98,13 @@ public abstract class SplitterBlock extends BaseEntityBlock implements Multibloc
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         return Multiblock.getStateForPlacement(this,
-                defaultBlockState().setValue(FACING, context.getHorizontalDirection()),
-                context);
+                defaultBlockState().setValue(FACING, placementFacing(context)), context);
+    }
+
+    /** The way the player looks, which is the way the belts run. */
+    @Override
+    public Direction placementFacing(BlockPlaceContext context) {
+        return context.getHorizontalDirection();
     }
 
     @Override

@@ -96,7 +96,13 @@ public class SteamEngineBlock extends BaseEntityBlock implements Multiblock.Mach
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         return Multiblock.getStateForPlacement(this,
-                defaultBlockState().setValue(FACING, context.getHorizontalDirection()), context);
+                defaultBlockState().setValue(FACING, placementFacing(context)), context);
+    }
+
+    /** Along the line the player looks down, which is the axis its steam ends are on. */
+    @Override
+    public Direction placementFacing(BlockPlaceContext context) {
+        return context.getHorizontalDirection();
     }
 
     @Override

@@ -420,7 +420,10 @@ Other confirmed details, second batch
   `PoseStack` at the camera's origin, where it may not). Translate by
   `pos - levelRenderState.cameraRenderState.pos` and `submitShapeOutline` as a renderer would.
   `RenderLevelStageEvent`'s own javadoc points here for anything that goes through the collector.
-  `nauvis_fluids/.../client/OffshorePumpGhost.java` is the worked example.
+  `nauvis_lib/.../client/MachineGhost.java` is the worked example, and it builds the click a
+  right-click would build - `new BlockPlaceContext(player, hand, stack, hit)` from
+  `Minecraft.hitResult`, through the item's `updatePlacementContext` - so the block's own
+  `getStateForPlacement` can be asked on the client what it would do.
 - `GameTestHelper.onEachTick(Runnable)` runs something every tick of the test, which is how a
   test in one mod stands in for a machine from another: the power mod's boiler tests top the
   water tank up each tick the way a pipe from an offshore pump would, and never name the pump.

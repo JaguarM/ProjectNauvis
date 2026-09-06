@@ -13,7 +13,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterFluidModelsEvent;
-import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.client.fluid.FluidTintSources;
 
 /**
@@ -70,11 +69,5 @@ public class NauvisFluidsClient {
     static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(
                 ModBlockEntities.CRUDE_OIL.get(), context -> new CrudeOilRenderer());
-    }
-
-    /** The lines the x-ray draws with have no depth test, which no vanilla pipeline offers. */
-    @SubscribeEvent
-    static void registerPipelines(RegisterRenderPipelinesEvent event) {
-        event.registerPipeline(CrudeOilRenderer.XRAY_PIPELINE);
     }
 }
