@@ -1,0 +1,17 @@
+{
+  "name": "Electric engine",
+  "order": "0049",
+  "prerequisites": [
+    "nauvis_research:lubricant"
+  ],
+  "units": 50,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3"
+  ],
+  "unlocks": [
+    "neoprogressivematerials:electric_engine_unit"
+  ]
+}

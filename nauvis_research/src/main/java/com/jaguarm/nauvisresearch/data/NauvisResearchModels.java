@@ -69,6 +69,10 @@ public class NauvisResearchModels extends ModelProvider {
         // thing a player reads off a slot rather than off a number.
         itemModels.generateFlatItem(ModItems.SCIENCE_PACK_2.get(), Items.EMERALD,
                 ModelTemplates.FLAT_ITEM);
+
+        // Blue science, on lapis. Red, green, blue: Factorio's own colours for the three.
+        itemModels.generateFlatItem(ModItems.SCIENCE_PACK_3.get(), Items.LAPIS_LAZULI,
+                ModelTemplates.FLAT_ITEM);
     }
 
     private void machine(BlockModelGenerators blockModels, Block block, MachineShape shape,

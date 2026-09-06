@@ -141,7 +141,7 @@
     "id": "inserter-capacity-bonus-1",
     "upgrade": true,
     "prerequisites": [
-      "bulk-inserter"
+      "stack-inserter"
     ],
     "cost": {
       "count": 200,
@@ -955,6 +955,244 @@
     },
     "unlock_recipes": [
       "substation"
+    ]
+  },
+  {
+    "id": "advanced-material-processing-2",
+    "prerequisites": [
+      "advanced-material-processing",
+      "science-pack-3"
+    ],
+    "cost": {
+      "count": 250,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "electric-furnace"
+    ]
+  },
+  {
+    "id": "electric-energy-accumulators",
+    "prerequisites": [
+      "electric-energy-distribution-1",
+      "battery"
+    ],
+    "cost": {
+      "count": 150,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "accumulator"
+    ]
+  },
+  {
+    "id": "stack-inserter",
+    "localised_name": "technology-name.bulk-inserter",
+    "localised_description": "technology-description.bulk-inserter",
+    "prerequisites": [
+      "fast-inserter",
+      "logistics-2",
+      "advanced-circuit"
+    ],
+    "cost": {
+      "count": 150,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "stack-inserter"
+    ],
+    "modifiers": [
+      {
+        "type": "bulk-inserter-capacity-bonus",
+        "modifier": 1
+      }
+    ]
+  },
+  {
+    "id": "inserter-capacity-bonus-3",
+    "upgrade": true,
+    "prerequisites": [
+      "inserter-capacity-bonus-2",
+      "science-pack-3"
+    ],
+    "cost": {
+      "count": 250,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        }
+      ]
+    },
+    "modifiers": [
+      {
+        "type": "bulk-inserter-capacity-bonus",
+        "modifier": 1
+      }
+    ]
+  },
+  {
+    "id": "modules",
+    "prerequisites": [
+      "advanced-circuit"
+    ],
+    "cost": {
+      "count": 100,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "speed-module",
+    "upgrade": true,
+    "prerequisites": [
+      "modules"
+    ],
+    "cost": {
+      "count": 50,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "speed-module"
+    ]
+  },
+  {
+    "id": "effectivity-module",
+    "localised_name": "technology-name.efficiency-module",
+    "localised_description": "technology-description.efficiency-module",
+    "upgrade": true,
+    "prerequisites": [
+      "modules"
+    ],
+    "cost": {
+      "count": 50,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "effectivity-module"
+    ]
+  },
+  {
+    "id": "productivity-module",
+    "upgrade": true,
+    "prerequisites": [
+      "modules"
+    ],
+    "cost": {
+      "count": 50,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "productivity-module"
+    ]
+  },
+  {
+    "id": "electric-engine",
+    "prerequisites": [
+      "lubricant"
+    ],
+    "cost": {
+      "count": 50,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "electric-engine-unit"
     ]
   }
 ]

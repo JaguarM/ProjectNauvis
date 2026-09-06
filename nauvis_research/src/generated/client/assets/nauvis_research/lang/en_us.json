@@ -36,6 +36,7 @@
   "hud.nauvis_research.no_research": "Press %s to start a new research.",
   "item.nauvis_research.science_pack_1": "Automation science pack",
   "item.nauvis_research.science_pack_2": "Logistic science pack",
+  "item.nauvis_research.science_pack_3": "Chemical science pack",
   "itemGroup.nauvis_research": "Project Nauvis: Research",
   "key.categories.nauvis_research.nauvis": "Project Nauvis",
   "key.nauvis_research.open_research": "Open technology screen",
@@ -66,5 +67,6 @@
   "screen.nauvis_research.research.unavailable_packs": "Needs a science pack this pack does not have yet",
   "screen.nauvis_research.research.unlocks": "Unlocks:",
   "tab.facrafting.group.intermediate": "Intermediate products",
-  "tab.facrafting.group.production": "Production"
+  "tab.facrafting.group.production": "Production",
+  "technology.nauvis_research.effectivity_module": "Efficiency module"
 }

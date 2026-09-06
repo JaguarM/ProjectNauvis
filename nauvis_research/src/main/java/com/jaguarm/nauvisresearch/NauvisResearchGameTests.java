@@ -114,6 +114,7 @@ public final class NauvisResearchGameTests {
         TEST_TYPES.register("a_panel_craft_counts", () -> PanelCraftCountsTest.CODEC);
         TEST_TYPES.register("technology_layout_is_sound", () -> TechnologyLayoutTest.CODEC);
         TEST_TYPES.register("research_keeps_its_progress", () -> ResearchKeepsItsProgressTest.CODEC);
+        TEST_TYPES.register("a_lab_spends_blue_science", () -> LabSpendsBlueScienceTest.CODEC);
     }
 
     /** Called from the mod constructor so the test types register with everything else. */
@@ -177,6 +178,16 @@ public final class NauvisResearchGameTests {
                 new TestEnvironmentDefinition.AllOf(List.of()));
         register(event, oil, "a_mine_trigger_finishes_research", MineTriggerFinishesResearchTest::new, 20);
         register(event, oil, "pumping_oil_finishes_oil_processing", PumpingOilFinishesOilProcessingTest::new, 100);
+
+        /*
+         * A fourth, for the one test that points the world's labs at a blue technology and runs a
+         * lab through a whole unit of it. Every lab test in `default` points them at automation and
+         * agrees with the others about it; this one would pull their labs onto a thirty-second unit.
+         */
+        Holder<TestEnvironmentDefinition<?>> blue = event.registerEnvironment(
+                Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "blue"),
+                new TestEnvironmentDefinition.AllOf(List.of()));
+        register(event, blue, "a_lab_spends_blue_science", LabSpendsBlueScienceTest::new, 700);
     }
 
     private interface TestFactory {
@@ -1731,6 +1742,115 @@ public final class NauvisResearchGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("pumping oil finishes oil processing");
+        }
+    }
+
+    /**
+     * A lab spends chemical science on a technology that asks for it, one of each pack a unit.
+     *
+     * <p>The lab code did not change for blue science, and that is the claim: a lab takes whatever
+     * packs the world's research names, so the third pack is an item and a recipe and nothing
+     * else. What is asserted is the rule that makes it a third <em>gate</em> rather than a third
+     * flavour - red and green in the slots and no blue is not two thirds of a unit, it is no unit
+     * at all, which is what stops a science farm from running on whatever it has most of.
+     *
+     * <p>Electric engine, at Factorio 2.0's fifty units of thirty seconds: the unit is three times
+     * as long as the lab's buffer, so the test tops the lab up every tick the way a pole would.
+     */
+    public static class LabSpendsBlueScienceTest extends GameTestInstance {
+
+        public static final MapCodec<LabSpendsBlueScienceTest> CODEC =
+                RecordCodecBuilder.<LabSpendsBlueScienceTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(LabSpendsBlueScienceTest::info))
+                                .apply(i, LabSpendsBlueScienceTest::new));
+
+        public LabSpendsBlueScienceTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            MinecraftServer server = helper.getLevel().getServer();
+            ResearchState state = Research.state(server);
+            ResourceKey<Technology> engine = ModTechnologies.key("electric_engine");
+            Technology technology = technology(helper, "electric_engine");
+            helper.assertTrue(technology != null, "electric engine is not in the tree");
+
+            Identifier blue = Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "science_pack_3");
+            helper.assertValueEqual(technology.packs().size(), 3, "kinds of pack electric engine wants");
+            helper.assertTrue(technology.packs().contains(blue), "electric engine does not cost blue science");
+            helper.assertTrue(technology.isResearchable(),
+                    "electric engine cannot be researched - a pack it wants is not a registered item");
+            helper.assertValueEqual(technology.ticksPerUnit(), 600, "ticks a unit of electric engine");
+
+            Set<ResourceKey<Technology>> before = Set.copyOf(state.completed());
+            ResourceKey<Technology> current = state.current();
+            research(helper, "electric_engine");
+            helper.assertValueEqual(state.current(), engine, "the world's current research");
+
+            LabBlockEntity lab = placeLab(helper);
+            helper.onEachTick(() -> charge(lab));
+            insert(lab.automationView(), ModItems.SCIENCE_PACK_1.get(), 2);
+            insert(lab.automationView(), ModItems.SCIENCE_PACK_2.get(), 2);
+
+            // Two of the three: not a unit. The lab is fed and powered and must sit still.
+            helper.runAfterDelay(30, () -> {
+                helper.assertValueEqual(lab.progress(), 0,
+                        "progress on a lab holding red and green but no blue science");
+                helper.assertValueEqual(lab.cycles(), 0, "units done without blue science");
+
+                insert(lab.automationView(), ModItems.SCIENCE_PACK_3.get(), 2);
+
+                // A fed lab with nothing to research looks again once a second, and the pack
+                // arriving cannot bring that look forward - a scheduled tick is kept, not moved -
+                // so the unit starts up to a recheck late. The window allows for the whole of one.
+                int unitTicks = technology.ticksPerUnit() + LabBlockEntity.IDLE_RECHECK_TICKS;
+
+                helper.runAfterDelay(unitTicks + 3, () -> {
+                    try {
+                        helper.assertValueEqual(lab.cycles(), 1, "units after one unit's worth of ticks");
+                        for (Item pack : List.of(ModItems.SCIENCE_PACK_1.get(),
+                                ModItems.SCIENCE_PACK_2.get(), ModItems.SCIENCE_PACK_3.get())) {
+                            helper.assertValueEqual(count(lab, pack), 1,
+                                    pack + " left after one unit - a unit is one of each");
+                        }
+                        helper.assertValueEqual(state.units(engine), 1,
+                                "units the world has towards electric engine");
+                    } finally {
+                        // Put the tree back for whatever batch runs next.
+                        for (ResourceKey<Technology> key : List.copyOf(state.completed())) {
+                            if (!before.contains(key)) {
+                                state.forget(key);
+                            }
+                        }
+                        before.forEach(state::complete);
+                        state.forget(engine);
+                        state.setCurrent(current);
+                        Research.changedExternally(server);
+                    }
+                    helper.succeed();
+                });
+            });
+        }
+
+        private static int count(LabBlockEntity lab, Item item) {
+            int total = 0;
+            for (int slot = 0; slot < lab.inventory().size(); slot++) {
+                if (lab.inventory().getAmountAsInt(slot) > 0 && lab.inventory().getResource(slot).is(item)) {
+                    total += lab.inventory().getAmountAsInt(slot);
+                }
+            }
+            return total;
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a lab spends blue science");
         }
     }
 }

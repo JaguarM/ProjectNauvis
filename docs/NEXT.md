@@ -95,24 +95,14 @@ pump are out of the plan; see `PLAN.md`. The jobs below are in the order to do t
 
 ### 1. Blue science, and what it buys
 
-Chemical science is the gate in front of everything the oil chain was for, and every one of its
-ingredients exists now: two advanced circuits, an engine unit and a sulfur, in an assembler. The
-item is the only thing missing, and behind it a tier of the tree that is transcription plus a few
-machines that are mostly built.
+**Chemical science exists** - `nauvis_research:science_pack_3`, the dump's recipe of an advanced
+circuit, an electric mining drill and an engine unit - and the tree's blue tier is transcribed:
+`advanced-material-processing-2` gates the electric furnace, `electric-energy-accumulators`,
+`stack-inserter`, `inserter-capacity-bonus-3`, `modules` with its three modules, and
+`electric-engine`. Not `logistics-3`, `automation-3` or `effect-transmission`: those cost
+production science, which the pack does not make. What the tier unlocks is mostly not built yet,
+and that is the rest of this job.
 
-- **`nauvis_research:science_pack_3`.** An item, its generated recipe, the lang line, a creative
-  tab entry, and a gametest that a lab spends it on a technology that asks for it. The lab already
-  takes whatever packs the world's research asks for, so no lab code changes. The five technologies
-  in the tree that already cost blue science - `advanced-oil-processing`, `lubricant`, `battery`,
-  `explosives`, `electric-energy-distribution-2` - become researchable the moment the item exists.
-- **The tree's blue tier**, transcribed into `data/technologies.json` from `reference/factorio/`
-  as the earlier ones were, in Wube's names: `advanced-material-processing-2` (the electric furnace,
-  which is built and whose recipe is live now that the advanced circuit exists), `stack-inserter`,
-  `electric-engine`, `modules` with `speed-module`, `effectivity-module` and `productivity-module`,
-  `electric-energy-accumulators` (red and green, the accumulator). Not `logistics-3`,
-  `automation-3` or `effect-transmission`: those cost production science, which the pack does not
-  make. The generator reports a missing prerequisite, and a technology whose unlock the pack cannot
-  build is still worth having in the tree for the reason `GAPS.md` gives.
 - **The accumulator**, `nauvis_power`, 2×2. Five batteries, which a chemical plant makes now.
   Factorio's numbers: 5 MJ held, 300 kW in and out - at the pack's ratio of 120 FE/t to 900 kW that
   is 13,333 FE and 40 FE/t. It wants `PowerNetwork`'s **third case**: today a network collects

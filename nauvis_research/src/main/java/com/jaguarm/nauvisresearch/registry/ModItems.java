@@ -46,6 +46,16 @@ public final class ModItems {
      */
     public static final DeferredItem<Item> SCIENCE_PACK_2 = ITEMS.registerSimpleItem("science_pack_2");
 
+    /**
+     * Blue science, and the gate in front of everything the oil chain was for.
+     *
+     * <p>The dump's recipe - an advanced circuit, an electric mining drill and an engine unit,
+     * twelve seconds - is the pre-0.17 one, and so is the id; the display name says "Chemical
+     * science pack" like the other two. It is the first pack whose ingredients cannot be made
+     * by hand: the advanced circuit is plastic, and plastic is a chemical plant.
+     */
+    public static final DeferredItem<Item> SCIENCE_PACK_3 = ITEMS.registerSimpleItem("science_pack_3");
+
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
             "nauvis_research",
             () -> CreativeModeTab.builder()
@@ -55,6 +65,7 @@ public final class ModItems {
                         output.accept(LAB.get());
                         output.accept(SCIENCE_PACK_1.get());
                         output.accept(SCIENCE_PACK_2.get());
+                        output.accept(SCIENCE_PACK_3.get());
                     })
                     .build());
 

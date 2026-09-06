@@ -1,0 +1,17 @@
+{
+  "name": "Electric energy accumulators",
+  "order": "0042",
+  "prerequisites": [
+    "nauvis_research:electric_energy_distribution_1",
+    "nauvis_research:battery"
+  ],
+  "units": 150,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis_power:accumulator"
+  ]
+}

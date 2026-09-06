@@ -1,0 +1,16 @@
+{
+  "name": "Inserter capacity bonus 3",
+  "order": "0044",
+  "prerequisites": [
+    "nauvis_research:inserter_capacity_bonus_2",
+    "nauvis_research:science_pack_3"
+  ],
+  "units": 250,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3"
+  ],
+  "unlocks": []
+}
