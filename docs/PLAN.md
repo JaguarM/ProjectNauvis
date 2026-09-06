@@ -51,9 +51,9 @@ answer changes only when someone ports something.
 **Nothing on 26.2 does Factorio's oil, or anything else in the chemistry chain.** Searching
 26.2 for `oil` returns one worldgen structure pack. Storage and transport do exist — Fluid
 Tank has both, see below — but refining, cracking and the chemical plant have no third-party
-answer, and those are the part milestone 4 is actually about. So the barrels shortcut stands:
-it deletes a subsystem nobody has built for this version. This resolves the fluids open
-question in `MAPPING.md`.
+answer, and those are the part milestone 4 is actually about. So oil is first-party: the well and
+the pumpjack are built, and the refinery is next. This resolves the fluids open question in
+`MAPPING.md`.
 
 The whole tech ecosystem stopped at 1.21.1: Create, Mekanism, PneumaticCraft, Modern
 Industrialization, Industrial Foregoing. Immersive Engineering has no current releases at all.

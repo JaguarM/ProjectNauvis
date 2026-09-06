@@ -89,9 +89,6 @@ public final class PumpjackShape {
     /** The middle: the block that holds everything, the one the player's click lands on, and the one over the well. */
     public static final int CENTRE = 4;
 
-    /** The pump, above the middle. */
-    public static final int PUMP = 9;
-
     private static MachineShape build() {
         List<MachineCell> cells = new ArrayList<>();
 

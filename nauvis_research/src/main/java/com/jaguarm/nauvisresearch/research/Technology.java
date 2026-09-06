@@ -101,14 +101,6 @@ public record Technology(
                         trigger.kind() == Kind.CRAFT ? Optional.of(trigger.target()) : Optional.empty(),
                         trigger.kind() == Kind.MINE ? Optional.of(trigger.target()) : Optional.empty(),
                         trigger.count()));
-
-        public static Trigger craft(Identifier item, int count) {
-            return new Trigger(Kind.CRAFT, item, count);
-        }
-
-        public static Trigger mine(Identifier resource, int count) {
-            return new Trigger(Kind.MINE, resource, count);
-        }
     }
 
     /** Ten minutes a unit. Long enough for anything Factorio has, short enough to catch a typo. */

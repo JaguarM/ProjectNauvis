@@ -126,10 +126,6 @@ public class PumpjackBlockEntity extends BlockEntity {
         return status;
     }
 
-    public int progress() {
-        return progress;
-    }
-
     /** The well under the middle of the machine, or null if there is not one. */
     public @Nullable CrudeOilBlockEntity well() {
         return level != null && level.getBlockEntity(worldPosition.below()) instanceof CrudeOilBlockEntity well
