@@ -510,6 +510,39 @@ changes neither, which two liquids with the same properties do not.
 `LevelChunk.postProcessGeneration` ticks every fluid the generator marked, reading the state that
 is there by then, so a swapped fluid still flows.
 
+Keeping a chunk loaded
+----------------------
+
+NeoForge's forced chunks: a `TicketController(Identifier, LoadingValidationCallback)` registered
+from `RegisterTicketControllersEvent` on the mod bus - an unregistered controller has every ticket
+it holds dropped on load - and `controller.forceChunk(level, BlockPos owner, chunkX, chunkZ, add,
+forceNaturalSpawning)` to take or release one chunk with a block as the owner. The tickets are
+`ChunkMap.FORCED_TICKET_LEVEL`, which is entity-ticking, and they are saved with the level; the
+callback runs as they are loaded with a `TicketHelper` whose `getBlockTickets()` says which owner
+holds what and whose `removeAllTickets(owner)` drops them. `ForcedChunkManager.hasForcedChunks(level)`
+is the one query, and is what a gametest asserts. `nauvis_machines/.../radar/RadarChunks.java` is the
+worked example.
+
+More confirmed details:
+
+- `ItemStackTemplate` is a record of `Holder<Item> item`, `int count`, `DataComponentPatch
+  components`, with a public canonical constructor; its `MAP_CODEC` caps the count at 99 and
+  `create()` refuses a count over the item's stack size. `ItemStack(Holder<Item>, int,
+  DataComponentPatch)` builds a stack of any count. `ItemResource.CODEC` is the item and its
+  components with no count. `Codec.withAlternative(primary, alternative)` reads either form and
+  writes the first; `ExtraCodecs.optionalEmptyMap` is how an empty stack encodes as `{}`.
+- Titles: `ClientboundSetTitleTextPacket(Component)`, `ClientboundSetSubtitleTextPacket(Component)`
+  and `ClientboundSetTitlesAnimationPacket(fadeIn, stay, fadeOut)` are records sent through
+  `player.connection.send`; `PlayerList.broadcastSystemMessage(Component, boolean overlay)` is chat
+  for everybody.
+- `ServerLevel.sendParticles(particle, x, y, z, count, dx, dy, dz, speed)`; a firework is
+  `new FireworkRocketEntity(level, x, y, z, stack)` with `DataComponents.FIREWORKS` on the stack as
+  `new Fireworks(flightDuration, List.of(new FireworkExplosion(Shape, IntList colors, IntList
+  fadeColors, trail, twinkle)))`, and it accelerates upward on its own unless shot at an angle.
+- `GameTestHelper.makeMockServerPlayer(GameType)` builds a `ServerPlayer` that is **not** in the
+  player list, so anything sent to `getPlayerList().getPlayers()` never reaches it; it does have
+  `getAdvancements()`, so an award can be asserted on it directly.
+
 Time is a world clock, and the gametest world's sky ignores it
 --------------------------------------------------------------
 

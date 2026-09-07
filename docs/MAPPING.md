@@ -64,7 +64,10 @@ opts into that by naming its entry in a `FACTORIO_ID` constant.
 iron plate, copper plate, steel plate and stone brick are `smelting` here. `gen_recipes.py` writes
 that into the recipe as Facrafting's `category`, Facrafting keeps such a recipe out of the hand
 panel and the hand queue, and a furnace is the machine that names the category it runs. The other
-categories join the generator's list the day a machine runs them.
+categories join the generator's list the day a machine runs them: `chemistry` and
+`oil-processing` came with the chemical plant and the refinery, `crafting-with-fluid` with the
+second assembler, and `rocket-building` - the rocket part, and the launch that the dump writes as
+the space science pack's recipe - with the silo, which is the only machine that names it.
 
 A fluid is a row like any other, `raw` where the dump gives it no recipe, and its `item` is the
 fluid's id — `nauvis_fluids:steam`, `nauvis_fluids:crude_oil` — because a pipe and a machine meet

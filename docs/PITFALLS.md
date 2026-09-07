@@ -238,6 +238,17 @@ Data, recipes and registries
   `observer`, `piston`, `minecart` and `torch` are on that list too. The answer is
   `AddPackFindersEvent` with `alwaysActive` and `Pack.Position.TOP` — see `ModPacks.java`. **And it
   was only caught because the test asks a running recipe manager**, not the files on disk.
+- **Two ceilings on a stack's count, and both fail quietly.** `ItemStack.CODEC` and
+  `ItemStackTemplate.MAP_CODEC` refuse a count over ninety-nine while parsing, and
+  `ItemStackTemplate.create()` refuses a count over the item's stack size with a warning and an
+  *empty stack*. The launch recipe makes a thousand space science packs: the recipe failed to load
+  as one log line, and once it loaded, `resultStack()` was air and the silo reported it had no
+  recipe. Facrafting carries its own result codec now, and `resultStack()` builds the stack
+  straight from the template. The same ceiling is on NeoForge's `ItemStacksResourceHandler`,
+  which saves through `ItemStack.OPTIONAL_CODEC`: an assembler slot holding a thousand concrete
+  would have loaded empty. `AssemblerInventory` saves a resource and an amount instead. **Anything
+  that holds more than a stack has to name its own codec**, and a test that never saves and
+  reloads will not see the difference.
 - **The condition is `neoforge:never`, and there is no `neoforge:false`.** A wrong name does not
   fail the build or the load — it throws while parsing that one recipe, which is a line in a log
   and a recipe that is still craftable.

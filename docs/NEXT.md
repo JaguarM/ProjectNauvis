@@ -9,40 +9,24 @@ for what. **Read `PITFALLS.md` before writing.**
 Where the pack stands
 ---------------------
 
-Every gametest passes, `./gradlew build` is clean, and the client boots into a world. Milestones 0
-to 5 are built: the first factory, belts, research, oil and the military. What is played and works
-is in `PLAN.md`'s milestone list; every machine's numbers are on the machine, in its `*Block` and
-`*Shape` classes, and the mapping is `data/mapping.json`.
+Every gametest passes, `./gradlew build` is clean, and the client boots into a world. **The rocket
+launches.** Milestones 0 to 5 and 7 are built: the first factory, belts, research, oil, the
+military, and the silo - `PLAN.md`'s milestone list says what each holds, every machine's numbers
+are on the machine in its `*Block` and `*Shape` classes, and the mapping is `data/mapping.json`.
+Milestone 6, the robots, is a later update by decision.
+
+**The rocket build has not been played.** Yannic's half of milestone 7 is owed: a client boot to
+look at the silo on its pad, the radar's dish, the nine module chips and the five new item icons,
+and a launch watched from the ground. The whole road is playable in survival - the tree reaches
+`rocket-silo`, every ingredient exists, and the silo is made in an assembling machine 2, whose
+input slots hold the thousand concrete and thousand steel it costs.
 
 The jobs
 --------
 
-**The rocket is next, and the robots come after it** - Yannic's call, 2026-09-07: finish the game
-before widening it. Milestone 6 is a later update and `PLAN.md` says so.
+### 1. From the first look at milestone 5
 
-### 1. The road to the silo
-
-What the rocket silo's technology and recipe need that the pack does not have, all of it items
-and numbers the dump already carries:
-
-- the tier two and three modules in `nauvis_machines`, six items on the one chip;
-- production and high-tech science in `nauvis_research`, each behind a technology of its own the
-  way chemical and military science are;
-- the low density structure, rocket fuel and the rocket control unit in Neo Progressive Materials;
-- the radar in `nauvis_machines`, 3×3, because a satellite is paid for in five of them;
-- the technologies from `speed-module-2` to `rocket-silo` in `data/technologies.json`.
-
-### 2. `nauvis_rocket`
-
-A new subsystem mod - the list under *Adding a subsystem mod* below is the whole procedure - with
-the rocket silo, the rocket part, the satellite and the space science pack. The silo builds rocket
-parts from its own recipe, a hundred of them make a rocket, a satellite in the slot launches it,
-and the launch is the game's end: an advancement, and a thousand space science packs.
-
-### 3. From the first look at milestone 5
-
-Yannic played the military build on 2026-09-07 and named three things, in this order. They wait
-behind the rocket.
+Yannic played the military build on 2026-09-07 and named three things, in this order.
 
 - **Pollution needs work.** The numbers in `Attacks` and `PollutionState` were never played; the
   absorption is flat and the attack chance is one formula. Play it, then move them.
@@ -52,6 +36,18 @@ behind the rocket.
 - **Mob targeting.** What pollution sends walks at the nearest player. Factorio's biters walk at
   the polluters and fight whatever is in the way; that wants a target position rather than a
   player, and the goal above to hit what they reach.
+
+### 2. What the first launch will name
+
+The silo is built to the dump and has passed its tests and nobody's eyes. The things most likely
+to want moving after a boot, none of them identity: the five-second countdown and the firework's
+height, the rocket's colours, the silo's placeholder textures, and whether a nine-by-nine pad
+reads as a silo at all. `GAPS.md`'s rocket section says what was left out and why.
+
+### 3. Later updates
+
+The robots (milestone 6), and what space science buys - the infinite research the tree does not
+transcribe. Neither is on the road to the rocket and both are `PLAN.md`'s to schedule.
 
 The playtest
 ------------
@@ -98,8 +94,10 @@ ids changed and `implementation project(':nauvis_lib')` in it, a
 `src/main/templates/META-INF/neoforge.mods.toml` declaring `nauvis_lib` required, two lines in
 `nauvis/build.gradle` — the `runtimeOnly project(':...')` and its namespace in
 `pack_gametest_namespaces` — and its name in the `MODS` lists of `tools/check_models.py`,
-`tools/check_gametests.py` and `tools/render_model.py`. `nauvis_research/` is the one written
-from scratch by following exactly that list, so its diff is what adding a mod costs.
+`tools/check_gametests.py` and `tools/render_model.py`, plus a `crafting_table/pack.mcmeta` even
+if the mod has no bench recipe, since the finder throws without one. `nauvis_rocket/` is the
+newest written from scratch by following exactly that list, so its first commit is what adding a
+mod costs.
 
 **Recipes** generate into a staging directory —
 `python tools/gen_recipes.py --only <modid> --out <tmp>` — then copy across only the files for items

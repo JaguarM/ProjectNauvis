@@ -115,10 +115,6 @@ Oil
   the machine faces the way the player stood when placing it, input towards them, and is not
   turned afterwards - break it and place it again. The first machine has no fluid box and no
   facing, as in Factorio.
-- **The processing unit is the top of the circuit ladder.** `advanced-electronics-2` is in the
-  tree at Factorio's cost and Neo Progressive Materials registers the unit; nothing in the pack
-  is made from one yet, because everything that takes a processing unit costs production or
-  utility science.
 - **Explosives do nothing.** The item exists because the chemical plant makes it and the mapping
   owns it; cliff explosives and artillery are milestones away.
 - **A mine trigger is only heard with Facrafting installed.** The pumpjack reports through
@@ -307,20 +303,46 @@ Military and pollution
 Modules
 -------
 
-- **Tier one only.** Speed, efficiency and productivity modules 2 and 3 cost production and
-  utility science, which the pack does not make. The mapping has their ids; nothing registers
-  them.
-- **No beacon.** `effect-transmission` costs production science. A module works in the machine
-  it sits in and nowhere else.
+- **No beacon.** `effect-transmission` is not in the tree. A module works in the machine it
+  sits in and nowhere else. The three ladders go to tier three, because the silo's technology
+  needs the third speed and productivity modules; the numbers on each tier are Factorio 2.0's.
 - **A refused recipe says nothing.** Choosing a recipe that may not have productivity modules
   while one sits in the machine is refused, as Factorio refuses it - but Factorio says so and
   this pack's panel does not, so the click looks like nothing happened. Take the module out
   first, or read the tooltip on the slot.
-- **The drills still take Neo Progressive Automation's modules.** `nauvis_mining:speed_module`,
-  `efficiency_module` and `range_module` are the fork's, not Factorio's, and its slots refuse
-  ours. Job 4 in `NEXT.md` replaces them.
 - **A module's effect is read as a craft starts and held for the craft.** Pull a speed module
   out mid-craft and that craft finishes at the speed it began at, which is Factorio's rule.
+
+The rocket
+----------
+
+- **The rocket is drawn whether or not one has been built.** Factorio's silo is a hole with
+  doors, and its rocket appears part by part as they are built; ours is a pad with the rocket
+  standing on it from the day it is placed, because the silo is block models and a rocket that
+  grew would be a hundred model variants. How far the real rocket has got is a number on the
+  screen and in the hover readout.
+- **The launch is a firework.** Five seconds of fire and smoke under the rocket, then a firework
+  in the rocket's colours climbs off the nose and bursts high over the base, and the rocket on
+  the pad stays where it is. What it means is not a shortcut: the advancement in the challenge
+  frame goes to every player on the server, with a title and a line in chat, and the science
+  comes back.
+- **A launch needs a satellite, and there is no launch button.** Factorio 0.16 let an empty rocket
+  go for nothing; here the silo launches on its own the moment it holds a hundred parts and a
+  satellite, which is Factorio 2.0's rule, and a rocket with no cargo waits. Nothing comes back
+  from a launch but space science, and nothing in the tree is paid for in space science yet - the
+  packs are for the infinite research the tree does not transcribe.
+- **A thousand space science packs are owed, not stacked.** The launch recipe's result is a
+  thousand and a slot holds sixty-four, so the silo keeps the rest as a number and pays it into
+  the output slot as fast as it is taken away. Break the silo and what is owed spills.
+- **The silo's ingredient slots take only what a rocket part is made of**, which is Factorio's
+  rule for a machine with a fixed recipe and the reason an inserter offering a satellite to the
+  machine finds the satellite slot. The assembler's slots are not filtered that way; see below.
+- **The radar keeps chunks loaded and charts nothing.** Factorio's radar reveals the map, and
+  there is no map. What it keeps is the seven-by-seven chunks around it loaded and ticking while
+  it has power - Factorio's continuously charted area at Minecraft's chunk size, the same rule
+  pollution follows - so an outpost runs while nobody is there. The far scan has nothing to
+  reveal on to and is not built. A running radar costs one tick a second; without power it
+  releases its tickets and sleeps.
 
 Smelting
 --------
@@ -349,6 +371,15 @@ Smelting
 Crafting and the panel
 ----------------------
 
+- **An assembler's input slot holds twice what its recipe wants, however much that is.** Factorio's
+  rule, and what lets a silo be built at all: a thousand concrete in one slot, where a slot that
+  stopped at sixty-four could never hold a craft's worth. The slot is saved as a resource and an
+  amount, since vanilla's stack codec stops at ninety-nine. Any other item still stops at its stack
+  size, so an assembler's inputs are not filtered to the recipe the way the silo's are - an
+  inserter can still put the wrong thing in.
+- **A rocket silo cannot be crafted by hand.** Its recipe is forty-two stacks of ingredients and a
+  player has thirty-six slots, so the crafting panel will never find them all at once. It is
+  made in an assembling machine, whose slots hold what the recipe wants.
 - **Personal crafts pay at the end, not the start.** `CraftTicker` checks affordability every tick
   and consumes on completion, so moving ingredients away mid-craft stalls the job rather than losing
   it. It looks like a queue that stopped for no reason, and has been mistaken for a bug.

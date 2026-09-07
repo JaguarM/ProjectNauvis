@@ -310,6 +310,30 @@ ended it: five blocks tall needs a five-value enum and two-by-two needs two more
 which `MachineShape` had all along. **Two implementations of one idea survive only while the
 smaller one never has to grow.**
 
+**A machine with a fixed recipe reads its numbers off the recipe.** The silo runs
+`rocket-part` and nobody chooses it, so it finds the recipe by what it makes in its own category,
+the way a furnace finds smelting. The launch is the dump's other recipe - a hundred parts and a
+satellite make a thousand space science packs - and the silo does not run it as a timed craft
+but reads how many parts a rocket is, what the cargo is and what comes back off it, so the
+generated data holds those facts and `RocketSiloBlockEntity` holds none. A recipe result may be
+more than a stack: Facrafting's `RESULT_CODEC` has no ceiling on the count and `resultStack()`
+builds the stack without vanilla's check, and what a machine does with a thousand of something is
+the machine's business - the silo owes them to its output slot and pays as the slot clears.
+
+**An input slot holds what its recipe wants.** Factorio's assembler holds twice what a craft needs
+of each ingredient, however much that is, and so does `AssemblerInventory`: its capacity for a
+resource is the larger of the stack size and twice the chosen recipe's count, asked of the block
+entity - and of the client's copy of the recipe, through `ClientSlotRules`, so a slot holding a
+thousand concrete draws and takes a click the same on both sides. Vanilla's stack codec stops at
+ninety-nine, so the slots are saved as a resource and an amount, and read back from either form.
+
+**A machine that holds chunks holds tickets, and the tickets outlive it.** The radar keeps its
+seven-by-seven chunks loaded through NeoForge's `TicketController`, one per mod, with the radar's
+own position as the owner; a ticket is a saved fact, which is what lets the chunk load the radar
+that will pay for it when the world opens. So a radar releases its tickets from
+`preRemoveSideEffects` and never from `setRemoved`, which a chunk unloading calls too, and the
+controller's validation callback drops tickets whose owner is a loaded position with no radar on it.
+
 **A resource is a block that holds a number.** Factorio's oil is a resource entity, not a fluid,
 and the oil well copies that: `nauvis_fluids:crude_oil` is ordinary unbreakable ground with a block
 entity holding Factorio's resource amount, and nothing about fluids in the world had to be written

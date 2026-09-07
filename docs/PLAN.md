@@ -124,7 +124,7 @@ The mods
 --------
 
 Three already exist in their own repos; Crumbling Ore is released and its ids are permanent.
-The other eleven are subprojects here — a library and ten subsystem mods, seven of which exist
+The other eleven are subprojects here — a library and ten subsystem mods, eight of which exist
 so far.
 
 | Mod id | Owns | Items |
@@ -338,7 +338,19 @@ The circuit network's seven were this milestone's other half and are out - the s
 decisions say why - so it is the roboport, the two robots, the flying robot frame and the
 logistic chests. Built after the rocket, by decision; see above.
 
-### 7 — Rocket · 14 new
+### 7 — Rocket · 14 new · *built*
+
+`rocket-silo`, `rocket-part`, `satellite`, `space-science-pack`, `low-density-structure`,
+`rocket-fuel`, `rocket-control-unit`, `production-science-pack`, `high-tech-science-pack`,
+`radar`, and the second and third tiers of the three modules. **The silo is built and the rocket
+launches**: `nauvis_rocket` is the eighth subsystem mod, nine tiles by nine, building rocket
+parts from the dump's recipe into the rocket on its pad; a satellite in its slot sends the rocket
+up, the launch is the game's one challenge advancement on every player's screen, and a thousand
+space science packs come back. The dump is a 0.16-era one, which made this smaller than it
+looked: production science is an electric engine and a furnace, high tech science is a battery,
+cable, processing units and a speed module, and rocket fuel is ten solid fuel. Nothing in the
+tree is paid for in space science - that is the infinite research, which the tree does not
+transcribe.
 
 Those seven milestones reach **89 of 214 items** — the critical path. Ten more — the trains, the
 car and the pump — are out; see the settled decisions. The remaining 115 are breadth: tier-2 and
@@ -358,7 +370,7 @@ Shortcuts, and what they defer
 | Research | ~~lab consumes packs, grants vanilla advancements~~ **rejected — advancements are per player and research belongs to the world.** Shipped instead: the real model, on a `SavedData`, drawn as Factorio's own screen — a list, one technology's neighbourhood, pan and zoom | the damage modifiers, transcribed and not yet read; research speed, hand sizes and mining productivity reach their machines through `nauvis_lib`'s `Bonuses` |
 | Oil | ~~barrels as items, no pipes at all~~ **superseded — the pipe network came with steam, and the well and pumpjack are the real ones.** One tank per run, no flow model | segments and throughput, if ever |
 | Biters | vanilla hostiles + per-chunk pollution raising spawn rate near the factory | nests, expansion, evolution factor |
-| Rocket | silo consumes 100 rocket parts, plays a launch, grants the advancement | satellite, cargo, space science loop |
+| Rocket | ~~silo consumes 100 rocket parts, plays a launch, grants the advancement~~ **shipped with the satellite and the space science in**: the rocket on the pad is drawn always, the launch is a firework | a rocket that grows part by part, a launch animation, and what space science buys |
 
 The belt note
 -------------
