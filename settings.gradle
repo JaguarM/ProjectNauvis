@@ -79,3 +79,6 @@ include 'nauvis_mining'
 // Weapons, armour, the gun turret, the stone wall - and pollution, which is what makes them
 // necessary: the machines' figures go through nauvis_lib and this is what keeps count.
 include 'nauvis_military'
+
+// The rocket silo, the rocket part, the satellite and space science: the end of the game.
+include 'nauvis_rocket'

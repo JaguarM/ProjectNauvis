@@ -60,7 +60,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # in put them under the same rule as everything else, and none of the three mods left over there
 # registers a machine.
 MODS = ['nauvis', 'nauvis_machines', 'nauvis_logistics', 'nauvis_fluids', 'nauvis_power',
-        'nauvis_research', 'nauvis_mining', 'nauvis_military']
+        'nauvis_research', 'nauvis_mining', 'nauvis_military', 'nauvis_rocket']
 
 # Where datagen writes, and where anything hand-written lives. Both are shipped, so both count.
 ASSET_ROOTS = ['src/generated/client/assets', 'src/main/resources/assets']

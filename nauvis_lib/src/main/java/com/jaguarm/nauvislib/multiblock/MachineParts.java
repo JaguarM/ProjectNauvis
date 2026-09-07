@@ -29,6 +29,8 @@ public final class MachineParts {
     public static final String DECK = "deck";
     public static final String EDGE = "edge";
     public static final String CORNER = "corner";
+    /** The floor with no wall at all: the inside of a machine wider than three. */
+    public static final String FLOOR_CELL = "floor";
 
     /** How high you stand when you are on a machine, in pixels. */
     public static final int FLOOR = 12;
@@ -45,6 +47,15 @@ public final class MachineParts {
      */
     public static final float[][] DECK_BOXES = {
         {0, 0, 0, 16, WALL, 16},
+    };
+
+    /**
+     * The recessed floor on its own, for a cell that is neither on the wall nor under anything.
+     * A three-by-three machine has none - its one inner cell is the deck - and a nine-by-nine
+     * silo is mostly this.
+     */
+    public static final float[][] FLOOR_BOXES = {
+        {0, 0, 0, 16, FLOOR, 16},
     };
 
     /**

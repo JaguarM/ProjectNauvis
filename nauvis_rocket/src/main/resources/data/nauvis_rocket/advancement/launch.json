@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "id": "nauvis_rocket:satellite"
+    },
+    "title": {
+      "translate": "advancements.nauvis_rocket.launch.title"
+    },
+    "description": {
+      "translate": "advancements.nauvis_rocket.launch.description"
+    },
+    "background": "minecraft:gui/advancements/backgrounds/end",
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "launched": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "launched"
+    ]
+  ]
+}

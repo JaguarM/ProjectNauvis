@@ -1,0 +1,60 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="JaguarM"
+displayURL="https://github.com/JaguarM/ProjectNauvis"
+issueTrackerURL="https://github.com/JaguarM/ProjectNauvis/issues"
+
+description='''
+Factorio's rocket: the silo, the rocket part, the satellite and space science.
+
+The rocket silo is nine tiles by nine and builds a rocket out of rocket parts - a hundred of
+them, each a low density structure, a rocket control unit and rocket fuel. Put a satellite in it
+and the rocket launches, which is the end of the game and the start of space science: a thousand
+packs of it, out of the silo's output.
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# The pack's library: multi-block machines, the views a machine publishes, the screens.
+[[dependencies.${mod_id}]]
+    modId="nauvis_lib"
+    type="required"
+    versionRange="[0.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+# Required, not optional: the silo runs timed Facrafting recipes - the rocket part's and the
+# launch's - and without Facrafting there is no recipe type for it to run.
+[[dependencies.${mod_id}]]
+    modId="facrafting"
+    type="required"
+    versionRange="[${facrafting_version},)"
+    ordering="AFTER"
+    side="BOTH"
+
+# Optional: a rocket part is paid for in Neo Progressive Materials' items. Without that mod the
+# recipe simply does not load, and the silo has nothing to build.
+[[dependencies.${mod_id}]]
+    modId="neoprogressivematerials"
+    type="optional"
+    versionRange="[1.0.0,)"
+    ordering="AFTER"
+    side="BOTH"

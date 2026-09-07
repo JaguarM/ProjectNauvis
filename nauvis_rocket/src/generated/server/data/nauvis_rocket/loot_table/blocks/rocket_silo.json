@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "conditions": [
+            {
+              "block": "nauvis_rocket:rocket_silo",
+              "condition": "minecraft:block_state_property",
+              "properties": {
+                "part": "40"
+              }
+            }
+          ],
+          "name": "nauvis_rocket:rocket_silo"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "nauvis_rocket:blocks/rocket_silo"
+}

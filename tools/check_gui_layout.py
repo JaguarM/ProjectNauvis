@@ -180,6 +180,16 @@ SCREENS = [
               ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT')],
     ),
     Screen(
+        'rocket silo',
+        'nauvis_rocket/src/main/java/com/jaguarm/nauvisrocket/silo',
+        'RocketSiloMenu.java', 'RocketSiloScreen.java',
+        slots=[('input', 'INPUT_X', 'INPUT_Y', 3, 3), ('satellite', 'SATELLITE_X', 'SATELLITE_Y', 1, 1),
+               ('output', 'OUTPUT_X', 'OUTPUT_Y', 1, 1), ('module', 'MODULE_X', 'MODULE_Y', 4, 4)],
+        bars=[('part bar', 'ARROW_X', 'ARROW_Y', 'ARROW_WIDTH', 'ARROW_HEIGHT'),
+              ('rocket bar', 'ROCKET_X', 'ROCKET_Y', 'ROCKET_WIDTH', 'ROCKET_HEIGHT'),
+              ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT')],
+    ),
+    Screen(
         'burner inserter',
         'nauvis_logistics/src/main/java/com/jaguarm/nauvislogistics/transport',
         'BurnerInserterMenu.java', 'BurnerInserterScreen.java',

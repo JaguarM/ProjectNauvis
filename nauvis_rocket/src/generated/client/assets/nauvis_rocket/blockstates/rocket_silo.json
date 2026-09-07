@@ -1,0 +1,469 @@
+{
+  "variants": {
+    "part=0": {
+      "model": "nauvis_rocket:block/rocket_silo_corner"
+    },
+    "part=1": {
+      "model": "nauvis_rocket:block/rocket_silo_edge"
+    },
+    "part=10": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=100": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 90
+    },
+    "part=101": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 180
+    },
+    "part=102": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 270
+    },
+    "part=103": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side"
+    },
+    "part=104": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 90
+    },
+    "part=105": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 180
+    },
+    "part=106": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 270
+    },
+    "part=107": {
+      "model": "nauvis_rocket:block/rocket_silo_body_core"
+    },
+    "part=108": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner"
+    },
+    "part=109": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 90
+    },
+    "part=11": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=110": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 180
+    },
+    "part=111": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 270
+    },
+    "part=112": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side"
+    },
+    "part=113": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 90
+    },
+    "part=114": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 180
+    },
+    "part=115": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 270
+    },
+    "part=116": {
+      "model": "nauvis_rocket:block/rocket_silo_body_core"
+    },
+    "part=117": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner"
+    },
+    "part=118": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 90
+    },
+    "part=119": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 180
+    },
+    "part=12": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=120": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 270
+    },
+    "part=121": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side"
+    },
+    "part=122": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 90
+    },
+    "part=123": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 180
+    },
+    "part=124": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 270
+    },
+    "part=125": {
+      "model": "nauvis_rocket:block/rocket_silo_body_core"
+    },
+    "part=126": {
+      "model": "nauvis_rocket:block/rocket_silo_nose_corner"
+    },
+    "part=127": {
+      "model": "nauvis_rocket:block/rocket_silo_nose_corner",
+      "y": 90
+    },
+    "part=128": {
+      "model": "nauvis_rocket:block/rocket_silo_nose_corner",
+      "y": 180
+    },
+    "part=129": {
+      "model": "nauvis_rocket:block/rocket_silo_nose_corner",
+      "y": 270
+    },
+    "part=13": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=130": {
+      "model": "nauvis_rocket:block/rocket_silo_nose_edge"
+    },
+    "part=131": {
+      "model": "nauvis_rocket:block/rocket_silo_nose_edge",
+      "y": 90
+    },
+    "part=132": {
+      "model": "nauvis_rocket:block/rocket_silo_nose_edge",
+      "y": 180
+    },
+    "part=133": {
+      "model": "nauvis_rocket:block/rocket_silo_nose_edge",
+      "y": 270
+    },
+    "part=134": {
+      "model": "nauvis_rocket:block/rocket_silo_nose_tip"
+    },
+    "part=14": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=15": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=16": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=17": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 90
+    },
+    "part=18": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 270
+    },
+    "part=19": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=2": {
+      "model": "nauvis_rocket:block/rocket_silo_edge"
+    },
+    "part=20": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=21": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=22": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=23": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=24": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=25": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=26": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 90
+    },
+    "part=27": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 270
+    },
+    "part=28": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=29": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=3": {
+      "model": "nauvis_rocket:block/rocket_silo_edge"
+    },
+    "part=30": {
+      "model": "nauvis_rocket:block/rocket_silo_deck"
+    },
+    "part=31": {
+      "model": "nauvis_rocket:block/rocket_silo_deck"
+    },
+    "part=32": {
+      "model": "nauvis_rocket:block/rocket_silo_deck"
+    },
+    "part=33": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=34": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=35": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 90
+    },
+    "part=36": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 270
+    },
+    "part=37": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=38": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=39": {
+      "model": "nauvis_rocket:block/rocket_silo_deck"
+    },
+    "part=4": {
+      "model": "nauvis_rocket:block/rocket_silo_edge"
+    },
+    "part=40": {
+      "model": "nauvis_rocket:block/rocket_silo_deck"
+    },
+    "part=41": {
+      "model": "nauvis_rocket:block/rocket_silo_deck"
+    },
+    "part=42": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=43": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=44": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 90
+    },
+    "part=45": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 270
+    },
+    "part=46": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=47": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=48": {
+      "model": "nauvis_rocket:block/rocket_silo_deck"
+    },
+    "part=49": {
+      "model": "nauvis_rocket:block/rocket_silo_deck"
+    },
+    "part=5": {
+      "model": "nauvis_rocket:block/rocket_silo_edge"
+    },
+    "part=50": {
+      "model": "nauvis_rocket:block/rocket_silo_deck"
+    },
+    "part=51": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=52": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=53": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 90
+    },
+    "part=54": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 270
+    },
+    "part=55": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=56": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=57": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=58": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=59": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=6": {
+      "model": "nauvis_rocket:block/rocket_silo_edge"
+    },
+    "part=60": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=61": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=62": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 90
+    },
+    "part=63": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 270
+    },
+    "part=64": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=65": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=66": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=67": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=68": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=69": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=7": {
+      "model": "nauvis_rocket:block/rocket_silo_edge"
+    },
+    "part=70": {
+      "model": "nauvis_rocket:block/rocket_silo_floor"
+    },
+    "part=71": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 90
+    },
+    "part=72": {
+      "model": "nauvis_rocket:block/rocket_silo_corner",
+      "y": 270
+    },
+    "part=73": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 180
+    },
+    "part=74": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 180
+    },
+    "part=75": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 180
+    },
+    "part=76": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 180
+    },
+    "part=77": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 180
+    },
+    "part=78": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 180
+    },
+    "part=79": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 180
+    },
+    "part=8": {
+      "model": "nauvis_rocket:block/rocket_silo_corner",
+      "y": 90
+    },
+    "part=80": {
+      "model": "nauvis_rocket:block/rocket_silo_corner",
+      "y": 180
+    },
+    "part=81": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner"
+    },
+    "part=82": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 90
+    },
+    "part=83": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 180
+    },
+    "part=84": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 270
+    },
+    "part=85": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side"
+    },
+    "part=86": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 90
+    },
+    "part=87": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 180
+    },
+    "part=88": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 270
+    },
+    "part=89": {
+      "model": "nauvis_rocket:block/rocket_silo_body_core"
+    },
+    "part=9": {
+      "model": "nauvis_rocket:block/rocket_silo_edge",
+      "y": 270
+    },
+    "part=90": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner"
+    },
+    "part=91": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 90
+    },
+    "part=92": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 180
+    },
+    "part=93": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner",
+      "y": 270
+    },
+    "part=94": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side"
+    },
+    "part=95": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 90
+    },
+    "part=96": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 180
+    },
+    "part=97": {
+      "model": "nauvis_rocket:block/rocket_silo_body_side",
+      "y": 270
+    },
+    "part=98": {
+      "model": "nauvis_rocket:block/rocket_silo_body_core"
+    },
+    "part=99": {
+      "model": "nauvis_rocket:block/rocket_silo_body_corner"
+    }
+  }
+}

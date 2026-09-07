@@ -1,0 +1,80 @@
+{
+  "parent": "minecraft:block/block",
+  "elements": [
+    {
+      "faces": {
+        "down": {
+          "cullface": "down",
+          "texture": "#bottom"
+        },
+        "east": {
+          "cullface": "east",
+          "texture": "#side"
+        },
+        "north": {
+          "texture": "#side"
+        },
+        "south": {
+          "cullface": "south",
+          "texture": "#side"
+        },
+        "up": {
+          "texture": "#top"
+        },
+        "west": {
+          "texture": "#side"
+        }
+      },
+      "from": [
+        4.0,
+        0.0,
+        4.0
+      ],
+      "to": [
+        16.0,
+        3.0,
+        16.0
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "texture": "#bottom"
+        },
+        "east": {
+          "cullface": "east",
+          "texture": "#side"
+        },
+        "north": {
+          "texture": "#side"
+        },
+        "south": {
+          "cullface": "south",
+          "texture": "#side"
+        },
+        "up": {
+          "texture": "#top"
+        },
+        "west": {
+          "texture": "#side"
+        }
+      },
+      "from": [
+        8.0,
+        3.0,
+        8.0
+      ],
+      "to": [
+        16.0,
+        6.0,
+        16.0
+      ]
+    }
+  ],
+  "textures": {
+    "bottom": "minecraft:block/white_concrete",
+    "particle": "minecraft:block/red_concrete",
+    "side": "minecraft:block/red_concrete",
+    "top": "minecraft:block/red_concrete"
+  }
+}
