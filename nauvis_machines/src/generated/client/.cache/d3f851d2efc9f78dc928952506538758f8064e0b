@@ -1,4 +1,4 @@
-// 26.2	2026-09-07T21:40:08.7518087	Model Definitions - nauvis_machines
+// 26.2	2026-09-07T22:10:13.2978423	Model Definitions - nauvis_machines
 1790e886a0559a36a7768f36dea5b29383f205fb assets/nauvis_machines/blockstates/assembling_machine_1.json
 e05be886f04247aebafa91764aac97be94245290 assets/nauvis_machines/blockstates/assembling_machine_2.json
 c8d897b38e842d398f1f665fa78b7d91d19beb6e assets/nauvis_machines/blockstates/electric_furnace.json
@@ -15,6 +15,7 @@ ddab57a33f060484f34bfed5fd30f52c628667ad assets/nauvis_machines/items/productivi
 4d351f9313ce4bc6975f752d54b25129642ce039 assets/nauvis_machines/items/productivity_module_2.json
 43bf152c074f36363bda57ee194ffdd29d3e71d9 assets/nauvis_machines/items/productivity_module_3.json
 15e89d4f401311d84caa7b6d65f41b86a9024257 assets/nauvis_machines/items/radar.json
+21ac709bacf853bb224866a2931b83debad0c217 assets/nauvis_machines/items/repair_pack.json
 a4b9893d8765707f57afc76e6d6e6a986e96889b assets/nauvis_machines/items/speed_module.json
 a1c39ad49072bc9cd050b546685e88e3df6f47d1 assets/nauvis_machines/items/speed_module_2.json
 cbba097069ba07ce9cc2eb1491d529764a56e1a3 assets/nauvis_machines/items/speed_module_3.json
@@ -56,6 +57,7 @@ ab200d00a6824315fa47da319de0de70565b8645 assets/nauvis_machines/models/block/sto
 09960e4b823f48870d5866a4c4e8b583349a670c assets/nauvis_machines/models/item/productivity_module.json
 270b0e3b9768d92cd0fa453db37a55474e32bdeb assets/nauvis_machines/models/item/productivity_module_2.json
 8366e0421165506946fde31c1e0953ce7a7ae195 assets/nauvis_machines/models/item/productivity_module_3.json
+73e2bcbbdc12bd9d80982ff96b2f8f2a8f556861 assets/nauvis_machines/models/item/repair_pack.json
 c1992a77fb7f9dbfeb2227776b45932eefbf147e assets/nauvis_machines/models/item/speed_module.json
 8573c58bd8eeee6ce31b97431b3d84eabaae7ee1 assets/nauvis_machines/models/item/speed_module_2.json
 eacfffdfd59eb732c5eb0a400333032230ec1c49 assets/nauvis_machines/models/item/speed_module_3.json

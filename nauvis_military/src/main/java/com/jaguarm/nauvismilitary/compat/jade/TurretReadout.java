@@ -4,6 +4,7 @@ import com.jaguarm.nauvismilitary.NauvisMilitary;
 import com.jaguarm.nauvismilitary.turret.GunTurretBlockEntity;
 import com.jaguarm.nauvismilitary.turret.GunTurretScreen;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
@@ -25,6 +26,8 @@ public class TurretReadout implements IServerDataProvider<BlockAccessor> {
 
     static final String STATUS = "Status";
     static final String ROUNDS = "Rounds";
+    static final String HEALTH = "Health";
+    static final String MAX_HEALTH = "MaxHealth";
 
     private TurretReadout() {}
 
@@ -35,6 +38,8 @@ public class TurretReadout implements IServerDataProvider<BlockAccessor> {
         }
         data.putInt(STATUS, turret.status().ordinal());
         data.putInt(ROUNDS, turret.roundsLeft());
+        data.putInt(HEALTH, Math.round(turret.health()));
+        data.putInt(MAX_HEALTH, Math.round(turret.maxHealth()));
     }
 
     @Override
@@ -57,6 +62,11 @@ public class TurretReadout implements IServerDataProvider<BlockAccessor> {
             }
             tooltip.add(GunTurretScreen.statusText(
                     GunTurretBlockEntity.Status.of(data.getIntOr(STATUS, 0)), data.getIntOr(ROUNDS, 0)));
+            int health = data.getIntOr(HEALTH, 0);
+            int max = data.getIntOr(MAX_HEALTH, 0);
+            if (max > 0 && health < max) {
+                tooltip.add(Component.translatable("jade.nauvis_military.turret.health", health, max));
+            }
         }
 
         @Override

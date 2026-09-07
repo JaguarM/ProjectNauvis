@@ -12,25 +12,30 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.Heightmap;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The biters: Minecraft's own hostiles, sent at the factory by its pollution.
  *
  * <p>Factorio's spawners absorb the pollution that drifts over them and send a biter for every so
- * much absorbed. There are no spawners here, so the cloud itself does the sending: once a minute,
- * a chunk holding at least {@link #MOB_COST} has a chance proportional to what it holds of
- * spending it on a group, which walks in from outside the cloud's edge with the nearest player as
- * its target. Nothing comes if nobody is near - an attack on an empty base is a server spending
- * ticks on mobs nobody will meet - and nothing comes on peaceful.
+ * much absorbed, and the group walks to the polluter. There are no spawners here, so the cloud
+ * itself does the sending: once a minute, a chunk holding at least {@link #MOB_COST} has a chance
+ * proportional to what it holds of spending it on a group, which appears outside the base and
+ * walks at the machine the cloud came from - the chunk's own last polluter, or the thickest
+ * neighbour's, followed uphill - and fights whatever is in its way; see {@link AttackFactoryGoal}.
+ * Nothing comes if nobody is near - an attack on an empty base is a server spending ticks on mobs
+ * nobody will meet - and nothing comes on peaceful.
  *
  * <p>What comes is decided by everything the level has ever emitted, which stands in for
  * Factorio's evolution: zombies to begin with, skeletons among them after twenty thousand,
- * creepers after sixty. They wear a cap so the sun does not do the turrets' job for them.
+ * creepers after sixty. They wear a cap so the sun does not do the turrets' job for them, and
+ * they have eyes only for a player within a few blocks: the factory is what they came for.
  *
  * <p>All of it is tunable and none of it is identity; {@code PLAN.md} has the model and
  * {@code GAPS.md} what it leaves out.
@@ -51,9 +56,15 @@ public final class Attacks {
     /** How near a player has to be to the polluted chunk for anything to come. */
     public static final double PLAYER_RANGE = 96.0;
 
-    /** How far from the chunk's middle the group appears: outside the base, not in it. */
+    /** How far from the target the group appears: outside the base, not in it. */
     public static final double SPAWN_NEAR = 24.0;
     public static final double SPAWN_FAR = 40.0;
+
+    /** How far uphill a group follows the cloud to find the machine that made it, in chunks. */
+    public static final int GRADIENT_STEPS = 6;
+
+    /** How near a player has to come to a hostile bound for the factory before it turns on them. */
+    public static final double NOTICE_PLAYER = 6.0;
 
     /** The level's lifetime pollution at which the mix changes. */
     public static final double SKELETONS_FROM = 20_000;
@@ -75,28 +86,33 @@ public final class Attacks {
                 continue;
             }
             BlockPos middle = chunk.getMiddleBlockPosition(level.getSeaLevel());
-            Player target = level.getNearestPlayer(middle.getX(), middle.getY(), middle.getZ(), PLAYER_RANGE, false);
-            if (target == null) {
+            Player near = level.getNearestPlayer(middle.getX(), middle.getY(), middle.getZ(), PLAYER_RANGE, false);
+            if (near == null) {
                 continue;
             }
-            launch(level, state, chunk, target);
+            // The factory, if the cloud remembers one; the player who is near it otherwise.
+            BlockPos polluter = state.polluterOf(chunk, GRADIENT_STEPS);
+            launch(level, state, chunk, polluter != null ? polluter : near.blockPosition(), polluter == null ? near : null);
         }
     }
 
     /**
-     * Sends a group from this chunk's cloud at this player, spending the cloud for each that
+     * Sends a group from this chunk's cloud at this position, spending the cloud for each that
      * appears. Public for the test, which does not want to wait for the dice.
      *
+     * @param player a player to walk at instead, for a cloud that remembers no machine; null
+     *               sends the group at the position and lets it find its own fights
      * @return the hostiles that appeared
      */
-    public static List<Mob> launch(ServerLevel level, PollutionState state, ChunkPos chunk, Player target) {
+    public static List<Mob> launch(ServerLevel level, PollutionState state, ChunkPos chunk, BlockPos target,
+            @Nullable Player player) {
         double amount = state.at(chunk);
         int group = (int) Math.min(MAX_GROUP, Math.floor(amount / MOB_COST));
         List<Mob> sent = new ArrayList<>();
-        BlockPos middle = chunk.getMiddleBlockPosition(level.getSeaLevel());
         for (int i = 0; i < group; i++) {
-            Mob mob = spawnOne(level, middle, state.total(), target);
+            Mob mob = spawnOne(level, target, state.total());
             if (mob != null) {
+                hunt(mob, target, player);
                 sent.add(mob);
             }
         }
@@ -104,12 +120,33 @@ public final class Attacks {
         return sent;
     }
 
-    private static Mob spawnOne(ServerLevel level, BlockPos middle, double lifetime, Player target) {
+    /**
+     * Points a hostile at the factory: it walks at this position and chews through what is in the
+     * way, and turns on a player only within {@link #NOTICE_PLAYER} blocks or when hit. Public so a
+     * test can send one hostile at one machine.
+     */
+    public static void hunt(Mob mob, BlockPos target, @Nullable Player player) {
+        // Here for the factory, not for the night: it does not wander off and it does not burn.
+        mob.setPersistenceRequired();
+        mob.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+        mob.setDropChance(EquipmentSlot.HEAD, 0.0F);
+        // Vanilla's hostiles go for any player in follow range, which would leave the factory
+        // untouched whenever its owner is at home. Only a player close enough to be in the way.
+        mob.targetSelector.removeAllGoals(goal -> goal instanceof NearestAttackableTargetGoal<?>);
+        mob.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(mob, Player.class, true,
+                (candidate, level) -> candidate.distanceToSqr(mob) <= NOTICE_PLAYER * NOTICE_PLAYER));
+        mob.goalSelector.addGoal(4, new AttackFactoryGoal(mob, target));
+        if (player != null) {
+            mob.setTarget(player);
+        }
+    }
+
+    private static @Nullable Mob spawnOne(ServerLevel level, BlockPos around, double lifetime) {
         RandomSource random = level.getRandom();
         double angle = random.nextDouble() * Math.PI * 2;
         double distance = SPAWN_NEAR + random.nextDouble() * (SPAWN_FAR - SPAWN_NEAR);
-        int x = middle.getX() + (int) Math.round(Math.cos(angle) * distance);
-        int z = middle.getZ() + (int) Math.round(Math.sin(angle) * distance);
+        int x = around.getX() + (int) Math.round(Math.cos(angle) * distance);
+        int z = around.getZ() + (int) Math.round(Math.sin(angle) * distance);
         if (!level.hasChunk(x >> 4, z >> 4)) {
             return null;
         }
@@ -118,17 +155,7 @@ public final class Attacks {
         if (!level.getBlockState(pos).isAir() || !level.getBlockState(pos.above()).isAir()) {
             return null;
         }
-
-        Mob mob = kind(random, lifetime).spawn(level, pos, EntitySpawnReason.EVENT);
-        if (mob == null) {
-            return null;
-        }
-        // Here for the factory, not for the night: it does not wander off and it does not burn.
-        mob.setPersistenceRequired();
-        mob.setTarget(target);
-        mob.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
-        mob.setDropChance(EquipmentSlot.HEAD, 0.0F);
-        return mob;
+        return kind(random, lifetime).spawn(level, pos, EntitySpawnReason.EVENT);
     }
 
     /** Who comes, by how dirty the level has been so far. */

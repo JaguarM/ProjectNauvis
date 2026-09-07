@@ -1,0 +1,30 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "production",
+  "order": "0087",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:electronic_circuit",
+      "count": 2
+    },
+    {
+      "ingredient": "neoprogressivematerials:iron_gear_wheel",
+      "count": 2
+    }
+  ],
+  "result": {
+    "id": "nauvis_machines:repair_pack",
+    "count": 1
+  }
+}

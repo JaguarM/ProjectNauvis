@@ -44,6 +44,11 @@ public final class PollutionCommand {
         double here = state.at(chunkOf(source));
         source.sendSuccess(() -> Component.translatable("commands.nauvis_military.pollution.here",
                 String.format("%.1f", here), String.format("%.0f", state.total())), false);
+        BlockPos polluter = state.source(chunkOf(source));
+        if (polluter != null) {
+            source.sendSuccess(() -> Component.translatable("commands.nauvis_military.pollution.source",
+                    polluter.getX(), polluter.getY(), polluter.getZ()), false);
+        }
         return (int) here;
     }
 

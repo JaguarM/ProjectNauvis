@@ -91,6 +91,8 @@ public class NauvisMachinesModels extends ModelProvider {
         for (var module : ModItems.modules()) {
             itemModels.generateFlatItem(module.get(), ModelTemplates.FLAT_ITEM);
         }
+        // The repair pack, from texture-workshop/make_material_textures.py.
+        itemModels.generateFlatItem(ModItems.REPAIR_PACK.get(), ModelTemplates.FLAT_ITEM);
 
         Identifier blastSide = TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_side").sprite();
         Identifier metalTop = TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite();

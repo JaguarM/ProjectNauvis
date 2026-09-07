@@ -102,9 +102,11 @@ public final class NauvisMilitaryData {
             add("status.nauvis_military.turret.watching", "Watching, %s rounds");
             add("status.nauvis_military.turret.firing", "Firing, %s rounds");
             add("readout.nauvis_military.pollution", "Pollution %s");
+            add("jade.nauvis_military.turret.health", "Health %s/%s - a repair pack mends it");
 
             add("commands.nauvis_military.pollution.here", "Pollution here: %s (%s made in this world so far)");
             add("commands.nauvis_military.pollution.set", "Pollution here set to %s");
+            add("commands.nauvis_military.pollution.source", "Last breathed out at %s, %s, %s - what an attack walks at");
 
             add("death.attack.nauvis_military.bullet", "%1$s was shot");
             add("death.attack.nauvis_military.bullet.player", "%1$s was shot by %2$s");

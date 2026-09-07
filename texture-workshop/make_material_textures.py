@@ -55,6 +55,8 @@ OUT = {
     "nauvis": os.path.join(REPO, "nauvis", "src", "main", "resources", "assets", "nauvis", "textures", "item"),
     "nauvis_fluids": os.path.join(
         REPO, "nauvis_fluids", "src", "main", "resources", "assets", "nauvis_fluids", "textures", "item"),
+    "nauvis_machines": os.path.join(
+        REPO, "nauvis_machines", "src", "main", "resources", "assets", "nauvis_machines", "textures", "item"),
 }
 
 SIZE = 16
@@ -311,6 +313,26 @@ IRON_STICK = """
 .....ddd........
 """
 
+# A toolbox with a handle and a clasp: the repair pack, which is a box of what mends a machine.
+REPAIR_PACK = """
+................
+................
+......dddd......
+.....dmmmmd.....
+....dd....dd....
+..dddddddddddd..
+..dmmmmmmmmmmd..
+..dmmmmhhmmmmd..
+..dmmmmhhmmmmd..
+..dddddddddddd..
+..dllllllllllld.
+..dllllllllllld.
+..dllllllllllld.
+..dllllllllllld.
+..dddddddddddd..
+................
+"""
+
 # --- palettes --------------------------------------------------------------
 # Cooler and lighter than iron: iron_block's greys are neutral, so a blue cast plus a
 # brighter top face is what tells the two apart at a glance.
@@ -430,6 +452,15 @@ ROCKET_ORANGE = {
     "h": (255, 200, 110, 255),
 }
 
+# Red steel with a pale clasp: the colour of a toolbox.
+TOOLBOX = {
+    ".": (0, 0, 0, 0),
+    "d": (70, 26, 22, 255),
+    "m": (176, 44, 36, 255),
+    "l": (204, 70, 56, 255),
+    "h": (230, 214, 170, 255),
+}
+
 # A grey unit with a blue window and one green lamp.
 CONTROL_UNIT = {
     ".": (0, 0, 0, 0),
@@ -458,6 +489,7 @@ ITEMS = {
     "rocket_control_unit": (ROCKET_CONTROL_UNIT, CONTROL_UNIT, "neoprogressivematerials"),
     "iron_stick": (IRON_STICK, IRON, "neoprogressivematerials"),
     "solid_fuel": (SOLID_FUEL, COAL_BLACK, "nauvis"),
+    "repair_pack": (REPAIR_PACK, TOOLBOX, "nauvis_machines"),
     "explosives": (EXPLOSIVES, DYNAMITE, "nauvis_fluids"),
 }
 

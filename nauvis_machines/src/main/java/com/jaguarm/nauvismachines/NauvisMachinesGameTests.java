@@ -13,6 +13,9 @@ import com.jaguarm.nauvismachines.machine.assembler.AssemblerMenu;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblingMachine2Shape;
 import com.jaguarm.nauvismachines.machine.radar.RadarBlockEntity;
+import com.jaguarm.nauvismachines.item.RepairPackItem;
+import com.jaguarm.nauvislib.health.Health;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.world.chunk.ForcedChunkManager;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
@@ -110,6 +113,7 @@ public final class NauvisMachinesGameTests {
         TEST_TYPES.register("assembler_places", () -> AssemblerPlacesTest.CODEC);
         TEST_TYPES.register("a_radar_keeps_its_chunks_loaded", () -> RadarChartsTest.CODEC);
         TEST_TYPES.register("a_radar_without_power_sleeps", () -> RadarSleepsTest.CODEC);
+        TEST_TYPES.register("a_repair_pack_mends_a_machine", () -> RepairPackTest.CODEC);
         TEST_TYPES.register("assembler_holds_items", () -> AssemblerHoldsItemsTest.CODEC);
         TEST_TYPES.register("assembler_crafts", () -> AssemblerCraftsTest.CODEC);
         TEST_TYPES.register("assembling_machine_2_is_faster", () -> AssemblingMachine2IsFasterTest.CODEC);
@@ -185,6 +189,7 @@ public final class NauvisMachinesGameTests {
                 AssemblersTileWalkablyTest::new, 20);
         register(event, environment, "a_radar_keeps_its_chunks_loaded", RadarChartsTest::new, 60);
         register(event, environment, "a_radar_without_power_sleeps", RadarSleepsTest::new, 40);
+        register(event, environment, "a_repair_pack_mends_a_machine", RepairPackTest::new, 20);
     }
 
     private interface TestFactory {
@@ -1752,6 +1757,51 @@ public final class NauvisMachinesGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a radar without power sleeps");
+        }
+    }
+
+    /**
+     * An assembler with no health of its own is worth three hundred, from its hardness of three,
+     * and a repair pack spends itself mending up to its charge - and is kept when there is nothing
+     * to mend.
+     */
+    public static class RepairPackTest extends GameTestInstance {
+
+        public static final MapCodec<RepairPackTest> CODEC = RecordCodecBuilder.<RepairPackTest>mapCodec(
+                i -> i.group(TestData.CODEC.forGetter(RepairPackTest::info)).apply(i, RepairPackTest::new));
+
+        public RepairPackTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            placeMachine(helper, MACHINE);
+            BlockPos edge = helper.absolutePos(MACHINE.offset(1, 0, 0));
+            helper.assertValueEqual(Health.maxHealth(helper.getLevel(), edge), 300.0F, "an assembler's health, from its hardness");
+
+            ItemStack packs = new ItemStack(ModItems.REPAIR_PACK.get(), 3);
+            helper.assertValueEqual(RepairPackItem.repair(helper.getLevel(), edge, packs, null), 0.0F,
+                    "mended on a whole machine");
+            helper.assertValueEqual(packs.getCount(), 3, "packs left after clicking a whole machine");
+
+            Health.hurt(helper.getLevel(), edge, 120);
+            helper.assertValueEqual(Health.health(helper.getLevel(), edge), 180.0F, "left after a hit");
+            helper.assertValueEqual(RepairPackItem.repair(helper.getLevel(), edge, packs, null), 120.0F, "mended");
+            helper.assertValueEqual(packs.getCount(), 2, "packs left after mending");
+            helper.assertValueEqual(Health.health(helper.getLevel(), edge), 300.0F, "whole again");
+            helper.assertBlockPresent(ModBlocks.ASSEMBLING_MACHINE_1.get(), MACHINE);
+            helper.succeed();
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a repair pack mends a machine");
         }
     }
 }

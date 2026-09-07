@@ -3,6 +3,7 @@ package com.jaguarm.nauvismachines.registry;
 import java.util.List;
 
 import com.jaguarm.nauvismachines.NauvisMachines;
+import com.jaguarm.nauvismachines.item.RepairPackItem;
 import com.jaguarm.nauvismachines.module.ModuleItem;
 
 import net.minecraft.core.registries.Registries;
@@ -77,6 +78,13 @@ public final class ModItems {
     public static final DeferredItem<ModuleItem> PRODUCTIVITY_MODULE_3 = ITEMS.registerItem("productivity_module_3",
             properties -> new ModuleItem(properties, ModuleItem.PRODUCTIVITY_3));
 
+    /**
+     * Two circuits and two gears, behind its own technology: a charge of three hundred health for
+     * whatever the hostiles chewed, spent by clicking the damage. See {@link RepairPackItem}.
+     */
+    public static final DeferredItem<RepairPackItem> REPAIR_PACK = ITEMS.registerItem("repair_pack",
+            RepairPackItem::new);
+
     /** Every module, first tier to third, for the model provider and the tab. */
     public static List<DeferredItem<ModuleItem>> modules() {
         return List.of(SPEED_MODULE, EFFECTIVITY_MODULE, PRODUCTIVITY_MODULE,
@@ -100,6 +108,7 @@ public final class ModItems {
                         output.accept(ASSEMBLING_MACHINE_1.get());
                         output.accept(ASSEMBLING_MACHINE_2.get());
                         output.accept(RADAR.get());
+                        output.accept(REPAIR_PACK.get());
                         modules().forEach(module -> output.accept(module.get()));
                     })
                     .build());

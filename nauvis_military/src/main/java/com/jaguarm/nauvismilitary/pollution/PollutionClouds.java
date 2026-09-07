@@ -24,9 +24,9 @@ public final class PollutionClouds {
     /** Ticks in a minute: how often the clouds move. */
     public static final int MINUTE = 1200;
 
-    /** The machines' figures, into the cloud over the machine's chunk. */
+    /** The machines' figures, into the cloud over the machine's chunk - which remembers where the machine stands. */
     public static final Pollution.Sink SINK =
-            (level, pos, amount) -> PollutionState.get(level).add(ChunkPos.containing(pos), amount);
+            (level, pos, amount) -> PollutionState.get(level).add(ChunkPos.containing(pos), amount, pos);
 
     @SubscribeEvent
     static void onLevelTick(LevelTickEvent.Post event) {
@@ -37,7 +37,7 @@ public final class PollutionClouds {
         if (state.clouds().isEmpty()) {
             return;
         }
-        state.drift();
+        state.drift(Absorption.of(level));
         Attacks.sweep(level, state);
     }
 }

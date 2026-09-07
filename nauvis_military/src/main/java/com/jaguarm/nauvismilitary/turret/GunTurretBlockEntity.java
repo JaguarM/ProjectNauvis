@@ -1,6 +1,8 @@
 package com.jaguarm.nauvismilitary.turret;
 
 import com.jaguarm.nauvislib.bonus.Bonuses;
+import com.jaguarm.nauvislib.health.Damageable;
+import com.jaguarm.nauvislib.health.MachineHealth;
 import com.jaguarm.nauvislib.transfer.MachineAccess;
 import com.jaguarm.nauvismilitary.registry.ModBlockEntities;
 import com.jaguarm.nauvismilitary.registry.ModDamageTypes;
@@ -52,7 +54,7 @@ import org.jspecify.annotations.Nullable;
  * of fire. That look is the one bounded poll in this mod: Minecraft does not tell a block when a
  * zombie walks into range, and a turret that waited to be told would be a wall.
  */
-public class GunTurretBlockEntity extends BlockEntity implements MenuProvider {
+public class GunTurretBlockEntity extends BlockEntity implements MenuProvider, Damageable {
 
     public static final int AMMO_SLOT = 0;
     public static final int SLOT_COUNT = 1;
@@ -63,6 +65,9 @@ public class GunTurretBlockEntity extends BlockEntity implements MenuProvider {
 
     /** How often a loaded turret with nothing in sight looks again. */
     public static final int SCAN_TICKS = 10;
+
+    /** Factorio's gun turret has four hundred health, which is what the biters chew through. */
+    public static final float MAX_HEALTH = 400;
 
     /** Factorio's modifier type for a turret's own damage bonus, and this turret's name in it. */
     public static final String TURRET_ATTACK = "turret-attack";
@@ -83,6 +88,12 @@ public class GunTurretBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private final TurretInventory inventory = new TurretInventory(this::onInventoryChanged);
+
+    /**
+     * What the hostiles chew through. The library finds it through any of the turret's four
+     * blocks, hurts it, and takes the turret down when it reaches nothing; a repair pack mends it.
+     */
+    private final MachineHealth health = new MachineHealth(MAX_HEALTH);
 
     /** What inserters see: magazines in, nothing out. */
     private final ResourceHandler<ItemResource> automationView = new MachineAccess(inventory, SLOT_COUNT);
@@ -133,6 +144,21 @@ public class GunTurretBlockEntity extends BlockEntity implements MenuProvider {
 
     public Status status() {
         return status;
+    }
+
+    @Override
+    public float maxHealth() {
+        return health.maxHealth();
+    }
+
+    @Override
+    public float health() {
+        return health.health();
+    }
+
+    @Override
+    public void setHealth(float value) {
+        health.setHealth(value);
     }
 
     public int shots() {
@@ -301,6 +327,7 @@ public class GunTurretBlockEntity extends BlockEntity implements MenuProvider {
         super.saveAdditional(output);
         inventory.serialize(output.child("Inventory"));
         output.putInt("Shots", shots);
+        health.save(output);
         output.putInt("Chambered", chambered);
         output.putFloat("ChamberedDamage", chamberedDamage);
     }
@@ -310,6 +337,7 @@ public class GunTurretBlockEntity extends BlockEntity implements MenuProvider {
         super.loadAdditional(input);
         input.child("Inventory").ifPresent(inventory::deserialize);
         shots = input.getIntOr("Shots", 0);
+        health.load(input);
         chambered = input.getIntOr("Chambered", 0);
         chamberedDamage = input.getFloatOr("ChamberedDamage", 0.0F);
     }
