@@ -1,6 +1,7 @@
-// 26.2	2026-09-06T23:41:06.770481	Model Definitions - nauvis_research
+// 26.2	2026-09-07T18:13:26.0707096	Model Definitions - nauvis_research
 00b9f0d97702543d6d857089bc89d41013e6fdbb assets/nauvis_research/blockstates/lab.json
 fd832695173d2e7854d65ab20596b1598c8e0331 assets/nauvis_research/items/lab.json
+e44f191755c9a1f16446b68ef2619688ee45e92b assets/nauvis_research/items/military_science_pack.json
 b0ccefad128c1dbbcf8beafb604c64fe03620c44 assets/nauvis_research/items/science_pack_1.json
 e5599f42041d187a6c63a114691a421a53d6f9dd assets/nauvis_research/items/science_pack_2.json
 2f680f3d9f8789ac19d8954205d2f8363ebb64b0 assets/nauvis_research/items/science_pack_3.json
@@ -9,6 +10,7 @@ ec736527518d71c4847ecd3a1a5ba9fc0a3561c3 assets/nauvis_research/models/block/lab
 2e793a5f040154149423777587bf648858d774e6 assets/nauvis_research/models/block/lab_dome.json
 8cf7bae1414ef97f96d14c6e9ca3e6111e8a3e3c assets/nauvis_research/models/block/lab_edge.json
 4ea7003328ff5b38aa50099324eaf291cecd92df assets/nauvis_research/models/block/lab_inventory.json
+c6deebadfc028d6d62f45fc649e6c7dd033f5af5 assets/nauvis_research/models/item/military_science_pack.json
 df044d7e2a265987e24a523d3fe97a6efb259a53 assets/nauvis_research/models/item/science_pack_1.json
 5af477fae0ee316daeface1cde9128dc4f6e626c assets/nauvis_research/models/item/science_pack_2.json
 8a48f4f32336d1722d37663c696173d6241f81bb assets/nauvis_research/models/item/science_pack_3.json

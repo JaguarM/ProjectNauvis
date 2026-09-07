@@ -1,5 +1,6 @@
 package com.jaguarm.nauvisfluids.processing;
 
+import com.jaguarm.nauvislib.pollution.Pollution;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -458,6 +459,7 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
             }
             progress++;
             energy.set(energy.getAmountAsInt() - draw);
+            Pollution.emitTick(level, worldPosition, layout.pollutionPerMinute(), modules.effect().energyFactor());
         }
         // Banking a finished craft costs nothing, and is not held for want of power: the buffer is
         // exactly one craft deep, so the last tick of every craft empties it, and a machine that

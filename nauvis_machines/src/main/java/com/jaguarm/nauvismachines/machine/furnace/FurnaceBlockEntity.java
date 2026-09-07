@@ -1,5 +1,6 @@
 package com.jaguarm.nauvismachines.machine.furnace;
 
+import com.jaguarm.nauvislib.pollution.Pollution;
 import com.jaguarm.nauvislib.module.ModuleEffect;
 import com.jaguarm.nauvislib.module.ModuleSlots;
 import com.jaguarm.nauvislib.module.Productivity;
@@ -134,6 +135,7 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
     public record Smelt(ResourceKey<Recipe<?>> key, Ingredient input, int count, ItemStack result, int ticks) {}
 
     private final float craftingSpeed;
+    private final double pollutionPerMinute;
     private final boolean burner;
     private final int energyPerTick;
 
@@ -202,6 +204,7 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
         // the stone furnace's numbers rather than a crash.
         FurnaceBlock tier = state.getBlock() instanceof FurnaceBlock block ? block : null;
         craftingSpeed = tier == null ? StoneFurnaceBlock.CRAFTING_SPEED : tier.craftingSpeed();
+        pollutionPerMinute = tier == null ? StoneFurnaceBlock.POLLUTION_PER_MINUTE : tier.pollutionPerMinute();
         burner = tier == null || tier.isBurner();
         energyPerTick = tier == null ? 0 : tier.energyPerTick();
 
@@ -416,6 +419,7 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
 
         progress++;
         spend();
+        Pollution.emitTick(level, worldPosition, pollutionPerMinute, modules.effect().energyFactor());
 
         if (progress >= craftTicks) {
             Status blocked = smelt(smelt, true);

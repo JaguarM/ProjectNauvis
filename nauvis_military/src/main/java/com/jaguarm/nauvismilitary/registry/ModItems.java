@@ -1,0 +1,77 @@
+package com.jaguarm.nauvismilitary.registry;
+
+import com.jaguarm.nauvismilitary.NauvisMilitary;
+import com.jaguarm.nauvismilitary.armor.Armors;
+import com.jaguarm.nauvismilitary.weapon.GrenadeItem;
+import com.jaguarm.nauvismilitary.weapon.GunItem;
+import com.jaguarm.nauvismilitary.weapon.MagazineItem;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.equipment.ArmorType;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredItem;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+/**
+ * Factorio's early military, at Factorio's numbers. The ids are the dump's and are permanent;
+ * the numbers on each item are the entity's and are not configurable.
+ */
+public final class ModItems {
+
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(NauvisMilitary.MODID);
+    public static final DeferredRegister<CreativeModeTab> TABS =
+            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, NauvisMilitary.MODID);
+
+    /** Four rounds a second, fifteen blocks. The gun you start with. */
+    public static final DeferredItem<GunItem> PISTOL = ITEMS.registerItem("pistol",
+            properties -> new GunItem(properties, 15, 15.0, false));
+
+    /** Ten rounds a second for as long as the button is held, eighteen blocks. Behind {@code military}. */
+    public static final DeferredItem<GunItem> SUBMACHINE_GUN = ITEMS.registerItem("submachine_gun",
+            properties -> new GunItem(properties, 6, 18.0, true));
+
+    /** Ten rounds of five. Four iron plates. */
+    public static final DeferredItem<MagazineItem> FIREARM_MAGAZINE = ITEMS.registerItem("firearm_magazine",
+            properties -> new MagazineItem(properties, 10, 5.0F));
+
+    /** Ten rounds of eight. A firearm magazine, a steel plate and five copper. Behind {@code military-2}. */
+    public static final DeferredItem<MagazineItem> PIERCING_ROUNDS_MAGAZINE = ITEMS.registerItem(
+            "piercing_rounds_magazine", properties -> new MagazineItem(properties, 10, 8.0F));
+
+    /** Ten coal and five iron plates, thrown. Behind {@code military-2}. */
+    public static final DeferredItem<GrenadeItem> GRENADE = ITEMS.registerItem("grenade",
+            properties -> new GrenadeItem(properties.stacksTo(16)));
+
+    /** Forty iron plates, worn on the chest. */
+    public static final DeferredItem<Item> LIGHT_ARMOR = ITEMS.registerItem("light_armor",
+            properties -> new Item(properties.humanoidArmor(Armors.LIGHT, ArmorType.CHESTPLATE)));
+
+    /** A hundred copper and fifty steel. Behind {@code heavy-armor}. */
+    public static final DeferredItem<Item> HEAVY_ARMOR = ITEMS.registerItem("heavy_armor",
+            properties -> new Item(properties.humanoidArmor(Armors.HEAVY, ArmorType.CHESTPLATE)));
+
+    public static final DeferredItem<BlockItem> GUN_TURRET = ITEMS.registerSimpleBlockItem(ModBlocks.GUN_TURRET);
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("main",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.nauvis_military"))
+                    .withTabsBefore(CreativeModeTabs.COMBAT)
+                    .icon(() -> PISTOL.get().getDefaultInstance())
+                    .displayItems((parameters, output) -> {
+                        output.accept(PISTOL.get());
+                        output.accept(SUBMACHINE_GUN.get());
+                        output.accept(FIREARM_MAGAZINE.get());
+                        output.accept(PIERCING_ROUNDS_MAGAZINE.get());
+                        output.accept(GRENADE.get());
+                        output.accept(GUN_TURRET.get());
+                        output.accept(LIGHT_ARMOR.get());
+                        output.accept(HEAVY_ARMOR.get());
+                    })
+                    .build());
+
+    private ModItems() {}
+}

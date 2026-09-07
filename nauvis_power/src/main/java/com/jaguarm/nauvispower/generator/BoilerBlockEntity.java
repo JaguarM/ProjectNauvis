@@ -1,5 +1,6 @@
 package com.jaguarm.nauvispower.generator;
 
+import com.jaguarm.nauvislib.pollution.Pollution;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvislib.transfer.FluidOutputAccess;
 import com.jaguarm.nauvislib.transfer.MachineAccess;
@@ -68,6 +69,9 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
 
     public static final int FUEL_SLOT = 0;
     public static final int SLOT_COUNT = 1;
+
+    /** Thirty a minute, Factorio's figure: a boiler is the dirtiest thing in the early game. */
+    public static final double POLLUTION_PER_MINUTE = 30;
 
     /** Two a tick against an engine's one: Factorio's one boiler to two engines. */
     public static final int STEAM_PER_TICK = 2;
@@ -211,6 +215,7 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         burnTime--;
+        Pollution.emitTick(level, worldPosition, POLLUTION_PER_MINUTE, 1.0);
         int made = Math.min(STEAM_PER_TICK, Math.min(room, water()));
         try (Transaction transaction = Transaction.openRoot()) {
             water.extract(water.resource(), made, transaction);

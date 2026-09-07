@@ -22,7 +22,7 @@ import com.jaguarm.facrafting.recipe.FacraftRecipe;
  * @param moduleSlots   Factorio's module slots, which are identity like the ports
  */
 public record ProcessingLayout(String category, int fluidInputs, int fluidOutputs,
-        int itemInputs, int itemOutputs, int energyPerTick, int moduleSlots) {
+        int itemInputs, int itemOutputs, int energyPerTick, int moduleSlots, double pollutionPerMinute) {
 
     public int tankCount() {
         return fluidInputs + fluidOutputs;

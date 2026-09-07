@@ -15,7 +15,7 @@ ext {
     // The sibling repos would count too if any of them had tests the pack cares about; the
     // drills' did, and they are nauvis_mining's now.
     pack_gametest_namespaces = 'nauvis,nauvis_machines,nauvis_logistics,nauvis_fluids,' +
-            'nauvis_power,nauvis_research,nauvis_mining'
+            'nauvis_power,nauvis_research,nauvis_mining,nauvis_military'
 }
 
 version = '0.1.0'
@@ -81,6 +81,7 @@ dependencies {
     runtimeOnly project(':nauvis_power')
     runtimeOnly project(':nauvis_research')
     runtimeOnly project(':nauvis_mining')
+    runtimeOnly project(':nauvis_military')
 
     // Not a dependency of anything, deliberately: it is in the pack because the readout is worth
     // having, and every mod still runs without it.

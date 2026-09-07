@@ -106,6 +106,7 @@ public final class NauvisResearchData {
             addItem(ModItems.SCIENCE_PACK_1, "Automation science pack");
             addItem(ModItems.SCIENCE_PACK_2, "Logistic science pack");
             addItem(ModItems.SCIENCE_PACK_3, "Chemical science pack");
+            addItem(ModItems.MILITARY_SCIENCE_PACK, "Military science pack");
 
             // Two technology names the generator's rule gets wrong, because the pack speaks the
             // dump's pre-1.0 ids: Factorio calls these Efficiency module and Bulk inserter now.
@@ -196,8 +197,8 @@ public final class NauvisResearchData {
             add("modifier.nauvis_research.laboratory-speed", "Research speed %s");
             add("modifier.nauvis_research.mining-drill-productivity-bonus", "Mining productivity %s");
             add("modifier.nauvis_research.character-mining-speed", "Mining speed %s (does nothing yet)");
-            add("modifier.nauvis_research.ammo-damage", "%2$s damage %1$s (does nothing yet)");
-            add("modifier.nauvis_research.turret-attack", "%2$s damage %1$s (does nothing yet)");
+            add("modifier.nauvis_research.ammo-damage", "%2$s damage %1$s");
+            add("modifier.nauvis_research.turret-attack", "%2$s damage %1$s");
             add("commands.nauvis_research.research.info.none", "nothing");
             add("commands.nauvis_research.research.granted", "Researched %s and what it needed (%s technologies)");
             add("commands.nauvis_research.research.already", "%s and everything it needs are already researched");

@@ -43,6 +43,14 @@ public class StoneFurnaceBlock extends FurnaceBlock {
         return true;
     }
 
+    /** Two a minute, Factorio's figure for the stone furnace. */
+    public static final double POLLUTION_PER_MINUTE = 2;
+
+    @Override
+    public double pollutionPerMinute() {
+        return POLLUTION_PER_MINUTE;
+    }
+
     @Override
     public int energyPerTick() {
         return 0;

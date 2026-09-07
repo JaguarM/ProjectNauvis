@@ -73,6 +73,10 @@ public class NauvisResearchModels extends ModelProvider {
         // Blue science, on lapis. Red, green, blue: Factorio's own colours for the three.
         itemModels.generateFlatItem(ModItems.SCIENCE_PACK_3.get(), Items.LAPIS_LAZULI,
                 ModelTemplates.FLAT_ITEM);
+
+        // Military science, on gunpowder: grey, which is Factorio's colour for it.
+        itemModels.generateFlatItem(ModItems.MILITARY_SCIENCE_PACK.get(), Items.GUNPOWDER,
+                ModelTemplates.FLAT_ITEM);
     }
 
     private void machine(BlockModelGenerators blockModels, Block block, MachineShape shape,

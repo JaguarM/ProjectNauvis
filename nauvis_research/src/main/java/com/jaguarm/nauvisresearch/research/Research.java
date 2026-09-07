@@ -237,6 +237,18 @@ public final class Research {
      * like the locked set, on the same revision, since both move only when a technology does.
      */
     public static double bonus(MinecraftServer server, String effect) {
+        return bonuses(server).getOrDefault(effect, 0.0);
+    }
+
+    /**
+     * The same for a modifier aimed at a target - {@code ammo-damage} at {@code bullet} - which
+     * is summed under {@code type@target}, so a bullet bonus never counts towards a shotgun's.
+     */
+    public static double bonus(MinecraftServer server, String effect, String target) {
+        return bonuses(server).getOrDefault(effect + "@" + target, 0.0);
+    }
+
+    private static Map<String, Double> bonuses(MinecraftServer server) {
         Registry<Technology> technologies = ModTechnologies.registry(server.registryAccess());
         if (bonusCache == null || bonusFor != technologies || bonusRevision != revision) {
             Map<String, Double> sums = new HashMap<>();
@@ -246,14 +258,18 @@ public final class Research {
                     continue;
                 }
                 for (Technology.Modifier modifier : holder.value().modifiers()) {
-                    sums.merge(modifier.type(), modifier.modifier(), Double::sum);
+                    // Untargeted under the type alone; targeted under both, so the untargeted
+                    // sum stays what it was - an inserter's hand size has no target.
+                    String key = modifier.target().map(target -> modifier.type() + "@" + target)
+                            .orElse(modifier.type());
+                    sums.merge(key, modifier.modifier(), Double::sum);
                 }
             }
             bonusCache = sums;
             bonusFor = technologies;
             bonusRevision = revision;
         }
-        return bonusCache.getOrDefault(effect, 0.0);
+        return bonusCache;
     }
 
     /**

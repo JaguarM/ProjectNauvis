@@ -1,6 +1,6 @@
 {
   "name": "Sulfur processing",
-  "order": "0034",
+  "order": "0035",
   "prerequisites": [
     "nauvis_research:oil_processing"
   ],

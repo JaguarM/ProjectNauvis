@@ -1,5 +1,6 @@
 package com.jaguarm.nauvisfluids.pumpjack;
 
+import com.jaguarm.nauvislib.pollution.Pollution;
 import com.jaguarm.nauvislib.transfer.PowerAccess;
 import com.jaguarm.nauvislib.transfer.MachinePower;
 import org.jspecify.annotations.Nullable;
@@ -62,6 +63,9 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * connected simply fill up and stop.
  */
 public class PumpjackBlockEntity extends BlockEntity {
+
+    /** Ten a minute, Factorio's figure. */
+    public static final double POLLUTION_PER_MINUTE = 10;
 
     /** 90 kW at the pack's ratio of 120 FE/t to a 900 kW engine. The ratio is what is kept. */
     public static final int ENERGY_PER_TICK = 12;
@@ -157,6 +161,7 @@ public class PumpjackBlockEntity extends BlockEntity {
             }
             energy.set(energy.getAmountAsInt() - ENERGY_PER_TICK);
             progress++;
+            Pollution.emitTick(level, worldPosition, POLLUTION_PER_MINUTE, 1.0);
         }
 
         if (progress >= CYCLE_TICKS) {

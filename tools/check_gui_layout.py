@@ -117,6 +117,13 @@ SCREENS = [
               ('flame', 'FLAME_X', 'FLAME_Y', 'FLAME_WIDTH', 'FLAME_HEIGHT')],
     ),
     Screen(
+        'gun turret',
+        'nauvis_military/src/main/java/com/jaguarm/nauvismilitary/turret',
+        'GunTurretMenu.java', 'GunTurretScreen.java',
+        slots=[('ammo', 'AMMO_X', 'AMMO_Y', 1, 1)],
+        bars=[],
+    ),
+    Screen(
         'boiler',
         'nauvis_power/src/main/java/com/jaguarm/nauvispower/generator',
         'BoilerMenu.java', 'BoilerScreen.java',

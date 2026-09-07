@@ -77,6 +77,9 @@ public abstract class FurnaceBlock extends BaseEntityBlock implements Multiblock
     /** FE spent per tick of smelting by an electric tier; nothing for a burner. */
     public abstract int energyPerTick();
 
+    /** Factorio's pollution for this tier, per minute of smelting. */
+    public abstract double pollutionPerMinute();
+
     /** Factorio's module slots: none on the burner furnaces, two on the electric one. */
     public int moduleSlots() {
         return 0;

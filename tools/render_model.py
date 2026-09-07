@@ -36,7 +36,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 
 MODS = ['nauvis', 'nauvis_machines', 'nauvis_logistics', 'nauvis_fluids', 'nauvis_power',
-        'nauvis_research', 'nauvis_mining']
+        'nauvis_research', 'nauvis_mining', 'nauvis_military']
 ASSET_ROOTS = ['src/generated/client/assets', 'src/main/resources/assets']
 
 # Minecraft's directional shading, from its block renderer: the top is full, the bottom half.

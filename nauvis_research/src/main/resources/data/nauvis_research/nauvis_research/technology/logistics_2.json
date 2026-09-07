@@ -1,6 +1,6 @@
 {
   "name": "Logistics 2",
-  "order": "0018",
+  "order": "0019",
   "prerequisites": [
     "nauvis_research:logistics",
     "nauvis_research:science_pack_2"

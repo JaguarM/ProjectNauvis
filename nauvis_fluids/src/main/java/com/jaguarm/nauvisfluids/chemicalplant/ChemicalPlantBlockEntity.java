@@ -32,12 +32,16 @@ public class ChemicalPlantBlockEntity extends ProcessingBlockEntity {
     public static final String CATEGORY = "chemistry";
     /** 210 kW at the pack's ratio. The ratio is what is kept. */
     public static final int ENERGY_PER_TICK = 28;
+
+    /** Four a minute, Factorio's figure. */
+    public static final double POLLUTION_PER_MINUTE = 4;
     public static final int ITEM_INPUTS = 2;
     public static final int ITEM_OUTPUTS = 1;
     /** Factorio's chemical plant takes three. */
     public static final int MODULE_SLOTS = 3;
     public static final ProcessingLayout LAYOUT =
-            new ProcessingLayout(CATEGORY, 2, 2, ITEM_INPUTS, ITEM_OUTPUTS, ENERGY_PER_TICK, MODULE_SLOTS);
+            new ProcessingLayout(CATEGORY, 2, 2, ITEM_INPUTS, ITEM_OUTPUTS, ENERGY_PER_TICK, MODULE_SLOTS,
+                    POLLUTION_PER_MINUTE);
 
     public static final int WATER_PORT = 0;
 

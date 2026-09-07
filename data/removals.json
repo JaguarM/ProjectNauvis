@@ -114,6 +114,21 @@
       "kind": "bypass",
       "replaced_by": "nauvis_logistics:burner_inserter",
       "note": "A hopper on rails is still a hopper. The plain minecart and the chest minecart stay: nothing of the pack's does their job, and a vanilla recipe goes only when the pack can already do that job."
+    },
+    "minecraft:cobblestone_wall": {
+      "kind": "conflict",
+      "replaced_by": "nauvis_military:cobblestone_wall",
+      "note": "Factorio's stone wall is five stone bricks; vanilla's cobblestone wall is six cobblestone. The wall is the same block, behind stone-wall research."
+    },
+    "minecraft:cobblestone_wall_from_cobblestone_stonecutting": {
+      "kind": "conflict",
+      "replaced_by": "nauvis_military:cobblestone_wall",
+      "note": "The stonecutter's route to the same wall, at vanilla's price of one cobblestone or stone a wall. Factorio's wall is five stone bricks and behind research."
+    },
+    "minecraft:cobblestone_wall_from_stone_stonecutting": {
+      "kind": "conflict",
+      "replaced_by": "nauvis_military:cobblestone_wall",
+      "note": "The stonecutter's route to the same wall, at vanilla's price of one cobblestone or stone a wall. Factorio's wall is five stone bricks and behind research."
     }
   }
 }

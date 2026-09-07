@@ -1,0 +1,21 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:stone_bricks",
+    "minecraft:stone_bricks",
+    "minecraft:stone_bricks",
+    "minecraft:stone_bricks",
+    "minecraft:stone_bricks"
+  ],
+  "result": {
+    "id": "minecraft:cobblestone_wall",
+    "count": 1
+  }
+}

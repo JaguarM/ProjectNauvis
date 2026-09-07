@@ -1,6 +1,6 @@
 {
   "name": "Explosives",
-  "order": "0039",
+  "order": "0040",
   "prerequisites": [
     "nauvis_research:sulfur_processing"
   ],

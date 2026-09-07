@@ -1,0 +1,17 @@
+{
+  "name": "Military science pack",
+  "order": "0016",
+  "prerequisites": [
+    "nauvis_research:military_2",
+    "nauvis_research:stone_wall"
+  ],
+  "units": 30,
+  "ticks_per_unit": 300,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [
+    "nauvis_research:military_science_pack"
+  ]
+}

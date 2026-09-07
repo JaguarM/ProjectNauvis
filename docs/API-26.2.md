@@ -44,6 +44,13 @@ Confirmed renames and signature changes
 | `Commands` permission levels | **`requires(source -> source.hasPermission(2))` is gone.** It is `requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))` — the `LEVEL_*` constants are `PermissionCheck` objects rather than ints, and `CommandSourceStack` has no `hasPermission`. `LEVEL_GAMEMASTERS` is what `/time` and `/gamemode` use |
 | Datapack registry command arguments | `ResourceKeyArgument.key(REGISTRY)` parses and suggests one, for a synced datapack registry as well as a built-in; `ResourceKeyArgument.getRegistryKey` gets it back out. It parses **any** identifier, so a key nothing registered reaches the command and has to be rejected there |
 | `TextureMapping#put(TextureSlot, ResourceLocation)` | takes a **`Material`** — `net.minecraft.client.resources.model.sprite.Material`, not the `resources.model` one. `TextureMapping.getBlockTexture` returns one; for a texture of your own that no block is named after, `new Material(Identifier.fromNamespaceAndPath(modid, "block/<name>"))` |
+| `ChunkPos` | a **record** now: `x()` and `z()`, `ChunkPos.containing(BlockPos)` for the constructor that took one, `pack()` / `ChunkPos.pack(x, z)` for `toLong` / `asLong`, `ChunkPos.unpack(long)` for the constructor that took one. `ChunkPos.getX(long)` and `getZ(long)` stay |
+| `EntityType.ZOMBIE` and every other vanilla entity constant | **`EntityTypes.ZOMBIE`** — the constants moved to `net.minecraft.world.entity.EntityTypes`; `EntityType` is the class alone. Same for `BlockEntityTypes` |
+| `net.minecraft.world.entity.monster.Husk` and friends | monsters are in subpackages: `monster.zombie.Husk`, `monster.skeleton.Skeleton`; `Creeper` and `Monster` stayed in `monster` |
+| `ThrowableItemProjectile`, `Snowball` | `net.minecraft.world.entity.projectile.throwableitemprojectile.*`; `ThrowableProjectile` stayed in `projectile` |
+| `Level.random` | protected — use `level.getRandom()` |
+| `Entity.moveTo(x, y, z, yRot, xRot)` | **`snapTo(x, y, z, yRot, xRot)`** |
+| `IMenuTypeExtension` | `net.neoforged.neoforge.common.extensions.IMenuTypeExtension`, not `neoforge.network` |
 
 Other confirmed details:
 

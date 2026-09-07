@@ -56,6 +56,14 @@ public final class ModItems {
      */
     public static final DeferredItem<Item> SCIENCE_PACK_3 = ITEMS.registerSimpleItem("science_pack_3");
 
+    /**
+     * Military science: a piercing rounds magazine, a grenade and a gun turret make two, in ten
+     * seconds - the dump's recipe. Every ingredient is nauvis_military's, so the recipe carries
+     * that condition and the pack is uncraftable without it; the item exists regardless, because
+     * a technology's cost has to name something.
+     */
+    public static final DeferredItem<Item> MILITARY_SCIENCE_PACK = ITEMS.registerSimpleItem("military_science_pack");
+
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
             "nauvis_research",
             () -> CreativeModeTab.builder()
@@ -66,6 +74,7 @@ public final class ModItems {
                         output.accept(SCIENCE_PACK_1.get());
                         output.accept(SCIENCE_PACK_2.get());
                         output.accept(SCIENCE_PACK_3.get());
+                        output.accept(MILITARY_SCIENCE_PACK.get());
                     })
                     .build());
 

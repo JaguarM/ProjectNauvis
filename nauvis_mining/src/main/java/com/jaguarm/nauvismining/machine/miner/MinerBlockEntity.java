@@ -1,5 +1,6 @@
 package com.jaguarm.nauvismining.machine.miner;
 
+import com.jaguarm.nauvislib.pollution.Pollution;
 import com.jaguarm.nauvislib.bonus.Bonuses;
 import com.jaguarm.nauvislib.module.ModuleEffect;
 import com.jaguarm.nauvislib.module.ModuleSlots;
@@ -374,6 +375,7 @@ public class MinerBlockEntity extends BlockEntity implements MenuProvider {
 
         progress++;
         spend();
+        Pollution.emitTick(level, worldPosition, tier.pollutionPerMinute(), modules.effect().energyFactor());
         MinerFeedback.chug(level, worldPosition, plume(), progress);
 
         if (progress >= cycleTicks) {

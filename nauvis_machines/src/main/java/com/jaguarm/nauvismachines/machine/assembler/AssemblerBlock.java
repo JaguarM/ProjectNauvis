@@ -136,6 +136,9 @@ public abstract class AssemblerBlock extends BaseEntityBlock implements Multiblo
     /** FE spent per tick of a craft, at the pack's ratio of 120 FE/t to Factorio's 900 kW engine. */
     public abstract int energyPerTick();
 
+    /** Factorio's pollution for this tier, per minute of work. */
+    public abstract double pollutionPerMinute();
+
     /**
      * Factorio's module slots: none on the first machine, two on the second, four on the third.
      * Identity like the footprint, and on the block like the speed, so a tier is a class.

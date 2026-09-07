@@ -1,0 +1,52 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="JaguarM"
+displayURL="https://github.com/JaguarM/ProjectNauvis"
+issueTrackerURL="https://github.com/JaguarM/ProjectNauvis/issues"
+description='''
+Factorio's early military, and the pollution that makes it necessary.
+The pistol and the submachine gun, the two magazines, the grenade, the gun turret, the stone wall,
+light and heavy armour. And pollution: what the factory breathes out drifts across the map and
+brings Minecraft's own hostiles to it, so the turrets and the walls have something to do.
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="nauvis_lib"
+    type="required"
+    versionRange="[0.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="facrafting"
+    type="optional"
+    versionRange="[${facrafting_version},)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="neoprogressivematerials"
+    type="optional"
+    versionRange="[1.0.0,)"
+    ordering="AFTER"
+    side="BOTH"

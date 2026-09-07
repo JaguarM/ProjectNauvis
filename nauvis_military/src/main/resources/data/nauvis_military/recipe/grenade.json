@@ -1,0 +1,26 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 160,
+  "group": "combat",
+  "order": "0204",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:coal",
+      "count": 10
+    },
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 5
+    }
+  ],
+  "result": {
+    "id": "nauvis_military:grenade",
+    "count": 1
+  }
+}

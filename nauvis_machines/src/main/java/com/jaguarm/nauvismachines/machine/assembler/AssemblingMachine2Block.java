@@ -24,6 +24,9 @@ public class AssemblingMachine2Block extends AssemblerBlock {
     /** 150 kW at the pack's ratio: twice the first machine. */
     public static final int ENERGY_PER_TICK = 20;
 
+    /** Three a minute: the second machine is cleaner than the first, in Factorio's figures. */
+    public static final double POLLUTION_PER_MINUTE = 3;
+
     public AssemblingMachine2Block(Properties properties) {
         super(properties);
     }
@@ -41,6 +44,11 @@ public class AssemblingMachine2Block extends AssemblerBlock {
     @Override
     public int energyPerTick() {
         return ENERGY_PER_TICK;
+    }
+
+    @Override
+    public double pollutionPerMinute() {
+        return POLLUTION_PER_MINUTE;
     }
 
     /** Factorio's assembling machine 2 has two. */

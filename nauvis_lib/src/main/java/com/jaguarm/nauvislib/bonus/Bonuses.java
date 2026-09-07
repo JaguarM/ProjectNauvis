@@ -30,6 +30,15 @@ public final class Bonuses {
 
         /** The sum of every earned modifier of this type, or zero for one nothing has granted. */
         double bonus(ServerLevel level, String effect);
+
+        /**
+         * The same for a modifier that names a target - {@code ammo-damage} for {@code bullet},
+         * {@code turret-attack} for {@code gun-turret} - counting only the ones aimed at it. A
+         * source that does not distinguish answers as for the type alone.
+         */
+        default double bonus(ServerLevel level, String effect, String target) {
+            return bonus(level, effect);
+        }
     }
 
     private static final Source NONE = (level, effect) -> 0;
@@ -54,6 +63,11 @@ public final class Bonuses {
     /** How much of this effect the world has earned. Zero when nothing answers. */
     public static double of(ServerLevel level, String effect) {
         return source.bonus(level, effect);
+    }
+
+    /** How much of this effect, aimed at this target, the world has earned. */
+    public static double of(ServerLevel level, String effect, String target) {
+        return source.bonus(level, effect, target);
     }
 
     /**

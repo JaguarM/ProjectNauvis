@@ -1,6 +1,6 @@
 {
   "name": "Research speed 1",
-  "order": "0022",
+  "order": "0023",
   "prerequisites": [
     "nauvis_research:automation_2"
   ],

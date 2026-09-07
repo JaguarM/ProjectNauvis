@@ -75,3 +75,7 @@ include 'nauvis_research'
 // still released - what a fork buys is Factorio's ids, `burner_mining_drill` rather than
 // `burner_drill`, which a mod already in players' worlds could never be given.
 include 'nauvis_mining'
+
+// Weapons, armour, the gun turret, the stone wall - and pollution, which is what makes them
+// necessary: the machines' figures go through nauvis_lib and this is what keeps count.
+include 'nauvis_military'

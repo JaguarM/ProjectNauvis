@@ -1,6 +1,6 @@
 {
   "name": "Advanced circuit",
-  "order": "0033",
+  "order": "0034",
   "prerequisites": [
     "nauvis_research:plastics"
   ],

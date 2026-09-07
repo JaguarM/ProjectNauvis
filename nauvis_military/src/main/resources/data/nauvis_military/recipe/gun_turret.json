@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 160,
+  "group": "combat",
+  "order": "0205",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:copper_ingot",
+      "count": 10
+    },
+    {
+      "ingredient": "neoprogressivematerials:iron_gear_wheel",
+      "count": 10
+    },
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 20
+    }
+  ],
+  "result": {
+    "id": "nauvis_military:gun_turret",
+    "count": 1
+  }
+}

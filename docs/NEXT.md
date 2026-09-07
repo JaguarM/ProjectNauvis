@@ -82,6 +82,13 @@ missing from each is `GAPS.md`.
 | `/oil` | `field` puts an oil field where you stand, as worldgen would; `well` puts one well under your feet. Gamemaster only. The tool for a superflat world, which runs no features |
 | `nauvis_mining:burner_mining_drill` | 2×2, five blocks; takes the ore out of the ground under its 2×2 and puts it down in front of the firebox, an ore every four seconds. Wants coal and a pickaxe |
 | `nauvis_mining:electric_mining_drill` | 3×3, nine blocks on a half-block deck you walk over; mines the 5×5 around it at an ore every two seconds, 12 FE/t, three module slots. Outputs in front of its head |
+| `nauvis_military:pistol`, `submachine_gun` | four rounds a second at fifteen blocks; ten a second, held, at eighteen. Both fire whatever magazine the player carries. Behind `military` for the SMG |
+| `nauvis_military:firearm_magazine`, `piercing_rounds_magazine` | ten rounds of five and of eight, as durability. Behind `military-2` for piercing |
+| `nauvis_military:grenade` | thrown; a blast of three that breaks nothing. Behind `military-2` |
+| `nauvis_military:gun_turret` | 2×2, four blocks with twin barrels; one magazine slot, eighteen blocks, ten rounds a second at anything hostile. Behind `gun-turret` |
+| `minecraft:cobblestone_wall` | Factorio's stone wall, five stone bricks. Behind `stone-wall` |
+| `nauvis_military:light_armor`, `heavy_armor` | chestplates: forty iron plates on chainmail's look, fifty steel and a hundred copper on netherite's. Behind `heavy-armor` for the second |
+| `nauvis_research:military_science_pack` | a piercing rounds magazine, a grenade and a gun turret make two. Behind `military-science-pack` |
 
 Power numbers keep Factorio's ratios rather than its units: one engine runs twelve first-tier
 assemblers, one boiler runs twenty-four. None of that is identity; ids, ingredients, craft times,
@@ -99,7 +106,8 @@ The jobs
 --------
 
 **Oil is played and works** - Yannic ran the chain on 2026-09-06 - and trains, vehicles and the
-pump are out of the plan; see `PLAN.md`. The jobs below are in the order to do them. The first is the next part.
+pump are out of the plan; see `PLAN.md`. The five jobs below are done; what is left is the rest
+of job 6 and the loose ends.
 
 ### 1. Blue science, and what it buys
 
@@ -162,22 +170,23 @@ the drill can take, Fortune multiplies the yield, and every ore costs a point of
 
 ### 5. Military and pollution
 
-Milestone 5, and the first milestone that is design before it is code: a `nauvis_military` mod
-that does not exist, pollution that nothing emits, and biters that are vanilla hostiles drawn
-towards a factory. `PLAN.md`'s shortcut is *vanilla hostiles plus per-chunk pollution raising the
-spawn rate near the factory*, and the eight items are the pistol, the submachine gun, the two
-magazines, the gun turret, the stone wall, light armour and military science. Write the design into
-`PLAN.md` before the first block - what pollution is stored on, what a machine emits, what a spawn
-rate is in Minecraft's terms, and what a turret shoots at - and ask Yannic the questions that are
-his: whether biters are vanilla mobs with a reason to come, or something of the pack's own.
+**Done, and designed first** - the model is `PLAN.md`'s military note. `nauvis_military` has the
+pistol, the submachine gun, the two magazines, the grenade, the gun turret, the stone wall, light
+and heavy armour; military science is `nauvis_research:military_science_pack` behind its own
+technology. Every machine emits Factorio's pollution figure through `nauvis_lib`'s `Pollution`
+seam, the clouds drift and thin once a minute per chunk, and a thick enough cloud with a player
+near it sends Minecraft's own hostiles at the factory - the decision the brief left to Yannic,
+made for him under the standing instruction to finish: vanilla mobs with a reason to come,
+because a creature of the pack's own is a model, an animation and an AI, and biters that are
+zombies with a target are playable now. The numbers are knobs and a playtest will move them.
 
 ### 6. More removals follow the items
 
-The conflict half of `data/removals.json` is already waiting: the moment a mod ships a recipe for
-`minecraft:redstone_lamp`, `cobblestone_wall` or `iron_door`, the build fails until vanilla's is
-removed — and each is gated behind a technology in Factorio, so each is a real research unlock.
-None can be done yet: the lamp needs an iron stick, the gate needs steel, and the wall belongs to
-`nauvis_military`, which does not exist.
+The wall's is done: `minecraft:cobblestone_wall` and its two stonecutter recipes are removed,
+replaced by `nauvis_military:cobblestone_wall` behind `stone-wall`. Two are left waiting on an
+item: `minecraft:redstone_lamp` needs an iron stick, and `minecraft:iron_door` is the gate, which
+needs the `gate` technology in the tree. Ship either and the build fails until vanilla's is removed,
+which is the check working.
 
 Loose ends — small enough to finish in an afternoon
 ---------------------------------------------------

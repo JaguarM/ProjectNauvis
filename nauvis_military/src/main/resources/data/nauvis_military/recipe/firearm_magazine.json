@@ -1,0 +1,22 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 20,
+  "group": "combat",
+  "order": "0199",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 4
+    }
+  ],
+  "result": {
+    "id": "nauvis_military:firearm_magazine",
+    "count": 1
+  }
+}

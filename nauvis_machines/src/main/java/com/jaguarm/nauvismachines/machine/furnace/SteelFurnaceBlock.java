@@ -43,6 +43,14 @@ public class SteelFurnaceBlock extends FurnaceBlock {
         return true;
     }
 
+    /** Four a minute: the steel furnace is twice as fast and twice as dirty. */
+    public static final double POLLUTION_PER_MINUTE = 4;
+
+    @Override
+    public double pollutionPerMinute() {
+        return POLLUTION_PER_MINUTE;
+    }
+
     @Override
     public int energyPerTick() {
         return 0;

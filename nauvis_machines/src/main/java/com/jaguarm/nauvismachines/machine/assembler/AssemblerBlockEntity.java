@@ -1,5 +1,6 @@
 package com.jaguarm.nauvismachines.machine.assembler;
 
+import com.jaguarm.nauvislib.pollution.Pollution;
 import com.jaguarm.nauvislib.module.ModuleEffect;
 import com.jaguarm.nauvislib.module.ModuleSlots;
 import com.jaguarm.nauvislib.module.Productivity;
@@ -134,6 +135,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
      */
     private final float craftingSpeed;
     private final int energyPerTick;
+    private final double pollutionPerMinute;
 
     private final AssemblerInventory inventory = new AssemblerInventory(SLOT_COUNT, this::onInventoryChanged);
 
@@ -228,6 +230,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         AssemblerBlock tier = state.getBlock() instanceof AssemblerBlock block ? block : null;
         craftingSpeed = tier == null ? AssemblingMachine1Block.CRAFTING_SPEED : tier.craftingSpeed();
         energyPerTick = tier == null ? AssemblingMachine1Block.ENERGY_PER_TICK : tier.energyPerTick();
+        pollutionPerMinute = tier == null ? AssemblingMachine1Block.POLLUTION_PER_MINUTE : tier.pollutionPerMinute();
         modules = new ModuleSlots(tier == null ? 0 : tier.moduleSlots(), this::onInventoryChanged,
                 module -> module.effect().productivity() <= 0 || allowsProductivity());
         if (tier != null && tier.fluidBoxes()) {
@@ -462,6 +465,8 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         if (progress < craftTicks) {
             progress++;
             energy.set(energy.getAmountAsInt() - draw);
+            // What it breathes out, scaled the way its draw is: less with efficiency modules.
+            Pollution.emitTick(level, worldPosition, pollutionPerMinute, modules.effect().energyFactor());
         }
 
         if (progress >= craftTicks) {

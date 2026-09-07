@@ -309,7 +309,12 @@ is in the tree as Factorio 2.0's trigger — the first crude oil pumped — and 
 the refinery and the chemical plant it unlocks, and a fluid-aware recipe generator with a data
 source for the oil recipes.
 
-### 5 — Military and pollution · 8 new
+### 5 — Military and pollution · 8 new · *all built*
+
+`pistol`, `submachine-gun`, `firearm-magazine`, `piercing-rounds-magazine`, `gun-turret`,
+`stone-wall`, `light-armor`, `military-science-pack` - and the grenade and heavy armour, which
+military science and its technology needed. `nauvis_military` exists, the machines pollute,
+and the pollution brings something; the model is the military note below.
 ### 6 — Circuit network and robots · 12 new
 ### 7 — Rocket · 14 new
 
@@ -361,6 +366,46 @@ Neither number is identity, so both are yours to tune; the id and the recipe are
 network is built — how a pole finds a machine built later, why poles are bucketed into cells, why a
 pole is a multi-block and why its wires draw themselves — is `ARCHITECTURE.md`'s grid section, and
 what it cannot do yet is `GAPS.md`'s.
+
+The military note
+-----------------
+
+**Pollution is a number over each chunk, and the biters are Minecraft's own hostiles.** That is
+the shortcut in the table above, taken in full, and this is what it is made of.
+
+Every working machine emits Factorio's figure for it - a stone furnace two a minute, a boiler
+thirty, a burner drill twelve - on every tick it works, scaled by its modules the way its draw
+is. The machines are in five mods that may not name a sixth, so the number goes through
+`nauvis_lib`'s `Pollution`, the same seam as `Bonuses` with the arrow the other way: a machine
+emits and never asks who is listening, and `nauvis_military` installs the one `Sink`. Without
+the military mod the number goes nowhere, which is what every machine did before.
+
+The clouds are Factorio's at chunk size: `PollutionState`, one per level, a number over each
+16-by-16. Once a minute every cloud gives two percent of itself to each of its four neighbours
+and the ground takes five off every chunk - a flat figure where Factorio's depends on the
+tiles, so a forest absorbs nothing more here. A cloud grows until its edges thin to nothing,
+which is the shape a Factorio cloud has. `/pollution` reads the chunk you stand in and the
+level's lifetime total; the hover readout says the same for any block.
+
+There are no spawners, so the cloud itself sends the attack. Once a minute a chunk holding at
+least fifty has a chance proportional to what it holds - certain at five hundred - of spending
+fifty a head on a group of up to six, which appears twenty-four to forty blocks from the
+chunk's middle with the nearest player as its target, and only if a player is within
+ninety-six blocks. What comes is the level's lifetime pollution standing in for evolution:
+zombies, skeletons among them past twenty thousand, creepers past sixty. They wear a cap so
+the sun does not do the turrets' job. None of those numbers is identity; they are the knobs,
+in `Attacks` and `PollutionState`, and the first playtest will move them.
+
+The weapons are Factorio's numbers on Minecraft's hits. A bullet is a line rather than an
+entity - the pistol, the submachine gun and the turret hit what they aim at on the tick they
+fire, and they ignore invulnerability frames, since ten rounds a second at one hit in ten is
+not a submachine gun. A magazine is durability, ten rounds, found in the off hand or the
+inventory the way a bow finds arrows. The turret is the family's 2x2 shell with the front open
+and two barrels, takes one magazine, looks around twice a second while loaded and sleeps
+when empty, and shoots anything Minecraft calls an enemy within eighteen blocks. Physical
+projectile damage research reaches all of them through `Bonuses`, by target. Armour is a
+chestplate on vanilla's chainmail and netherite models; the grenade is a snowball that goes
+off without breaking blocks; the stone wall is vanilla's cobblestone wall at Factorio's price.
 
 The look-at readout
 -------------------

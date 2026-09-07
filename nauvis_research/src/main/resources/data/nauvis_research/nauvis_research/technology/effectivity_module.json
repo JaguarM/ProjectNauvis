@@ -1,6 +1,6 @@
 {
   "name": "Effectivity module",
-  "order": "0047",
+  "order": "0048",
   "prerequisites": [
     "nauvis_research:modules"
   ],

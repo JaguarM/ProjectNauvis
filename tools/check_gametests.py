@@ -36,7 +36,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # Every mod with tests, this repo's and the siblings'. A sibling that is not checked out is
 # skipped and said so - the composite build would have failed long before here.
 SEARCH = ['nauvis', 'nauvis_machines', 'nauvis_logistics', 'nauvis_fluids', 'nauvis_power',
-          'nauvis_research', 'nauvis_mining']
+          'nauvis_research', 'nauvis_mining', 'nauvis_military']
 
 failures = []
 checked = 0

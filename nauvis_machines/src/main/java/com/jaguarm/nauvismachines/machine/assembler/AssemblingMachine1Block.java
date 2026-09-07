@@ -22,6 +22,9 @@ public class AssemblingMachine1Block extends AssemblerBlock {
     /** 75 kW at the pack's ratio of 120 FE/t to a 900 kW engine. */
     public static final int ENERGY_PER_TICK = 10;
 
+    /** Four a minute, which is Factorio's figure for the first machine. */
+    public static final double POLLUTION_PER_MINUTE = 4;
+
     public AssemblingMachine1Block(Properties properties) {
         super(properties);
     }
@@ -39,5 +42,10 @@ public class AssemblingMachine1Block extends AssemblerBlock {
     @Override
     public int energyPerTick() {
         return ENERGY_PER_TICK;
+    }
+
+    @Override
+    public double pollutionPerMinute() {
+        return POLLUTION_PER_MINUTE;
     }
 }

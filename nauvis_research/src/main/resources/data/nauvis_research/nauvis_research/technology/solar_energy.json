@@ -1,6 +1,6 @@
 {
   "name": "Solar energy",
-  "order": "0019",
+  "order": "0020",
   "prerequisites": [
     "nauvis_research:steel_processing",
     "nauvis_research:science_pack_2"

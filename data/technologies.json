@@ -349,6 +349,30 @@
     ]
   },
   {
+    "id": "military-science-pack",
+    "prerequisites": [
+      "military-2",
+      "stone-wall"
+    ],
+    "cost": {
+      "count": 30,
+      "time_seconds": 15,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "military-science-pack"
+    ]
+  },
+  {
     "id": "fast-inserter",
     "prerequisites": [
       "science-pack-1"

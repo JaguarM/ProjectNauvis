@@ -138,7 +138,9 @@ with an `ammo_category` or `turret_id` folded into a `target`. The research mod 
 ones by type and answers any machine through `nauvis_lib`'s `Bonuses`; the generator's summary
 counts them by type so it is visible which types nothing reads yet. Read so far: the lab reads
 `laboratory-speed`, the inserters `inserter-stack-size-bonus` and `bulk-inserter-capacity-bonus`,
-the drills `mining-drill-productivity-bonus`.
+the drills `mining-drill-productivity-bonus`, and the guns and the turret `ammo-damage` for
+`bullet` and `turret-attack` for `gun-turret` - the two with a target, summed under
+`type@target` so a bullet bonus never counts towards a shotgun's.
 
 `data/removals.json`, and the rule it enforces
 ---------------------------------------------

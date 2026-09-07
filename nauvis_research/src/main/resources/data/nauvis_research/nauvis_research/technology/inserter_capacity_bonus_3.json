@@ -1,6 +1,6 @@
 {
   "name": "Inserter capacity bonus 3",
-  "order": "0044",
+  "order": "0045",
   "prerequisites": [
     "nauvis_research:inserter_capacity_bonus_2",
     "nauvis_research:science_pack_3"

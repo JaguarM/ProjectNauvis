@@ -1,0 +1,27 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:copper_ingot",
+    "minecraft:copper_ingot",
+    "minecraft:copper_ingot",
+    "minecraft:copper_ingot",
+    "minecraft:copper_ingot",
+    "nauvis_military:firearm_magazine",
+    "neoprogressivematerials:steel_plate"
+  ],
+  "result": {
+    "id": "nauvis_military:piercing_rounds_magazine",
+    "count": 1
+  }
+}

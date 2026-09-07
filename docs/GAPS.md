@@ -261,6 +261,40 @@ Mining
 - **Only the first mining productivity.** `mining-productivity-1` is in the tree at Factorio's
   cost and the drills read it; the rest of the ladder is infinite research on higher science.
 
+Military and pollution
+----------------------
+
+- **The biters are zombies.** Minecraft's hostiles with a target, wearing a cap against the sun,
+  in place of Factorio's biters, spitters, nests, expansion and evolution. They do not attack
+  buildings - a zombie has no opinion about a furnace - so a base is never damaged by an attack,
+  only its player is, and creepers past sixty thousand lifetime pollution are the one thing that
+  breaks a wall. `PLAN.md`'s military note has the model and its knobs; a creature of the pack's
+  own is the version after this one.
+- **The ground absorbs a flat five a minute per chunk.** Factorio's absorption is per tile and a
+  forest takes far more than a desert; here every chunk is the same, and planting trees does
+  nothing for the air. Nothing about the terrain is read.
+- **Nothing comes for an empty base.** An attack is only sent when a player is within ninety-six
+  blocks of the polluted chunk, so a factory left running overnight is not found overrun - or
+  defended - in the morning. Factorio's attacks do not care where you are.
+- **A turret does not turn, and nothing attacks it.** The barrels point the way it was placed
+  and the shots come from its middle whichever way the target is; it has no health, since
+  hostiles here do not hit blocks. And a loaded turret looks around twice a second whether or not
+  anything is near, which is the one bounded poll the mod has - Minecraft tells a block nothing
+  about a zombie walking into range.
+- **Bullets are lines and go through nothing.** A shot hits the first living thing along it and
+  stops; Factorio's bullets do the same. What it cannot do is miss - there is no spread and no
+  travel time - and a player in the line of a turret's fire is not in it, because a turret only
+  ever aims at an enemy and the bullet's line is to that enemy's eyes.
+- **Armour is a chestplate, drawn as vanilla's.** Factorio's armour is one item for the whole
+  body with a resistance table and, later, a grid; here light armour is chainmail's five points
+  and heavy armour netherite's eight with its toughness, worn as chestplates and drawn with
+  vanilla's equipment models. Modular armour and the equipment grid are not built.
+- **The shotgun is not built.** `military` unlocks it and its shells in Factorio; here it unlocks
+  the submachine gun and nothing else, and the shells have no entry in the dump at all.
+- **Only the first physical projectile damage.** `physical-projectile-damage-1` is in the tree and
+  the guns and the turret read it - `ammo-damage` for bullets and `turret-attack` for the gun
+  turret, by target; the rest of the ladder and `weapon-shooting-speed` are not transcribed.
+
 Modules
 -------
 

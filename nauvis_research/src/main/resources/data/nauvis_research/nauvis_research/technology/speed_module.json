@@ -1,6 +1,6 @@
 {
   "name": "Speed module",
-  "order": "0046",
+  "order": "0047",
   "prerequisites": [
     "nauvis_research:modules"
   ],

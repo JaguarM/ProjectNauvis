@@ -1,6 +1,6 @@
 {
   "name": "Lubricant",
-  "order": "0037",
+  "order": "0038",
   "prerequisites": [
     "nauvis_research:advanced_oil_processing"
   ],

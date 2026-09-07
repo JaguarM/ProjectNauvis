@@ -121,6 +121,7 @@ public final class NauvisGameTests {
                                 "neoprogressivematerials:iron_gear_wheel",
                                 "neoprogressivematerials:electronic_circuit",
                                 "nauvis_mining:burner_mining_drill",
+                                "nauvis_military:gun_turret",
                                 "nauvis_machines:assembling_machine_1",
                                 "nauvis_logistics:burner_inserter",
                                 "nauvis_logistics:inserter",

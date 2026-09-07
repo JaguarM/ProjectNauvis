@@ -451,6 +451,15 @@ had before. The names are typed where they are used - on the machine that reads 
 tree that grants them - and nowhere in the library, which has no opinion about what any of them
 means. A gametest that needs a bonus installs a stand-in `Source` and puts the real one back.
 
+**A machine breathes out and never asks who is listening.** The same seam with the arrow the
+other way: `nauvis_lib`'s `Pollution` is a number in, and `nauvis_military` installs the one
+`Sink`. Every machine calls `Pollution.emitTick(level, pos, perMinute, factor)` on every tick it
+works, with Factorio's per-minute figure written on the machine - `POLLUTION_PER_MINUTE` beside
+`ENERGY_PER_TICK`, or a field on the tier - and its modules' energy factor, since a machine on
+efficiency modules pollutes less by the same fraction it draws less. Without the military mod the
+number goes nowhere. What the sink does with it is `PollutionState`, a `SavedData` per level of
+chunk to amount, and `PLAN.md`'s military note.
+
 **The research screen paints and does not decide.** `ResearchScreen` is handed cells and arrows;
 everything checkable — every node right of every prerequisite, no two in one cell, every technology
 placed once, every arrow drawn, and the same tree laid out the same way twice — lives in

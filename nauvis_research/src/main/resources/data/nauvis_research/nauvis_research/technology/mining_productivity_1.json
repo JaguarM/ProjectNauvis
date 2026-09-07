@@ -1,6 +1,6 @@
 {
   "name": "Mining productivity 1",
-  "order": "0050",
+  "order": "0051",
   "prerequisites": [
     "nauvis_research:advanced_circuit"
   ],

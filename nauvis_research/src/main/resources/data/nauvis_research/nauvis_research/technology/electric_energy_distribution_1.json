@@ -1,6 +1,6 @@
 {
   "name": "Electric energy distribution 1",
-  "order": "0024",
+  "order": "0025",
   "prerequisites": [
     "nauvis_research:steel_processing",
     "nauvis_research:science_pack_2"

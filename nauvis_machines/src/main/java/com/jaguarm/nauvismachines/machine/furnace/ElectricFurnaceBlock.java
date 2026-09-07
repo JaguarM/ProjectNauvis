@@ -47,6 +47,14 @@ public class ElectricFurnaceBlock extends FurnaceBlock {
         return false;
     }
 
+    /** One a minute: the electric furnace is the clean one, and a reason to build it. */
+    public static final double POLLUTION_PER_MINUTE = 1;
+
+    @Override
+    public double pollutionPerMinute() {
+        return POLLUTION_PER_MINUTE;
+    }
+
     @Override
     public int energyPerTick() {
         return ENERGY_PER_TICK;

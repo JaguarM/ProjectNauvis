@@ -18,14 +18,14 @@ public enum MachineTier implements StringRepresentable {
      * The drill you start with. Burns solid fuel, covers exactly what it stands on, and has no
      * module slots - Factorio's burner mining drill, 150 kW and a mining speed of 0.25.
      */
-    BURNER("burner_mining_drill", false, 0, 0, 0.25, 0),
+    BURNER("burner_mining_drill", false, 0, 0, 0.25, 0, 12),
 
     /**
      * The drill you graduate to. Runs on electricity, reaches one tile past its own edge on every
      * side, and takes three modules - Factorio's electric mining drill, 90 kW and a mining speed
      * of 0.5. The step up is infrastructure, not just a bigger recipe.
      */
-    ELECTRIC("electric_mining_drill", true, 3, 1, 0.5, 12);
+    ELECTRIC("electric_mining_drill", true, 3, 1, 0.5, 12, 10);
 
     public static final Codec<MachineTier> CODEC = StringRepresentable.fromEnum(MachineTier::values);
 
@@ -35,15 +35,17 @@ public enum MachineTier implements StringRepresentable {
     private final int reach;
     private final double miningSpeed;
     private final int energyPerTick;
+    private final double pollutionPerMinute;
 
     MachineTier(String id, boolean electric, int moduleSlots, int reach, double miningSpeed,
-            int energyPerTick) {
+            int energyPerTick, double pollutionPerMinute) {
         this.id = id;
         this.electric = electric;
         this.moduleSlots = moduleSlots;
         this.reach = reach;
         this.miningSpeed = miningSpeed;
         this.energyPerTick = energyPerTick;
+        this.pollutionPerMinute = pollutionPerMinute;
     }
 
     public String id() {
@@ -79,6 +81,11 @@ public enum MachineTier implements StringRepresentable {
      */
     public int energyPerTick() {
         return energyPerTick;
+    }
+
+    /** Factorio's pollution for this drill, per minute of mining: twelve for the burner, ten for the electric. */
+    public double pollutionPerMinute() {
+        return pollutionPerMinute;
     }
 
     @Override

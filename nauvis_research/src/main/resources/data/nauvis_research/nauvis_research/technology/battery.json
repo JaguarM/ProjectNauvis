@@ -1,6 +1,6 @@
 {
   "name": "Battery",
-  "order": "0038",
+  "order": "0039",
   "prerequisites": [
     "nauvis_research:sulfur_processing"
   ],

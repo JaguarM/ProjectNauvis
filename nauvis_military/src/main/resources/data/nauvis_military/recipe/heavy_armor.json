@@ -1,0 +1,30 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 160,
+  "group": "combat",
+  "order": "0206",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:copper_ingot",
+      "count": 100
+    },
+    {
+      "ingredient": "neoprogressivematerials:steel_plate",
+      "count": 50
+    }
+  ],
+  "result": {
+    "id": "nauvis_military:heavy_armor",
+    "count": 1
+  }
+}

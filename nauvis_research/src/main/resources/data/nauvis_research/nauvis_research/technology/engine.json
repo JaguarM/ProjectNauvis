@@ -1,6 +1,6 @@
 {
   "name": "Engine",
-  "order": "0028",
+  "order": "0029",
   "prerequisites": [
     "nauvis_research:steel_processing",
     "nauvis_research:science_pack_2"

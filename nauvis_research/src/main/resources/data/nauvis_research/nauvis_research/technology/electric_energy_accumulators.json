@@ -1,6 +1,6 @@
 {
   "name": "Electric energy accumulators",
-  "order": "0042",
+  "order": "0043",
   "prerequisites": [
     "nauvis_research:electric_energy_distribution_1",
     "nauvis_research:battery"
