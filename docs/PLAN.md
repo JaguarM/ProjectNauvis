@@ -29,6 +29,14 @@ never built, and every redstone recipe - repeater, comparator, observer, piston,
 vanilla's and is never removed. Wiring a Factorio machine to redstone, if it is ever wanted, is
 a feature on the machine and not a milestone.
 
+**The rocket before the robots.** Yannic's call after the military playtest, 2026-09-07: finish
+the game before widening it. Milestone 7 is built ahead of milestone 6, and the roboport, the two
+robots and the logistic chests are a later update - `nauvis_logistics` still owns them, their ids
+are in the mapping, and nothing about the rocket waits on them. The one item of milestone 6 the
+rocket does need, the flying robot frame, is not needed after all: the pack's science packs are
+the dump's, and the dump's high tech science pack is a battery, cable, processing units and a
+speed module.
+
 **Power is Minecraft FE, buffered per machine.** Explicitly chosen over a first-party grid
 with a global satisfaction ratio, so third-party cables keep working. Brownouts are
 approximated per machine: one whose buffer cannot refill runs slower. Power poles survive as
@@ -324,11 +332,12 @@ source for the oil recipes.
 `stone-wall`, `light-armor`, `military-science-pack` - and the grenade and heavy armour, which
 military science and its technology needed. `nauvis_military` exists, the machines pollute,
 and the pollution brings something; the model is the military note below.
-### 6 — Robots · 5 new
+### 6 — Robots · 5 new · *a later update*
 
 The circuit network's seven were this milestone's other half and are out - the settled
 decisions say why - so it is the roboport, the two robots, the flying robot frame and the
-logistic chests.
+logistic chests. Built after the rocket, by decision; see above.
+
 ### 7 — Rocket · 14 new
 
 Those seven milestones reach **89 of 214 items** — the critical path. Ten more — the trains, the
