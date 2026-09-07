@@ -32,7 +32,7 @@ public final class ModContent {
     private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Nauvis.MODID);
 
     /** Factorio's solid fuel: a brick of it out of a chemical plant, burnt like coal, three times over. */
-    public static final DeferredItem<Item> SOLID_FUEL = ITEMS.registerSimpleItem("solid_fuel");
+    public static final DeferredItem<Item> SOLID_FUEL = ITEMS.registerSimpleItem("solid_fuel", () -> new Item.Properties().stacksTo(50));
 
     /** Every block this mod registers, for a loot table provider to walk. */
     public static java.util.List<Block> blocks() {

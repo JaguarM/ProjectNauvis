@@ -320,12 +320,28 @@ more than a stack: Facrafting's `RESULT_CODEC` has no ceiling on the count and `
 builds the stack without vanilla's check, and what a machine does with a thousand of something is
 the machine's business - the silo owes them to its output slot and pays as the slot clears.
 
-**An input slot holds what its recipe wants.** Factorio's assembler holds twice what a craft needs
-of each ingredient, however much that is, and so does `AssemblerInventory`: its capacity for a
-resource is the larger of the stack size and twice the chosen recipe's count, asked of the block
-entity - and of the client's copy of the recipe, through `ClientSlotRules`, so a slot holding a
-thousand concrete draws and takes a click the same on both sides. Vanilla's stack codec stops at
-ninety-nine, so the slots are saved as a resource and an amount, and read back from either form.
+**An input slot is one ingredient's, and holds what its recipe wants.** Factorio's assembler has
+a slot per ingredient and holds twice what a craft needs of it, however much that is, and so do
+`AssemblerInventory` and `RocketSiloInventory`: slot *i* takes the recipe's ingredient *i* and
+nothing else, a machine with no recipe takes nothing, and a slot's capacity is the larger of the
+stack size and twice the recipe's count. Both ask the block entity, which answers off the recipe
+- and the client's stand-in asks the client's copy of the same recipe, through `ClientSlotRules`
+and `ClientSiloRules`, so a shift-click lands where the server will put it and a slot holding a
+thousand concrete draws the same on both sides. Vanilla's stack codec stops at ninety-nine, so
+the assembler's slots are saved as a resource and an amount, and read back from either form.
+
+**A screen's button is vanilla's menu button.** The silo's launch controls - the automatic-launch
+toggle and Launch - are `clickMenuButton(player, id)` on the menu, which holds the block entity on
+the server and nothing on the client, and `handleInventoryButtonClick(containerId, id)` from the
+screen: the packet the enchanting table and the loom use, so there is no payload of ours and
+nothing to register. A button id the menu does not know is ignored.
+
+**An item says Factorio's stack size.** `Stacks.of(n)` in `nauvis_lib` is item properties with
+Factorio's own number, clamped to Minecraft's ninety-nine, so a registration reads
+`Stacks.of(200)` for a circuit and the day the ceiling moves nothing is retyped. The number is
+also `stack` on the item's entry in `data/mapping.json`, and `check_models.py` holds each
+registration to it the way it holds footprints. Neo Progressive Materials and the pack mod
+compile against nothing of ours and say the same thing in vanilla's `stacksTo`.
 
 **A machine that holds chunks holds tickets, and the tickets outlive it.** The radar keeps its
 seven-by-seven chunks loaded through NeoForge's `TicketController`, one per mod, with the radar's

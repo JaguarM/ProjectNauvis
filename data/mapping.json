@@ -5,6 +5,7 @@
   "_speed": "Factorio belt speed in tiles per second. Identity: it decides what a factory looks like, and throughput follows from it - four items a tile a lane, two lanes, so 1.875 tiles/s is the wiki's 15 items/s. tools/check_models.py holds each belt block's SPEED constant to this.",
   "_category": "Factorio's recipe category, for a recipe only a machine runs: `smelting` is the four the furnaces do - plates, steel and stone brick - `chemistry` is the chemical plant's, `oil-processing` the refinery's, and `crafting-with-fluid` is a recipe with one fluid in or out that only an assembler with a fluid box - assembling machine 2 - runs: the electric engine unit, the processing unit, concrete and the barrels; `rocket-building` is the rocket silo's alone - the rocket part, and the launch that turns a hundred of them and a satellite into space science. Absent means hand-craftable, which is Factorio's `crafting`. Not in the dump, so entered by hand against the wiki like `size`. gen_recipes.py writes it into the recipe as Facrafting's `category`, and Facrafting keeps such a recipe out of the hand panel; a machine names the category it runs. A recipe that takes or makes a fluid is a machine's whatever its category, and the recipes that make only fluids or several things are in data/fluid_recipes.json.",
   "_unlocks": "A technology effect names a *recipe*, and Factorio's recipe names are not always its item names. This maps the ones that differ to the item whose recipe file gen_recipes.py writes - `small-lamp` makes a lamp, `solar-panel-equipment` makes a portable solar panel. null means the pack has no counterpart at all. A name in data/fluid_recipes.json needs no line here: it resolves to that recipe's own key, which is how the barrel recipes are unlocked. Any name in none of the three is a GenError in tools/gen_technologies.py rather than a silently dropped unlock.",
+  "_stack": "Factorio's stack size, for every item the pack registers itself: a fact a player carries in their head, so it is written here and tools/check_models.py holds each registration's Stacks.of(n) to it. Minecraft caps a stack at 99 and nauvis_lib's Stacks clamps to that, so a 100 or a 200 here is 99 in a chest; a vanilla stand-in keeps vanilla's 64. Entered by hand, like size.",
   "unlocks": {
     "small-lamp": "lamp",
     "shotgun-shell": "shotgun-shells",
@@ -35,7 +36,8 @@
       "craft": {
         "time": 10,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "advanced-circuit": {
       "name": "Advanced circuit",
@@ -44,7 +46,8 @@
       "craft": {
         "time": 6,
         "yield": 1
-      }
+      },
+      "stack": 200
     },
     "arithmetic-combinator": {
       "skip": true,
@@ -96,7 +99,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "assembling-machine-2": {
       "name": "Assembling machine 2",
@@ -109,7 +113,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "assembling-machine-3": {
       "name": "Assembling machine 3",
@@ -141,7 +146,8 @@
         "time": 5,
         "yield": 1
       },
-      "category": "chemistry"
+      "category": "chemistry",
+      "stack": 200
     },
     "battery-mk1": {
       "name": "Battery MK1",
@@ -185,7 +191,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 20
     },
     "blueprint": {
       "skip": true,
@@ -206,7 +213,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "burner-inserter": {
       "name": "Burner inserter",
@@ -215,7 +223,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "burner-mining-drill": {
       "name": "Burner mining drill",
@@ -228,7 +237,8 @@
       "craft": {
         "time": 4,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "cannon-shell": {
       "name": "Cannon shell",
@@ -271,7 +281,8 @@
       "craft": {
         "time": 5,
         "yield": 1
-      }
+      },
+      "stack": 10
     },
     "cliff-explosives": {
       "name": "Cliff explosives",
@@ -338,7 +349,8 @@
       "craft": {
         "time": 0.5,
         "yield": 2
-      }
+      },
+      "stack": 200
     },
     "copper-ore": {
       "name": "Copper ore",
@@ -368,7 +380,8 @@
       "name": "Crude oil barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:crude_oil_barrel",
-      "raw": true
+      "raw": true,
+      "stack": 10
     },
     "decider-combinator": {
       "skip": true,
@@ -430,7 +443,8 @@
       "craft": {
         "time": 15,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "effectivity-module-2": {
       "name": "Efficiency module 2",
@@ -439,7 +453,8 @@
       "craft": {
         "time": 30,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "effectivity-module-3": {
       "name": "Efficiency module 3",
@@ -448,7 +463,8 @@
       "craft": {
         "time": 60,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "electric-engine-unit": {
       "name": "Electric engine unit",
@@ -458,7 +474,8 @@
         "time": 10,
         "yield": 1
       },
-      "category": "crafting-with-fluid"
+      "category": "crafting-with-fluid",
+      "stack": 50
     },
     "electric-furnace": {
       "name": "Electric furnace",
@@ -471,7 +488,8 @@
       "craft": {
         "time": 5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "electric-mining-drill": {
       "name": "Electric mining drill",
@@ -484,7 +502,8 @@
       "craft": {
         "time": 2,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "electronic-circuit": {
       "name": "Electronic circuit",
@@ -493,7 +512,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 200
     },
     "empty-barrel": {
       "name": "Empty barrel",
@@ -502,7 +522,8 @@
       "craft": {
         "time": 1,
         "yield": 1
-      }
+      },
+      "stack": 10
     },
     "energy-shield": {
       "name": "Energy shield",
@@ -529,7 +550,8 @@
       "craft": {
         "time": 10,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "exoskeleton": {
       "name": "Exoskeleton",
@@ -575,7 +597,8 @@
         "time": 5,
         "yield": 2
       },
-      "category": "chemistry"
+      "category": "chemistry",
+      "stack": 50
     },
     "express-splitter": {
       "name": "Express splitter",
@@ -612,7 +635,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "fast-splitter": {
       "name": "Fast splitter",
@@ -626,7 +650,8 @@
       "craft": {
         "time": 2,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "fast-transport-belt": {
       "name": "Fast transport belt",
@@ -636,7 +661,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 100
     },
     "fast-underground-belt": {
       "skip": true,
@@ -658,7 +684,8 @@
       "craft": {
         "time": 1,
         "yield": 1
-      }
+      },
+      "stack": 200
     },
     "flamethrower": {
       "name": "Flamethrower",
@@ -725,7 +752,8 @@
       "craft": {
         "time": 8,
         "yield": 1
-      }
+      },
+      "stack": 100
     },
     "gun-turret": {
       "name": "Gun turret",
@@ -738,7 +766,8 @@
       "craft": {
         "time": 8,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "hazard-concrete": {
       "name": "Hazard concrete",
@@ -779,7 +808,8 @@
       "craft": {
         "time": 8,
         "yield": 1
-      }
+      },
+      "stack": 1
     },
     "heavy-oil": {
       "name": "Heavy oil",
@@ -791,7 +821,8 @@
       "name": "Heavy oil barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:heavy_oil_barrel",
-      "raw": true
+      "raw": true,
+      "stack": 10
     },
     "high-tech-science-pack": {
       "name": "High tech science pack",
@@ -800,7 +831,8 @@
       "craft": {
         "time": 14,
         "yield": 2
-      }
+      },
+      "stack": 200
     },
     "inserter": {
       "name": "Inserter",
@@ -809,7 +841,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "iron-axe": {
       "skip": true,
@@ -822,7 +855,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "iron-gear-wheel": {
       "name": "Iron gear wheel",
@@ -831,7 +865,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 100
     },
     "iron-ore": {
       "name": "Iron ore",
@@ -858,7 +893,8 @@
       "craft": {
         "time": 0.5,
         "yield": 2
-      }
+      },
+      "stack": 100
     },
     "kovarex-enrichment-process": {
       "name": "Kovarex enrichment process",
@@ -880,7 +916,8 @@
       "craft": {
         "time": 2,
         "yield": 1
-      }
+      },
+      "stack": 10
     },
     "lamp": {
       "skip": true,
@@ -925,7 +962,8 @@
       "craft": {
         "time": 3,
         "yield": 1
-      }
+      },
+      "stack": 1
     },
     "light-oil": {
       "name": "Light oil",
@@ -937,7 +975,8 @@
       "name": "Light oil barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:light_oil_barrel",
-      "raw": true
+      "raw": true,
+      "stack": 10
     },
     "locomotive": {
       "skip": true,
@@ -1004,7 +1043,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "low-density-structure": {
       "name": "Low density structure",
@@ -1013,7 +1053,8 @@
       "craft": {
         "time": 30,
         "yield": 1
-      }
+      },
+      "stack": 10
     },
     "lubricant": {
       "name": "Lubricant",
@@ -1029,7 +1070,8 @@
       "name": "Lubricant barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:lubricant_barrel",
-      "raw": true
+      "raw": true,
+      "stack": 10
     },
     "medium-electric-pole": {
       "name": "Medium electric pole",
@@ -1038,7 +1080,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "military-science-pack": {
       "name": "Military science pack",
@@ -1047,7 +1090,8 @@
       "craft": {
         "time": 10,
         "yield": 2
-      }
+      },
+      "stack": 200
     },
     "modular-armor": {
       "name": "Modular armor",
@@ -1109,7 +1153,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 20
     },
     "oil-refinery": {
       "name": "Oil refinery",
@@ -1122,7 +1167,8 @@
       "craft": {
         "time": 8,
         "yield": 1
-      }
+      },
+      "stack": 10
     },
     "personal-laser-defense": {
       "name": "Personal laser defense",
@@ -1161,7 +1207,8 @@
       "name": "Petroleum gas barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:petroleum_gas_barrel",
-      "raw": true
+      "raw": true,
+      "stack": 10
     },
     "piercing-rounds-magazine": {
       "name": "Piercing rounds magazine",
@@ -1170,7 +1217,8 @@
       "craft": {
         "time": 3,
         "yield": 1
-      }
+      },
+      "stack": 200
     },
     "piercing-shotgun-shells": {
       "name": "Piercing shotgun shells",
@@ -1188,7 +1236,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 100
     },
     "pipe-to-ground": {
       "skip": true,
@@ -1201,7 +1250,8 @@
       "craft": {
         "time": 5,
         "yield": 1
-      }
+      },
+      "stack": 5
     },
     "plastic-bar": {
       "name": "Plastic bar",
@@ -1211,7 +1261,8 @@
         "time": 1,
         "yield": 2
       },
-      "category": "chemistry"
+      "category": "chemistry",
+      "stack": 100
     },
     "poison-capsule": {
       "name": "Poison capsule",
@@ -1275,7 +1326,8 @@
         "time": 10,
         "yield": 1
       },
-      "category": "crafting-with-fluid"
+      "category": "crafting-with-fluid",
+      "stack": 200
     },
     "production-science-pack": {
       "name": "Production science pack",
@@ -1284,7 +1336,8 @@
       "craft": {
         "time": 14,
         "yield": 2
-      }
+      },
+      "stack": 200
     },
     "productivity-module": {
       "name": "Productivity module",
@@ -1293,7 +1346,8 @@
       "craft": {
         "time": 15,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "productivity-module-2": {
       "name": "Productivity module 2",
@@ -1302,7 +1356,8 @@
       "craft": {
         "time": 30,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "productivity-module-3": {
       "name": "Productivity module 3",
@@ -1311,7 +1366,8 @@
       "craft": {
         "time": 60,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "programmable-speaker": {
       "skip": true,
@@ -1332,7 +1388,8 @@
       "craft": {
         "time": 5,
         "yield": 1
-      }
+      },
+      "stack": 20
     },
     "radar": {
       "name": "Radar",
@@ -1345,7 +1402,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "rail": {
       "skip": true,
@@ -1402,7 +1460,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 100
     },
     "roboport": {
       "name": "Roboport",
@@ -1433,7 +1492,8 @@
       "craft": {
         "time": 30,
         "yield": 1
-      }
+      },
+      "stack": 10
     },
     "rocket-fuel": {
       "name": "Rocket fuel",
@@ -1442,7 +1502,8 @@
       "craft": {
         "time": 30,
         "yield": 1
-      }
+      },
+      "stack": 10
     },
     "rocket-launcher": {
       "name": "Rocket launcher",
@@ -1461,7 +1522,8 @@
         "time": 3,
         "yield": 1
       },
-      "category": "rocket-building"
+      "category": "rocket-building",
+      "stack": 5
     },
     "rocket-silo": {
       "name": "Rocket silo",
@@ -1474,7 +1536,8 @@
       "craft": {
         "time": 30,
         "yield": 1
-      }
+      },
+      "stack": 1
     },
     "satellite": {
       "name": "Satellite",
@@ -1483,7 +1546,8 @@
       "craft": {
         "time": 5,
         "yield": 1
-      }
+      },
+      "stack": 1
     },
     "science-pack-1": {
       "name": "Science pack 1",
@@ -1492,7 +1556,8 @@
       "craft": {
         "time": 5,
         "yield": 1
-      }
+      },
+      "stack": 200
     },
     "science-pack-2": {
       "name": "Science pack 2",
@@ -1501,7 +1566,8 @@
       "craft": {
         "time": 6,
         "yield": 1
-      }
+      },
+      "stack": 200
     },
     "science-pack-3": {
       "name": "Science pack 3",
@@ -1510,7 +1576,8 @@
       "craft": {
         "time": 12,
         "yield": 1
-      }
+      },
+      "stack": 200
     },
     "shotgun": {
       "name": "Shotgun",
@@ -1546,7 +1613,8 @@
       "craft": {
         "time": 0.5,
         "yield": 2
-      }
+      },
+      "stack": 50
     },
     "solar-panel": {
       "name": "Solar panel",
@@ -1559,13 +1627,15 @@
       "craft": {
         "time": 10,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "solid-fuel": {
       "name": "Solid fuel",
       "owner": "nauvis",
       "item": "nauvis:solid_fuel",
-      "raw": true
+      "raw": true,
+      "stack": 50
     },
     "space-science-pack": {
       "name": "Space science pack",
@@ -1575,7 +1645,8 @@
         "time": 300,
         "yield": 1000
       },
-      "category": "rocket-building"
+      "category": "rocket-building",
+      "stack": 2000
     },
     "speed-module": {
       "name": "Speed module",
@@ -1584,7 +1655,8 @@
       "craft": {
         "time": 15,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "speed-module-2": {
       "name": "Speed module 2",
@@ -1593,7 +1665,8 @@
       "craft": {
         "time": 30,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "speed-module-3": {
       "name": "Speed module 3",
@@ -1602,7 +1675,8 @@
       "craft": {
         "time": 60,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "splitter": {
       "name": "Splitter",
@@ -1616,7 +1690,8 @@
       "craft": {
         "time": 1,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "stack-filter-inserter": {
       "name": "Stack filter inserter",
@@ -1634,7 +1709,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "steam": {
       "name": "Steam",
@@ -1653,7 +1729,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 10
     },
     "steam-turbine": {
       "name": "Steam turbine",
@@ -1679,7 +1756,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "steel-furnace": {
       "name": "Steel furnace",
@@ -1692,7 +1770,8 @@
       "craft": {
         "time": 3,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "steel-plate": {
       "name": "Steel plate",
@@ -1702,7 +1781,8 @@
       "craft": {
         "time": 16,
         "yield": 1
-      }
+      },
+      "stack": 100
     },
     "stone": {
       "name": "Stone",
@@ -1733,7 +1813,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "stone-wall": {
       "name": "Stone wall",
@@ -1756,7 +1837,8 @@
       "craft": {
         "time": 3,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "submachine-gun": {
       "name": "Submachine gun",
@@ -1765,7 +1847,8 @@
       "craft": {
         "time": 10,
         "yield": 1
-      }
+      },
+      "stack": 5
     },
     "substation": {
       "name": "Substation",
@@ -1778,7 +1861,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "sulfur": {
       "name": "Sulfur",
@@ -1788,7 +1872,8 @@
         "time": 1,
         "yield": 2
       },
-      "category": "chemistry"
+      "category": "chemistry",
+      "stack": 50
     },
     "sulfuric-acid": {
       "name": "Sulfuric acid",
@@ -1804,7 +1889,8 @@
       "name": "Sulfuric acid barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:sulfuric_acid_barrel",
-      "raw": true
+      "raw": true,
+      "stack": 10
     },
     "tank": {
       "name": "Tank",
@@ -1827,7 +1913,8 @@
       "craft": {
         "time": 0.5,
         "yield": 2
-      }
+      },
+      "stack": 100
     },
     "underground-belt": {
       "skip": true,
@@ -1907,7 +1994,8 @@
       "name": "Water barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:water_barrel",
-      "raw": true
+      "raw": true,
+      "stack": 10
     },
     "wood": {
       "name": "Wood",

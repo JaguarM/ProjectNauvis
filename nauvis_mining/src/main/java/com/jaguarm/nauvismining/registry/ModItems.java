@@ -12,6 +12,7 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import com.jaguarm.nauvislib.item.Stacks;
 
 /**
  * The two drills, and nothing else: the modules a drill takes are Factorio's, which
@@ -29,7 +30,7 @@ public final class ModItems {
     public static final Map<MachineTier, DeferredItem<BlockItem>> DRILLS = new LinkedHashMap<>();
 
     static {
-        ModBlocks.DRILLS.forEach((tier, block) -> DRILLS.put(tier, ITEMS.registerSimpleBlockItem(block)));
+        ModBlocks.DRILLS.forEach((tier, block) -> DRILLS.put(tier, ITEMS.registerSimpleBlockItem(block, () -> Stacks.of(50))));
     }
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB =

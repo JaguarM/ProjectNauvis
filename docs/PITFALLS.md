@@ -258,7 +258,18 @@ Data, recipes and registries
   which saves through `ItemStack.OPTIONAL_CODEC`: an assembler slot holding a thousand concrete
   would have loaded empty. `AssemblerInventory` saves a resource and an amount instead. **Anything
   that holds more than a stack has to name its own codec**, and a test that never saves and
-  reloads will not see the difference.
+  reloads will not see the difference. Registration does not check it: `stacksTo(200)` is
+  accepted, and the ninety-nine only bites when a stack is saved or sent, so `Stacks.of` clamps.
+- **A slot rule that filters by ingredient changes what a test may feed a bare machine.** Three
+  assembler tests put iron ingots into a machine with no recipe and expected them taken; once a
+  slot took only its recipe's ingredient, a machine with no recipe took nothing and they failed
+  at the first insert. A test that feeds a machine should set its recipe first, the way an
+  inserter's world does, and any slot rule tightened later should expect to hear from them.
+- **A slot's capacity is the item's stack size unless something says otherwise**, and Factorio's
+  stack sizes made that bite: a low density structure stacks to ten and a rocket part takes ten,
+  so the silo's slot filled to one part's worth and the machine ran dry every craft. The
+  assembler had the twice-the-recipe rule and the silo did not; now both do. When an item's stack
+  size drops, every slot that holds it without a rule of its own shrinks with it.
 - **The condition is `neoforge:never`, and there is no `neoforge:false`.** A wrong name does not
   fail the build or the load — it throws while parsing that one recipe, which is a line in a log
   and a recipe that is still craftable.

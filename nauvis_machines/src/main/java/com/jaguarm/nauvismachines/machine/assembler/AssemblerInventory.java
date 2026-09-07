@@ -1,7 +1,6 @@
 package com.jaguarm.nauvismachines.machine.assembler;
 
 import java.util.Optional;
-import java.util.function.ToIntFunction;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -16,19 +15,19 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
  * The assembler's slots: ingredients in the first {@link AssemblerBlockEntity#INPUT_SLOTS},
  * results after them.
  *
- * <p>Deliberately unrestricted as to <em>what</em> goes where - any slot will take anything.
- * Restricting is {@link com.jaguarm.nauvislib.transfer.MachineAccess}'s job, on the view
- * published to automation; the machine itself has to be able to spend from its inputs and write
- * to its output.
+ * <h2>One slot per ingredient</h2>
  *
- * <h2>An input slot holds what its recipe wants</h2>
+ * <p>Factorio's assembler has a slot for each ingredient of its recipe and nothing else goes in,
+ * which is what keeps an inserter from filling the machine with the first thing it picks up.
+ * Slot {@code i} here takes the recipe's ingredient {@code i} and refuses the rest, asked of the
+ * block entity through {@code wanted}; a machine with no recipe takes nothing. The first version
+ * let anything into any slot, and a belt of plates filled all six and stalled the line - which
+ * is exactly the Factorio rule being for something.
  *
- * <p>Factorio's assembler holds up to twice what a craft of its recipe needs of each ingredient,
- * however many that is, and inserters fill it to that and stop. This inventory does the same: an
- * input slot's capacity is the larger of the item's own stack size and twice the count the
- * chosen recipe asks for, asked of the block entity through {@code wanted}. That rule is what
- * lets a rocket silo be built at all - it is a thousand concrete and a thousand steel, and a
- * slot that stopped at sixty-four could never hold a craft's worth of either.
+ * <p>And a slot holds what its recipe wants: up to twice what a craft needs of that ingredient,
+ * however many that is, or the item's stack size if that is more. That is what lets a rocket
+ * silo be built at all - it is a thousand concrete and a thousand steel, and a slot that stopped
+ * at a stack could never hold a craft's worth of either.
  *
  * <p>A stack of a thousand does not fit vanilla's stack codec, which caps a count at ninety-nine
  * while saving, so these slots are saved as a resource and an amount instead - and read back
@@ -54,17 +53,31 @@ public class AssemblerInventory extends StacksResourceHandler<ItemStack, ItemRes
             .xmap(stack -> stack.orElse(ItemStack.EMPTY),
                     stack -> stack.isEmpty() ? Optional.empty() : Optional.of(stack));
 
+    /** How many of a resource one craft takes at this slot: the recipe's ingredient there, or zero. */
+    public interface Wants {
+        int of(int slot, ItemResource resource);
+    }
+
     private final Runnable onChanged;
-    private final ToIntFunction<ItemResource> wanted;
+    private final Wants wanted;
 
     /**
-     * @param wanted how many of a resource one craft of the chosen recipe takes, or zero for a
-     *               resource the recipe has no use for - or for no recipe at all
+     * @param wanted how many of a resource one craft of the chosen recipe takes in this slot, or
+     *               zero for a resource that is not the slot's ingredient - or for no recipe at all
      */
-    public AssemblerInventory(int size, Runnable onChanged, ToIntFunction<ItemResource> wanted) {
+    public AssemblerInventory(int size, Runnable onChanged, Wants wanted) {
         super(size, ItemStack.EMPTY, SLOT_CODEC);
         this.onChanged = onChanged;
         this.wanted = wanted;
+    }
+
+    /** An input slot takes its recipe's ingredient and nothing else; the output takes what the machine puts there. */
+    @Override
+    public boolean isValid(int index, ItemResource resource) {
+        if (index >= AssemblerBlockEntity.INPUT_SLOTS) {
+            return super.isValid(index, resource);
+        }
+        return !resource.isEmpty() && wanted.of(index, resource) > 0;
     }
 
     @Override
@@ -102,7 +115,7 @@ public class AssemblerInventory extends StacksResourceHandler<ItemStack, ItemRes
         if (index >= AssemblerBlockEntity.INPUT_SLOTS || resource.isEmpty()) {
             return stackSize;
         }
-        return Math.max(stackSize, 2 * wanted.applyAsInt(resource));
+        return Math.max(stackSize, 2 * wanted.of(index, resource));
     }
 
     /**

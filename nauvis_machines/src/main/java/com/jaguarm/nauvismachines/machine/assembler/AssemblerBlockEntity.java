@@ -142,9 +142,10 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
             new AssemblerInventory(SLOT_COUNT, this::onInventoryChanged, this::wanted);
 
     /**
-     * The chosen recipe's ingredients, kept so an input slot can say how much it holds without
-     * resolving a recipe key on every capacity query - hoppers and inserters ask often. Null
-     * until the recipe is resolved, which for a machine loaded from disk is its first tick.
+     * The chosen recipe's ingredients, kept so an input slot can say what it takes and how much
+     * without resolving a recipe key on every query - hoppers and inserters ask often. Null until
+     * the recipe is resolved, which for a machine loaded from disk is its first tick; until then
+     * the slots take nothing, and the first tick opens them.
      */
     private @Nullable List<SizedIngredient> wantedIngredients;
 
@@ -321,35 +322,28 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /**
-     * How many of this one craft of the recipe takes, or zero for something it has no use for.
-     * The largest count where an ingredient could be met by several, which never happens in
-     * Factorio's recipes and is the safe answer if it did.
+     * How many of this one craft of the recipe takes at this slot: the recipe's ingredient at
+     * that index, if this is it, and zero otherwise - for a slot past the recipe's ingredients,
+     * or for something the slot's ingredient is not. Factorio's arrangement: slot one is
+     * ingredient one.
      */
-    public static int wanted(FacraftRecipe recipe, ItemResource resource) {
-        ItemStack stack = resource.toStack(1);
-        int most = 0;
-        for (SizedIngredient ingredient : recipe.ingredients()) {
-            if (ingredient.ingredient().test(stack)) {
-                most = Math.max(most, ingredient.count());
-            }
-        }
-        return most;
-    }
-
-    /** The same for this machine's chosen recipe: what {@link AssemblerInventory} sizes an input slot by. */
-    private int wanted(ItemResource resource) {
-        List<SizedIngredient> ingredients = wantedIngredients;
-        if (ingredients == null) {
+    public static int wanted(FacraftRecipe recipe, int slot, ItemResource resource) {
+        List<SizedIngredient> ingredients = recipe.ingredients();
+        if (slot < 0 || slot >= ingredients.size()) {
             return 0;
         }
-        ItemStack stack = resource.toStack(1);
-        int most = 0;
-        for (SizedIngredient ingredient : ingredients) {
-            if (ingredient.ingredient().test(stack)) {
-                most = Math.max(most, ingredient.count());
-            }
+        SizedIngredient ingredient = ingredients.get(slot);
+        return ingredient.ingredient().test(resource.toStack(1)) ? ingredient.count() : 0;
+    }
+
+    /** The same for this machine's chosen recipe: what {@link AssemblerInventory} filters and sizes a slot by. */
+    private int wanted(int slot, ItemResource resource) {
+        List<SizedIngredient> ingredients = wantedIngredients;
+        if (ingredients == null || slot < 0 || slot >= ingredients.size()) {
+            return 0;
         }
-        return most;
+        SizedIngredient ingredient = ingredients.get(slot);
+        return ingredient.ingredient().test(resource.toStack(1)) ? ingredient.count() : 0;
     }
 
     /** FE this tier spends per tick of a craft. */

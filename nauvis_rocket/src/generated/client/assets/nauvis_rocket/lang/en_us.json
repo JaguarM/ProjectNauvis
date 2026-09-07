@@ -13,6 +13,12 @@
   "message.nauvis_rocket.launched.chat": "A rocket has launched from the silo at %s, %s, %s.",
   "message.nauvis_rocket.launched.where": "From the silo at %s, %s, %s",
   "pack.nauvis_rocket.crafting_table": "Nauvis Rocket: bench recipes (skips research)",
+  "screen.nauvis_rocket.silo.auto": "A",
+  "screen.nauvis_rocket.silo.auto.off": "Automatic launch off: a complete rocket waits for the Launch button",
+  "screen.nauvis_rocket.silo.auto.on": "Automatic launch on: a complete rocket with a satellite goes on its own",
+  "screen.nauvis_rocket.silo.launch": "Launch",
+  "screen.nauvis_rocket.silo.launch.not_yet": "Nothing to launch until the rocket is complete",
+  "screen.nauvis_rocket.silo.launch.ready": "Launch the rocket now, with the satellite if there is one",
   "status.nauvis_rocket.silo.building": "Rocket %s/%s - building rocket parts",
   "status.nauvis_rocket.silo.launching": "Launching",
   "status.nauvis_rocket.silo.no_ingredients": "Rocket %s/%s - waiting for rocket part ingredients",
@@ -20,6 +26,7 @@
   "status.nauvis_rocket.silo.no_recipe": "No rocket part recipe - this pack has none",
   "status.nauvis_rocket.silo.owed": "%s space science packs waiting for the output to clear",
   "status.nauvis_rocket.silo.ready": "Rocket complete - put a satellite in to launch",
+  "status.nauvis_rocket.silo.ready_manual": "Rocket complete - press Launch",
   "tab.facrafting.group.combat": "Combat",
   "tab.facrafting.group.intermediate": "Intermediate products"
 }

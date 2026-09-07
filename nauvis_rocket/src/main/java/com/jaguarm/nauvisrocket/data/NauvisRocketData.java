@@ -95,6 +95,13 @@ public final class NauvisRocketData {
             add("status.nauvis_rocket.silo.no_power", "No power - run a wire to it");
             add("status.nauvis_rocket.silo.building", "Rocket %s/%s - building rocket parts");
             add("status.nauvis_rocket.silo.ready", "Rocket complete - put a satellite in to launch");
+            add("status.nauvis_rocket.silo.ready_manual", "Rocket complete - press Launch");
+            add("screen.nauvis_rocket.silo.launch", "Launch");
+            add("screen.nauvis_rocket.silo.launch.ready", "Launch the rocket now, with the satellite if there is one");
+            add("screen.nauvis_rocket.silo.launch.not_yet", "Nothing to launch until the rocket is complete");
+            add("screen.nauvis_rocket.silo.auto", "A");
+            add("screen.nauvis_rocket.silo.auto.on", "Automatic launch on: a complete rocket with a satellite goes on its own");
+            add("screen.nauvis_rocket.silo.auto.off", "Automatic launch off: a complete rocket waits for the Launch button");
             add("status.nauvis_rocket.silo.launching", "Launching");
             add("status.nauvis_rocket.silo.owed", "%s space science packs waiting for the output to clear");
 

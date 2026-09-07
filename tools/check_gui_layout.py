@@ -187,7 +187,10 @@ SCREENS = [
                ('output', 'OUTPUT_X', 'OUTPUT_Y', 1, 1), ('module', 'MODULE_X', 'MODULE_Y', 4, 4)],
         bars=[('part bar', 'ARROW_X', 'ARROW_Y', 'ARROW_WIDTH', 'ARROW_HEIGHT'),
               ('rocket bar', 'ROCKET_X', 'ROCKET_Y', 'ROCKET_WIDTH', 'ROCKET_HEIGHT'),
-              ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT')],
+              ('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT'),
+              # Two buttons: clickable boxes, so an overlap would swallow a click.
+              ('launch button', 'LAUNCH_X', 'LAUNCH_Y', 'LAUNCH_WIDTH', 'LAUNCH_HEIGHT'),
+              ('auto-launch toggle', 'AUTO_X', 'AUTO_Y', 'AUTO_WIDTH', 'AUTO_HEIGHT')],
     ),
     Screen(
         'burner inserter',

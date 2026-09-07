@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import com.jaguarm.nauvislib.item.Stacks;
 
 public final class ModItems {
 
@@ -21,27 +22,27 @@ public final class ModItems {
     public static final DeferredRegister<CreativeModeTab> TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, NauvisPower.MODID);
 
-    public static final DeferredItem<BlockItem> BOILER = ITEMS.registerSimpleBlockItem(ModBlocks.BOILER);
+    public static final DeferredItem<BlockItem> BOILER = ITEMS.registerSimpleBlockItem(ModBlocks.BOILER, () -> Stacks.of(50));
     public static final DeferredItem<BlockItem> STEAM_ENGINE =
-            ITEMS.registerSimpleBlockItem(ModBlocks.STEAM_ENGINE);
+            ITEMS.registerSimpleBlockItem(ModBlocks.STEAM_ENGINE, () -> Stacks.of(10));
     public static final DeferredItem<BlockItem> SMALL_ELECTRIC_POLE =
-            ITEMS.registerSimpleBlockItem(ModBlocks.SMALL_ELECTRIC_POLE);
+            ITEMS.registerSimpleBlockItem(ModBlocks.SMALL_ELECTRIC_POLE, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> MEDIUM_ELECTRIC_POLE =
-            ITEMS.registerSimpleBlockItem(ModBlocks.MEDIUM_ELECTRIC_POLE);
+            ITEMS.registerSimpleBlockItem(ModBlocks.MEDIUM_ELECTRIC_POLE, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> BIG_ELECTRIC_POLE =
-            ITEMS.registerSimpleBlockItem(ModBlocks.BIG_ELECTRIC_POLE);
+            ITEMS.registerSimpleBlockItem(ModBlocks.BIG_ELECTRIC_POLE, () -> Stacks.of(20));
 
     /** Its recipe waits on the advanced circuit existing - see {@code SubstationBlock}. */
     public static final DeferredItem<BlockItem> SUBSTATION =
-            ITEMS.registerSimpleBlockItem(ModBlocks.SUBSTATION);
+            ITEMS.registerSimpleBlockItem(ModBlocks.SUBSTATION, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> SOLAR_PANEL =
-            ITEMS.registerSimpleBlockItem(ModBlocks.SOLAR_PANEL);
+            ITEMS.registerSimpleBlockItem(ModBlocks.SOLAR_PANEL, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> ACCUMULATOR =
-            ITEMS.registerSimpleBlockItem(ModBlocks.ACCUMULATOR);
+            ITEMS.registerSimpleBlockItem(ModBlocks.ACCUMULATOR, () -> Stacks.of(50));
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
             "nauvis_power",

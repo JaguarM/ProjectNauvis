@@ -345,8 +345,8 @@ logistic chests. Built after the rocket, by decision; see above.
 `radar`, and the second and third tiers of the three modules. **The silo is built and the rocket
 launches**: `nauvis_rocket` is the eighth subsystem mod, nine tiles by nine, building rocket
 parts from the dump's recipe into the rocket on its pad; a satellite in its slot sends the rocket
-up, the launch is the game's one challenge advancement on every player's screen, and a thousand
-space science packs come back. The dump is a 0.16-era one, which made this smaller than it
+up - or the Launch button does, with automatic launch switched off - the launch is the game's one
+challenge advancement on every player's screen, and a thousand space science packs come back. The dump is a 0.16-era one, which made this smaller than it
 looked: production science is an electric engine and a furnace, high tech science is a battery,
 cable, processing units and a speed module, and rocket fuel is ten solid fuel. Nothing in the
 tree is paid for in space science - that is the infinite research, which the tree does not

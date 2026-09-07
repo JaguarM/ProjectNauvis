@@ -1,6 +1,7 @@
 package com.jaguarm.nauvisrocket.silo;
 
 import com.jaguarm.nauvislib.module.ModuleSlots;
+import com.jaguarm.nauvisrocket.client.ClientSiloRules;
 import com.jaguarm.nauvisrocket.registry.ModBlocks;
 import com.jaguarm.nauvisrocket.registry.ModItems;
 import com.jaguarm.nauvisrocket.registry.ModMenus;
@@ -14,6 +15,7 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The silo's menu: three ingredient slots, the satellite's, the output's, four module slots, and
@@ -36,7 +38,12 @@ public class RocketSiloMenu extends AbstractContainerMenu {
     public static final int DATA_OWED = 7;
     public static final int DATA_STATUS = 8;
     public static final int DATA_LAUNCHES = 9;
-    public static final int DATA_COUNT = 10;
+    public static final int DATA_AUTO_LAUNCH = 10;
+    public static final int DATA_COUNT = 11;
+
+    /** The two buttons, by the id vanilla's menu-button packet carries. */
+    public static final int BUTTON_AUTO_LAUNCH = 0;
+    public static final int BUTTON_LAUNCH = 1;
 
     /**
      * Where the screen expects to find things. Shared, so the two cannot drift apart, and read
@@ -60,20 +67,27 @@ public class RocketSiloMenu extends AbstractContainerMenu {
     private final ContainerData data;
     private final ContainerLevelAccess access;
 
-    /** Client side: there is no silo here, only the numbers the server sends. */
+    /** The machine, on the server; null on a client, which only has the numbers. */
+    private final @Nullable RocketSiloBlockEntity silo;
+
+    /**
+     * Client side: there is no silo here, only the numbers the server sends - and the client's own
+     * copy of the rocket part recipe, so a shift-click lands where the server will put it.
+     */
     public RocketSiloMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory,
-                new RocketSiloInventory(() -> {}, resource -> true, resource -> resource.is(ModItems.SATELLITE.get())),
+                new RocketSiloInventory(() -> {}, ClientSiloRules.partWants(), resource -> resource.is(ModItems.SATELLITE.get())),
                 new ModuleSlots(RocketSiloBlockEntity.MODULE_SLOTS, () -> {}),
                 new SimpleContainerData(DATA_COUNT),
-                ContainerLevelAccess.NULL);
+                ContainerLevelAccess.NULL, null);
     }
 
     public RocketSiloMenu(int containerId, Inventory playerInventory, RocketSiloInventory inventory,
-            ModuleSlots modules, ContainerData data, ContainerLevelAccess access) {
+            ModuleSlots modules, ContainerData data, ContainerLevelAccess access, @Nullable RocketSiloBlockEntity silo) {
         super(ModMenus.ROCKET_SILO.get(), containerId);
         this.data = data;
         this.access = access;
+        this.silo = silo;
 
         for (int index = 0; index < RocketSiloBlockEntity.INPUT_SLOTS; index++) {
             addSlot(new ResourceHandlerSlot(inventory, inventory::set, index, INPUT_X + index * 18, INPUT_Y));
@@ -149,6 +163,35 @@ public class RocketSiloMenu extends AbstractContainerMenu {
 
     public RocketSiloStatus status() {
         return RocketSiloStatus.of(data.get(DATA_STATUS));
+    }
+
+    public boolean autoLaunch() {
+        return data.get(DATA_AUTO_LAUNCH) != 0;
+    }
+
+    /** Whether the rocket is complete and not yet leaving: when the Launch button does something. */
+    public boolean canLaunch() {
+        return parts() >= partsNeeded() && partsNeeded() > 0 && launchTicks() <= 0;
+    }
+
+    /**
+     * The two buttons, through vanilla's menu-button packet: the screen calls
+     * {@code handleInventoryButtonClick} and the server lands here. Nothing to write and nothing
+     * to trust - a button id the menu does not know is ignored.
+     */
+    @Override
+    public boolean clickMenuButton(Player player, int buttonId) {
+        if (silo == null) {
+            return false;
+        }
+        switch (buttonId) {
+            case BUTTON_AUTO_LAUNCH -> silo.setAutoLaunch(!silo.autoLaunch());
+            case BUTTON_LAUNCH -> silo.requestLaunch();
+            default -> {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

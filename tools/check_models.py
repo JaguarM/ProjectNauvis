@@ -500,6 +500,71 @@ def check_footprints():
             check_rotations(path, mod, entry, [int(turns) for _x, _y, _z, turns in cell_calls])
 
 
+def check_stacks():
+    """Every item's stack size, against the `stack` recorded for it in data/mapping.json.
+
+    A stack size is a fact a Factorio player carries in their head - plates in hundreds, machines
+    in fifties, one satellite - so it is written in the mapping and the code is held to it, the
+    way footprints are. The code says `Stacks.of(n)` with Factorio's own n and the library clamps
+    it to Minecraft's ninety-nine, so the two numbers compared here are both Factorio's.
+
+    Registrations are read out of each mod's ModItems.java (and the pack mod's ModContent.java)
+    one statement at a time: `registerSimpleItem("id", Stacks.of(n))` - or vanilla's own
+    `stacksTo(n)` in the pack mod, which compiles against nothing of ours - `registerItem("id", ...,
+    () -> Stacks.of(n))`, and `registerSimpleBlockItem(ModBlocks.CONST, () -> Stacks.of(n))` with
+    the constant resolved through ModBlocks.java. A registration in a loop names no id and is
+    reported as unchecked rather than guessed at. An item with a `stack` in the mapping and none
+    in the code fails, and so does the reverse.
+    """
+    mapping = json.loads((ROOT / 'data' / 'mapping.json').read_text(encoding='utf-8'))['items']
+    wanted = {}
+    for entry in mapping.values():
+        if 'stack' in entry and entry.get('item'):
+            wanted[entry['item']] = entry['stack']
+
+    seen = set()
+    for mod in MODS:
+        source = ROOT / mod / 'src' / 'main' / 'java'
+        if not source.is_dir():
+            continue
+        constants = {}
+        for path in source.rglob('ModBlocks.java'):
+            constants.update(dict(re.findall(r'(\w+)\s*=\s*BLOCKS\.registerBlock\(\s*"([a-z0-9_]+)"',
+                                             path.read_text(encoding='utf-8'))))
+        for path in list(source.rglob('ModItems.java')) + list(source.rglob('ModContent.java')):
+            text = path.read_text(encoding='utf-8')
+            for statement in text.split(';'):
+                if 'register' not in statement:
+                    continue
+                stack = re.search(r'(?:Stacks\.of|stacksTo)\((\d+)\)', statement)
+                named = re.search(r'register(?:Simple)?Item\(\s*"([a-z0-9_]+)"', statement)
+                by_block = re.search(r'registerSimpleBlockItem\(\s*ModBlocks\.(\w+)', statement)
+                if named:
+                    item_id = f'{mod}:{named.group(1)}'
+                elif by_block:
+                    if by_block.group(1) not in constants:
+                        fail(path.name, f'registers a block item for ModBlocks.{by_block.group(1)}, which '
+                                        f'ModBlocks.java does not register by a literal id')
+                        continue
+                    item_id = f'{mod}:{constants[by_block.group(1)]}'
+                elif 'registerSimpleBlockItem(' in statement:
+                    notes.append(f'{path.name}: a block item registered without naming its block - a loop - '
+                                 f'so its stack size is unchecked')
+                    continue
+                else:
+                    continue
+                seen.add(item_id)
+                if stack and item_id not in wanted:
+                    fail(path.name, f'{item_id} says Stacks.of({stack.group(1)}) and data/mapping.json records '
+                                    f'no stack for it')
+                elif not stack and item_id in wanted:
+                    fail(path.name, f'{item_id} has a stack of {wanted[item_id]} in data/mapping.json and none '
+                                    f'in the code - register it with Stacks.of({wanted[item_id]})')
+                elif stack and int(stack.group(1)) != wanted[item_id]:
+                    fail(path.name, f'{item_id} says Stacks.of({stack.group(1)}), and data/mapping.json says '
+                                    f'{wanted[item_id]}')
+
+
 # North, east, south, west, in quarter turns clockwise - the same order Boxes uses.
 QUARTER_TURNS = {'north': 0, 'east': 1, 'south': 2, 'west': 3}
 
@@ -643,6 +708,7 @@ def check_belt_speeds():
 assets = Assets()
 check_references(assets)
 check_registrations(assets)
+check_stacks()
 check_fluid_models(assets)
 check_footprints()
 check_belt_speeds()

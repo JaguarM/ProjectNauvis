@@ -7,6 +7,7 @@ import com.jaguarm.nauvisrocket.registry.ModBlocks;
 import com.jaguarm.nauvisrocket.registry.ModItems;
 import com.jaguarm.nauvisrocket.silo.Launch;
 import com.jaguarm.nauvisrocket.silo.RocketSiloBlockEntity;
+import com.jaguarm.nauvisrocket.silo.RocketSiloMenu;
 import com.jaguarm.nauvisrocket.silo.RocketSiloShape;
 import com.jaguarm.nauvisrocket.silo.RocketSiloStatus;
 import com.mojang.serialization.MapCodec;
@@ -70,6 +71,7 @@ public final class NauvisRocketGameTests {
         TEST_TYPES.register("a_silo_builds_a_rocket_part", () -> SiloBuildsAPartTest.CODEC);
         TEST_TYPES.register("a_silo_launches_a_satellite", () -> SiloLaunchesTest.CODEC);
         TEST_TYPES.register("a_silo_with_nothing_to_build_sleeps", () -> SiloSleepsTest.CODEC);
+        TEST_TYPES.register("a_silo_launches_by_the_button", () -> SiloManualLaunchTest.CODEC);
     }
 
     static void register(IEventBus modEventBus) {
@@ -86,6 +88,8 @@ public final class NauvisRocketGameTests {
         register(event, environment, "a_silo_launches_a_satellite", SiloLaunchesTest::new,
                 RocketSiloBlockEntity.LAUNCH_TICKS + 60);
         register(event, environment, "a_silo_with_nothing_to_build_sleeps", SiloSleepsTest::new, 40);
+        register(event, environment, "a_silo_launches_by_the_button", SiloManualLaunchTest::new,
+                2 * RocketSiloBlockEntity.LAUNCH_TICKS + 100);
     }
 
     private interface TestFactory {
@@ -190,6 +194,13 @@ public final class NauvisRocketGameTests {
                     "rocket control units accepted");
             helper.assertValueEqual(insert(view, item(helper, "neoprogressivematerials:rocket_fuel"), 10), 10,
                     "rocket fuel accepted");
+            // One ingredient a slot, in the recipe's order, so a belt of one thing cannot fill the machine.
+            helper.assertValueEqual(silo.inventory().getAmountAsInt(0), 10, "low density structures in the first slot");
+            helper.assertValueEqual(silo.inventory().getAmountAsInt(1), 10, "rocket control units in the second slot");
+            helper.assertValueEqual(silo.inventory().getAmountAsInt(2), 10, "rocket fuel in the third slot");
+            helper.assertValueEqual(insert(view, item(helper, "neoprogressivematerials:low_density_structure"), 200), 10,
+                    "more low density structures accepted: the slot holds twice a part's worth and the others refuse it");
+            helper.assertValueEqual(insert(view, Items.STICK, 1), 0, "sticks accepted by a silo");
 
             helper.runAfterDelay(20, () -> {
                 helper.assertValueEqual(silo.status(), RocketSiloStatus.BUILDING, "status while building");
@@ -198,10 +209,10 @@ public final class NauvisRocketGameTests {
             // Three seconds is sixty ticks; the first tick's check and a tick of slack.
             helper.runAfterDelay(70, () -> {
                 helper.assertValueEqual(silo.parts(), 1, "rocket parts built");
-                for (int slot = 0; slot < RocketSiloBlockEntity.INPUT_SLOTS; slot++) {
-                    helper.assertValueEqual(silo.inventory().getAmountAsInt(slot), 0,
-                            "ingredients left in slot " + slot + " after one part");
-                }
+                // One part's worth taken from each slot: the first held two parts' worth and keeps one.
+                helper.assertValueEqual(silo.inventory().getAmountAsInt(0), 10, "low density structures left after one part");
+                helper.assertValueEqual(silo.inventory().getAmountAsInt(1), 0, "rocket control units left after one part");
+                helper.assertValueEqual(silo.inventory().getAmountAsInt(2), 0, "rocket fuel left after one part");
                 helper.assertTrue(silo.energyStored() < RocketSiloBlockEntity.ENERGY_CAPACITY,
                         "the silo built a part for nothing");
                 helper.succeed();
@@ -301,6 +312,72 @@ public final class NauvisRocketGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("a silo with nothing to build sleeps");
+        }
+    }
+
+    /**
+     * With automatic launch off, a complete rocket with a satellite waits; the Launch button - the
+     * menu's button, as the screen presses it - sends it up, and the satellite goes with it. A
+     * second rocket launched by the button with no satellite goes too, and nothing comes back.
+     */
+    public static class SiloManualLaunchTest extends GameTestInstance {
+
+        public static final MapCodec<SiloManualLaunchTest> CODEC = RecordCodecBuilder.<SiloManualLaunchTest>mapCodec(
+                i -> i.group(TestData.CODEC.forGetter(SiloManualLaunchTest::info)).apply(i, SiloManualLaunchTest::new));
+
+        public SiloManualLaunchTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            RocketSiloBlockEntity silo = placeSilo(helper);
+            charge(silo);
+            Player player = helper.makeMockServerPlayer(GameType.SURVIVAL);
+            RocketSiloMenu menu = (RocketSiloMenu) silo.createMenu(1, player.getInventory(), player);
+
+            helper.assertTrue(silo.autoLaunch(), "a new silo does not launch on its own");
+            helper.assertTrue(menu.clickMenuButton(player, RocketSiloMenu.BUTTON_AUTO_LAUNCH), "the toggle did nothing");
+            helper.assertFalse(silo.autoLaunch(), "the toggle left automatic launch on");
+
+            silo.loadRocket(100);
+            helper.assertValueEqual(insert(silo.automationView(), ModItems.SATELLITE.get(), 1), 1, "a satellite accepted");
+            helper.runAfterDelay(20, () -> {
+                helper.assertValueEqual(silo.status(), RocketSiloStatus.READY, "a complete rocket with automatic launch off");
+                helper.assertValueEqual(silo.launches(), 0, "rockets launched before the button");
+                helper.assertTrue(menu.clickMenuButton(player, RocketSiloMenu.BUTTON_LAUNCH), "the button did nothing");
+            });
+            helper.runAfterDelay(25, () -> helper.assertValueEqual(silo.status(), RocketSiloStatus.LAUNCHING,
+                    "status after the button"));
+            helper.runAfterDelay(RocketSiloBlockEntity.LAUNCH_TICKS + 30, () -> {
+                helper.assertValueEqual(silo.launches(), 1, "rockets launched by the button");
+                helper.assertValueEqual(silo.inventory().getAmountAsInt(RocketSiloBlockEntity.SATELLITE_SLOT), 0,
+                        "the satellite stayed behind");
+                int came = silo.inventory().getAmountAsInt(RocketSiloBlockEntity.OUTPUT_SLOT) + silo.owed();
+                helper.assertValueEqual(came, 1000, "space science from a rocket launched by hand with its satellite");
+
+                // An empty rocket, by the button: it goes, and nothing comes back.
+                silo.loadRocket(100);
+                silo.requestLaunch();
+            });
+            helper.runAfterDelay(RocketSiloBlockEntity.LAUNCH_TICKS + 40, () -> helper.assertValueEqual(
+                    silo.status(), RocketSiloStatus.LAUNCHING, "status of an empty rocket sent by the button"));
+            helper.runAfterDelay(2 * RocketSiloBlockEntity.LAUNCH_TICKS + 60, () -> {
+                helper.assertValueEqual(silo.launches(), 2, "rockets launched");
+                int came = silo.inventory().getAmountAsInt(RocketSiloBlockEntity.OUTPUT_SLOT) + silo.owed();
+                helper.assertValueEqual(came, 1000, "space science after an empty launch: no more than before");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a silo launches by the button");
         }
     }
 }

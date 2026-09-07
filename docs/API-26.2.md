@@ -531,6 +531,19 @@ More confirmed details:
   DataComponentPatch)` builds a stack of any count. `ItemResource.CODEC` is the item and its
   components with no count. `Codec.withAlternative(primary, alternative)` reads either form and
   writes the first; `ExtraCodecs.optionalEmptyMap` is how an empty stack encodes as `{}`.
+- A stack size is the `DataComponents.MAX_STACK_SIZE` component, set by
+  `Item.Properties.stacksTo(int)`; its codec is `intRange(1, 99)` and `Item.ABSOLUTE_MAX_STACK_SIZE`
+  is 99. Registration accepts a larger number - `validateComponent` checks a class's immutability,
+  not a value - and the count codecs cap it when a stack is saved or sent.
+- `DeferredRegister.Items` has **no `registerSimpleItem(String, Item.Properties)`**: the overloads
+  take a `Supplier<Item.Properties>` or a `UnaryOperator<Item.Properties>`, and so do
+  `registerSimpleBlockItem(Holder<Block>, ...)` and `registerItem(String, Function, ...)`. A bare
+  `Properties` is a compile error.
+- Menu buttons: `AbstractContainerMenu.clickMenuButton(Player, int buttonId)` is what the server
+  calls, returning false by default; the client sends the id with
+  `minecraft.gameMode.handleInventoryButtonClick(menu.containerId, buttonId)`. The enchanting table
+  and loom use it, and it needs no payload or handler of your own. `mouseClicked` on a screen takes
+  `(MouseButtonEvent event, boolean doubleClick)`, and the event is a record with `x()` and `y()`.
 - Titles: `ClientboundSetTitleTextPacket(Component)`, `ClientboundSetSubtitleTextPacket(Component)`
   and `ClientboundSetTitlesAnimationPacket(fadeIn, stay, fadeOut)` are records sent through
   `player.connection.send`; `PlayerList.broadcastSystemMessage(Component, boolean overlay)` is chat

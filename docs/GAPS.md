@@ -297,10 +297,11 @@ Military and pollution
   the submachine gun, where Factorio's are fifteen and eighteen: Yannic's call after the first
   playtest, because a Factorio tile-range is a Minecraft yard. A range is balance, not identity,
   and the turret keeps Factorio's eighteen. Not debt.
-- **Magazines stack to sixty-four, not Factorio's two hundred.** Minecraft's stack. A gun loads one
-  at a time and keeps the rounds on itself as a component, drawn as the item's bar; a turret
-  chambers one at a time out of the stack in its slot. The first version made a magazine's
-  rounds its durability, and durability does not stack - Yannic's first look caught it.
+- **Magazines stack to ninety-nine, not Factorio's two hundred** - Minecraft's ceiling; see the
+  stack sizes under *Vanilla*. A gun loads one at a time and keeps the rounds on itself as a
+  component, drawn as the item's bar; a turret chambers one at a time out of the stack in its
+  slot. The first version made a magazine's rounds its durability, and durability does not stack -
+  Yannic's first look caught it.
 - **Armour is a chestplate, drawn as vanilla's.** Factorio's armour is one item for the whole
   body with a resistance table and, later, a grid; here light armour is chainmail's five points
   and heavy armour netherite's eight with its toughness, worn as chestplates and drawn with
@@ -337,17 +338,22 @@ The rocket
   the pad stays where it is. What it means is not a shortcut: the advancement in the challenge
   frame goes to every player on the server, with a title and a line in chat, and the science
   comes back.
-- **A launch needs a satellite, and there is no launch button.** Factorio 0.16 let an empty rocket
-  go for nothing; here the silo launches on its own the moment it holds a hundred parts and a
-  satellite, which is Factorio 2.0's rule, and a rocket with no cargo waits. Nothing comes back
-  from a launch but space science, and nothing in the tree is paid for in space science yet - the
-  packs are for the infinite research the tree does not transcribe.
+- **Automatic launch is Factorio 2.0's rule and the Launch button is 1.1's, and the screen has
+  both.** A silo launches on its own the moment it holds a hundred parts and a satellite, and a
+  rocket with no cargo waits. The *A* toggle on the screen switches that off, and the Launch
+  button sends a complete rocket up by hand, satellite or none - an empty rocket goes and nothing
+  comes back, which is what 0.16 and 1.1 allowed. Both go through vanilla's menu-button packet.
+  Nothing comes back from a launch but space science, and nothing in the tree is paid for in space
+  science yet - the packs are for the infinite research the tree does not transcribe.
 - **A thousand space science packs are owed, not stacked.** The launch recipe's result is a
-  thousand and a slot holds sixty-four, so the silo keeps the rest as a number and pays it into
+  thousand and a slot holds ninety-nine, so the silo keeps the rest as a number and pays it into
   the output slot as fast as it is taken away. Break the silo and what is owed spills.
-- **The silo's ingredient slots take only what a rocket part is made of**, which is Factorio's
-  rule for a machine with a fixed recipe and the reason an inserter offering a satellite to the
-  machine finds the satellite slot. The assembler's slots are not filtered that way; see below.
+- **The silo's three ingredient slots are one ingredient each**, in the recipe's order, and each
+  holds twice what a part takes - Factorio's rule for a machine with a fixed recipe, the reason a
+  belt of low density structures cannot fill the machine and stall it, and the reason an inserter
+  offering a satellite finds the satellite slot. The first version let any ingredient into any
+  slot, and Yannic's first look at the silo caught it. The assembler's slots follow the same rule;
+  see *Crafting*.
 - **The radar keeps chunks loaded and charts nothing.** Factorio's radar reveals the map, and
   there is no map. What it keeps is the seven-by-seven chunks around it loaded and ticking while
   it has power - Factorio's continuously charted area at Minecraft's chunk size, the same rule
@@ -382,12 +388,12 @@ Smelting
 Crafting and the panel
 ----------------------
 
-- **An assembler's input slot holds twice what its recipe wants, however much that is.** Factorio's
-  rule, and what lets a silo be built at all: a thousand concrete in one slot, where a slot that
-  stopped at sixty-four could never hold a craft's worth. The slot is saved as a resource and an
-  amount, since vanilla's stack codec stops at ninety-nine. Any other item still stops at its stack
-  size, so an assembler's inputs are not filtered to the recipe the way the silo's are - an
-  inserter can still put the wrong thing in.
+- **An assembler's input slots are one ingredient each, and each holds twice what the recipe
+  wants, however much that is.** Factorio's arrangement - slot one is ingredient one - and what
+  keeps an inserter from filling all six with the first thing it picks up. A machine with no
+  recipe takes nothing. The slot's size is what lets a silo be built at all: a thousand concrete
+  in one slot, where a slot that stopped at a stack could never hold a craft's worth, so the slot
+  is saved as a resource and an amount, since vanilla's stack codec stops at ninety-nine.
 - **A rocket silo cannot be crafted by hand.** Its recipe is forty-two stacks of ingredients and a
   player has thirty-six slots, so the crafting panel will never find them all at once. It is
   made in an assembling machine, whose slots hold what the recipe wants.
@@ -463,11 +469,18 @@ Vanilla, and what is left alone
 - **One tool, and the ladder kept.** Four planks is a stone pickaxe, the wooden one has no recipe,
   and `mineable/pickaxe` absorbs the axe, shovel and hoe tags. Material tiers are untouched, and the
   other tools still exist — they are simply never necessary.
+- **Stacks are Factorio's sizes, capped at ninety-nine.** Every item the pack registers says
+  Factorio's stack size - machines fifty, a satellite one, rocket fuel ten - written as `stack` in
+  `data/mapping.json` and held to the code by `check_models.py`. Minecraft writes a stack's count
+  as one to ninety-nine in every codec that saves or sends one, and no mod lifts that, so a
+  hundred plates and two hundred circuits are both ninety-nine; everything under a hundred is
+  exact. A vanilla stand-in - the iron ingot that is a plate, coal, stone brick - keeps vanilla's
+  sixty-four, since a vanilla item's stack size is not the pack's to change. Space science is
+  written as Factorio's two thousand and stacks to ninety-nine, which is why the silo owes it.
 
 Smaller
 -------
 
 Nothing tests that inventories survive a save and reload, or that a network rebuilds after a chunk
-cycle — both paths exist and are only reasoned about. The assembler's input slots are unfiltered.
-An inserter at a chunk border whose source chunk cycles while it stays loaded can sleep through
+cycle — both paths exist and are only reasoned about. An inserter at a chunk border whose source chunk cycles while it stays loaded can sleep through
 items appearing.

@@ -3,6 +3,7 @@ package com.jaguarm.nauvisresearch.registry;
 import java.util.List;
 
 import com.jaguarm.nauvisresearch.NauvisResearch;
+import com.jaguarm.nauvislib.item.Stacks;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -22,7 +23,7 @@ public final class ModItems {
     public static final DeferredRegister<CreativeModeTab> TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, NauvisResearch.MODID);
 
-    public static final DeferredItem<BlockItem> LAB = ITEMS.registerSimpleBlockItem(ModBlocks.LAB);
+    public static final DeferredItem<BlockItem> LAB = ITEMS.registerSimpleBlockItem(ModBlocks.LAB, () -> Stacks.of(10));
 
     /**
      * Red science.
@@ -32,7 +33,7 @@ public final class ModItems {
      * from before that, so the whole mapping speaks the old names - see {@code docs/MAPPING.md}.
      * An id is permanent; the display name is not, and says "Automation science pack".
      */
-    public static final DeferredItem<Item> SCIENCE_PACK_1 = ITEMS.registerSimpleItem("science_pack_1");
+    public static final DeferredItem<Item> SCIENCE_PACK_1 = ITEMS.registerSimpleItem("science_pack_1", () -> Stacks.of(200));
 
     /**
      * Green science, and the gate in front of the whole of milestone 3 - every technology that
@@ -44,7 +45,7 @@ public final class ModItems {
      * behind {@code science-pack-2} without a new world being unable to reach it. Same id rule as
      * red science above - the dump's name, not the modern {@code logistic-science-pack}.
      */
-    public static final DeferredItem<Item> SCIENCE_PACK_2 = ITEMS.registerSimpleItem("science_pack_2");
+    public static final DeferredItem<Item> SCIENCE_PACK_2 = ITEMS.registerSimpleItem("science_pack_2", () -> Stacks.of(200));
 
     /**
      * Blue science, and the gate in front of everything the oil chain was for.
@@ -54,7 +55,7 @@ public final class ModItems {
      * science pack" like the other two. It is the first pack whose ingredients cannot be made
      * by hand: the advanced circuit is plastic, and plastic is a chemical plant.
      */
-    public static final DeferredItem<Item> SCIENCE_PACK_3 = ITEMS.registerSimpleItem("science_pack_3");
+    public static final DeferredItem<Item> SCIENCE_PACK_3 = ITEMS.registerSimpleItem("science_pack_3", () -> Stacks.of(200));
 
     /**
      * Military science: a piercing rounds magazine, a grenade and a gun turret make two, in ten
@@ -62,14 +63,14 @@ public final class ModItems {
      * that condition and the pack is uncraftable without it; the item exists regardless, because
      * a technology's cost has to name something.
      */
-    public static final DeferredItem<Item> MILITARY_SCIENCE_PACK = ITEMS.registerSimpleItem("military_science_pack");
+    public static final DeferredItem<Item> MILITARY_SCIENCE_PACK = ITEMS.registerSimpleItem("military_science_pack", () -> Stacks.of(200));
 
     /**
      * Production science: an electric engine unit and an electric furnace make two, in fourteen
      * seconds - the dump's recipe, from before the pack wanted rails. The first of the two packs
      * the rocket silo's thousand units are paid for in beyond blue.
      */
-    public static final DeferredItem<Item> PRODUCTION_SCIENCE_PACK = ITEMS.registerSimpleItem("production_science_pack");
+    public static final DeferredItem<Item> PRODUCTION_SCIENCE_PACK = ITEMS.registerSimpleItem("production_science_pack", () -> Stacks.of(200));
 
     /**
      * High tech science, which Factorio has since renamed utility science: a battery, thirty
@@ -77,7 +78,7 @@ public final class ModItems {
      * The dump's id, like the rest; the display name is the dump's too, because "utility" would
      * be a name for a different recipe.
      */
-    public static final DeferredItem<Item> HIGH_TECH_SCIENCE_PACK = ITEMS.registerSimpleItem("high_tech_science_pack");
+    public static final DeferredItem<Item> HIGH_TECH_SCIENCE_PACK = ITEMS.registerSimpleItem("high_tech_science_pack", () -> Stacks.of(200));
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
             "nauvis_research",

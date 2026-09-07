@@ -1,6 +1,7 @@
 package com.jaguarm.nauvismilitary.registry;
 
 import com.jaguarm.nauvismilitary.NauvisMilitary;
+import com.jaguarm.nauvislib.item.Stacks;
 import com.jaguarm.nauvismilitary.armor.Armors;
 import com.jaguarm.nauvismilitary.weapon.GrenadeItem;
 import com.jaguarm.nauvismilitary.weapon.GunItem;
@@ -35,33 +36,40 @@ public final class ModItems {
 
     /** Four rounds a second, Factorio's fifteen blocks doubled. The gun you start with. */
     public static final DeferredItem<GunItem> PISTOL = ITEMS.registerItem("pistol",
-            properties -> new GunItem(properties, 15, 15.0 * RANGE_SCALE, false));
+            properties -> new GunItem(properties, 15, 15.0 * RANGE_SCALE, false),
+            () -> Stacks.of(5));
 
     /** Ten rounds a second for as long as the button is held, Factorio's eighteen doubled. Behind {@code military}. */
     public static final DeferredItem<GunItem> SUBMACHINE_GUN = ITEMS.registerItem("submachine_gun",
-            properties -> new GunItem(properties, 6, 18.0 * RANGE_SCALE, true));
+            properties -> new GunItem(properties, 6, 18.0 * RANGE_SCALE, true),
+            () -> Stacks.of(5));
 
     /** Ten rounds of five. Four iron plates. */
     public static final DeferredItem<MagazineItem> FIREARM_MAGAZINE = ITEMS.registerItem("firearm_magazine",
-            properties -> new MagazineItem(properties, 10, 5.0F));
+            properties -> new MagazineItem(properties, 10, 5.0F),
+            () -> Stacks.of(200));
 
     /** Ten rounds of eight. A firearm magazine, a steel plate and five copper. Behind {@code military-2}. */
     public static final DeferredItem<MagazineItem> PIERCING_ROUNDS_MAGAZINE = ITEMS.registerItem(
-            "piercing_rounds_magazine", properties -> new MagazineItem(properties, 10, 8.0F));
+            "piercing_rounds_magazine", properties -> new MagazineItem(properties, 10, 8.0F),
+            () -> Stacks.of(200));
 
     /** Ten coal and five iron plates, thrown. Behind {@code military-2}. */
     public static final DeferredItem<GrenadeItem> GRENADE = ITEMS.registerItem("grenade",
-            properties -> new GrenadeItem(properties.stacksTo(16)));
+            properties -> new GrenadeItem(properties),
+            () -> Stacks.of(100));
 
     /** Forty iron plates, worn on the chest. */
     public static final DeferredItem<Item> LIGHT_ARMOR = ITEMS.registerItem("light_armor",
-            properties -> new Item(properties.humanoidArmor(Armors.LIGHT, ArmorType.CHESTPLATE)));
+            properties -> new Item(properties.humanoidArmor(Armors.LIGHT, ArmorType.CHESTPLATE)),
+            () -> Stacks.of(1));
 
     /** A hundred copper and fifty steel. Behind {@code heavy-armor}. */
     public static final DeferredItem<Item> HEAVY_ARMOR = ITEMS.registerItem("heavy_armor",
-            properties -> new Item(properties.humanoidArmor(Armors.HEAVY, ArmorType.CHESTPLATE)));
+            properties -> new Item(properties.humanoidArmor(Armors.HEAVY, ArmorType.CHESTPLATE)),
+            () -> Stacks.of(1));
 
-    public static final DeferredItem<BlockItem> GUN_TURRET = ITEMS.registerSimpleBlockItem(ModBlocks.GUN_TURRET);
+    public static final DeferredItem<BlockItem> GUN_TURRET = ITEMS.registerSimpleBlockItem(ModBlocks.GUN_TURRET, () -> Stacks.of(50));
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("main",
             () -> CreativeModeTab.builder()

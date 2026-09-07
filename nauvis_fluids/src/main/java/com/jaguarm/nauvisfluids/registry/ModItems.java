@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import com.jaguarm.nauvislib.item.Stacks;
 
 public final class ModItems {
 
@@ -23,17 +24,17 @@ public final class ModItems {
     public static final DeferredRegister<CreativeModeTab> TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, NauvisFluids.MODID);
 
-    public static final DeferredItem<BlockItem> PIPE = ITEMS.registerSimpleBlockItem(ModBlocks.PIPE);
+    public static final DeferredItem<BlockItem> PIPE = ITEMS.registerSimpleBlockItem(ModBlocks.PIPE, () -> Stacks.of(100));
 
     /** A block item of its own, so a click on a lake puts the pump on the water rather than under it. */
     public static final DeferredItem<OffshorePumpItem> OFFSHORE_PUMP = ITEMS.registerItem("offshore_pump",
             properties -> new OffshorePumpItem(ModBlocks.OFFSHORE_PUMP.get(), properties),
-            () -> new Item.Properties().useBlockDescriptionPrefix());
+            () -> Stacks.of(20).useBlockDescriptionPrefix());
 
-    public static final DeferredItem<BlockItem> PUMPJACK = ITEMS.registerSimpleBlockItem(ModBlocks.PUMPJACK);
-    public static final DeferredItem<BlockItem> STORAGE_TANK = ITEMS.registerSimpleBlockItem(ModBlocks.STORAGE_TANK);
-    public static final DeferredItem<BlockItem> OIL_REFINERY = ITEMS.registerSimpleBlockItem(ModBlocks.OIL_REFINERY);
-    public static final DeferredItem<BlockItem> CHEMICAL_PLANT = ITEMS.registerSimpleBlockItem(ModBlocks.CHEMICAL_PLANT);
+    public static final DeferredItem<BlockItem> PUMPJACK = ITEMS.registerSimpleBlockItem(ModBlocks.PUMPJACK, () -> Stacks.of(20));
+    public static final DeferredItem<BlockItem> STORAGE_TANK = ITEMS.registerSimpleBlockItem(ModBlocks.STORAGE_TANK, () -> Stacks.of(50));
+    public static final DeferredItem<BlockItem> OIL_REFINERY = ITEMS.registerSimpleBlockItem(ModBlocks.OIL_REFINERY, () -> Stacks.of(10));
+    public static final DeferredItem<BlockItem> CHEMICAL_PLANT = ITEMS.registerSimpleBlockItem(ModBlocks.CHEMICAL_PLANT, () -> Stacks.of(10));
 
     /**
      * The map editor's oil well. No recipe and no drop, so survival never sees one; it exists so
@@ -46,7 +47,7 @@ public final class ModItems {
      * {@code data/mapping.json} says so; what it is for - cliff explosives, artillery - is
      * milestones away, so today it is a thing a chemical plant makes and a chest holds.
      */
-    public static final DeferredItem<Item> EXPLOSIVES = ITEMS.registerSimpleItem("explosives");
+    public static final DeferredItem<Item> EXPLOSIVES = ITEMS.registerSimpleItem("explosives", () -> Stacks.of(50));
 
     /**
      * Factorio's barrels: a steel drum, and the same drum full of each of the seven fluids.
@@ -56,14 +57,14 @@ public final class ModItems {
      * belt or by hand. The dump carries the filled ones as raw items, so their recipes are
      * {@code data/fluid_recipes.json}'s, one pair a fluid.
      */
-    public static final DeferredItem<Item> EMPTY_BARREL = ITEMS.registerSimpleItem("empty_barrel");
-    public static final DeferredItem<Item> WATER_BARREL = ITEMS.registerSimpleItem("water_barrel");
-    public static final DeferredItem<Item> CRUDE_OIL_BARREL = ITEMS.registerSimpleItem("crude_oil_barrel");
-    public static final DeferredItem<Item> HEAVY_OIL_BARREL = ITEMS.registerSimpleItem("heavy_oil_barrel");
-    public static final DeferredItem<Item> LIGHT_OIL_BARREL = ITEMS.registerSimpleItem("light_oil_barrel");
-    public static final DeferredItem<Item> LUBRICANT_BARREL = ITEMS.registerSimpleItem("lubricant_barrel");
-    public static final DeferredItem<Item> PETROLEUM_GAS_BARREL = ITEMS.registerSimpleItem("petroleum_gas_barrel");
-    public static final DeferredItem<Item> SULFURIC_ACID_BARREL = ITEMS.registerSimpleItem("sulfuric_acid_barrel");
+    public static final DeferredItem<Item> EMPTY_BARREL = ITEMS.registerSimpleItem("empty_barrel", () -> Stacks.of(10));
+    public static final DeferredItem<Item> WATER_BARREL = ITEMS.registerSimpleItem("water_barrel", () -> Stacks.of(10));
+    public static final DeferredItem<Item> CRUDE_OIL_BARREL = ITEMS.registerSimpleItem("crude_oil_barrel", () -> Stacks.of(10));
+    public static final DeferredItem<Item> HEAVY_OIL_BARREL = ITEMS.registerSimpleItem("heavy_oil_barrel", () -> Stacks.of(10));
+    public static final DeferredItem<Item> LIGHT_OIL_BARREL = ITEMS.registerSimpleItem("light_oil_barrel", () -> Stacks.of(10));
+    public static final DeferredItem<Item> LUBRICANT_BARREL = ITEMS.registerSimpleItem("lubricant_barrel", () -> Stacks.of(10));
+    public static final DeferredItem<Item> PETROLEUM_GAS_BARREL = ITEMS.registerSimpleItem("petroleum_gas_barrel", () -> Stacks.of(10));
+    public static final DeferredItem<Item> SULFURIC_ACID_BARREL = ITEMS.registerSimpleItem("sulfuric_acid_barrel", () -> Stacks.of(10));
 
     /** The filled barrels, in the fluids' order. */
     public static final List<DeferredItem<Item>> FILLED_BARRELS = List.of(WATER_BARREL, CRUDE_OIL_BARREL,

@@ -29,6 +29,7 @@ public class RocketSiloReadout implements IServerDataProvider<BlockAccessor> {
     static final String NEEDED = "Needed";
     static final String OWED = "Owed";
     static final String LAUNCHES = "Launches";
+    static final String AUTO = "Auto";
 
     private RocketSiloReadout() {}
 
@@ -42,6 +43,7 @@ public class RocketSiloReadout implements IServerDataProvider<BlockAccessor> {
         data.putInt(NEEDED, silo.partsNeeded());
         data.putInt(OWED, silo.owed());
         data.putInt(LAUNCHES, silo.launches());
+        data.putBoolean(AUTO, silo.autoLaunch());
     }
 
     @Override
@@ -63,7 +65,8 @@ public class RocketSiloReadout implements IServerDataProvider<BlockAccessor> {
                 return;
             }
             tooltip.add(RocketSiloScreen.statusText(RocketSiloStatus.of(data.getIntOr(STATUS, 0)),
-                    data.getIntOr(PARTS, 0), data.getIntOr(NEEDED, 0), data.getIntOr(OWED, 0)));
+                    data.getIntOr(PARTS, 0), data.getIntOr(NEEDED, 0), data.getIntOr(OWED, 0),
+                    data.getBooleanOr(AUTO, true)));
             int launches = data.getIntOr(LAUNCHES, 0);
             if (launches > 0) {
                 tooltip.add(Component.translatable("jade.nauvis_rocket.silo.launches", launches));

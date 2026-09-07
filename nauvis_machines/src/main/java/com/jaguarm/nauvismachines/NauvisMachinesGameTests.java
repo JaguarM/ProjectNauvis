@@ -382,9 +382,18 @@ public final class NauvisMachinesGameTests {
             AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
             ResourceHandler<ItemResource> view = assembler.automationView();
 
+            // A machine with no recipe takes nothing, which is Factorio's rule: nothing an
+            // inserter drops in can be for anything.
+            helper.assertValueEqual(insert(view, Items.IRON_INGOT, 10), 0, "ingots accepted with no recipe");
+
+            // With one, each slot is one ingredient's - the assembler's recipe is circuits, gears
+            // and plates in that order - so plates land in the third slot and nowhere else, and a
+            // stick, which the recipe has no use for, lands nowhere.
+            assembler.setRecipe(AssemblerBlockEntity.recipeProducing(helper.getLevel(), ModItems.ASSEMBLING_MACHINE_1.get()));
             helper.assertValueEqual(insert(view, Items.IRON_INGOT, 10), 10, "ingots accepted");
-            helper.assertValueEqual(
-                    assembler.inventory().getAmountAsInt(0), 10, "ingots in the first input slot");
+            helper.assertValueEqual(assembler.inventory().getAmountAsInt(2), 10, "ingots in the plates' slot");
+            helper.assertValueEqual(assembler.inventory().getAmountAsInt(0), 0, "ingots in the circuits' slot");
+            helper.assertValueEqual(insert(view, Items.STICK, 1), 0, "sticks accepted by a machine that wants none");
 
             // Extraction from an input slot is refused: those are the machine's to spend.
             try (Transaction transaction = Transaction.openRoot()) {
@@ -591,8 +600,7 @@ public final class NauvisMachinesGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            placeMachine(helper, MACHINE);
-            AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            AssemblerBlockEntity assembler = unpoweredMachineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
             helper.assertValueEqual(
                     insert(assembler.automationView(), Items.IRON_INGOT, 7), 7, "ingots accepted");
 
@@ -1019,8 +1027,7 @@ public final class NauvisMachinesGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            placeMachine(helper, MACHINE);
-            AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            AssemblerBlockEntity assembler = unpoweredMachineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
 
             helper.assertValueEqual(insert(view(helper, MACHINE.offset(-1, 0, -1), Direction.WEST),
                     Items.IRON_INGOT, 4), 4, "ingots taken at the far corner");

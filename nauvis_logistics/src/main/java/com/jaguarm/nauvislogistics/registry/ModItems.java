@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import com.jaguarm.nauvislib.item.Stacks;
 
 public final class ModItems {
 
@@ -22,37 +23,37 @@ public final class ModItems {
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, NauvisLogistics.MODID);
 
     public static final DeferredItem<BlockItem> BURNER_INSERTER =
-            ITEMS.registerSimpleBlockItem(ModBlocks.BURNER_INSERTER);
+            ITEMS.registerSimpleBlockItem(ModBlocks.BURNER_INSERTER, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> INSERTER =
-            ITEMS.registerSimpleBlockItem(ModBlocks.INSERTER);
+            ITEMS.registerSimpleBlockItem(ModBlocks.INSERTER, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> LONG_HANDED_INSERTER =
-            ITEMS.registerSimpleBlockItem(ModBlocks.LONG_HANDED_INSERTER);
+            ITEMS.registerSimpleBlockItem(ModBlocks.LONG_HANDED_INSERTER, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> FAST_INSERTER =
-            ITEMS.registerSimpleBlockItem(ModBlocks.FAST_INSERTER);
+            ITEMS.registerSimpleBlockItem(ModBlocks.FAST_INSERTER, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> STACK_INSERTER =
-            ITEMS.registerSimpleBlockItem(ModBlocks.STACK_INSERTER);
+            ITEMS.registerSimpleBlockItem(ModBlocks.STACK_INSERTER, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> IRON_CHEST =
-            ITEMS.registerSimpleBlockItem(ModBlocks.IRON_CHEST);
+            ITEMS.registerSimpleBlockItem(ModBlocks.IRON_CHEST, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> STEEL_CHEST =
-            ITEMS.registerSimpleBlockItem(ModBlocks.STEEL_CHEST);
+            ITEMS.registerSimpleBlockItem(ModBlocks.STEEL_CHEST, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> TRANSPORT_BELT =
-            ITEMS.registerSimpleBlockItem(ModBlocks.TRANSPORT_BELT);
+            ITEMS.registerSimpleBlockItem(ModBlocks.TRANSPORT_BELT, () -> Stacks.of(100));
 
     public static final DeferredItem<BlockItem> FAST_TRANSPORT_BELT =
-            ITEMS.registerSimpleBlockItem(ModBlocks.FAST_TRANSPORT_BELT);
+            ITEMS.registerSimpleBlockItem(ModBlocks.FAST_TRANSPORT_BELT, () -> Stacks.of(100));
 
     public static final DeferredItem<BlockItem> SPLITTER =
-            ITEMS.registerSimpleBlockItem(ModBlocks.SPLITTER);
+            ITEMS.registerSimpleBlockItem(ModBlocks.SPLITTER, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> FAST_SPLITTER =
-            ITEMS.registerSimpleBlockItem(ModBlocks.FAST_SPLITTER);
+            ITEMS.registerSimpleBlockItem(ModBlocks.FAST_SPLITTER, () -> Stacks.of(50));
 
     /** Its own tab. A subsystem mod has to be usable without the rest of the pack installed. */
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(

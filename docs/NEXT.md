@@ -15,11 +15,12 @@ military, and the silo - `PLAN.md`'s milestone list says what each holds, every 
 are on the machine in its `*Block` and `*Shape` classes, and the mapping is `data/mapping.json`.
 Milestone 6, the robots, is a later update by decision.
 
-**The rocket build has not been played.** Yannic's half of milestone 7 is owed: a client boot to
-look at the silo on its pad, the radar's dish, the nine module chips and the five new item icons,
-and a launch watched from the ground. The whole road is playable in survival - the tree reaches
-`rocket-silo`, every ingredient exists, and the silo is made in an assembling machine 2, whose
-input slots hold the thousand concrete and thousand steel it costs.
+**The rocket has had one look and one round of polish.** Yannic's first look, 2026-09-08, found
+the silo filling every slot with one ingredient, no way to launch by hand, and stacks of
+sixty-four; now a slot is one ingredient's, the screen has an automatic-launch toggle and a Launch
+button, and every item stacks to Factorio's size or Minecraft's ninety-nine. The second look is
+owed: the two buttons on the silo's screen, the radar's dish, the nine module chips and the five
+new item icons, and a launch watched from the ground.
 
 The jobs
 --------
@@ -28,13 +29,13 @@ The jobs
 
 Two builds have passed their tests and nobody's eyes, and both want a client boot and an evening:
 
-- **The rocket.** The silo on its pad, the radar's dish, the nine module chips and the five new
-  item icons, and a launch watched from the ground. The whole road is playable in survival - the
-  tree reaches `rocket-silo`, every ingredient exists, and the silo is made in an assembling
-  machine 2, whose input slots hold the thousand concrete and thousand steel it costs. The things
-  most likely to want moving, none of them identity: the five-second countdown, the firework's
-  height, the rocket's colours, the placeholder textures, and whether a nine-by-nine pad reads as
-  a silo at all.
+- **The rocket.** The two launch controls on the silo's screen - the *A* toggle and Launch, drawn
+  as the lab's button is - the radar's dish, the nine module chips and the five new item icons,
+  and a launch watched from the ground. The whole road is playable in survival - the tree reaches
+  `rocket-silo`, every ingredient exists, and the silo is made in an assembling machine 2, whose
+  slots hold the thousand concrete and thousand steel it costs. The things most likely to want
+  moving, none of them identity: the five-second countdown, the firework's height, the rocket's
+  colours, the placeholder textures, and whether a nine-by-nine pad reads as a silo at all.
 - **The attack.** Since 2026-09-07 what pollution sends walks at the machine that made it, chews
   through the wall in its way, hits the turret when it gets there, and turns on a player only within
   six blocks. Every machine has health - a hundred times its hardness, the turret Factorio's four
@@ -94,7 +95,8 @@ ids changed and `implementation project(':nauvis_lib')` in it, a
 `nauvis/build.gradle` — the `runtimeOnly project(':...')` and its namespace in
 `pack_gametest_namespaces` — and its name in the `MODS` lists of `tools/check_models.py`,
 `tools/check_gametests.py` and `tools/render_model.py`, plus a `crafting_table/pack.mcmeta` even
-if the mod has no bench recipe, since the finder throws without one. `nauvis_rocket/` is the
+if the mod has no bench recipe, since the finder throws without one. Every item it registers takes
+`Stacks.of(n)` with Factorio's stack size and a matching `stack` in `data/mapping.json`. `nauvis_rocket/` is the
 newest written from scratch by following exactly that list, so its first commit is what adding a
 mod costs.
 

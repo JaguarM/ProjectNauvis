@@ -63,8 +63,10 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * hundred seconds are the hundred parts' three seconds each, already spent - but it reads its
  * numbers off it, so how many parts a rocket is and what comes back are the generated data's and
  * not this class's. When the parts are there and the slot holds the satellite, the countdown
- * starts on its own, as Factorio 2.0's does; the science is owed to the output slot and paid
- * into it as fast as it is taken away, since a thousand of anything is sixteen stacks.
+ * starts on its own, as Factorio 2.0's does - or, with automatic launch switched off on the
+ * screen, waits for the Launch button, which sends the rocket up with whatever it holds, cargo or
+ * none, as Factorio 1.1's did. The science is owed to the output slot and paid into it as fast as
+ * it is taken away, since a thousand of anything is sixteen stacks.
  *
  * <h2>Sleeping</h2>
  *
@@ -103,7 +105,7 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
     public static final int LAUNCH_TICKS = 100;
 
     private final RocketSiloInventory inventory = new RocketSiloInventory(this::onInventoryChanged,
-            this::isIngredient, resource -> resource.is(ModItems.SATELLITE.get()));
+            this::wanted, resource -> resource.is(ModItems.SATELLITE.get()));
 
     /** What inserters see: ingredients and a satellite in, science out. Never the raw slots. */
     private final ResourceHandler<ItemResource> automationView = new MachineAccess(inventory, OUTPUT_SLOT);
@@ -135,6 +137,12 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
     /** Rockets this silo has launched, for the readout and for the record. */
     private int launches;
 
+    /** Whether a complete rocket with a satellite goes on its own. Off, it waits for the button. */
+    private boolean autoLaunch = true;
+
+    /** The button was pressed: launch as soon as the rocket is complete, cargo or none. */
+    private boolean launchRequested;
+
     private RocketSiloStatus status = RocketSiloStatus.NO_INGREDIENTS;
 
     private final ContainerData menuData = new ContainerData() {
@@ -151,6 +159,7 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
                 case RocketSiloMenu.DATA_OWED -> owed;
                 case RocketSiloMenu.DATA_STATUS -> status.ordinal();
                 case RocketSiloMenu.DATA_LAUNCHES -> launches;
+                case RocketSiloMenu.DATA_AUTO_LAUNCH -> autoLaunch ? 1 : 0;
                 default -> 0;
             };
         }
@@ -217,6 +226,30 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
         return status;
     }
 
+    public boolean autoLaunch() {
+        return autoLaunch;
+    }
+
+    /** Switches automatic launch on or off: the screen's toggle. */
+    public void setAutoLaunch(boolean automatic) {
+        if (autoLaunch != automatic) {
+            autoLaunch = automatic;
+            setChanged();
+            wake();
+        }
+    }
+
+    /**
+     * The Launch button: sends the rocket up the moment it is complete, with the satellite if
+     * there is one and with nothing if not. Nothing happens to a rocket still being built - the
+     * request is kept until it is - or to one already leaving.
+     */
+    public void requestLaunch() {
+        launchRequested = true;
+        setChanged();
+        wake();
+    }
+
     /**
      * Puts parts into the rocket without building them. For a gametest, and for a gamemaster:
      * a hundred parts is a hundred and fifty minutes of one silo, which no test waits for.
@@ -246,13 +279,15 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
         partsNeeded = partsPerRocket(launch);
 
         if (parts >= partsNeeded) {
-            if (!holdsCargo(launch)) {
-                // The rocket is complete and waits for its satellite. The slot filling wakes it.
-                settle(RocketSiloStatus.READY);
+            boolean cargo = holdsCargo(launch);
+            if (launchRequested || (autoLaunch && cargo)) {
+                launchRequested = false;
+                beginLaunch(level, launch, cargo);
+                level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
                 return;
             }
-            beginLaunch(level, launch);
-            level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
+            // The rocket is complete and waits: for its satellite, or for the button. Either wakes it.
+            settle(RocketSiloStatus.READY);
             return;
         }
 
@@ -307,9 +342,11 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
         if (launchTicks <= 0) {
             Launch.liftOff(level, nose());
             FacraftRecipe launch = launchRecipe(level);
-            ItemStack science = launch == null ? ItemStack.EMPTY : launch.resultStack();
+            // What comes back is the cargo's doing: a rocket sent up empty sends nothing back.
+            ItemStack science = launch == null || !carryingCargo ? ItemStack.EMPTY : launch.resultStack();
             owed += science.getCount();
             launches++;
+            carryingCargo = false;
             if (!science.isEmpty()) {
                 CraftListeners.fireMachine(level, science);
             }
@@ -321,10 +358,14 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
         level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
     }
 
-    /** Takes the satellite, empties the rocket, lights the engines. */
-    private void beginLaunch(ServerLevel level, FacraftRecipe launch) {
+    /** Whether the rocket on its way up has a satellite in it, for what comes back. */
+    private boolean carryingCargo;
+
+    /** Takes the satellite if the rocket is to carry one, empties the rocket, lights the engines. */
+    private void beginLaunch(ServerLevel level, FacraftRecipe launch, boolean withCargo) {
         SizedIngredient cargo = cargoOf(launch);
-        if (cargo != null) {
+        carryingCargo = false;
+        if (withCargo && cargo != null) {
             try (Transaction transaction = Transaction.openRoot()) {
                 ItemResource held = inventory.getResource(SATELLITE_SLOT);
                 if (inventory.extract(SATELLITE_SLOT, held, cargo.count(), transaction) != cargo.count()) {
@@ -332,6 +373,7 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
                 }
                 transaction.commit();
             }
+            carryingCargo = true;
         }
         parts -= partsNeeded;
         launchTicks = LAUNCH_TICKS;
@@ -392,24 +434,27 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /**
-     * Whether a rocket part is made of this, by the recipe as this server has it. A client, which
-     * has no recipe manager, says yes to anything and lets the server's answer land a tick later.
+     * How many of this a rocket part takes in this slot, by the recipe as this server has it: slot
+     * one is ingredient one, and zero for anything else. This block entity's copy on a client has
+     * no recipe manager and is asked nothing; the client's menu works the same rule out of its own
+     * copy of the recipe, in {@code ClientSiloRules}.
      */
-    private boolean isIngredient(ItemResource resource) {
+    private int wanted(int slot, ItemResource resource) {
         if (!(level instanceof ServerLevel serverLevel)) {
-            return true;
+            return 0;
         }
         FacraftRecipe part = partRecipe(serverLevel);
-        if (part == null) {
-            return false;
+        return part == null ? 0 : wanted(part, slot, resource);
+    }
+
+    /** How many of this ingredient {@code slot} of the recipe takes, or zero if this is not it. */
+    public static int wanted(FacraftRecipe part, int slot, ItemResource resource) {
+        List<SizedIngredient> ingredients = part.ingredients();
+        if (slot < 0 || slot >= ingredients.size()) {
+            return 0;
         }
-        ItemStack stack = resource.toStack(1);
-        for (SizedIngredient ingredient : part.ingredients()) {
-            if (ingredient.ingredient().test(stack)) {
-                return true;
-            }
-        }
-        return false;
+        SizedIngredient ingredient = ingredients.get(slot);
+        return ingredient.ingredient().test(resource.toStack(1)) ? ingredient.count() : 0;
     }
 
     /** The launch recipe's ingredient that is not the rocket part: the satellite, in the dump. */
@@ -522,7 +567,7 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new RocketSiloMenu(containerId, playerInventory, inventory, modules, menuData,
-                ContainerLevelAccess.create(level, worldPosition));
+                ContainerLevelAccess.create(level, worldPosition), this);
     }
 
     /**
@@ -574,6 +619,9 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
         output.putInt("LaunchTicks", launchTicks);
         output.putInt("Owed", owed);
         output.putInt("Launches", launches);
+        output.putBoolean("AutoLaunch", autoLaunch);
+        output.putBoolean("LaunchRequested", launchRequested);
+        output.putBoolean("CarryingCargo", carryingCargo);
     }
 
     @Override
@@ -589,5 +637,8 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
         launchTicks = input.getIntOr("LaunchTicks", 0);
         owed = input.getIntOr("Owed", 0);
         launches = input.getIntOr("Launches", 0);
+        autoLaunch = input.getBooleanOr("AutoLaunch", true);
+        launchRequested = input.getBooleanOr("LaunchRequested", false);
+        carryingCargo = input.getBooleanOr("CarryingCargo", false);
     }
 }
