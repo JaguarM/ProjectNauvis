@@ -234,29 +234,32 @@ Belts
 Mining
 ------
 
-- **The drills are quarries, not Factorio drills.** `nauvis_mining` is a fork of Neo Progressive
-  Automation and carries its behaviour: a drill digs *downwards*, has three dig modes on a button,
-  wants a pickaxe and fill material, and pushes what it finds into any container beside it. What is
-  no longer wrong is the area — it covers the ground it stands on, 2×2 or 3×3, rather than a radius
-  out of the config with the machine's own size playing no part. Factorio's sits on an ore patch, takes the resource out of the tiles it
-  covers, needs nothing but fuel or power, and drops onto one output tile in front. The fork
-  bought the ids; the behaviour is `NEXT.md`'s job 1 — all of it except the pickaxe, below.
-- **A block that insists on a shovel for its drops is skipped.** The shovel slot is gone — a
-  Factorio drill carries no tools, and vanilla's shovel blocks all drop by hand, so the slot only
-  ever bought speed on dirt. Dirt, sand and gravel are still dug, by hand at vanilla's wrong-tool
-  rate; a modded block that *requires* a shovel is left standing, the way anything else the drill
-  cannot take is left standing, and the area still reports itself cleared.
+- **The ore patch is Minecraft's veins, not a painted number.** Factorio's drill sits on a patch
+  it can see; ours reaches down through the ground for whatever ore blocks are in its columns, down
+  to `mineFloor`, and a player places it blind. The hover outline shows the volume and the status
+  line says "No minable resources" after the first walk, which is the whole of the feedback; a
+  count of what is under a drill before it is placed would be the Factorio thing and is not built.
+  How much a vein yields is Crumbling Ore's `crumbleHarvests`, eight a block, and that is the
+  pack's resource number rather than a block entity of the pack's own.
 - **A drill wants a pickaxe, and Factorio's does not. That one is kept.** It is the pack's
   clearest deliberate divergence: a machine you hand a tool to reads as a Minecraft machine, and
-  the tool's tier, its enchantments and its durability all do something. Going 1:1 with Factorio is
-  what keeps the *balance* legible, which is why ids, ingredients, craft times and footprints are
-  held to it without exception — a mechanic that is simply more fun here is a different question,
-  and this one was answered. **Do not read it as debt**; `NEXT.md`'s job 1 excludes it on purpose.
-- **Its three modules are not Factorio's.** `speed`, `efficiency` and `range` were invented for
-  NPA. Factorio has speed, efficiency and productivity in three tiers, they belong to
-  `nauvis_machines` per `PLAN.md`, and a range module has no counterpart at all — a drill's area
-  is a property of the entity. The three items are live ids in the pack's namespace, which is why
-  they are the first thing job 1 resolves.
+  the tool's tier, its enchantments and its durability all do something - the tier decides which
+  ores it can take, Fortune multiplies the yield, Efficiency shortens the cycle a tenth a level,
+  Silk Touch is stripped, and every ore costs a point. Going 1:1 with Factorio is what keeps the
+  *balance* legible, which is why ids, ingredients, craft times and footprints are held to it
+  without exception - a mechanic that is simply more fun here is a different question, and this
+  one was answered. **Do not read it as debt.**
+- **A drill with nowhere to put its ore polls.** The output goes to the block in front of the
+  head; a belt clearing is not a block change and wakes nothing, so a drill that stopped on a
+  full output looks again once a second rather than sleeping. A chest placed in front wakes it at
+  once. And it never drops ore on the ground the way Factorio's does when the tile is bare - the
+  ore waits in the drill's one output slot instead.
+- **A depleted drill stays depleted until its pickaxe changes.** Walking three thousand blocks
+  again on every neighbour change was the alternative. Ore does not grow back, so the only thing
+  that makes new ore minable is a better pickaxe, and that is the one change that restarts the
+  walk. A drill loaded from disk walks once regardless.
+- **Only the first mining productivity.** `mining-productivity-1` is in the tree at Factorio's
+  cost and the drills read it; the rest of the ladder is infinite research on higher science.
 
 Modules
 -------

@@ -47,6 +47,7 @@
   "modifier.nauvis_research.character-mining-speed": "Mining speed %s (does nothing yet)",
   "modifier.nauvis_research.inserter-stack-size-bonus": "Inserter hand size %s",
   "modifier.nauvis_research.laboratory-speed": "Research speed %s",
+  "modifier.nauvis_research.mining-drill-productivity-bonus": "Mining productivity %s",
   "modifier.nauvis_research.turret-attack": "%2$s damage %1$s (does nothing yet)",
   "pack.nauvis_research.crafting_table": "Nauvis Research: bench recipes (skips research)",
   "screen.nauvis_research.lab.idle": "Idle - give it science packs",

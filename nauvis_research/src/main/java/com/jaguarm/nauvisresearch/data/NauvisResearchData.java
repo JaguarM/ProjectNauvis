@@ -194,6 +194,7 @@ public final class NauvisResearchData {
             add("modifier.nauvis_research.inserter-stack-size-bonus", "Inserter hand size %s");
             add("modifier.nauvis_research.bulk-inserter-capacity-bonus", "Stack inserter hand size %s");
             add("modifier.nauvis_research.laboratory-speed", "Research speed %s");
+            add("modifier.nauvis_research.mining-drill-productivity-bonus", "Mining productivity %s");
             add("modifier.nauvis_research.character-mining-speed", "Mining speed %s (does nothing yet)");
             add("modifier.nauvis_research.ammo-damage", "%2$s damage %1$s (does nothing yet)");
             add("modifier.nauvis_research.turret-attack", "%2$s damage %1$s (does nothing yet)");

@@ -42,6 +42,10 @@ repositories {
     }
 
     mavenCentral()
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+    }
 }
 
 dependencies {
@@ -49,6 +53,10 @@ dependencies {
     // the screen it is drawn on. The one compile-time dependency between the pack's own mods,
     // and it points one way - the library depends on nothing of ours.
     implementation project(':nauvis_lib')
+
+    // Jade, for the look-at readout: compileOnly, never implementation. The @WailaPlugin
+    // class is only loaded when Jade is present, so the mod runs standalone without it.
+    compileOnly "maven.modrinth:jade:${jade_version}"
 
     // No compile-time dependency, deliberately. A drill puts what it digs into whatever is
     // beside it through Capabilities.Item.BLOCK, which is NeoForge's - it never needs to know

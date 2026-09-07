@@ -61,6 +61,9 @@ public final class BurnerDrillShape {
     /** The front-left block: the firebox, the block entity, and the one you click. */
     public static final int FIREBOX = 0;
 
+    /** The ore comes out under the chimney: the block in front of the firebox is the output tile. */
+    public static final int OUTPUT = FIREBOX;
+
     private static MachineShape build() {
         List<MachineCell> cells = new ArrayList<>();
 

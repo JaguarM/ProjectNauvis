@@ -314,8 +314,12 @@ smaller one never has to grow.**
 and the oil well copies that: `nauvis_fluids:crude_oil` is ordinary unbreakable ground with a block
 entity holding Factorio's resource amount, and nothing about fluids in the world had to be written
 to make it unmovable — a solid block is not bucketed, does not flow and is not picked up. The fluid
-of the same name exists only in tanks and pipes. Ore patches, when the drills become Factorio's
-drills, want the same shape: a block that is the ground and knows how much is under it.
+of the same name exists only in tanks and pipes. **Ore patches did not get that shape**, and on
+purpose: Minecraft's ore is already blocks in the ground at every depth, and Crumbling Ore already
+gives each of them a number - eight harvests - so a drill's patch is the ore blocks in its columns,
+reached down through the ground and mined by the same break event a player's pickaxe fires. The
+drill leaves the ground standing and puts the rock back where an ore ran out; the terrain is the
+patch's own record of what is left, and nothing about it had to be written.
 
 **A resource's starting value is a function of where it is**, seed and position, worked out the
 first time anything asks. Worldgen then only places blocks — a block entity in a proto-chunk is a

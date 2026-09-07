@@ -106,6 +106,17 @@ SCREENS = [
               ('flame', 'FLAME_X', 'FLAME_Y', 'FLAME_WIDTH', 'FLAME_HEIGHT')],
     ),
     Screen(
+        # The electric tier's charge bolt stands where the burner's flame does, one or the
+        # other and never both; its three module slots are checked, the burner has none.
+        'mining drill',
+        'nauvis_mining/src/main/java/com/jaguarm/nauvismining/machine/miner',
+        'MinerMenu.java', 'MinerScreen.java',
+        slots=[('pickaxe', 'PICKAXE_X', 'PICKAXE_Y', 1, 1), ('fuel', 'FUEL_X', 'FUEL_Y', 1, 1),
+               ('output', 'OUTPUT_X', 'OUTPUT_Y', 1, 1), ('module', 'MODULE_X', 'MODULE_Y', 3, 3)],
+        bars=[('progress bar', 'ARROW_X', 'ARROW_Y', 'ARROW_WIDTH', 'ARROW_HEIGHT'),
+              ('flame', 'FLAME_X', 'FLAME_Y', 'FLAME_WIDTH', 'FLAME_HEIGHT')],
+    ),
+    Screen(
         'boiler',
         'nauvis_power/src/main/java/com/jaguarm/nauvispower/generator',
         'BoilerMenu.java', 'BoilerScreen.java',

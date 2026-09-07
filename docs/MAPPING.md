@@ -136,7 +136,9 @@ type by name rather than dropping it.
 A technology's `modifiers` go through whole - `{"type": "laboratory-speed", "modifier": 0.2}` -
 with an `ammo_category` or `turret_id` folded into a `target`. The research mod sums the earned
 ones by type and answers any machine through `nauvis_lib`'s `Bonuses`; the generator's summary
-counts them by type so it is visible which types nothing reads yet.
+counts them by type so it is visible which types nothing reads yet. Read so far: the lab reads
+`laboratory-speed`, the inserters `inserter-stack-size-bonus` and `bulk-inserter-capacity-bonus`,
+the drills `mining-drill-productivity-bonus`.
 
 `data/removals.json`, and the rule it enforces
 ---------------------------------------------

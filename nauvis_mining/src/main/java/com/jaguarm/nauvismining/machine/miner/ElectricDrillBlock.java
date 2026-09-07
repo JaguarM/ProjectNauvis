@@ -28,6 +28,11 @@ public class ElectricDrillBlock extends MinerBlock {
     }
 
     @Override
+    public int outputCell() {
+        return ElectricDrillShape.OUTPUT;
+    }
+
+    @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }

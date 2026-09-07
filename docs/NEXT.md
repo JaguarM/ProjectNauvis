@@ -80,8 +80,8 @@ missing from each is `GAPS.md`.
 | a technology's modifiers | in the tree and summed by the world: research speed shortens a lab's unit, the two inserter capacity bonuses grow hands. Any mod asks through `nauvis_lib`'s `Bonuses`; the screen lists each modifier beside the unlocks and says which do nothing yet |
 | `/research` | grant, forget, start, stop, list, info, all, reset. Gamemaster only. **Grant and forget cascade** — grant brings the prerequisites, forget takes the dependants |
 | `/oil` | `field` puts an oil field where you stand, as worldgen would; `well` puts one well under your feet. Gamemaster only. The tool for a superflat world, which runs no features |
-| `nauvis_mining:burner_mining_drill` | 2×2, five blocks; mines the 2×2 it stands on. Digs down, not across — job 1 |
-| `nauvis_mining:electric_mining_drill` | 3×3, nine blocks, mining its own 3×3; a half-block deck you walk over |
+| `nauvis_mining:burner_mining_drill` | 2×2, five blocks; takes the ore out of the ground under its 2×2 and puts it down in front of the firebox, an ore every four seconds. Wants coal and a pickaxe |
+| `nauvis_mining:electric_mining_drill` | 3×3, nine blocks on a half-block deck you walk over; mines the 5×5 around it at an ore every two seconds, 12 FE/t, three module slots. Outputs in front of its head |
 
 Power numbers keep Factorio's ratios rather than its units: one engine runs twelve first-tier
 assemblers, one boiler runs twenty-four. None of that is identity; ids, ingredients, craft times,
@@ -126,9 +126,8 @@ plant - and Factorio's arithmetic: effects add, a machine is never slower or che
 of itself, and productivity is a bar that pays out a free craft. A productivity module is
 refused unless the recipe is an intermediate product.
 
-What is left of the job is the drills. `nauvis_mining`'s three NPA modules (`speed`,
-`efficiency`, `range`) are still ids in the pack's namespace and its slots still take them and
-not ours; `range` has no counterpart at all. That is the first thing job 4 resolves. The beacon
+The drills take them too, since job 4: three slots on the electric drill, none on the burner,
+and NPA's `speed`, `efficiency` and `range` items are gone from the pack's namespace. The beacon
 is not in this job: `effect-transmission` costs production science. The pumpjack takes none
 because it has no screen to put them in; see `GAPS.md`.
 
@@ -147,42 +146,19 @@ technology, which is not in the tree yet.
 
 ### 4. Make the drills Factorio's drills
 
-**`nauvis_mining` is a fork of Neo Progressive Automation**, taken so the drills could have
-Factorio's ids: `nauvis_mining:burner_mining_drill` and `nauvis_mining:electric_mining_drill`,
-where a released mod was stuck with `burner_drill`. The fork is the ids and the wiring — the
-behaviour that came across is still Progressive Automation's, and **that is the job**. NPA is
-untouched in its own repo and stays released; nothing here changes it.
-
-What a Factorio drill does that this one does not:
-
-- **It sits on an ore patch and eats it.** Ours digs *downwards*, one block at a time — a quarry
-  rather than a drill. Factorio's takes the resource out of the tiles under it and leaves the
-  terrain alone. Crumbling Ore is already the pack's answer to a patch that runs out, and the oil
-  well is the pack's shape for a resource that is a block with a number in it — `ARCHITECTURE.md`
-  says an ore patch wants the same shape — so the three want designing together. **The area is
-  right now, and only the direction is wrong**: a drill covers exactly the ground it stands on, 2×2
-  under a burner and 3×3 under an electric. `DigArea` is where that lives and the hover outline
-  reads it, so whatever replaces the downward digging inherits both.
-- **It has no dig modes.** Ours has three on a button — ore only, clear and fill, clear — and a
-  fill slot to pay for the middle one. Both are answers to being a quarry and both go when the
-  digging does. The shovel slot is already gone.
-- **It outputs to the front, onto a belt.** Ours pushes into any container beside it. Factorio's
-  has one output tile it drops onto — which is what makes a drill-and-belt line a thing you lay
-  out rather than a chest you place.
-- **Its modules are Factorio's modules.** Ours are `speed`, `efficiency` and `range`, invented
-  for NPA. Factorio has speed, efficiency and productivity in three tiers each, they are
-  `nauvis_machines`' to own per `PLAN.md`, and `range` has no counterpart at all — a drill's area
-  is the entity's. **The three module items in `nauvis_mining` are the first thing to resolve**,
-  because they are ids in a namespace that is now the pack's.
-
-**The pickaxe slot is not on this list, and that is a decision rather than an oversight.** A
-Factorio drill carries no tools; ours wants a pickaxe and will keep wanting one, because Yannic
-likes it — a drill you have to hand a tool to reads as a Minecraft machine, and the pack is
-Factorio in Minecraft rather than Factorio ported to it. Do not put this back on the list.
-
-None of the rest is a small change, and none of it is urgent: the drills work, their tests pass,
-and their recipes and footprints are already Factorio-correct. Do it as one designed piece rather
-than four.
+**Done.** A drill stands on the ground and takes the ore out from under it: every ore block in
+its columns, from just under the machine down to the floor, mined through a `BreakBlockEvent` on
+a fake player holding the drill's pickaxe - so Crumbling Ore takes eight harvests to a block and
+protection mods can refuse it - and the ground is left standing, a spent ore becoming the rock it
+sat in. Factorio's area: the 2×2 under a burner, the 5×5 around an electric. Factorio's rate: an
+ore every four seconds and every two, shortened by speed modules and by Efficiency on the pickaxe,
+with productivity modules and `mining-productivity-1` banking a free ore. Factorio's output: the
+one block in front of the head, a belt or a chest, and the drill stops when that and its one output
+slot are full. The dig modes, the fill slot, the quarrying and NPA's three modules are gone; the
+electric drill takes three of `nauvis_machines`' modules and the burner none. It sleeps: no
+ticker, a scheduled tick while mining, and a drill that has walked its whole area goes quiet until
+its pickaxe is changed. **The pickaxe stays**, by Yannic's decision: its tier decides which ores
+the drill can take, Fortune multiplies the yield, and every ore costs a point of durability.
 
 ### 5. Military and pollution
 

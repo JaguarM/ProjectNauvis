@@ -1,0 +1,20 @@
+{
+  "name": "Mining productivity 1",
+  "order": "0050",
+  "prerequisites": [
+    "nauvis_research:advanced_circuit"
+  ],
+  "units": 250,
+  "ticks_per_unit": 1200,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2"
+  ],
+  "unlocks": [],
+  "modifiers": [
+    {
+      "type": "mining-drill-productivity-bonus",
+      "modifier": 0.1
+    }
+  ]
+}

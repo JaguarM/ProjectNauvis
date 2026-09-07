@@ -1194,5 +1194,31 @@
     "unlock_recipes": [
       "electric-engine-unit"
     ]
+  },
+  {
+    "id": "mining-productivity-1",
+    "prerequisites": [
+      "advanced-circuit"
+    ],
+    "cost": {
+      "count": 250,
+      "time_seconds": 60,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "modifiers": [
+      {
+        "type": "mining-drill-productivity-bonus",
+        "modifier": 0.1
+      }
+    ]
   }
 ]

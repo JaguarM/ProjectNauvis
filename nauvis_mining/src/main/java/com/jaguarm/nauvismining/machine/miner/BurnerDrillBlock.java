@@ -27,6 +27,11 @@ public class BurnerDrillBlock extends MinerBlock {
     }
 
     @Override
+    public int outputCell() {
+        return BurnerDrillShape.OUTPUT;
+    }
+
+    @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }

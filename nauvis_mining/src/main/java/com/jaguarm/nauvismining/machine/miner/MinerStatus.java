@@ -3,24 +3,32 @@ package com.jaguarm.nauvismining.machine.miner;
 import net.minecraft.network.chat.Component;
 
 /**
- * Why the miner is or is not running, surfaced in the GUI.
+ * Why the drill is or is not running, surfaced in the screen and the hover readout.
  *
- * <p>The original mod gave no feedback at all when a machine sat idle, which made an empty
- * fuel slot indistinguishable from a bug. Each constant maps to a translation key.
+ * <p>A machine that sits idle without saying why is indistinguishable from a bug. Each constant
+ * maps to a translation key.
  */
 public enum MinerStatus {
     /**
-     * Ordinal 0 deliberately. ContainerData starts zeroed on the client, so whatever sits
-     * first is what an unsynced screen shows; that must not be a state that claims the
-     * machine is working.
+     * Ordinal 0 deliberately. ContainerData starts zeroed on the client, so whatever sits first
+     * is what an unsynced screen shows; that must not be a state that claims the machine is
+     * working.
      */
     IDLE("idle"),
-    RUNNING("running"),
-    NO_FUEL("no_fuel"),
-    NO_ENERGY("no_energy"),
+    /** Taking ore out of the ground. */
+    MINING("mining"),
+    /** Walking its columns for the next ore, which it does with a budget rather than all at once. */
+    SEARCHING("searching"),
+    /** The pickaxe slot is empty. */
     NO_PICKAXE("no_pickaxe"),
-    NO_COBBLE("no_cobble"),
-    COMPLETE("complete");
+    /** A burner with nothing to burn. */
+    NO_FUEL("no_fuel"),
+    /** An electric drill with an empty buffer. */
+    NO_POWER("no_power"),
+    /** What it mined has nowhere to go: the output slot is full and nothing in front takes it. */
+    OUTPUT_FULL("output_full"),
+    /** Factorio's "no minable resources": nothing under it that this pickaxe can mine. */
+    NO_ORE("no_ore");
 
     private final String key;
 

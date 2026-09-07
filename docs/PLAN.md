@@ -290,9 +290,9 @@ built and gated behind blue science.
 
 `pumpjack`, `oil-refinery`, `chemical-plant`, `empty-barrel`, `storage-tank`,
 `plastic-bar`, `advanced-circuit`, `engine-unit`, `science-pack-3`, `electric-mining-drill`.
-Every one of them exists, and the assembling machine 2 grew the fluid box that the barrels and
-the electric engine unit needed; what is left of the milestone is the drills becoming
-Factorio's drills, which is `NEXT.md`'s job 4.
+Every one of them exists, the assembling machine 2 grew the fluid box that the barrels and the
+electric engine unit needed, and the drills are Factorio's drills: they take the ore out of the
+ground under them and put it down in front of themselves.
 
 **The pumpjack and the oil well are done**, and the well is the piece nobody had a shape for: a
 resource *block* — unbreakable ground holding Factorio's resource amount — rather than a fluid in
@@ -328,7 +328,7 @@ Shortcuts, and what they defer
 | Belt | BlockEntity per block passing items along | transport lines, items at positions |
 | Power | FE per machine — burner generator, solar, FE-battery accumulator | unchanged; FE *is* the chosen model |
 | Poles | FE cables with a wide connection radius | unchanged |
-| Research | ~~lab consumes packs, grants vanilla advancements~~ **rejected — advancements are per player and research belongs to the world.** Shipped instead: the real model, on a `SavedData`, drawn as Factorio's own screen — a list, one technology's neighbourhood, pan and zoom | the modifiers — research speed, mining speed, damage — which are transcribed and dropped |
+| Research | ~~lab consumes packs, grants vanilla advancements~~ **rejected — advancements are per player and research belongs to the world.** Shipped instead: the real model, on a `SavedData`, drawn as Factorio's own screen — a list, one technology's neighbourhood, pan and zoom | the damage modifiers, transcribed and not yet read; research speed, hand sizes and mining productivity reach their machines through `nauvis_lib`'s `Bonuses` |
 | Oil | ~~barrels as items, no pipes at all~~ **superseded — the pipe network came with steam, and the well and pumpjack are the real ones.** One tank per run, no flow model | segments and throughput, if ever |
 | Biters | vanilla hostiles + per-chunk pollution raising spawn rate near the factory | nests, expansion, evolution factor |
 | Rocket | silo consumes 100 rocket parts, plays a launch, grants the advancement | satellite, cargo, space science loop |

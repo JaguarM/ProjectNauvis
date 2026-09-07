@@ -127,9 +127,8 @@ public final class NauvisMiningData {
          *
          * <p>{@code ModelProvider} checks that every block and item it is told about came out with
          * a model, and refuses to finish if one did not - which is the check that would have
-         * caught half the visual bugs this mod ever had. Left at its default it would also demand
-         * models for the three module items, whose hand-written ones are perfectly good and have
-         * no geometry worth generating. So it is told what it is responsible for.
+         * caught half the visual bugs this mod ever had. So it is told exactly what it is
+         * responsible for.
          */
         @Override
         protected Stream<? extends Holder<Block>> getKnownBlocks() {

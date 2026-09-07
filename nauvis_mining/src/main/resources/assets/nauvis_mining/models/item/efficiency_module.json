@@ -1,4 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": { "layer0": "nauvis_mining:item/efficiency_module" }
-}
