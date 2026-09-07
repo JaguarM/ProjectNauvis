@@ -1,0 +1,775 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis - Client",
+      "presentation": {
+        "group": "Mod Development - nauvis",
+        "order": 0
+      },
+      "projectName": "nauvis",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\build\\moddev\\clientRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis - ClientData",
+      "presentation": {
+        "group": "Mod Development - nauvis",
+        "order": 1
+      },
+      "projectName": "nauvis",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\build\\moddev\\clientDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\build\\moddev\\clientDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis - GameTestServer",
+      "presentation": {
+        "group": "Mod Development - nauvis",
+        "order": 2
+      },
+      "projectName": "nauvis",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\build\\moddev\\gameTestServerRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\build\\moddev\\gameTestServerRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis - Server",
+      "presentation": {
+        "group": "Mod Development - nauvis",
+        "order": 3
+      },
+      "projectName": "nauvis",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\build\\moddev\\serverRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis - ServerData",
+      "presentation": {
+        "group": "Mod Development - nauvis",
+        "order": 4
+      },
+      "projectName": "nauvis",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\build\\moddev\\serverDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\build\\moddev\\serverDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_fluids - Client",
+      "presentation": {
+        "group": "Mod Development - nauvis_fluids",
+        "order": 0
+      },
+      "projectName": "nauvis_fluids",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\build\\moddev\\clientRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_fluids%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_fluids\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_fluids - ClientData",
+      "presentation": {
+        "group": "Mod Development - nauvis_fluids",
+        "order": 1
+      },
+      "projectName": "nauvis_fluids",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\build\\moddev\\clientDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\build\\moddev\\clientDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_fluids%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_fluids\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_fluids - GameTestServer",
+      "presentation": {
+        "group": "Mod Development - nauvis_fluids",
+        "order": 2
+      },
+      "projectName": "nauvis_fluids",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\build\\moddev\\gameTestServerRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\build\\moddev\\gameTestServerRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_fluids%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_fluids\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_fluids - Server",
+      "presentation": {
+        "group": "Mod Development - nauvis_fluids",
+        "order": 3
+      },
+      "projectName": "nauvis_fluids",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\build\\moddev\\serverRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_fluids%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_fluids\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_fluids - ServerData",
+      "presentation": {
+        "group": "Mod Development - nauvis_fluids",
+        "order": 4
+      },
+      "projectName": "nauvis_fluids",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\build\\moddev\\serverDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\build\\moddev\\serverDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_fluids%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_fluids\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_fluids\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_logistics - Client",
+      "presentation": {
+        "group": "Mod Development - nauvis_logistics",
+        "order": 0
+      },
+      "projectName": "nauvis_logistics",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\build\\moddev\\clientRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_logistics%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_logistics\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_logistics - ClientData",
+      "presentation": {
+        "group": "Mod Development - nauvis_logistics",
+        "order": 1
+      },
+      "projectName": "nauvis_logistics",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\build\\moddev\\clientDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\build\\moddev\\clientDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_logistics%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_logistics\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_logistics - GameTestServer",
+      "presentation": {
+        "group": "Mod Development - nauvis_logistics",
+        "order": 2
+      },
+      "projectName": "nauvis_logistics",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\build\\moddev\\gameTestServerRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\build\\moddev\\gameTestServerRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_logistics%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_logistics\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_logistics - Server",
+      "presentation": {
+        "group": "Mod Development - nauvis_logistics",
+        "order": 3
+      },
+      "projectName": "nauvis_logistics",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\build\\moddev\\serverRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_logistics%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_logistics\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_logistics - ServerData",
+      "presentation": {
+        "group": "Mod Development - nauvis_logistics",
+        "order": 4
+      },
+      "projectName": "nauvis_logistics",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\build\\moddev\\serverDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\build\\moddev\\serverDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_logistics%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_logistics\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_logistics\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_machines - Client",
+      "presentation": {
+        "group": "Mod Development - nauvis_machines",
+        "order": 0
+      },
+      "projectName": "nauvis_machines",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\build\\moddev\\clientRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_machines%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_machines\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_machines - ClientData",
+      "presentation": {
+        "group": "Mod Development - nauvis_machines",
+        "order": 1
+      },
+      "projectName": "nauvis_machines",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\build\\moddev\\clientDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\build\\moddev\\clientDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_machines%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_machines\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_machines - GameTestServer",
+      "presentation": {
+        "group": "Mod Development - nauvis_machines",
+        "order": 2
+      },
+      "projectName": "nauvis_machines",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\build\\moddev\\gameTestServerRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\build\\moddev\\gameTestServerRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_machines%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_machines\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_machines - Server",
+      "presentation": {
+        "group": "Mod Development - nauvis_machines",
+        "order": 3
+      },
+      "projectName": "nauvis_machines",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\build\\moddev\\serverRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_machines%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_machines\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_machines - ServerData",
+      "presentation": {
+        "group": "Mod Development - nauvis_machines",
+        "order": 4
+      },
+      "projectName": "nauvis_machines",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\build\\moddev\\serverDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\build\\moddev\\serverDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_machines%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_machines\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_machines\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_mining - Client",
+      "presentation": {
+        "group": "Mod Development - nauvis_mining",
+        "order": 0
+      },
+      "projectName": "nauvis_mining",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\build\\moddev\\clientRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_mining%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_mining\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_mining - ClientData",
+      "presentation": {
+        "group": "Mod Development - nauvis_mining",
+        "order": 1
+      },
+      "projectName": "nauvis_mining",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\build\\moddev\\clientDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\build\\moddev\\clientDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_mining%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_mining\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_mining - GameTestServer",
+      "presentation": {
+        "group": "Mod Development - nauvis_mining",
+        "order": 2
+      },
+      "projectName": "nauvis_mining",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\build\\moddev\\gameTestServerRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\build\\moddev\\gameTestServerRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_mining%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_mining\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_mining - Server",
+      "presentation": {
+        "group": "Mod Development - nauvis_mining",
+        "order": 3
+      },
+      "projectName": "nauvis_mining",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\build\\moddev\\serverRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_mining%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_mining\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_mining - ServerData",
+      "presentation": {
+        "group": "Mod Development - nauvis_mining",
+        "order": 4
+      },
+      "projectName": "nauvis_mining",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\build\\moddev\\serverDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\build\\moddev\\serverDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_mining%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_mining\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_mining\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_power - Client",
+      "presentation": {
+        "group": "Mod Development - nauvis_power",
+        "order": 0
+      },
+      "projectName": "nauvis_power",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\build\\moddev\\clientRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_power%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_power\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_power - ClientData",
+      "presentation": {
+        "group": "Mod Development - nauvis_power",
+        "order": 1
+      },
+      "projectName": "nauvis_power",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\build\\moddev\\clientDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\build\\moddev\\clientDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_power%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_power\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_power - GameTestServer",
+      "presentation": {
+        "group": "Mod Development - nauvis_power",
+        "order": 2
+      },
+      "projectName": "nauvis_power",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\build\\moddev\\gameTestServerRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\build\\moddev\\gameTestServerRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_power%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_power\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_power - Server",
+      "presentation": {
+        "group": "Mod Development - nauvis_power",
+        "order": 3
+      },
+      "projectName": "nauvis_power",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\build\\moddev\\serverRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_power%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_power\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_power - ServerData",
+      "presentation": {
+        "group": "Mod Development - nauvis_power",
+        "order": 4
+      },
+      "projectName": "nauvis_power",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\build\\moddev\\serverDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\build\\moddev\\serverDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_power%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_power\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_power\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_research - Client",
+      "presentation": {
+        "group": "Mod Development - nauvis_research",
+        "order": 0
+      },
+      "projectName": "nauvis_research",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\build\\moddev\\clientRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_research%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_research\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_research - ClientData",
+      "presentation": {
+        "group": "Mod Development - nauvis_research",
+        "order": 1
+      },
+      "projectName": "nauvis_research",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\build\\moddev\\clientDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\build\\moddev\\clientDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_research%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_research\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_research - GameTestServer",
+      "presentation": {
+        "group": "Mod Development - nauvis_research",
+        "order": 2
+      },
+      "projectName": "nauvis_research",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\build\\moddev\\gameTestServerRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\build\\moddev\\gameTestServerRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_research%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_research\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_research - Server",
+      "presentation": {
+        "group": "Mod Development - nauvis_research",
+        "order": 3
+      },
+      "projectName": "nauvis_research",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\build\\moddev\\serverRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_research%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_research\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "nauvis_research - ServerData",
+      "presentation": {
+        "group": "Mod Development - nauvis_research",
+        "order": 4
+      },
+      "projectName": "nauvis_research",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\build\\moddev\\serverDataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\build\\moddev\\serverDataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dnauvis_research%%C:\\Users\\yanni\\IdeaProjects\\ProjectNauvis\\nauvis_research\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\nauvis_research\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    }
+  ]
+}

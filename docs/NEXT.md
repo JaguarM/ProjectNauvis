@@ -206,24 +206,6 @@ Yannic played the military build on 2026-09-07 and named three things for later,
 Fixed from the same look: the guns are held like swords rather than cards, the three circuits
 are one board in three colours, and magazines stack.
 
-Loose ends — small enough to finish in an afternoon
----------------------------------------------------
-
-- **`MachineParts` wants refinement** so the machines read as one family. Yannic has said so, and
-  it is one file now, in `nauvis_lib`. Left for eyes: what "one family" wants is a look at a row
-  of them in a world, and a render of one machine at a time does not show it.
-- **The pumpjack's pump is two blocks tall now**: the post in one cell and the beam, the horse
-  head and the counterweight rocking on it in a cell appended above. It was one block and read as
-  a small box; `render_model.py` shows a nodding donkey. A boot decides whether it is tall enough.
-- **The furnace's fire was judged by render**: the lava-mouthed stack on the corner reads as a
-  chimney on a furnace from the item slot's angle. Whether it does in a world is still a boot's
-  question; the boxes are in `FurnaceShape` and `ElectricFurnaceShape`.
-- **Facrafting's panel draws vanilla's slot sprite under every recipe** now, the way every
-  machine screen draws a slot, so nothing on a screen is painted paint. Whether the selected and
-  the uncraftable tints read on top of the sprite is for eyes.
-- **The pumpjack has a screen**: two module slots, the charge, the cycle and the tank. Factorio's
-  has none, but Factorio's module slots are on the entity's panel, and a slot here needs somewhere
-  to be. Mining productivity research reaches it too.
 
 The playtest
 ------------
