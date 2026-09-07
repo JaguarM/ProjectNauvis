@@ -5,6 +5,7 @@ import com.jaguarm.nauvislib.pack.BenchRecipePacks;
 import com.jaguarm.facrafting.machine.MachineCategories;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlock;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlockEntity;
+import com.jaguarm.nauvismachines.machine.radar.RadarChunks;
 import com.jaguarm.nauvismachines.registry.ModBlockEntities;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
 import com.jaguarm.nauvismachines.registry.ModItems;
@@ -38,6 +39,8 @@ public class NauvisMachines {
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
         modEventBus.addListener((AddPackFindersEvent event) -> BenchRecipePacks.add(event, MODID));
+        // The radar's chunk tickets. A controller nobody registers has every ticket it holds dropped.
+        modEventBus.addListener(RadarChunks::register);
         NauvisMachinesGameTests.register(modEventBus);
         NauvisMachinesFurnaceGameTests.register(modEventBus);
 

@@ -37,6 +37,19 @@ public class ModuleItem extends Item implements Module {
     /** Productivity module 1: +4% productivity, -5% speed, +40% energy. */
     public static final ModuleEffect PRODUCTIVITY = new ModuleEffect(-0.05, 0.4, 0.04);
 
+    /**
+     * The second and third tiers, at Factorio 2.0's numbers like the first: a speed module 2 is
+     * +30% for +60%, a 3 is +50% for +70%; efficiency 2 and 3 are -40% and -50%; productivity 2
+     * is +6% for -10% speed and +70% power, productivity 3 is +10% for -15% and +80%. Each tier is
+     * paid for in the one below it, so the numbers climb and the cost climbs faster.
+     */
+    public static final ModuleEffect SPEED_2 = new ModuleEffect(0.3, 0.6, 0);
+    public static final ModuleEffect SPEED_3 = new ModuleEffect(0.5, 0.7, 0);
+    public static final ModuleEffect EFFICIENCY_2 = new ModuleEffect(0, -0.4, 0);
+    public static final ModuleEffect EFFICIENCY_3 = new ModuleEffect(0, -0.5, 0);
+    public static final ModuleEffect PRODUCTIVITY_2 = new ModuleEffect(-0.10, 0.7, 0.06);
+    public static final ModuleEffect PRODUCTIVITY_3 = new ModuleEffect(-0.15, 0.8, 0.10);
+
     private final ModuleEffect effect;
 
     public ModuleItem(Properties properties, ModuleEffect effect) {

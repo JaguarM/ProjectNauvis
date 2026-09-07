@@ -7,6 +7,7 @@ import com.jaguarm.nauvismachines.machine.furnace.ElectricFurnaceBlock;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlock;
 import com.jaguarm.nauvismachines.machine.furnace.SteelFurnaceBlock;
 import com.jaguarm.nauvismachines.machine.furnace.StoneFurnaceBlock;
+import com.jaguarm.nauvismachines.machine.radar.RadarBlock;
 
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.MapColor;
@@ -77,6 +78,19 @@ public final class ModBlocks {
                     .strength(3.0F, 6.0F)
                     .sound(SoundType.METAL)
                     .lightLevel(FurnaceBlock::lightLevel)
+                    .requiresCorrectToolForDrops());
+
+    /**
+     * The radar: three by three on the grid, keeping the chunks around it loaded. Five circuits,
+     * five gears and ten iron plates, behind its own technology and red science.
+     */
+    public static final DeferredBlock<RadarBlock> RADAR = BLOCKS.registerBlock(
+            "radar",
+            RadarBlock::new,
+            properties -> properties
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)
                     .requiresCorrectToolForDrops());
 
     private ModBlocks() {}

@@ -12,6 +12,7 @@ import com.jaguarm.nauvismachines.machine.assembler.AssemblingMachine2Shape;
 import com.jaguarm.nauvismachines.machine.furnace.ElectricFurnaceShape;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlock;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceShape;
+import com.jaguarm.nauvismachines.machine.radar.RadarShape;
 import com.jaguarm.nauvislib.multiblock.Boxes;
 import com.jaguarm.nauvislib.multiblock.MachineCell;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
@@ -85,11 +86,11 @@ public class NauvisMachinesModels extends ModelProvider {
 
     @Override
     protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels) {
-        // The three modules, on art of their own from texture-workshop/make_module_textures.py:
-        // one chip in Factorio's three colours.
-        itemModels.generateFlatItem(ModItems.SPEED_MODULE.get(), ModelTemplates.FLAT_ITEM);
-        itemModels.generateFlatItem(ModItems.EFFECTIVITY_MODULE.get(), ModelTemplates.FLAT_ITEM);
-        itemModels.generateFlatItem(ModItems.PRODUCTIVITY_MODULE.get(), ModelTemplates.FLAT_ITEM);
+        // The nine modules, on art of their own from texture-workshop/make_module_textures.py:
+        // one chip in Factorio's three colours, with a stripe for each tier above the first.
+        for (var module : ModItems.modules()) {
+            itemModels.generateFlatItem(module.get(), ModelTemplates.FLAT_ITEM);
+        }
 
         Identifier blastSide = TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_side").sprite();
         Identifier metalTop = TextureMapping.getBlockTexture(Blocks.BLAST_FURNACE, "_top").sprite();
@@ -124,6 +125,11 @@ public class NauvisMachinesModels extends ModelProvider {
                 new Look(new Textures(deepslate, deepslate, deepslate),
                         Map.of(ElectricFurnaceShape.HOOD, new Textures(iron, iron, iron)),
                         Map.of(ElectricFurnaceShape.HOOD, new Textures(iron, lava, iron))), true);
+
+        // The radar: an iron casing with the dish in the darker metal of its mast.
+        machine(blockModels, ModBlocks.RADAR.get(), RadarShape.SHAPE,
+                new Look(new Textures(iron, iron, iron),
+                        Map.of(RadarShape.DISH, new Textures(deepslate, iron, deepslate)), Map.of()), false);
     }
 
     /** The three texture slots every model here has. */

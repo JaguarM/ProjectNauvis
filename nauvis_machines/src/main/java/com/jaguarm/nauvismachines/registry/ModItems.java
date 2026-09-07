@@ -37,6 +37,8 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> ELECTRIC_FURNACE =
             ITEMS.registerSimpleBlockItem(ModBlocks.ELECTRIC_FURNACE);
 
+    public static final DeferredItem<BlockItem> RADAR = ITEMS.registerSimpleBlockItem(ModBlocks.RADAR);
+
     /**
      * The three first-tier modules, Factorio's colours and Factorio 2.0's numbers. The ids are the
      * dump's - {@code effectivity_module}, which Factorio has since renamed to efficiency - and
@@ -50,6 +52,37 @@ public final class ModItems {
 
     public static final DeferredItem<ModuleItem> PRODUCTIVITY_MODULE = ITEMS.registerItem("productivity_module",
             properties -> new ModuleItem(properties, ModuleItem.PRODUCTIVITY));
+
+    /**
+     * The second and third tiers, the same chip with a stripe for each tier. Each costs five
+     * advanced circuits, five processing units and modules of the tier below - four for a 2,
+     * five for a 3 - and the third tier of each ladder is what the rocket silo's technology
+     * needs, which is why they exist before the beacon does.
+     */
+    public static final DeferredItem<ModuleItem> SPEED_MODULE_2 = ITEMS.registerItem("speed_module_2",
+            properties -> new ModuleItem(properties, ModuleItem.SPEED_2));
+
+    public static final DeferredItem<ModuleItem> SPEED_MODULE_3 = ITEMS.registerItem("speed_module_3",
+            properties -> new ModuleItem(properties, ModuleItem.SPEED_3));
+
+    public static final DeferredItem<ModuleItem> EFFECTIVITY_MODULE_2 = ITEMS.registerItem("effectivity_module_2",
+            properties -> new ModuleItem(properties, ModuleItem.EFFICIENCY_2));
+
+    public static final DeferredItem<ModuleItem> EFFECTIVITY_MODULE_3 = ITEMS.registerItem("effectivity_module_3",
+            properties -> new ModuleItem(properties, ModuleItem.EFFICIENCY_3));
+
+    public static final DeferredItem<ModuleItem> PRODUCTIVITY_MODULE_2 = ITEMS.registerItem("productivity_module_2",
+            properties -> new ModuleItem(properties, ModuleItem.PRODUCTIVITY_2));
+
+    public static final DeferredItem<ModuleItem> PRODUCTIVITY_MODULE_3 = ITEMS.registerItem("productivity_module_3",
+            properties -> new ModuleItem(properties, ModuleItem.PRODUCTIVITY_3));
+
+    /** Every module, first tier to third, for the model provider and the tab. */
+    public static List<DeferredItem<ModuleItem>> modules() {
+        return List.of(SPEED_MODULE, EFFECTIVITY_MODULE, PRODUCTIVITY_MODULE,
+                SPEED_MODULE_2, EFFECTIVITY_MODULE_2, PRODUCTIVITY_MODULE_2,
+                SPEED_MODULE_3, EFFECTIVITY_MODULE_3, PRODUCTIVITY_MODULE_3);
+    }
 
     /**
      * Its own tab, rather than one shared with the pack mod. A subsystem mod has to be usable
@@ -66,9 +99,8 @@ public final class ModItems {
                         output.accept(ELECTRIC_FURNACE.get());
                         output.accept(ASSEMBLING_MACHINE_1.get());
                         output.accept(ASSEMBLING_MACHINE_2.get());
-                        output.accept(SPEED_MODULE.get());
-                        output.accept(EFFECTIVITY_MODULE.get());
-                        output.accept(PRODUCTIVITY_MODULE.get());
+                        output.accept(RADAR.get());
+                        modules().forEach(module -> output.accept(module.get()));
                     })
                     .build());
 

@@ -64,6 +64,21 @@ public final class ModItems {
      */
     public static final DeferredItem<Item> MILITARY_SCIENCE_PACK = ITEMS.registerSimpleItem("military_science_pack");
 
+    /**
+     * Production science: an electric engine unit and an electric furnace make two, in fourteen
+     * seconds - the dump's recipe, from before the pack wanted rails. The first of the two packs
+     * the rocket silo's thousand units are paid for in beyond blue.
+     */
+    public static final DeferredItem<Item> PRODUCTION_SCIENCE_PACK = ITEMS.registerSimpleItem("production_science_pack");
+
+    /**
+     * High tech science, which Factorio has since renamed utility science: a battery, thirty
+     * copper cable, three processing units and a speed module make two, in fourteen seconds.
+     * The dump's id, like the rest; the display name is the dump's too, because "utility" would
+     * be a name for a different recipe.
+     */
+    public static final DeferredItem<Item> HIGH_TECH_SCIENCE_PACK = ITEMS.registerSimpleItem("high_tech_science_pack");
+
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
             "nauvis_research",
             () -> CreativeModeTab.builder()
@@ -75,6 +90,8 @@ public final class ModItems {
                         output.accept(SCIENCE_PACK_2.get());
                         output.accept(SCIENCE_PACK_3.get());
                         output.accept(MILITARY_SCIENCE_PACK.get());
+                        output.accept(PRODUCTION_SCIENCE_PACK.get());
+                        output.accept(HIGH_TECH_SCIENCE_PACK.get());
                     })
                     .build());
 

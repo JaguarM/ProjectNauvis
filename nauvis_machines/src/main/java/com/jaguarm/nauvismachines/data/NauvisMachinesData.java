@@ -8,6 +8,7 @@ import com.jaguarm.nauvismachines.NauvisMachines;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
 import com.jaguarm.nauvismachines.machine.furnace.ElectricFurnaceShape;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceShape;
+import com.jaguarm.nauvismachines.machine.radar.RadarShape;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
 import com.jaguarm.nauvismachines.registry.ModItems;
@@ -109,9 +110,16 @@ public final class NauvisMachinesData {
             addBlock(ModBlocks.STONE_FURNACE, "Stone furnace");
             addBlock(ModBlocks.STEEL_FURNACE, "Steel furnace");
             addBlock(ModBlocks.ELECTRIC_FURNACE, "Electric furnace");
+            addBlock(ModBlocks.RADAR, "Radar");
             addItem(ModItems.SPEED_MODULE, "Speed module");
             addItem(ModItems.EFFECTIVITY_MODULE, "Efficiency module");
             addItem(ModItems.PRODUCTIVITY_MODULE, "Productivity module");
+            addItem(ModItems.SPEED_MODULE_2, "Speed module 2");
+            addItem(ModItems.SPEED_MODULE_3, "Speed module 3");
+            addItem(ModItems.EFFECTIVITY_MODULE_2, "Efficiency module 2");
+            addItem(ModItems.EFFECTIVITY_MODULE_3, "Efficiency module 3");
+            addItem(ModItems.PRODUCTIVITY_MODULE_2, "Productivity module 2");
+            addItem(ModItems.PRODUCTIVITY_MODULE_3, "Productivity module 3");
             // A module's tooltip: one line per effect that is not zero, in Factorio's words.
             add("tooltip.nauvis_machines.module.speed", "Speed %s");
             add("tooltip.nauvis_machines.module.energy", "Energy consumption %s");
@@ -147,6 +155,9 @@ public final class NauvisMachinesData {
             // one too.
             add("config.jade.plugin_nauvis_machines", "Project Nauvis: Machines");
             add("config.jade.plugin_nauvis_machines.furnace", "Furnace");
+            add("config.jade.plugin_nauvis_machines.radar", "Radar");
+            add("jade.nauvis_machines.radar.charting", "Keeping %s x %s chunks loaded");
+            add("jade.nauvis_machines.radar.no_power", "No power - run a wire to it");
         }
     }
 
@@ -176,6 +187,7 @@ public final class NauvisMachinesData {
             add(ModBlocks.STEEL_FURNACE.get(), anchorOnly(ModBlocks.STEEL_FURNACE.get(), FurnaceShape.SHAPE));
             add(ModBlocks.ELECTRIC_FURNACE.get(), anchorOnly(ModBlocks.ELECTRIC_FURNACE.get(),
                     ElectricFurnaceShape.SHAPE));
+            add(ModBlocks.RADAR.get(), anchorOnly(ModBlocks.RADAR.get(), RadarShape.SHAPE));
         }
 
         /**

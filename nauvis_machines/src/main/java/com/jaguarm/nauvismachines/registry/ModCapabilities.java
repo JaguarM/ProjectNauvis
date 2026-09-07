@@ -7,6 +7,7 @@ import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlock;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlockEntity;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblingMachine2Shape;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlockEntity;
+import com.jaguarm.nauvismachines.machine.radar.RadarBlockEntity;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
 
 import org.jspecify.annotations.Nullable;
@@ -66,6 +67,10 @@ public final class ModCapabilities {
                 ModBlocks.STONE_FURNACE.get(), ModBlocks.STEEL_FURNACE.get(), ModBlocks.ELECTRIC_FURNACE.get());
         anywhere(event, Capabilities.Energy.BLOCK, FurnaceBlockEntity.class, FurnaceBlockEntity::gridView,
                 ModBlocks.ELECTRIC_FURNACE.get());
+
+        // A radar takes power and nothing else: no items in, none out.
+        anywhere(event, Capabilities.Energy.BLOCK, RadarBlockEntity.class, RadarBlockEntity::gridView,
+                ModBlocks.RADAR.get());
 
         // The second machine's fluid boxes, at the two faces its shape names and nowhere else: a
         // pipe on the north edge fills the input, one on the south edge drains the output, and a

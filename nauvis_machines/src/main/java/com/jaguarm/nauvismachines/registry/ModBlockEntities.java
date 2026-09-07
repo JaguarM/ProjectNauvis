@@ -3,6 +3,7 @@ package com.jaguarm.nauvismachines.registry;
 import com.jaguarm.nauvismachines.NauvisMachines;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlockEntity;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlockEntity;
+import com.jaguarm.nauvismachines.machine.radar.RadarBlockEntity;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -35,6 +36,10 @@ public final class ModBlockEntities {
                             ModBlocks.STONE_FURNACE.get(),
                             ModBlocks.STEEL_FURNACE.get(),
                             ModBlocks.ELECTRIC_FURNACE.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<RadarBlockEntity>> RADAR =
+            BLOCK_ENTITIES.register("radar",
+                    () -> new BlockEntityType<>(RadarBlockEntity::new, ModBlocks.RADAR.get()));
 
     private ModBlockEntities() {}
 }

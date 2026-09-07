@@ -12,6 +12,8 @@ import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlockEntity;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerMenu;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblerShape;
 import com.jaguarm.nauvismachines.machine.assembler.AssemblingMachine2Shape;
+import com.jaguarm.nauvismachines.machine.radar.RadarBlockEntity;
+import net.neoforged.neoforge.common.world.chunk.ForcedChunkManager;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
@@ -106,6 +108,8 @@ public final class NauvisMachinesGameTests {
 
     static {
         TEST_TYPES.register("assembler_places", () -> AssemblerPlacesTest.CODEC);
+        TEST_TYPES.register("a_radar_keeps_its_chunks_loaded", () -> RadarChartsTest.CODEC);
+        TEST_TYPES.register("a_radar_without_power_sleeps", () -> RadarSleepsTest.CODEC);
         TEST_TYPES.register("assembler_holds_items", () -> AssemblerHoldsItemsTest.CODEC);
         TEST_TYPES.register("assembler_crafts", () -> AssemblerCraftsTest.CODEC);
         TEST_TYPES.register("assembling_machine_2_is_faster", () -> AssemblingMachine2IsFasterTest.CODEC);
@@ -179,6 +183,8 @@ public final class NauvisMachinesGameTests {
                 AssemblerFedFromAnyCellTest::new, 20);
         register(event, environment, "assemblers_tile_walkably",
                 AssemblersTileWalkablyTest::new, 20);
+        register(event, environment, "a_radar_keeps_its_chunks_loaded", RadarChartsTest::new, 60);
+        register(event, environment, "a_radar_without_power_sleeps", RadarSleepsTest::new, 40);
     }
 
     private interface TestFactory {
@@ -1660,6 +1666,92 @@ public final class NauvisMachinesGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("assembling machine 2 fills and empties a barrel");
+        }
+    }
+
+    /**
+     * A radar with power holds tickets on the chunks around it, and lets them go when it is
+     * broken. The assertion is NeoForge's own count of forced chunks, which no other test here
+     * touches: it is false before the radar ticks, true once it has, and false again after the
+     * radar is gone - which is what stops a test world keeping forty-nine chunks alive for ever.
+     */
+    public static class RadarChartsTest extends GameTestInstance {
+
+        public static final MapCodec<RadarChartsTest> CODEC = RecordCodecBuilder.<RadarChartsTest>mapCodec(
+                i -> i.group(TestData.CODEC.forGetter(RadarChartsTest::info)).apply(i, RadarChartsTest::new));
+
+        public RadarChartsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            helper.assertFalse(ForcedChunkManager.hasForcedChunks(helper.getLevel()),
+                    "something is forcing chunks before the radar exists");
+            Multiblock.place(ModBlocks.RADAR.get(), helper.getLevel(), helper.absolutePos(MACHINE),
+                    ModBlocks.RADAR.get().defaultBlockState());
+            RadarBlockEntity radar = helper.getBlockEntity(MACHINE, RadarBlockEntity.class);
+            try (Transaction transaction = Transaction.openRoot()) {
+                radar.gridView().insert(RadarBlockEntity.ENERGY_CAPACITY, transaction);
+                transaction.commit();
+            }
+            helper.runAfterDelay(5, () -> {
+                helper.assertTrue(radar.isCharting(), "a powered radar is not charting");
+                helper.assertTrue(ForcedChunkManager.hasForcedChunks(helper.getLevel()),
+                        "a charting radar holds no chunk tickets");
+                helper.assertTrue(radar.energyStored() < RadarBlockEntity.ENERGY_CAPACITY,
+                        "the radar charted without spending anything");
+                helper.destroyBlock(MACHINE);
+            });
+            helper.runAfterDelay(10, () -> {
+                helper.assertFalse(ForcedChunkManager.hasForcedChunks(helper.getLevel()),
+                        "a broken radar left its chunk tickets behind");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a radar keeps its chunks loaded");
+        }
+    }
+
+    /** A radar with nothing in its buffer holds no tickets and schedules nothing: non-negotiable #5. */
+    public static class RadarSleepsTest extends GameTestInstance {
+
+        public static final MapCodec<RadarSleepsTest> CODEC = RecordCodecBuilder.<RadarSleepsTest>mapCodec(
+                i -> i.group(TestData.CODEC.forGetter(RadarSleepsTest::info)).apply(i, RadarSleepsTest::new));
+
+        public RadarSleepsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            Multiblock.place(ModBlocks.RADAR.get(), helper.getLevel(), helper.absolutePos(MACHINE),
+                    ModBlocks.RADAR.get().defaultBlockState());
+            RadarBlockEntity radar = helper.getBlockEntity(MACHINE, RadarBlockEntity.class);
+            helper.runAfterDelay(10, () -> {
+                helper.assertFalse(radar.isCharting(), "an unpowered radar is charting");
+                helper.assertFalse(helper.getLevel().getBlockTicks().hasScheduledTick(
+                        helper.absolutePos(MACHINE), ModBlocks.RADAR.get()), "an unpowered radar is still ticking");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a radar without power sleeps");
         }
     }
 }

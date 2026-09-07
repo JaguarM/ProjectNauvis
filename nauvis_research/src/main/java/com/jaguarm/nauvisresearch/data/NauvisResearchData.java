@@ -107,11 +107,15 @@ public final class NauvisResearchData {
             addItem(ModItems.SCIENCE_PACK_2, "Logistic science pack");
             addItem(ModItems.SCIENCE_PACK_3, "Chemical science pack");
             addItem(ModItems.MILITARY_SCIENCE_PACK, "Military science pack");
+            addItem(ModItems.PRODUCTION_SCIENCE_PACK, "Production science pack");
+            addItem(ModItems.HIGH_TECH_SCIENCE_PACK, "High tech science pack");
 
             // Two technology names the generator's rule gets wrong, because the pack speaks the
             // dump's pre-1.0 ids: Factorio calls these Efficiency module and Bulk inserter now.
             // The item is still "Stack inserter" here, so the technology says the same.
             add("technology.nauvis_research.effectivity_module", "Efficiency module");
+            add("technology.nauvis_research.effectivity_module_2", "Efficiency module 2");
+            add("technology.nauvis_research.effectivity_module_3", "Efficiency module 3");
 
                         // "skips research" is not a caveat, it is the point of the pack and has to be on the
             // label. The technology tree gates crafting through Facrafting's panel, which is the

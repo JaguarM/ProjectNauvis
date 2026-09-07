@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "combat",
+  "order": "0223",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:electronic_circuit",
+      "count": 5
+    },
+    {
+      "ingredient": "neoprogressivematerials:iron_gear_wheel",
+      "count": 5
+    },
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 10
+    }
+  ],
+  "result": {
+    "id": "nauvis_machines:radar",
+    "count": 1
+  }
+}

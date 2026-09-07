@@ -51,6 +51,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.fluids.FluidStackTemplate;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
@@ -137,7 +138,15 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
     private final int energyPerTick;
     private final double pollutionPerMinute;
 
-    private final AssemblerInventory inventory = new AssemblerInventory(SLOT_COUNT, this::onInventoryChanged);
+    private final AssemblerInventory inventory =
+            new AssemblerInventory(SLOT_COUNT, this::onInventoryChanged, this::wanted);
+
+    /**
+     * The chosen recipe's ingredients, kept so an input slot can say how much it holds without
+     * resolving a recipe key on every capacity query - hoppers and inserters ask often. Null
+     * until the recipe is resolved, which for a machine loaded from disk is its first tick.
+     */
+    private @Nullable List<SizedIngredient> wantedIngredients;
 
     /**
      * The tier's module slots - none on the first machine - and the free craft they work towards.
@@ -311,6 +320,38 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         return "intermediate".equals(recipe.group());
     }
 
+    /**
+     * How many of this one craft of the recipe takes, or zero for something it has no use for.
+     * The largest count where an ingredient could be met by several, which never happens in
+     * Factorio's recipes and is the safe answer if it did.
+     */
+    public static int wanted(FacraftRecipe recipe, ItemResource resource) {
+        ItemStack stack = resource.toStack(1);
+        int most = 0;
+        for (SizedIngredient ingredient : recipe.ingredients()) {
+            if (ingredient.ingredient().test(stack)) {
+                most = Math.max(most, ingredient.count());
+            }
+        }
+        return most;
+    }
+
+    /** The same for this machine's chosen recipe: what {@link AssemblerInventory} sizes an input slot by. */
+    private int wanted(ItemResource resource) {
+        List<SizedIngredient> ingredients = wantedIngredients;
+        if (ingredients == null) {
+            return 0;
+        }
+        ItemStack stack = resource.toStack(1);
+        int most = 0;
+        for (SizedIngredient ingredient : ingredients) {
+            if (ingredient.ingredient().test(stack)) {
+                most = Math.max(most, ingredient.count());
+            }
+        }
+        return most;
+    }
+
     /** FE this tier spends per tick of a craft. */
     public int energyPerTick() {
         return energyPerTick;
@@ -386,6 +427,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
             }
         }
         recipeKey = key;
+        wantedIngredients = chosen == null ? null : chosen.ingredients();
         pointTanks(chosen);
         progress = 0;
         craftTicks = 0;
@@ -435,11 +477,16 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         if (recipe == null) {
             // No recipe, or one that no longer exists. Nothing to schedule for; choosing a
             // recipe wakes it again.
+            wantedIngredients = null;
             if (progress != 0) {
                 progress = 0;
                 setChanged();
             }
             return;
+        }
+        if (wantedIngredients == null) {
+            // Loaded from disk: the recipe is resolved by key only once a level is here.
+            wantedIngredients = recipe.ingredients();
         }
 
         // The modules are read as the craft starts and hold for the craft, which is Factorio's

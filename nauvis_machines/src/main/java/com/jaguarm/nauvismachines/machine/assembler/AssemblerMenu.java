@@ -5,6 +5,7 @@ import org.jspecify.annotations.Nullable;
 import com.jaguarm.facrafting.machine.RecipeSelector;
 import com.jaguarm.facrafting.recipe.FacraftRecipe;
 import com.jaguarm.nauvislib.module.ModuleSlots;
+import com.jaguarm.nauvismachines.client.ClientSlotRules;
 import com.jaguarm.nauvismachines.registry.ModMenus;
 
 import net.minecraft.core.BlockPos;
@@ -99,10 +100,19 @@ public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelect
     private final int machineSlots;
     private final int moduleSlots;
 
-    /** Client side: NeoForge's menu factory hands the machine's position across. */
+    /**
+     * Client side: NeoForge's menu factory hands the machine's position across.
+     *
+     * <p>The stand-in inventory is told what the machine's recipe wants, as far as the client
+     * can know it - the recipe key is on the synced block entity and Facrafting sends every
+     * timed recipe - so a slot holding a thousand concrete draws and takes a click the way the
+     * server's does. {@link ClientSlotRules} is a client class, and this constructor is the only
+     * thing that runs on a client.
+     */
     public AssemblerMenu(int containerId, Inventory playerInventory, BlockPos machinePos) {
         this(containerId, playerInventory,
-                new AssemblerInventory(AssemblerBlockEntity.SLOT_COUNT, () -> {}),
+                new AssemblerInventory(AssemblerBlockEntity.SLOT_COUNT, () -> {},
+                        ClientSlotRules.assemblerWants(playerInventory.player.level(), machinePos)),
                 new ModuleSlots(moduleSlotsAt(playerInventory.player.level(), machinePos), () -> {}),
                 new SimpleContainerData(DATA_COUNT),
                 machinePos);

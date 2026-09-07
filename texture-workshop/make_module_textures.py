@@ -12,7 +12,7 @@ Legend for the map:
     .  transparent                   d  dark board / outline
     m  mid board                     l  light board edge
     c  the module's colour           b  the colour, brighter
-    p  a pin
+    p  a pin                         t  a tier stripe, gold
 """
 
 import os
@@ -54,17 +54,41 @@ BOARD = {
     "m": (78, 84, 96, 255),
     "l": (118, 126, 140, 255),
     "p": (196, 176, 96, 255),
+    "t": (228, 196, 84, 255),
 }
 
 BLUE = dict(BOARD, c=(48, 108, 196, 255), b=(120, 176, 240, 255))
 GREEN = dict(BOARD, c=(56, 150, 72, 255), b=(130, 220, 140, 255))
 RED = dict(BOARD, c=(178, 48, 48, 255), b=(240, 120, 110, 255))
 
-# name -> palette
+# The second and third tiers are the same chip with a gold stripe across the board for each
+# tier above the first: one stripe for a 2, two for a 3. A tier reads as a count before it
+# reads as a name, which is what a player sorting a chest of them wants.
+def striped(text, row):
+    """The map with the board row at {@code row} turned to a gold stripe."""
+    lines = text.split("\n")
+    assert lines[row] == "..pp.dmmmmmmd...", f"row {row} is not a plain board row: {lines[row]!r}"
+    lines[row] = "..pp.dttttttd..."
+    return "\n".join(lines)
+
+
+MODULE_2 = striped(MODULE, 13)
+MODULE_3 = striped(MODULE_2, 9)
+
+for tiered in (MODULE_2, MODULE_3):
+    assert tiered != MODULE, "a tier's stripe did not land on the map"
+
+# name -> (map, palette)
 ITEMS = {
-    "speed_module": BLUE,
-    "effectivity_module": GREEN,
-    "productivity_module": RED,
+    "speed_module": (MODULE, BLUE),
+    "effectivity_module": (MODULE, GREEN),
+    "productivity_module": (MODULE, RED),
+    "speed_module_2": (MODULE_2, BLUE),
+    "effectivity_module_2": (MODULE_2, GREEN),
+    "productivity_module_2": (MODULE_2, RED),
+    "speed_module_3": (MODULE_3, BLUE),
+    "effectivity_module_3": (MODULE_3, GREEN),
+    "productivity_module_3": (MODULE_3, RED),
 }
 
 
@@ -100,8 +124,8 @@ def main():
     if not os.path.isdir(OUT):
         os.makedirs(OUT)
     drawn = []
-    for name, palette in ITEMS.items():
-        image = draw(MODULE, palette)
+    for name, (text, palette) in ITEMS.items():
+        image = draw(text, palette)
         image.save(os.path.join(OUT, f"{name}.png"))
         print(f"wrote nauvis_machines/{name}.png")
         drawn.append(image)

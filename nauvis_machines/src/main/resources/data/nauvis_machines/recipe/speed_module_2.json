@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 600,
+  "group": "production",
+  "order": "0090",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:advanced_circuit",
+      "count": 5
+    },
+    {
+      "ingredient": "neoprogressivematerials:processing_unit",
+      "count": 5
+    },
+    {
+      "ingredient": "nauvis_machines:speed_module",
+      "count": 4
+    }
+  ],
+  "result": {
+    "id": "nauvis_machines:speed_module_2",
+    "count": 1
+  }
+}

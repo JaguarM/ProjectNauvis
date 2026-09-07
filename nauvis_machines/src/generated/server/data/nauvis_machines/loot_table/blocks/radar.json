@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "conditions": [
+            {
+              "block": "nauvis_machines:radar",
+              "condition": "minecraft:block_state_property",
+              "properties": {
+                "part": "8"
+              }
+            }
+          ],
+          "name": "nauvis_machines:radar"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "nauvis_machines:blocks/radar"
+}

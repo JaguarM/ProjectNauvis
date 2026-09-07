@@ -77,6 +77,13 @@ public class NauvisResearchModels extends ModelProvider {
         // Military science, on gunpowder: grey, which is Factorio's colour for it.
         itemModels.generateFlatItem(ModItems.MILITARY_SCIENCE_PACK.get(), Items.GUNPOWDER,
                 ModelTemplates.FLAT_ITEM);
+
+        // Production science is purple and high tech science is yellow, in Factorio; an
+        // amethyst shard and glowstone dust are the nearest vanilla has.
+        itemModels.generateFlatItem(ModItems.PRODUCTION_SCIENCE_PACK.get(), Items.AMETHYST_SHARD,
+                ModelTemplates.FLAT_ITEM);
+        itemModels.generateFlatItem(ModItems.HIGH_TECH_SCIENCE_PACK.get(), Items.GLOWSTONE_DUST,
+                ModelTemplates.FLAT_ITEM);
     }
 
     private void machine(BlockModelGenerators blockModels, Block block, MachineShape shape,

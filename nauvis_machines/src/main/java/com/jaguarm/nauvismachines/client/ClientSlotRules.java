@@ -1,14 +1,17 @@
 package com.jaguarm.nauvismachines.client;
 
 import java.util.function.Predicate;
+import java.util.function.ToIntFunction;
 
 import com.jaguarm.facrafting.client.ClientRecipes;
 import com.jaguarm.facrafting.recipe.FacraftRecipe;
+import com.jaguarm.nauvismachines.machine.assembler.AssemblerBlockEntity;
 import com.jaguarm.nauvismachines.machine.furnace.FurnaceBlockEntity;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipePropertySet;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 
@@ -51,5 +54,21 @@ public final class ClientSlotRules {
     /** Whether this burns, by the fuel values the server sent. */
     public static Predicate<ItemResource> fuel(Level level) {
         return resource -> resource.toStack(1).getBurnTime(null, level.fuelValues()) > 0;
+    }
+
+    /**
+     * How many of a resource the assembler here wants for one craft, by the recipe key on its
+     * synced block entity and the client's copy of the recipe. Zero for no machine, no recipe or
+     * a recipe this client was never sent.
+     */
+    public static ToIntFunction<ItemResource> assemblerWants(Level level, BlockPos machinePos) {
+        return resource -> {
+            if (!(level.getBlockEntity(machinePos) instanceof AssemblerBlockEntity assembler)
+                    || assembler.recipeKey() == null) {
+                return 0;
+            }
+            RecipeHolder<FacraftRecipe> holder = ClientRecipes.byId(assembler.recipeKey());
+            return holder == null ? 0 : AssemblerBlockEntity.wanted(holder.value(), resource);
+        };
     }
 }

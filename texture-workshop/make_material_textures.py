@@ -228,6 +228,89 @@ EXPLOSIVES = """
 ................
 """
 
+# A copper panel drilled through: Factorio's low density structure is a honeycomb, and a grid
+# of dark holes in a bright plate is how a honeycomb reads at sixteen pixels.
+LOW_DENSITY_STRUCTURE = """
+................
+.dddddddddddddd.
+.dhhhhhhhhhhhhd.
+.dhlllllllllllld
+.dhldmldmldmlld.
+.dhlmmlmmlmmlld.
+.dhllllllllllld.
+.dhldmldmldmlld.
+.dhlmmlmmlmmlld.
+.dhllllllllllld.
+.dhldmldmldmlld.
+.dhlmmlmmlmmlld.
+.dhllllllllllld.
+.dhmmmmmmmmmmmd.
+.dddddddddddddd.
+................
+"""
+
+# A canister standing up: a dark cap and a bright band round the middle, in the orange that
+# nothing else in an inventory is.
+ROCKET_FUEL = """
+................
+......dddd......
+.....dmmmmd.....
+....ddddddd.....
+....dllmmmd.....
+....dllmmmd.....
+....dllmmmd.....
+....dhhhhhd.....
+....dhhhhhd.....
+....dllmmmd.....
+....dllmmmd.....
+....dllmmmd.....
+....dllmmmd.....
+....dddddd......
+................
+................
+"""
+
+# A square unit with a window in it and one bright lamp: the thing that steers a rocket, and
+# not another circuit board.
+ROCKET_CONTROL_UNIT = """
+................
+..dddddddddddd..
+..dmmmmmmmmmmd..
+..dmddddddddmd..
+..dmdllllllldmd.
+..dmdlhhhhlldmd.
+..dmdlhhhhlldmd.
+..dmdllllllldmd.
+..dmddddddddmd..
+..dmmmmmmmmmmd..
+..dmmgmmmmmmmd..
+..dmmmmmmmmmmd..
+..dddddddddddd..
+...d..d..d..d...
+................
+................
+"""
+
+# Two iron rods, leaning the way a stick does, one lit along its length.
+IRON_STICK = """
+................
+.............dd.
+............dhd.
+...........dhmd.
+..........dhmd..
+.........dhmd...
+........dhmd....
+.......dhmd.dd..
+......dhmd.dhd..
+.....dhmd.dhmd..
+....dhmd.dhmd...
+...dhmd.dhmd....
+..dhmd.dhmd.....
+..dmd.dhmd......
+..dd.dhmd.......
+.....ddd........
+"""
+
 # --- palettes --------------------------------------------------------------
 # Cooler and lighter than iron: iron_block's greys are neutral, so a blue cast plus a
 # brighter top face is what tells the two apart at a glance.
@@ -329,6 +412,34 @@ DYNAMITE = {
     "f": (214, 194, 130, 255),
 }
 
+# Copper's oranges, off the copper block: the low density structure is a copper skin.
+COPPER = {
+    ".": (0, 0, 0, 0),
+    "d": (112, 60, 36, 255),
+    "m": (168, 96, 62, 255),
+    "l": (204, 128, 84, 255),
+    "h": (236, 170, 118, 255),
+}
+
+# A canister of something that burns hard: orange, with a near-black cap.
+ROCKET_ORANGE = {
+    ".": (0, 0, 0, 0),
+    "d": (60, 36, 24, 255),
+    "m": (206, 98, 30, 255),
+    "l": (236, 138, 52, 255),
+    "h": (255, 200, 110, 255),
+}
+
+# A grey unit with a blue window and one green lamp.
+CONTROL_UNIT = {
+    ".": (0, 0, 0, 0),
+    "d": (48, 52, 60, 255),
+    "m": (110, 116, 128, 255),
+    "l": (70, 120, 200, 255),
+    "h": (130, 190, 250, 255),
+    "g": (110, 230, 110, 255),
+}
+
 # name -> (map, palette, the mod whose item it is)
 ITEMS = {
     "steel_plate": (STEEL_PLATE, STEEL, "neoprogressivematerials"),
@@ -342,6 +453,10 @@ ITEMS = {
     # The same engine in the blue-grey of Factorio's electric one: one map, so the two read as
     # the same part with a different drive, which they are.
     "electric_engine_unit": (ENGINE_UNIT, ELECTRIC_IRON, "neoprogressivematerials"),
+    "low_density_structure": (LOW_DENSITY_STRUCTURE, COPPER, "neoprogressivematerials"),
+    "rocket_fuel": (ROCKET_FUEL, ROCKET_ORANGE, "neoprogressivematerials"),
+    "rocket_control_unit": (ROCKET_CONTROL_UNIT, CONTROL_UNIT, "neoprogressivematerials"),
+    "iron_stick": (IRON_STICK, IRON, "neoprogressivematerials"),
     "solid_fuel": (SOLID_FUEL, COAL_BLACK, "nauvis"),
     "explosives": (EXPLOSIVES, DYNAMITE, "nauvis_fluids"),
 }
