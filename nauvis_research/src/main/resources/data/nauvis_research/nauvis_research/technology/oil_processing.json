@@ -1,6 +1,6 @@
 {
   "name": "Oil processing",
-  "order": "0032",
+  "order": "0033",
   "prerequisites": [
     "nauvis_research:oil_gathering"
   ],

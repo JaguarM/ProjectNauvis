@@ -8,6 +8,10 @@
       "model": "nauvis_fluids:block/pumpjack_edge",
       "y": 90
     },
+    "facing=east,part=10": {
+      "model": "nauvis_fluids:block/pumpjack_top",
+      "y": 90
+    },
     "facing=east,part=2": {
       "model": "nauvis_fluids:block/pumpjack_outlet",
       "y": 90
@@ -43,6 +47,9 @@
     },
     "facing=north,part=1": {
       "model": "nauvis_fluids:block/pumpjack_edge"
+    },
+    "facing=north,part=10": {
+      "model": "nauvis_fluids:block/pumpjack_top"
     },
     "facing=north,part=2": {
       "model": "nauvis_fluids:block/pumpjack_outlet"
@@ -81,6 +88,10 @@
       "model": "nauvis_fluids:block/pumpjack_edge",
       "y": 180
     },
+    "facing=south,part=10": {
+      "model": "nauvis_fluids:block/pumpjack_top",
+      "y": 180
+    },
     "facing=south,part=2": {
       "model": "nauvis_fluids:block/pumpjack_outlet",
       "y": 180
@@ -117,6 +128,10 @@
     },
     "facing=west,part=1": {
       "model": "nauvis_fluids:block/pumpjack_edge",
+      "y": 270
+    },
+    "facing=west,part=10": {
+      "model": "nauvis_fluids:block/pumpjack_top",
       "y": 270
     },
     "facing=west,part=2": {

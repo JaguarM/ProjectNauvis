@@ -1,6 +1,6 @@
 {
   "name": "Modules",
-  "order": "0046",
+  "order": "0047",
   "prerequisites": [
     "nauvis_research:advanced_circuit"
   ],

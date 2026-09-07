@@ -49,9 +49,10 @@ public final class PumpjackShape {
     /** The name of the port the crude oil comes out of. See {@link MachineShape#hasPort}. */
     public static final String OUTPUT = "output";
 
-    /** The two models this machine adds to the shared shell. */
+    /** The three models this machine adds to the shared shell. */
     public static final String OUTLET = "outlet";
     public static final String HEAD = "head";
+    public static final String TOP = "top";
 
     /**
      * The corner the oil leaves: the shell's floor with the east wall kept and the north wall left
@@ -64,15 +65,25 @@ public final class PumpjackShape {
     };
 
     /**
-     * A nodding donkey inside one block: a post, a walking beam along it, the horse head at the
-     * front and the counterweight at the back. The beam's ends sit inside the head and the weight
-     * so no two faces share a plane - see {@code docs/PITFALLS.md} on z-fighting.
+     * A nodding donkey over two blocks. The lower block is the post on its base plate, the
+     * upper is the beam rocking on it: the walking beam along the block, the horse head at the
+     * front and the counterweight at the back. It was one block once and read as a small box
+     * from the item slot; a pumpjack is the tallest thing on an oil field and should look it.
+     *
+     * <p>The beam's ends sit inside the head and the weight, and the post meets the pivot face to
+     * face rather than sharing a plane the same way, so nothing z-fights - see
+     * {@code docs/PITFALLS.md}.
      */
     private static final float[][] HEAD_BOXES = {
-        {6.5F, 0, 6.5F, 9.5F, 9, 9.5F},
-        {6, 9, 1, 10, 12, 15},
-        {4, 6, 0, 12, 13, 3},
-        {4, 8, 13, 12, 14, 16},
+        {4, 0, 4, 12, 2, 12},
+        {6, 2, 6, 10, 16, 10},
+    };
+
+    private static final float[][] TOP_BOXES = {
+        {5, 0, 5, 11, 1, 11},
+        {5, 1, 1, 11, 4, 15},
+        {3, 0, 0, 13, 9, 3},
+        {4, 0, 13, 12, 6, 16},
     };
 
     /**
@@ -107,8 +118,9 @@ public final class PumpjackShape {
         cells.add(new MachineCell(1, 0, 2, MachineParts.EDGE, 2, MachineParts.EDGE_BOXES));
         cells.add(new MachineCell(2, 0, 2, MachineParts.CORNER, 2, MachineParts.CORNER_BOXES));
 
-        // The pump.
+        // The pump: the post, and the beam above it. Appended in that order; see above.
         cells.add(new MachineCell(1, 1, 1, HEAD, 0, HEAD_BOXES));
+        cells.add(new MachineCell(1, 2, 1, TOP, 0, TOP_BOXES));
 
         return new MachineShape(cells, CENTRE, CENTRE,
                 Map.of(OUTPUT, Set.of(new MachineShape.Port(OUTLET_CELL, Direction.NORTH))));

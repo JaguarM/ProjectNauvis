@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoprogressivematerials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "combat",
+  "order": "0203",
+  "ingredients": [
+    {
+      "ingredient": "neoprogressivematerials:electronic_circuit",
+      "count": 2
+    },
+    {
+      "ingredient": "neoprogressivematerials:steel_plate",
+      "count": 2
+    },
+    {
+      "ingredient": "minecraft:cobblestone_wall",
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "minecraft:iron_door",
+    "count": 1
+  }
+}

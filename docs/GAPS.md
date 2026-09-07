@@ -75,10 +75,10 @@ Oil
 - **There is no map, so there is an x-ray.** Factorio's map view is how oil is found. Holding a
   pumpjack outlines every well within render distance through the terrain; further than that,
   nothing. Whether that finds a field at this density is a judgement only a player makes.
-- **No mining productivity, no pollution, and no module slots on the pumpjack.** Factorio's has
-  two and 10/min of pollution, and mining productivity research raises its output. Pollution and
-  the research are mechanics this pack does not have yet; the slots wait on a screen to put a
-  module in, which the pumpjack does not have. The machine is the plain 90 kW one.
+- **The pumpjack's screen exists for its module slots.** Factorio's pumpjack has no screen; ours
+  opens one because two module slots need somewhere to be, and it draws the charge, the cycle and
+  the tank while it is open. Mining productivity research and productivity modules bank a free
+  cycle's oil without touching the well, which is Factorio's rule for pumpjacks too.
 - **No brownout, again.** A pumpjack short of 12 FE stops; Factorio's runs slower.
 - **The tank is one number and the pipe run is one tank**, as for steam. Factorio 2.0's flow
   model — segments, throughput falling with length — is not modelled, and a pipeline here carries
@@ -115,9 +115,10 @@ Oil
   the machine faces the way the player stood when placing it, input towards them, and is not
   turned afterwards - break it and place it again. The first machine has no fluid box and no
   facing, as in Factorio.
-- **No processing unit yet.** It is the other recipe with a fluid in it - two advanced circuits,
-  twenty circuits and five sulfuric acid - and its technology is not in the tree; the item is
-  not registered until it is.
+- **The processing unit is the top of the circuit ladder.** `advanced-electronics-2` is in the
+  tree at Factorio's cost and Neo Progressive Materials registers the unit; nothing in the pack
+  is made from one yet, because everything that takes a processing unit costs production or
+  utility science.
 - **Explosives do nothing.** The item exists because the chemical plant makes it and the mapping
   owns it; cliff explosives and artillery are milestones away.
 - **A mine trigger is only heard with Facrafting installed.** The pumpjack reports through

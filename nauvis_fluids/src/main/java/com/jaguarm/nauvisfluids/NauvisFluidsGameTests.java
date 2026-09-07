@@ -1,5 +1,7 @@
 package com.jaguarm.nauvisfluids;
 
+import com.jaguarm.nauvislib.module.ModuleSlots;
+import com.jaguarm.nauvislib.module.ModuleEffect;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -141,6 +143,7 @@ public final class NauvisFluidsGameTests {
         TEST_TYPES.register("oil_field_is_pumpable", () -> OilFieldIsPumpableTest.CODEC);
         TEST_TYPES.register("pumpjack_reports_what_it_mines", () -> PumpjackReportsWhatItMinesTest.CODEC);
         TEST_TYPES.register("pumpjack_caps_a_cycle_at_its_tank", () -> PumpjackCapsACycleTest.CODEC);
+        TEST_TYPES.register("pumpjack_takes_modules", () -> PumpjackTakesModulesTest.CODEC);
         TEST_TYPES.register("oil_command_places_a_field", () -> OilCommandPlacesAFieldTest.CODEC);
         TEST_TYPES.register("natural_water_is_bucketed_as_water", () -> NaturalWaterIsBucketedAsWaterTest.CODEC);
         TEST_TYPES.register("natural_water_makes_no_new_source", () -> NaturalWaterMakesNoNewSourceTest.CODEC);
@@ -183,6 +186,7 @@ public final class NauvisFluidsGameTests {
                 PumpjackPumpsAtFactorioRateTest::new, 100, PADDING);
         registerSpaced(event, environment, "well_stops_at_its_floor", WellStopsAtItsFloorTest::new, 100, PADDING);
         registerSpaced(event, environment, "pumpjack_sleeps", PumpjackSleepsTest::new, 200, PADDING);
+        registerSpaced(event, environment, "pumpjack_takes_modules", PumpjackTakesModulesTest::new, 40, PADDING);
         registerSpaced(event, environment, "pumpjack_feeds_a_pipe", PumpjackFeedsAPipeTest::new, 100, PADDING);
         registerSpaced(event, environment, "oil_field_is_pumpable", OilFieldIsPumpableTest::new, 60, WIDE_PADDING);
         registerSpaced(event, environment, "pumpjack_reports_what_it_mines",
@@ -2483,6 +2487,60 @@ public final class NauvisFluidsGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("oil machines take modules");
+        }
+    }
+
+    /**
+     * A pumpjack takes Factorio's modules and reads them the way every other machine does: a
+     * speed module shortens the cycle by its speed and raises the draw by its cost. The module is
+     * {@code nauvis_machines}' and this mod does not name it, so it is looked up by id and the test
+     * passes trivially without it.
+     */
+    public static class PumpjackTakesModulesTest extends GameTestInstance {
+
+        public static final MapCodec<PumpjackTakesModulesTest> CODEC =
+                RecordCodecBuilder.<PumpjackTakesModulesTest>mapCodec(
+                        i -> i.group(TestData.CODEC.forGetter(PumpjackTakesModulesTest::info))
+                                .apply(i, PumpjackTakesModulesTest::new));
+
+        public PumpjackTakesModulesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            var speed = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_machines", "speed_module"));
+            if (ModuleSlots.moduleOf(new ItemStack(speed)) == null) {
+                helper.succeed();
+                return;
+            }
+            well(helper, WELL, CrudeOilBlockEntity.NORMAL);
+            PumpjackBlockEntity pumpjack = pumpjack(helper, PUMPJACK);
+            pumpjack.modules().set(0, ItemResource.of(speed), 1);
+            charge(pumpjack);
+            ModuleEffect effect = ModuleSlots.moduleOf(new ItemStack(speed)).effect();
+
+            helper.runAfterDelay(10, () -> {
+                helper.assertValueEqual(pumpjack.status(), PumpjackStatus.PUMPING, "status with a well, power and a module");
+                helper.assertValueEqual(pumpjack.cycleTicks(),
+                        (int) Math.round(PumpjackBlockEntity.CYCLE_TICKS / effect.speedFactor()),
+                        "ticks a cycle takes with a speed module");
+                helper.assertTrue(pumpjack.cycleTicks() < PumpjackBlockEntity.CYCLE_TICKS,
+                        "a speed module did not shorten the cycle");
+                helper.assertValueEqual(pumpjack.currentEnergyPerTick(),
+                        effect.scaleEnergy(PumpjackBlockEntity.ENERGY_PER_TICK), "draw with a speed module");
+                helper.succeed();
+            });
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("a pumpjack takes modules");
         }
     }
 }

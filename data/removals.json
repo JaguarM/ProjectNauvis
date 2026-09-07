@@ -129,6 +129,11 @@
       "kind": "conflict",
       "replaced_by": "nauvis_military:cobblestone_wall",
       "note": "The stonecutter's route to the same wall, at vanilla's price of one cobblestone or stone a wall. Factorio's wall is five stone bricks and behind research."
+    },
+    "minecraft:iron_door": {
+      "kind": "conflict",
+      "replaced_by": "nauvis_military:iron_door",
+      "note": "Factorio's gate is a stone wall, two steel plates and two circuits; vanilla's iron door is six iron ingots. The door is the gate, behind gate research."
     }
   }
 }

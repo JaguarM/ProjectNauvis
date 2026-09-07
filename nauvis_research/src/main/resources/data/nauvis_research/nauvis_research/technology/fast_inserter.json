@@ -1,6 +1,6 @@
 {
   "name": "Fast inserter",
-  "order": "0017",
+  "order": "0018",
   "prerequisites": [
     "nauvis_research:science_pack_1"
   ],

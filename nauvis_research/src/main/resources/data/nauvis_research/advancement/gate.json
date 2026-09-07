@@ -1,0 +1,29 @@
+{
+  "parent": "nauvis_research:root",
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_door"
+    },
+    "title": {
+      "translate": "technology.nauvis_research.gate",
+      "fallback": "Gate"
+    },
+    "description": {
+      "translate": "advancements.nauvis_research.researched"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "researched": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "researched"
+    ]
+  ]
+}

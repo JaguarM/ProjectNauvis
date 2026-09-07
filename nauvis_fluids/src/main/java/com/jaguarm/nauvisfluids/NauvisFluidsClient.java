@@ -1,5 +1,6 @@
 package com.jaguarm.nauvisfluids;
 
+import com.jaguarm.nauvisfluids.pumpjack.PumpjackScreen;
 import com.jaguarm.nauvisfluids.client.CrudeOilRenderer;
 import com.jaguarm.nauvisfluids.chemicalplant.ChemicalPlantScreen;
 import com.jaguarm.nauvisfluids.refinery.OilRefineryScreen;
@@ -91,6 +92,7 @@ public class NauvisFluidsClient {
     static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.OIL_REFINERY.get(), OilRefineryScreen::new);
         event.register(ModMenus.CHEMICAL_PLANT.get(), ChemicalPlantScreen::new);
+        event.register(ModMenus.PUMPJACK.get(), PumpjackScreen::new);
     }
 
     /** The x-ray: an outline drawn on every oil well while a pumpjack is in hand. */

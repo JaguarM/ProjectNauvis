@@ -1,6 +1,6 @@
 {
   "name": "Advanced material processing",
-  "order": "0026",
+  "order": "0027",
   "prerequisites": [
     "nauvis_research:steel_processing",
     "nauvis_research:science_pack_2"

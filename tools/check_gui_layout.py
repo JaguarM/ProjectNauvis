@@ -124,6 +124,15 @@ SCREENS = [
         bars=[],
     ),
     Screen(
+        'pumpjack',
+        'nauvis_fluids/src/main/java/com/jaguarm/nauvisfluids/pumpjack',
+        'PumpjackMenu.java', 'PumpjackScreen.java',
+        slots=[('module', 'MODULE_X', 'MODULE_Y', 2, 2)],
+        bars=[('charge bar', 'CHARGE_X', 'CHARGE_Y', 'CHARGE_WIDTH', 'CHARGE_HEIGHT'),
+              ('progress bar', 'ARROW_X', 'ARROW_Y', 'ARROW_WIDTH', 'ARROW_HEIGHT'),
+              ('tank bar', 'TANK_X', 'TANK_Y', 'TANK_WIDTH', 'TANK_HEIGHT')],
+    ),
+    Screen(
         'boiler',
         'nauvis_power/src/main/java/com/jaguarm/nauvispower/generator',
         'BoilerMenu.java', 'BoilerScreen.java',

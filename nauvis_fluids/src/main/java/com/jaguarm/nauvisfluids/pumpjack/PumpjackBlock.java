@@ -1,5 +1,7 @@
 package com.jaguarm.nauvisfluids.pumpjack;
 
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.InteractionResult;
 import java.util.List;
 
 import com.jaguarm.nauvislib.multiblock.MachineShape;
@@ -222,6 +224,21 @@ public class PumpjackBlock extends BaseEntityBlock implements Multiblock.Machine
         }
     }
 
-    // No screen. Factorio's pumpjack has nothing to put in or take out; what it would show is
-    // on the hover readout - yield, contents, and whether it is pumping.
+    /**
+     * Factorio's pumpjack has nothing to put in or take out; ours has two module slots, and a
+     * slot needs a screen. The charge, the cycle and the tank are drawn while it is open.
+     */
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
+            BlockHitResult hitResult) {
+        if (!(level instanceof ServerLevel)) {
+            return InteractionResult.SUCCESS;
+        }
+        BlockPos anchor = Multiblock.anchorPos(this, state, pos);
+        if (!(level.getBlockEntity(anchor) instanceof PumpjackBlockEntity pumpjack)) {
+            return InteractionResult.PASS;
+        }
+        player.openMenu(pumpjack, anchor);
+        return InteractionResult.SUCCESS;
+    }
 }

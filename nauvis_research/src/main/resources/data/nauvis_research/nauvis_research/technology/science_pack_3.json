@@ -1,6 +1,6 @@
 {
   "name": "Science pack 3",
-  "order": "0036",
+  "order": "0037",
   "prerequisites": [
     "nauvis_research:advanced_circuit",
     "nauvis_research:sulfur_processing"

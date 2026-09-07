@@ -273,6 +273,16 @@ RED_BOARD = {
 }
 
 # Iron's neutral greys, so the engine sits beside the gear wheel as the same metal.
+# The processing unit: the advanced circuit's board in Factorio's blue.
+BLUE_BOARD = {
+    ".": (0, 0, 0, 0),
+    "d": (22, 40, 92, 255),
+    "m": (36, 70, 152, 255),
+    "l": (62, 112, 202, 255),
+    "h": (120, 170, 240, 255),
+    "w": (226, 198, 150, 255),
+}
+
 IRON = {
     ".": (0, 0, 0, 0),
     "d": (56, 56, 61, 255),
@@ -313,6 +323,7 @@ ITEMS = {
     "sulfur": (SULFUR, YELLOW, "neoprogressivematerials"),
     "battery": (BATTERY, BLACK_AND_RED, "neoprogressivematerials"),
     "advanced_circuit": (ADVANCED_CIRCUIT, RED_BOARD, "neoprogressivematerials"),
+    "processing_unit": (ADVANCED_CIRCUIT, BLUE_BOARD, "neoprogressivematerials"),
     "engine_unit": (ENGINE_UNIT, IRON, "neoprogressivematerials"),
     # The same engine in the blue-grey of Factorio's electric one: one map, so the two read as
     # the same part with a different drive, which they are.

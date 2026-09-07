@@ -1,6 +1,6 @@
 {
   "name": "Stack inserter",
-  "order": "0044",
+  "order": "0045",
   "prerequisites": [
     "nauvis_research:fast_inserter",
     "nauvis_research:logistics_2",

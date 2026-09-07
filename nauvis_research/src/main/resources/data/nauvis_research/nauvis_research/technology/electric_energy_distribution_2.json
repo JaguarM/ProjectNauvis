@@ -1,6 +1,6 @@
 {
   "name": "Electric energy distribution 2",
-  "order": "0041",
+  "order": "0042",
   "prerequisites": [
     "nauvis_research:science_pack_3",
     "nauvis_research:electric_energy_distribution_1"

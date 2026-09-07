@@ -1,6 +1,6 @@
 {
   "name": "Oil gathering",
-  "order": "0031",
+  "order": "0032",
   "prerequisites": [
     "nauvis_research:fluid_handling"
   ],

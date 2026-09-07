@@ -1,5 +1,6 @@
 package com.jaguarm.nauvisfluids.registry;
 
+import com.jaguarm.nauvisfluids.pumpjack.PumpjackMenu;
 import com.jaguarm.nauvisfluids.NauvisFluids;
 import com.jaguarm.nauvisfluids.chemicalplant.ChemicalPlantMenu;
 import com.jaguarm.nauvisfluids.refinery.OilRefineryMenu;
@@ -26,6 +27,10 @@ public final class ModMenus {
     public static final DeferredHolder<MenuType<?>, MenuType<ChemicalPlantMenu>> CHEMICAL_PLANT =
             MENUS.register("chemical_plant", () -> IMenuTypeExtension.create(
                     (windowId, inventory, data) -> new ChemicalPlantMenu(windowId, inventory, data.readBlockPos())));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<PumpjackMenu>> PUMPJACK =
+            MENUS.register("pumpjack", () -> IMenuTypeExtension.create(
+                    (windowId, inventory, data) -> new PumpjackMenu(windowId, inventory, data.readBlockPos())));
 
     private ModMenus() {}
 }

@@ -1,10 +1,10 @@
 {
-  "name": "Lubricant",
-  "order": "0039",
+  "name": "Advanced electronics 2",
+  "order": "0052",
   "prerequisites": [
-    "nauvis_research:advanced_oil_processing"
+    "nauvis_research:science_pack_3"
   ],
-  "units": 50,
+  "units": 300,
   "ticks_per_unit": 600,
   "packs": [
     "nauvis_research:science_pack_1",
@@ -12,6 +12,6 @@
     "nauvis_research:science_pack_3"
   ],
   "unlocks": [
-    "nauvis_fluids:lubricant"
+    "neoprogressivematerials:processing_unit"
   ]
 }

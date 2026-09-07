@@ -182,28 +182,31 @@ zombies with a target are playable now. The numbers are knobs and a playtest wil
 
 ### 6. More removals follow the items
 
-The wall's is done: `minecraft:cobblestone_wall` and its two stonecutter recipes are removed,
-replaced by `nauvis_military:cobblestone_wall` behind `stone-wall`. Two are left waiting on an
-item: `minecraft:redstone_lamp` needs an iron stick, and `minecraft:iron_door` is the gate, which
-needs the `gate` technology in the tree. Ship either and the build fails until vanilla's is removed,
-which is the check working.
+The wall's and the gate's are done: `minecraft:cobblestone_wall` and its two stonecutter recipes
+are removed for `nauvis_military:cobblestone_wall` behind `stone-wall`, and `minecraft:iron_door`
+for `nauvis_military:iron_door` behind `gate`. The lamp is left: `minecraft:redstone_lamp` is
+`nauvis_circuits`' in the mapping, which is milestone 6's mod, and its recipe wants an iron stick
+Neo Progressive Materials does not register. Ship either and the build fails until vanilla's is
+removed, which is the check working.
 
 Loose ends — small enough to finish in an afternoon
 ---------------------------------------------------
 
 - **`MachineParts` wants refinement** so the machines read as one family. Yannic has said so, and
-  it is one file now, in `nauvis_lib`.
-- **The pumpjack's pump** is a nodding donkey inside one block, and reads as a small box from the
-  item slot. Bigger geometry means a taller head cell; it is boxes in `PumpjackShape`, and
-  `render_model.py` shows the result without a boot.
-- **The furnace's fire is a lava texture on the stack's mouth**, chosen because it is opaque and
-  animated and nothing else vanilla ships is both. Whether a brazier on a corner reads as a furnace
-  is a judgement for eyes; the boxes are in `FurnaceShape` and `ElectricFurnaceShape`.
-- **Facrafting's panel still paints its recipe grid.** The machine screens are settled: the dark
-  panel Yannic likes, with vanilla's slot sprite where there is a slot, vanilla's furnace flame
-  where there is a fire, and the charge bolt where there is electricity, all drawn the way vanilla
-  draws its flame. The panel's grid of recipe squares is the one painted thing left, and whether
-  it should be vanilla's slot sprite too is a judgement for eyes.
+  it is one file now, in `nauvis_lib`. Left for eyes: what "one family" wants is a look at a row
+  of them in a world, and a render of one machine at a time does not show it.
+- **The pumpjack's pump is two blocks tall now**: the post in one cell and the beam, the horse
+  head and the counterweight rocking on it in a cell appended above. It was one block and read as
+  a small box; `render_model.py` shows a nodding donkey. A boot decides whether it is tall enough.
+- **The furnace's fire was judged by render**: the lava-mouthed stack on the corner reads as a
+  chimney on a furnace from the item slot's angle. Whether it does in a world is still a boot's
+  question; the boxes are in `FurnaceShape` and `ElectricFurnaceShape`.
+- **Facrafting's panel draws vanilla's slot sprite under every recipe** now, the way every
+  machine screen draws a slot, so nothing on a screen is painted paint. Whether the selected and
+  the uncraftable tints read on top of the sprite is for eyes.
+- **The pumpjack has a screen**: two module slots, the charge, the cycle and the tank. Factorio's
+  has none, but Factorio's module slots are on the entity's panel, and a slot here needs somewhere
+  to be. Mining productivity research reaches it too.
 
 The playtest
 ------------

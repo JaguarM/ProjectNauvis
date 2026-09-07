@@ -1,6 +1,6 @@
 {
   "name": "Heavy armor",
-  "order": "0021",
+  "order": "0022",
   "prerequisites": [
     "nauvis_research:military",
     "nauvis_research:steel_processing"

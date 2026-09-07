@@ -373,6 +373,30 @@
     ]
   },
   {
+    "id": "gate",
+    "prerequisites": [
+      "stone-wall",
+      "military-2"
+    ],
+    "cost": {
+      "count": 100,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "gate"
+    ]
+  },
+  {
     "id": "fast-inserter",
     "prerequisites": [
       "science-pack-1"
@@ -1217,6 +1241,33 @@
     },
     "unlock_recipes": [
       "electric-engine-unit"
+    ]
+  },
+  {
+    "id": "advanced-electronics-2",
+    "prerequisites": [
+      "science-pack-3"
+    ],
+    "cost": {
+      "count": 300,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "processing-unit"
     ]
   },
   {

@@ -1,21 +1,29 @@
 package com.jaguarm.nauvisfluids.pumpjack;
 
+import com.jaguarm.nauvislib.bonus.Bonuses;
+import com.jaguarm.nauvislib.module.ModuleEffect;
+import com.jaguarm.nauvislib.module.ModuleSlots;
+import com.jaguarm.nauvislib.module.Productivity;
 import com.jaguarm.nauvislib.pollution.Pollution;
-import com.jaguarm.nauvislib.transfer.PowerAccess;
-import com.jaguarm.nauvislib.transfer.MachinePower;
-import org.jspecify.annotations.Nullable;
-
 import com.jaguarm.nauvislib.transfer.FluidOutputAccess;
+import com.jaguarm.nauvislib.transfer.MachinePower;
+import com.jaguarm.nauvislib.transfer.PowerAccess;
 import com.jaguarm.nauvislib.transfer.SingleFluidTank;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
 import com.jaguarm.nauvisfluids.oil.OilProgress;
 import com.jaguarm.nauvisfluids.registry.ModBlockEntities;
 import com.jaguarm.nauvisfluids.registry.ModBlocks;
 import com.jaguarm.nauvisfluids.registry.ModFluids;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Containers;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -24,7 +32,9 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A pumpjack: stands over an oil well, spends electricity, and fills its tank with crude oil.
@@ -39,9 +49,13 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  *       yield fall - one percent every three hundred cycles;
  *   <li><b>90 kW</b>, which at this pack's ratio - a 900 kW steam engine is 120 FE a tick - is
  *       {@value #ENERGY_PER_TICK} FE a tick while pumping;
- *   <li>and a tank of {@value #TANK_CAPACITY}, Factorio's output fluid box - which is also the
- *       most one cycle can produce. Factorio caps a pumpjack's cycle at its fluid box volume, so
- *       a well of any richness fills the tank in a second and no faster.
+ *   <li>a tank of {@value #TANK_CAPACITY}, Factorio's output fluid box - which is also the most
+ *       one cycle can produce. Factorio caps a pumpjack's cycle at its fluid box volume, so a well
+ *       of any richness fills the tank in a second and no faster;
+ *   <li>and <b>two module slots</b>. Speed modules shorten the cycle and raise the draw,
+ *       efficiency modules lower it, and productivity modules - and mining productivity research,
+ *       which Factorio applies to pumpjacks as it does to drills - bank a free cycle's worth of
+ *       oil now and then without taking anything off the well.
  * </ul>
  *
  * <p>The yield is a fraction, and the output is integer units, so the fraction is carried between
@@ -62,7 +76,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * the pipe run pulls, which is what lets both ends sleep and what makes a pumpjack with nothing
  * connected simply fill up and stop.
  */
-public class PumpjackBlockEntity extends BlockEntity {
+public class PumpjackBlockEntity extends BlockEntity implements MenuProvider {
 
     /** Ten a minute, Factorio's figure. */
     public static final double POLLUTION_PER_MINUTE = 10;
@@ -82,6 +96,12 @@ public class PumpjackBlockEntity extends BlockEntity {
     /** Ten units a cycle from a 100% well. Identity. */
     public static final int UNITS_PER_CYCLE_AT_NORMAL = 10;
 
+    /** Factorio's pumpjack takes two modules. */
+    public static final int MODULE_SLOTS = 2;
+
+    /** Factorio's modifier for mining productivity research, which reaches pumpjacks as well as drills. */
+    public static final String MINING_PRODUCTIVITY = "mining-drill-productivity-bonus";
+
     /**
      * A cycle's output in units is {@code UNITS_PER_CYCLE_AT_NORMAL * amount / NORMAL}, which is
      * {@code amount / 30000}. The remainder is carried in these units, so nothing is lost.
@@ -99,33 +119,71 @@ public class PumpjackBlockEntity extends BlockEntity {
     /** What a pipe sees at the outlet: extraction only, and a wake-up on the way out. */
     private final ResourceHandler<FluidResource> output = new FluidOutputAccess(tank, this::wake);
 
-    /** Ticks into the current cycle. At {@link #CYCLE_TICKS} the cycle is done and waiting to bank. */
+    /** The two module slots, and the free cycle they and the research work towards. */
+    private final ModuleSlots modules = new ModuleSlots(MODULE_SLOTS, this::onModulesChanged);
+    private final Productivity productivity = new Productivity();
+
+    /** Ticks into the current cycle. At {@link #cycleTicks} the cycle is done and waiting to bank. */
     private int progress;
 
-    /** The fraction of a unit carried over from the last cycle, in {@link #UNIT_DIVISOR}ths. */
+    /** The cycle's length and draw under the modules read as it started. */
+    private int cycleTicks = CYCLE_TICKS;
+    private int draw = ENERGY_PER_TICK;
+
+    /** Fractions of a unit carried between cycles. */
     private long owed;
 
     private PumpjackStatus status = PumpjackStatus.NO_WELL;
+
+    private final ContainerData menuData = new ContainerData() {
+        @Override
+        public int get(int id) {
+            return switch (id) {
+                case PumpjackMenu.DATA_PROGRESS -> progress;
+                case PumpjackMenu.DATA_CYCLE_TICKS -> cycleTicks;
+                case PumpjackMenu.DATA_ENERGY -> energy.getAmountAsInt();
+                case PumpjackMenu.DATA_ENERGY_CAPACITY -> ENERGY_CAPACITY;
+                case PumpjackMenu.DATA_STORED -> stored();
+                case PumpjackMenu.DATA_STATUS -> status.ordinal();
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int id, int value) {
+            // Server-authoritative.
+        }
+
+        @Override
+        public int getCount() {
+            return PumpjackMenu.DATA_COUNT;
+        }
+    };
 
     public PumpjackBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PUMPJACK.get(), pos, state);
     }
 
-    /** What a power pole fills. Registered as {@code Capabilities.Energy.BLOCK}. */
     public EnergyHandler gridView() {
         return gridView;
     }
 
-    /** What pipes draw from. Registered as {@code Capabilities.Fluid.BLOCK} at the outlet. */
     public ResourceHandler<FluidResource> output() {
         return output;
+    }
+
+    public ModuleSlots modules() {
+        return modules;
+    }
+
+    public Productivity productivity() {
+        return productivity;
     }
 
     public int energyStored() {
         return energy.getAmountAsInt();
     }
 
-    /** How much crude oil is in the tank. Read by Jade and by tests. */
     public int stored() {
         return tank.getAmountAsInt(0);
     }
@@ -134,14 +192,22 @@ public class PumpjackBlockEntity extends BlockEntity {
         return status;
     }
 
-    /** The well under the middle of the machine, or null if there is not one. */
+    /** The cycle's length under the modules read as it started, for the test and the screen. */
+    public int cycleTicks() {
+        return cycleTicks;
+    }
+
+    /** The draw under the modules in it right now. */
+    public int currentEnergyPerTick() {
+        return modules.effect().scaleEnergy(ENERGY_PER_TICK);
+    }
+
     public @Nullable CrudeOilBlockEntity well() {
         return level != null && level.getBlockEntity(worldPosition.below()) instanceof CrudeOilBlockEntity well
                 ? well
                 : null;
     }
 
-    /** Called by {@link PumpjackBlock}, and only ever on a tick this machine asked for. */
     public void serverTick(ServerLevel level) {
         CrudeOilBlockEntity well = well();
         if (well == null) {
@@ -152,19 +218,26 @@ public class PumpjackBlockEntity extends BlockEntity {
             return;
         }
 
-        if (progress < CYCLE_TICKS) {
-            if (energy.getAmountAsInt() < ENERGY_PER_TICK) {
+        // The modules are read as the cycle starts and hold for the cycle, which is Factorio's rule.
+        if (progress == 0) {
+            ModuleEffect effect = modules.effect();
+            cycleTicks = Math.max(1, (int) Math.round(CYCLE_TICKS / effect.speedFactor()));
+            draw = effect.scaleEnergy(ENERGY_PER_TICK);
+        }
+
+        if (progress < cycleTicks) {
+            if (energy.getAmountAsInt() < draw) {
                 // Out of power, holding the cycle where it stands. Nothing here can wake it - the
                 // grid can, and MachinePower is what tells us it has.
                 settle(PumpjackStatus.NO_POWER);
                 return;
             }
-            energy.set(energy.getAmountAsInt() - ENERGY_PER_TICK);
+            energy.set(energy.getAmountAsInt() - draw);
             progress++;
-            Pollution.emitTick(level, worldPosition, POLLUTION_PER_MINUTE, 1.0);
+            Pollution.emitTick(level, worldPosition, POLLUTION_PER_MINUTE, modules.effect().energyFactor());
         }
 
-        if (progress >= CYCLE_TICKS) {
+        if (progress >= cycleTicks) {
             if (!bank(level, well)) {
                 // Finished a cycle and the tank will not take it. Hold the cycle, keep the well as
                 // it is, and sleep until a pipe draws - FluidOutputAccess wakes us then.
@@ -179,26 +252,14 @@ public class PumpjackBlockEntity extends BlockEntity {
         level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
     }
 
-    /**
-     * Puts one cycle's oil in the tank and takes one cycle off the well, or does neither.
-     *
-     * <p>The two happen together or not at all: a tank that cannot take the oil leaves the well
-     * exactly as rich as it was, so a blocked pumpjack wastes nothing, which is Factorio's
-     * behaviour too.
-     */
     private boolean bank(ServerLevel level, CrudeOilBlockEntity well) {
         long due = owed + well.amount();
         // Factorio caps a cycle at the fluid box's volume. Above the cap the excess is simply not
         // produced - there is nothing to carry - and below it the fraction is.
         boolean capped = due / UNIT_DIVISOR >= TANK_CAPACITY;
         int units = capped ? TANK_CAPACITY : (int) (due / UNIT_DIVISOR);
-        if (units > 0) {
-            try (Transaction transaction = Transaction.openRoot()) {
-                if (tank.insert(tank.resource(), units, transaction) != units) {
-                    return false;
-                }
-                transaction.commit();
-            }
+        if (units > 0 && !insert(units)) {
+            return false;
         }
         owed = capped ? 0 : due % UNIT_DIVISOR;
         well.deplete();
@@ -206,34 +267,38 @@ public class PumpjackBlockEntity extends BlockEntity {
         // what finishes oil processing, through whoever is listening.
         OilProgress.report(level, well.getBlockPos(),
                 BuiltInRegistries.BLOCK.getKey(ModBlocks.CRUDE_OIL.get()), 1);
+
+        // Productivity: every cycle earns a fraction of a free one, from the modules and from the
+        // world's mining productivity research; a whole one is banked without touching the well,
+        // and stays owed if the tank has no room for it.
+        productivity.earn(modules.effect().productivityBonus() + Bonuses.of(level, MINING_PRODUCTIVITY));
+        if (productivity.owed() && units > 0 && insert(units)) {
+            productivity.pay();
+        }
         return true;
     }
 
-    /** Stops without rescheduling, remembering why for the readout. */
+    private boolean insert(int units) {
+        try (Transaction transaction = Transaction.openRoot()) {
+            if (tank.insert(tank.resource(), units, transaction) != units) {
+                return false;
+            }
+            transaction.commit();
+            return true;
+        }
+    }
+
     private void settle(PumpjackStatus why) {
         status = why;
         setChanged();
     }
 
-    /**
-     * A chunk that has just loaded has a pumpjack that has never been woken.
-     *
-     * <p>One scheduled tick per machine per chunk load, paid once. Without it a pumpjack that slept
-     * with power and room before a restart would never start again on its own.
-     */
     @Override
     public void onLoad() {
         super.onLoad();
         wake();
     }
 
-    /**
-     * Schedules the next tick unless one is already coming.
-     *
-     * <p>The guard is what makes this safe to call from anywhere: a grid filling the buffer and a
-     * pipe drawing from the tank may both report in one tick, and without it each would queue its
-     * own visit.
-     */
     void wake() {
         if (!(level instanceof ServerLevel serverLevel) || isRemoved()) {
             return;
@@ -244,16 +309,47 @@ public class PumpjackBlockEntity extends BlockEntity {
         }
     }
 
-    /** Electricity arrived, or was spent. The wake is the half that matters. */
     private void onPowerChanged() {
         setChanged();
         wake();
     }
 
-    /** Room in the tank is the one thing that gives a full pumpjack work again. */
     private void onTankChanged() {
         setChanged();
         wake();
+    }
+
+    private void onModulesChanged() {
+        setChanged();
+        wake();
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return getBlockState().getBlock().getName();
+    }
+
+    @Override
+    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+        return new PumpjackMenu(containerId, playerInventory, modules, menuData, worldPosition);
+    }
+
+    /** The modules spill when the machine is broken. The oil in the tank does not; it is a fluid. */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (level == null) {
+            return;
+        }
+        for (int slot = 0; slot < modules.size(); slot++) {
+            int amount = modules.getAmountAsInt(slot);
+            if (amount <= 0) {
+                continue;
+            }
+            ItemResource resource = modules.getResource(slot);
+            modules.set(slot, ItemResource.EMPTY, 0);
+            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), resource.toStack(amount));
+        }
     }
 
     @Override
@@ -261,7 +357,11 @@ public class PumpjackBlockEntity extends BlockEntity {
         super.saveAdditional(output);
         energy.serialize(output.child("Energy"));
         tank.serialize(output.child("Tank"));
+        modules.serialize(output.child("Modules"));
+        productivity.save(output);
         output.putInt("Progress", progress);
+        output.putInt("CycleTicks", cycleTicks);
+        output.putInt("Draw", draw);
         output.putLong("Owed", owed);
         output.putInt("Status", status.ordinal());
     }
@@ -271,7 +371,11 @@ public class PumpjackBlockEntity extends BlockEntity {
         super.loadAdditional(input);
         input.child("Energy").ifPresent(energy::deserialize);
         input.child("Tank").ifPresent(tank::deserialize);
+        input.child("Modules").ifPresent(modules::deserialize);
+        productivity.load(input);
         progress = input.getIntOr("Progress", 0);
+        cycleTicks = input.getIntOr("CycleTicks", CYCLE_TICKS);
+        draw = input.getIntOr("Draw", ENERGY_PER_TICK);
         owed = input.getLongOr("Owed", 0);
         status = PumpjackStatus.byOrdinal(input.getIntOr("Status", PumpjackStatus.NO_WELL.ordinal()));
     }

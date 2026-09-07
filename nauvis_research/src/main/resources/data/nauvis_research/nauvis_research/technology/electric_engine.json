@@ -1,6 +1,6 @@
 {
   "name": "Electric engine",
-  "order": "0050",
+  "order": "0051",
   "prerequisites": [
     "nauvis_research:lubricant"
   ],

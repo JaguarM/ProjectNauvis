@@ -1,6 +1,6 @@
 {
   "name": "Productivity module",
-  "order": "0049",
+  "order": "0050",
   "prerequisites": [
     "nauvis_research:modules"
   ],
