@@ -1295,5 +1295,288 @@
         "modifier": 0.1
       }
     ]
+  },
+  {
+    "id": "speed-module-2",
+    "upgrade": true,
+    "prerequisites": [
+      "speed-module"
+    ],
+    "cost": {
+      "count": 75,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "speed-module-2"
+    ]
+  },
+  {
+    "id": "speed-module-3",
+    "upgrade": true,
+    "prerequisites": [
+      "speed-module-2"
+    ],
+    "cost": {
+      "count": 300,
+      "time_seconds": 60,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        },
+        {
+          "science_pack": "high-tech-science-pack",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "speed-module-3"
+    ]
+  },
+  {
+    "id": "effectivity-module-2",
+    "upgrade": true,
+    "prerequisites": [
+      "effectivity-module"
+    ],
+    "cost": {
+      "count": 75,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "effectivity-module-2"
+    ]
+  },
+  {
+    "id": "effectivity-module-3",
+    "upgrade": true,
+    "prerequisites": [
+      "effectivity-module-2"
+    ],
+    "cost": {
+      "count": 300,
+      "time_seconds": 60,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        },
+        {
+          "science_pack": "high-tech-science-pack",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "effectivity-module-3"
+    ]
+  },
+  {
+    "id": "productivity-module-2",
+    "upgrade": true,
+    "prerequisites": [
+      "productivity-module"
+    ],
+    "cost": {
+      "count": 75,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "productivity-module-2"
+    ]
+  },
+  {
+    "id": "productivity-module-3",
+    "upgrade": true,
+    "prerequisites": [
+      "productivity-module-2"
+    ],
+    "cost": {
+      "count": 300,
+      "time_seconds": 60,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        },
+        {
+          "science_pack": "production-science-pack",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "productivity-module-3"
+    ]
+  },
+  {
+    "id": "production-science-pack",
+    "prerequisites": [
+      "advanced-material-processing-2",
+      "electric-engine"
+    ],
+    "cost": {
+      "count": 100,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "production-science-pack"
+    ]
+  },
+  {
+    "id": "high-tech-science-pack",
+    "prerequisites": [
+      "advanced-electronics-2",
+      "speed-module",
+      "battery"
+    ],
+    "cost": {
+      "count": 100,
+      "time_seconds": 30,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "high-tech-science-pack"
+    ]
+  },
+  {
+    "id": "rocket-silo",
+    "prerequisites": [
+      "advanced-electronics-2",
+      "speed-module-3",
+      "productivity-module-3"
+    ],
+    "cost": {
+      "count": 1000,
+      "time_seconds": 60,
+      "ingredients": [
+        {
+          "science_pack": "science-pack-1",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-2",
+          "count": 1
+        },
+        {
+          "science_pack": "science-pack-3",
+          "count": 1
+        },
+        {
+          "science_pack": "military-science-pack",
+          "count": 1
+        },
+        {
+          "science_pack": "production-science-pack",
+          "count": 1
+        },
+        {
+          "science_pack": "high-tech-science-pack",
+          "count": 1
+        }
+      ]
+    },
+    "unlock_recipes": [
+      "rocket-silo",
+      "low-density-structure",
+      "rocket-fuel",
+      "rocket-control-unit",
+      "rocket-part",
+      "satellite"
+    ]
   }
 ]

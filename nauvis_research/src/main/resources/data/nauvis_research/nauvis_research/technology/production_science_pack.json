@@ -1,0 +1,18 @@
+{
+  "name": "Production science pack",
+  "order": "0060",
+  "prerequisites": [
+    "nauvis_research:advanced_material_processing_2",
+    "nauvis_research:electric_engine"
+  ],
+  "units": 100,
+  "ticks_per_unit": 600,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3"
+  ],
+  "unlocks": [
+    "nauvis_research:production_science_pack"
+  ]
+}
