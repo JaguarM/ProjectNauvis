@@ -286,6 +286,10 @@ Military and pollution
   stops; Factorio's bullets do the same. What it cannot do is miss - there is no spread and no
   travel time - and a player in the line of a turret's fire is not in it, because a turret only
   ever aims at an enemy and the bullet's line is to that enemy's eyes.
+- **The guns reach twice as far as Factorio's.** Thirty blocks for the pistol and thirty-six for
+  the submachine gun, where Factorio's are fifteen and eighteen: Yannic's call after the first
+  playtest, because a Factorio tile-range is a Minecraft yard. A range is balance, not identity,
+  and the turret keeps Factorio's eighteen. Not debt.
 - **Magazines stack to sixty-four, not Factorio's two hundred.** Minecraft's stack. A gun loads one
   at a time and keeps the rounds on itself as a component, drawn as the item's bar; a turret
   chambers one at a time out of the stack in its slot. The first version made a magazine's

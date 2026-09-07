@@ -26,13 +26,20 @@ public final class ModItems {
     public static final DeferredRegister<CreativeModeTab> TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, NauvisMilitary.MODID);
 
-    /** Four rounds a second, fifteen blocks. The gun you start with. */
-    public static final DeferredItem<GunItem> PISTOL = ITEMS.registerItem("pistol",
-            properties -> new GunItem(properties, 15, 15.0, false));
+    /**
+     * Twice Factorio's reach, on both guns: fifteen and eighteen tiles are a Factorio screen, and
+     * in Minecraft's first person they are the far side of a small yard. Yannic's call after the
+     * first playtest, 2026-09-07 - a range is balance, not identity, and this one is his to move.
+     */
+    public static final double RANGE_SCALE = 2.0;
 
-    /** Ten rounds a second for as long as the button is held, eighteen blocks. Behind {@code military}. */
+    /** Four rounds a second, Factorio's fifteen blocks doubled. The gun you start with. */
+    public static final DeferredItem<GunItem> PISTOL = ITEMS.registerItem("pistol",
+            properties -> new GunItem(properties, 15, 15.0 * RANGE_SCALE, false));
+
+    /** Ten rounds a second for as long as the button is held, Factorio's eighteen doubled. Behind {@code military}. */
     public static final DeferredItem<GunItem> SUBMACHINE_GUN = ITEMS.registerItem("submachine_gun",
-            properties -> new GunItem(properties, 6, 18.0, true));
+            properties -> new GunItem(properties, 6, 18.0 * RANGE_SCALE, true));
 
     /** Ten rounds of five. Four iron plates. */
     public static final DeferredItem<MagazineItem> FIREARM_MAGAZINE = ITEMS.registerItem("firearm_magazine",

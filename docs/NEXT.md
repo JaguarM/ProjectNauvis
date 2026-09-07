@@ -82,7 +82,7 @@ missing from each is `GAPS.md`.
 | `/oil` | `field` puts an oil field where you stand, as worldgen would; `well` puts one well under your feet. Gamemaster only. The tool for a superflat world, which runs no features |
 | `nauvis_mining:burner_mining_drill` | 2×2, five blocks; takes the ore out of the ground under its 2×2 and puts it down in front of the firebox, an ore every four seconds. Wants coal and a pickaxe |
 | `nauvis_mining:electric_mining_drill` | 3×3, nine blocks on a half-block deck you walk over; mines the 5×5 around it at an ore every two seconds, 12 FE/t, three module slots. Outputs in front of its head |
-| `nauvis_military:pistol`, `submachine_gun` | four rounds a second at fifteen blocks; ten a second, held, at eighteen. Both fire whatever magazine the player carries. Behind `military` for the SMG |
+| `nauvis_military:pistol`, `submachine_gun` | four rounds a second at thirty blocks; ten a second, held, at thirty-six - twice Factorio's reach, Yannic's call. Both load whatever magazine the player carries. Behind `military` for the SMG |
 | `nauvis_military:firearm_magazine`, `piercing_rounds_magazine` | ten rounds of five and of eight, as durability. Behind `military-2` for piercing |
 | `nauvis_military:grenade` | thrown; a blast of three that breaks nothing. Behind `military-2` |
 | `nauvis_military:gun_turret` | 2×2, four blocks with twin barrels; one magazine slot, eighteen blocks, ten rounds a second at anything hostile. Behind `gun-turret` |

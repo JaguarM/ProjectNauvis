@@ -23,8 +23,9 @@ import org.jspecify.annotations.Nullable;
 /**
  * A gun: the pistol and the submachine gun.
  *
- * <p>Factorio's two: the pistol fires four rounds a second and the submachine gun ten, the pistol
- * at fifteen blocks and the submachine gun at eighteen. Both take the same magazines and do the
+ * <p>Factorio's two: the pistol fires four rounds a second and the submachine gun ten, at twice
+ * Factorio's reach - thirty blocks and thirty-six; see {@code ModItems.RANGE_SCALE}. Both take the
+ * same magazines and do the
  * magazine's damage, raised by whatever physical projectile damage research the world has done -
  * Factorio's {@code ammo-damage} modifier for bullets, read through the library's hook.
  *
