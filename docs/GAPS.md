@@ -286,6 +286,10 @@ Military and pollution
   stops; Factorio's bullets do the same. What it cannot do is miss - there is no spread and no
   travel time - and a player in the line of a turret's fire is not in it, because a turret only
   ever aims at an enemy and the bullet's line is to that enemy's eyes.
+- **Magazines stack to sixty-four, not Factorio's two hundred.** Minecraft's stack. A gun loads one
+  at a time and keeps the rounds on itself as a component, drawn as the item's bar; a turret
+  chambers one at a time out of the stack in its slot. The first version made a magazine's
+  rounds its durability, and durability does not stack - Yannic's first look caught it.
 - **Armour is a chestplate, drawn as vanilla's.** Factorio's armour is one item for the whole
   body with a resistance table and, later, a grid; here light armour is chainmail's five points
   and heavy armour netherite's eight with its toughness, worn as chestplates and drawn with
@@ -406,10 +410,10 @@ Vanilla, and what is left alone
   price. The rule is that nothing is taken away before the pack can do that job. The conflict half
   of `data/removals.json` is a check rather than a list and will force the rest as items land; the
   bypass half is a judgement and grows one line at a time.
-- **The circuit network's vanilla equivalent is deliberately left alone.** Repeaters, comparators,
-  observers and pistons are Minecraft's answer to combinators; removing them now would take away a
-  system and offer nothing until milestone 6. The dropper stays too, and a test asserts it, because
-  it needs a clock to move anything — that is a build rather than a free ride.
+- **Redstone is vanilla's, for good.** Repeaters, comparators, observers, pistons and the lamp are
+  Minecraft's signal system and keep their vanilla recipes; Factorio's circuit network is not
+  built, by decision - see `PLAN.md`. The dropper stays too, and a test asserts it, because it
+  needs a clock to move anything - that is a build rather than a free ride.
 - **One tool, and the ladder kept.** Four planks is a stone pickaxe, the wooden one has no recipe,
   and `mineable/pickaxe` absorbs the axe, shovel and hoe tags. Material tiers are untouched, and the
   other tools still exist — they are simply never necessary.

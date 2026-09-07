@@ -182,12 +182,29 @@ zombies with a target are playable now. The numbers are knobs and a playtest wil
 
 ### 6. More removals follow the items
 
-The wall's and the gate's are done: `minecraft:cobblestone_wall` and its two stonecutter recipes
-are removed for `nauvis_military:cobblestone_wall` behind `stone-wall`, and `minecraft:iron_door`
-for `nauvis_military:iron_door` behind `gate`. The lamp is left: `minecraft:redstone_lamp` is
-`nauvis_circuits`' in the mapping, which is milestone 6's mod, and its recipe wants an iron stick
-Neo Progressive Materials does not register. Ship either and the build fails until vanilla's is
-removed, which is the check working.
+**Done.** `minecraft:cobblestone_wall` and its two stonecutter recipes are removed for
+`nauvis_military:cobblestone_wall` behind `stone-wall`, and `minecraft:iron_door` for
+`nauvis_military:iron_door` behind `gate`. The lamp was the third and is not a removal any more:
+redstone is vanilla's by decision (`PLAN.md`, 2026-09-07), lamp included. The conflict check
+will name the next one the moment a mod ships a recipe for a vanilla item.
+
+Next, from the first look at milestone 5
+----------------------------------------
+
+Yannic played the military build on 2026-09-07 and named three things for later, in this order:
+
+- **Pollution needs work.** The numbers in `Attacks` and `PollutionState` were never played; the
+  absorption is flat and the attack chance is one formula. Play it, then move them.
+- **Machine health.** Hostiles do not touch a machine and a machine cannot be hurt, so an attack
+  is only ever on the player. Factorio's entities have health and biters chew through walls to
+  the polluters; a first version is a `Damageable` seam in `nauvis_lib` that a mob's attack goal
+  can reach, with the wall and the turret first.
+- **Mob targeting.** What pollution sends walks at the nearest player. Factorio's biters walk at
+  the polluters and fight whatever is in the way; that wants a target position rather than a
+  player, and the goal above to hit what they reach.
+
+Fixed from the same look: the guns are held like swords rather than cards, the three circuits
+are one board in three colours, and magazines stack.
 
 Loose ends — small enough to finish in an afternoon
 ---------------------------------------------------

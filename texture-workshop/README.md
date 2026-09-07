@@ -23,8 +23,9 @@ drift apart.
 
 `make_material_textures.py` writes into `../NeoProgressiveMaterials`, which is a sibling repo
 rather than a subproject. That is deliberate - the workshop is one place, not five - and it
-only writes the items it has a map for, so the three that were drawn by hand before it existed
-are left alone.
+only writes the items it has a map for, so the two that were drawn by hand before it existed -
+the copper cable and the iron gear wheel - are left alone. The three circuits are one board map
+in three colours, so they cannot drift apart again.
 
 The chests
 ----------

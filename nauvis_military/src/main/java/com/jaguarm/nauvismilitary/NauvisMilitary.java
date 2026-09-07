@@ -6,6 +6,7 @@ import com.jaguarm.nauvismilitary.pollution.PollutionClouds;
 import com.jaguarm.nauvismilitary.registry.ModBlockEntities;
 import com.jaguarm.nauvismilitary.registry.ModBlocks;
 import com.jaguarm.nauvismilitary.registry.ModCapabilities;
+import com.jaguarm.nauvismilitary.registry.ModComponents;
 import com.jaguarm.nauvismilitary.registry.ModEntities;
 import com.jaguarm.nauvismilitary.registry.ModItems;
 import com.jaguarm.nauvismilitary.registry.ModMenus;
@@ -33,6 +34,7 @@ public class NauvisMilitary {
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModItems.TABS.register(modEventBus);
+        ModComponents.COMPONENTS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModEntities.ENTITY_TYPES.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);

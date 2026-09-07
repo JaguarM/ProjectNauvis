@@ -18,7 +18,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -31,6 +30,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -93,6 +93,10 @@ public class GunTurretBlockEntity extends BlockEntity implements MenuProvider {
     /** Rounds fired since it was placed, for the readout. */
     private int shots;
 
+    /** The magazine it is firing from: the rounds left in it and what each one does. */
+    private int chambered;
+    private float chamberedDamage;
+
     private final ContainerData menuData = new ContainerData() {
         @Override
         public int get(int id) {
@@ -135,18 +139,22 @@ public class GunTurretBlockEntity extends BlockEntity implements MenuProvider {
         return shots;
     }
 
-    /** Rounds left in the magazine in the slot, or none. */
+    /** Rounds left: what is chambered and every magazine still in the slot. */
     public int roundsLeft() {
-        if (inventory.getAmountAsInt(AMMO_SLOT) <= 0) {
-            return 0;
-        }
-        ItemStack magazine = inventory.getResource(AMMO_SLOT).toStack(1);
-        return magazine.getMaxDamage() - magazine.getDamageValue();
+        int inSlot = inventory.getAmountAsInt(AMMO_SLOT);
+        int perMagazine = inSlot > 0 && inventory.getResource(AMMO_SLOT).getItem() instanceof MagazineItem magazine
+                ? magazine.rounds()
+                : 0;
+        return chambered + inSlot * perMagazine;
+    }
+
+    private boolean hasAmmo() {
+        return chambered > 0 || inventory.getAmountAsInt(AMMO_SLOT) > 0;
     }
 
     /** Called by {@link GunTurretBlock}, and only ever on a tick this turret asked for. */
     public void serverTick(ServerLevel level) {
-        if (inventory.getAmountAsInt(AMMO_SLOT) <= 0) {
+        if (!hasAmmo()) {
             target = null;
             settle(Status.NO_AMMO);
             return;
@@ -212,27 +220,35 @@ public class GunTurretBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private void fire(ServerLevel level, Vec3 muzzle, LivingEntity at) {
-        ItemStack magazine = inventory.getResource(AMMO_SLOT).toStack(1);
-        if (!(magazine.getItem() instanceof MagazineItem rounds)) {
+        if (chambered <= 0 && !chamber()) {
             return;
         }
         double bonus = Bonuses.of(level, GunItem.AMMO_DAMAGE, GunItem.BULLET)
                 + Bonuses.of(level, TURRET_ATTACK, GUN_TURRET);
-        float damage = (float) (rounds.damage() * (1 + bonus));
+        float damage = (float) (chamberedDamage * (1 + bonus));
 
         Vec3 aim = at.getEyePosition().subtract(muzzle);
         Bullets.fire(level, null, muzzle, aim, RANGE + 1, damage, ModDamageTypes.turret(level, muzzle));
         Bullets.crack(level, muzzle, 0.8F);
         shots++;
+        chambered--;
+    }
 
-        // One round off the magazine; the last round empties the slot.
-        int used = magazine.getDamageValue() + 1;
-        if (used >= magazine.getMaxDamage()) {
-            inventory.set(AMMO_SLOT, ItemResource.EMPTY, 0);
-        } else {
-            magazine.setDamageValue(used);
-            inventory.set(AMMO_SLOT, ItemResource.of(magazine), 1);
+    /** Takes one magazine out of the slot and chambers its rounds. False with the slot empty. */
+    private boolean chamber() {
+        ItemResource resource = inventory.getResource(AMMO_SLOT);
+        if (inventory.getAmountAsInt(AMMO_SLOT) <= 0 || !(resource.getItem() instanceof MagazineItem magazine)) {
+            return false;
         }
+        try (Transaction transaction = Transaction.openRoot()) {
+            if (inventory.extract(AMMO_SLOT, resource, 1, transaction) != 1) {
+                return false;
+            }
+            transaction.commit();
+        }
+        chambered = magazine.rounds();
+        chamberedDamage = magazine.damage();
+        return true;
     }
 
     private void settle(Status why) {
@@ -285,6 +301,8 @@ public class GunTurretBlockEntity extends BlockEntity implements MenuProvider {
         super.saveAdditional(output);
         inventory.serialize(output.child("Inventory"));
         output.putInt("Shots", shots);
+        output.putInt("Chambered", chambered);
+        output.putFloat("ChamberedDamage", chamberedDamage);
     }
 
     @Override
@@ -292,5 +310,7 @@ public class GunTurretBlockEntity extends BlockEntity implements MenuProvider {
         super.loadAdditional(input);
         input.child("Inventory").ifPresent(inventory::deserialize);
         shots = input.getIntOr("Shots", 0);
+        chambered = input.getIntOr("Chambered", 0);
+        chamberedDamage = input.getFloatOr("ChamberedDamage", 0.0F);
     }
 }

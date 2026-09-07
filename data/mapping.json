@@ -47,13 +47,8 @@
       }
     },
     "arithmetic-combinator": {
-      "name": "Arithmetic combinator",
-      "owner": "nauvis_circuits",
-      "item": "nauvis_circuits:arithmetic_combinator",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
     },
     "artillery-shell": {
       "name": "Artillery shell",
@@ -323,13 +318,8 @@
       }
     },
     "constant-combinator": {
-      "name": "Constant combinator",
-      "owner": "nauvis_circuits",
-      "item": "nauvis_circuits:constant_combinator",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
     },
     "construction-robot": {
       "name": "Construction robot",
@@ -380,13 +370,8 @@
       "raw": true
     },
     "decider-combinator": {
-      "name": "Decider combinator",
-      "owner": "nauvis_circuits",
-      "item": "nauvis_circuits:decider_combinator",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
     },
     "deconstruction-planner": {
       "skip": true,
@@ -729,13 +714,8 @@
       }
     },
     "green-wire": {
-      "name": "Green wire",
-      "owner": "nauvis_circuits",
-      "item": "nauvis_circuits:green_wire",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
     },
     "grenade": {
       "name": "Grenade",
@@ -902,14 +882,8 @@
       }
     },
     "lamp": {
-      "name": "Lamp",
-      "owner": "nauvis_circuits",
-      "item": "minecraft:redstone_lamp",
-      "stand_in": true,
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
     },
     "land-mine": {
       "name": "Land mine",
@@ -1339,13 +1313,8 @@
       }
     },
     "programmable-speaker": {
-      "name": "Programmable speaker",
-      "owner": "nauvis_circuits",
-      "item": "nauvis_circuits:programmable_speaker",
-      "craft": {
-        "time": 2,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
     },
     "pump": {
       "skip": true,
@@ -1404,13 +1373,8 @@
       "raw": true
     },
     "red-wire": {
-      "name": "Red wire",
-      "owner": "nauvis_circuits",
-      "item": "nauvis_circuits:red_wire",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
     },
     "refined-concrete": {
       "name": "Refined concrete",

@@ -1,4 +1,4 @@
-// 26.2	2026-09-07T18:13:26.0480224	Model Definitions - nauvis_military
+// 26.2	2026-09-07T20:47:45.4973089	Model Definitions - nauvis_military
 2bce0b32d44f45a944deade3a84f57cfbbaedf3b assets/nauvis_military/blockstates/gun_turret.json
 dd1a287d897175ac8ef56467a736c95f7528148c assets/nauvis_military/items/firearm_magazine.json
 ff9a46ef1f32c1be47947fcbe3dff9ee428cadc9 assets/nauvis_military/items/grenade.json
@@ -17,5 +17,5 @@ daeb2703dc8a8bb96ff0ca3c6394ecf065f6cdcc assets/nauvis_military/models/block/gun
 15f435f966efefaa1db00240fa2baf4c5158318b assets/nauvis_military/models/item/heavy_armor.json
 fbffb9034021a4c1ee5e7fd2639757efe2984d6f assets/nauvis_military/models/item/light_armor.json
 44d1933e018b4bc07c982eb3f2302545c6fd1572 assets/nauvis_military/models/item/piercing_rounds_magazine.json
-32e5999d142b8d58899794f067cad3d8e379ed08 assets/nauvis_military/models/item/pistol.json
-190939d4351881325338bc077c4603f28c969ba5 assets/nauvis_military/models/item/submachine_gun.json
+7be2f7f62b1fd8bfcf2a7a9c3a70f8efcf9e17f0 assets/nauvis_military/models/item/pistol.json
+d8a1de836dacabc1ad55009ac8e3a1af7d41791a assets/nauvis_military/models/item/submachine_gun.json

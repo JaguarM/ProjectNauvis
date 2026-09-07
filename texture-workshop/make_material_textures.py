@@ -10,9 +10,11 @@ change to the map moves every item drawn from it and they cannot drift apart.
 Most of these go into `../NeoProgressiveMaterials`, which is a sibling repo rather than a
 subproject -- see CLAUDE.md -- and two go into mods here, because an item lives in the mod the
 mapping gives it: solid fuel is the pack mod's and explosives are the fluids mod's. Only the
-items with a map below are written; the copper cable, the iron gear wheel and the electronic
-circuit were drawn by hand before this file existed and are left alone rather than redrawn from
-a guess at their maps.
+items with a map below are written; the copper cable and the iron gear wheel were drawn by hand
+before this file existed and are left alone rather than redrawn from a guess at their maps. The
+electronic circuit was too, until the advanced circuit and the processing unit came off one
+board map beside it and the three read as two families - now all three are that map, in
+Factorio's green, red and blue.
 
 Legend for the maps:
     .  transparent                   m  mid material
@@ -273,6 +275,17 @@ RED_BOARD = {
 }
 
 # Iron's neutral greys, so the engine sits beside the gear wheel as the same metal.
+# The electronic circuit: the same board in Factorio's green. It was drawn by hand before this
+# file existed and looked like a different family from the two circuits above it.
+GREEN_BOARD = {
+    ".": (0, 0, 0, 0),
+    "d": (26, 78, 34, 255),
+    "m": (46, 128, 58, 255),
+    "l": (84, 176, 92, 255),
+    "h": (150, 224, 150, 255),
+    "w": (226, 198, 150, 255),
+}
+
 # The processing unit: the advanced circuit's board in Factorio's blue.
 BLUE_BOARD = {
     ".": (0, 0, 0, 0),
@@ -322,6 +335,7 @@ ITEMS = {
     "plastic_bar": (PLASTIC_BAR, PLASTIC, "neoprogressivematerials"),
     "sulfur": (SULFUR, YELLOW, "neoprogressivematerials"),
     "battery": (BATTERY, BLACK_AND_RED, "neoprogressivematerials"),
+    "electronic_circuit": (ADVANCED_CIRCUIT, GREEN_BOARD, "neoprogressivematerials"),
     "advanced_circuit": (ADVANCED_CIRCUIT, RED_BOARD, "neoprogressivematerials"),
     "processing_unit": (ADVANCED_CIRCUIT, BLUE_BOARD, "neoprogressivematerials"),
     "engine_unit": (ENGINE_UNIT, IRON, "neoprogressivematerials"),

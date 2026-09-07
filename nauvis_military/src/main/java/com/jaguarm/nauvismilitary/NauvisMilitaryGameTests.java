@@ -5,6 +5,7 @@ import com.jaguarm.nauvislib.pollution.Pollution;
 import com.jaguarm.nauvismilitary.pollution.Attacks;
 import com.jaguarm.nauvismilitary.pollution.PollutionState;
 import com.jaguarm.nauvismilitary.registry.ModBlocks;
+import com.jaguarm.nauvismilitary.registry.ModComponents;
 import com.jaguarm.nauvismilitary.registry.ModItems;
 import com.jaguarm.nauvismilitary.turret.GunTurretBlock;
 import com.jaguarm.nauvismilitary.turret.GunTurretBlockEntity;
@@ -124,8 +125,7 @@ public final class NauvisMilitaryGameTests {
             // Yaw 180 looks north, which is where the husk stands.
             player.snapTo(feet.x, feet.y, feet.z, 180.0F, 0.0F);
             ItemStack pistol = new ItemStack(ModItems.PISTOL.get());
-            ItemStack magazine = new ItemStack(ModItems.FIREARM_MAGAZINE.get());
-            player.getInventory().add(magazine);
+            player.getInventory().add(new ItemStack(ModItems.FIREARM_MAGAZINE.get(), 3));
 
             Husk husk = helper.spawn(EntityTypes.HUSK, new BlockPos(0, 1, -6));
             float before = husk.getHealth();
@@ -133,12 +133,21 @@ public final class NauvisMilitaryGameTests {
             helper.assertTrue(((GunItem) pistol.getItem()).fire(helper.getLevel(), player, pistol),
                     "the pistol did not fire with a magazine in the inventory");
             helper.assertTrue(husk.getHealth() < before, "the husk in front of the pistol was not hit");
-            // The inventory took a copy; the one the gun fired from is the one it holds.
+            // The gun loaded one magazine off the stack and fired one round from it.
             ItemStack held = MagazineItem.find(player);
-            helper.assertTrue(held != null, "the magazine left the inventory");
-            helper.assertValueEqual(held.getDamageValue(), 1, "rounds spent from the magazine");
+            helper.assertTrue(held != null, "every magazine left the inventory");
+            helper.assertValueEqual(held.getCount(), 2, "magazines left in the stack after loading one");
+            ModComponents.Loaded loaded = GunItem.loaded(pistol);
+            helper.assertTrue(loaded != null, "the pistol holds no magazine after firing");
+            helper.assertValueEqual(loaded.rounds(), 9, "rounds left in the loaded magazine");
+            helper.assertTrue(((GunItem) pistol.getItem()).fire(helper.getLevel(), player, pistol),
+                    "the pistol did not fire its second round");
+            helper.assertValueEqual(GunItem.loaded(pistol).rounds(), 8, "rounds left after two shots");
+            helper.assertValueEqual(MagazineItem.find(player).getCount(), 2,
+                    "the second shot took another magazine instead of the loaded one's next round");
 
             player.getInventory().clearContent();
+            pistol.remove(ModComponents.LOADED.get());
             helper.assertFalse(((GunItem) pistol.getItem()).fire(helper.getLevel(), player, pistol),
                     "the pistol fired with nothing to fire");
             husk.discard();
@@ -182,6 +191,8 @@ public final class NauvisMilitaryGameTests {
                 helper.assertFalse(husk.isAlive(), "the husk in front of a loaded turret is still alive");
                 helper.assertTrue(turret.shots() >= 4, "rounds the turret fired: " + turret.shots());
                 helper.assertTrue(turret.roundsLeft() < 10, "the turret shot without spending its magazine");
+                helper.assertValueEqual(turret.inventory().getAmountAsInt(GunTurretBlockEntity.AMMO_SLOT), 0,
+                        "magazines still in the slot after chambering the only one");
                 helper.succeed();
             });
         }

@@ -10,8 +10,9 @@ Read `../CLAUDE.md` first. The five non-negotiables there govern everything belo
 Settled decisions — do not re-litigate
 --------------------------------------
 
-**Scope is the whole game, rocket included.** Oil, circuit network, pollution and biters,
-rocket launch. Chosen knowingly as a multi-year plan.
+**Scope is the whole game, rocket included.** Oil, pollution and biters, robots, rocket
+launch. Chosen knowingly as a multi-year plan. Two things are out, below: the trains and the
+circuit network.
 
 **No trains, no vehicles, and no pump.** Yannic's call after the oil playtest, 2026-09-06: a
 railway is a great deal of work for something this pack is not about. `nauvis_trains` is never
@@ -19,6 +20,14 @@ built. The rail, the two signals, the stop, the locomotive, the three wagons, th
 pump - which exists to load and unload fluid wagons - are `skip` in `data/mapping.json` with the
 reason, so the generator never reports them missing. Optional things that are fun to build -
 modules, the beacon, the tiers - are in.
+
+**No circuit network. Vanilla redstone stays, with its vanilla recipes.** Yannic's call after
+the military playtest, 2026-09-07: Factorio's required progression is already enough work, and
+Minecraft has a signal system of its own that players know. So the combinators, the two wires,
+the lamp and the programmable speaker are `skip` in `data/mapping.json`, `nauvis_circuits` is
+never built, and every redstone recipe - repeater, comparator, observer, piston, lamp - is
+vanilla's and is never removed. Wiring a Factorio machine to redstone, if it is ever wanted, is
+a feature on the machine and not a milestone.
 
 **Power is Minecraft FE, buffered per machine.** Explicitly chosen over a first-party grid
 with a global satisfaction ratio, so third-party cables keep working. Brownouts are
@@ -123,7 +132,7 @@ so far.
 | `nauvis_research` | labs, science packs, tech gating | 7 |
 | `nauvis_mining` | the two mining drills | 2 |
 | `nauvis_fluids` | pipes, oil, chemistry, nuclear | 33 |
-| `nauvis_circuits` | combinators, wires, lamps, speakers | 7 |
+| ~~`nauvis_circuits`~~ | ~~combinators, wires, lamps, speakers~~ never built: vanilla redstone stays, see the settled decisions | 0 |
 | `nauvis_military` | weapons, armour, turrets, walls, pollution, biters | 54 |
 | `nauvis_rocket` | silo, rocket parts, satellite, space science | 4 |
 
@@ -315,7 +324,11 @@ source for the oil recipes.
 `stone-wall`, `light-armor`, `military-science-pack` - and the grenade and heavy armour, which
 military science and its technology needed. `nauvis_military` exists, the machines pollute,
 and the pollution brings something; the model is the military note below.
-### 6 — Circuit network and robots · 12 new
+### 6 — Robots · 5 new
+
+The circuit network's seven were this milestone's other half and are out - the settled
+decisions say why - so it is the roboport, the two robots, the flying robot frame and the
+logistic chests.
 ### 7 — Rocket · 14 new
 
 Those seven milestones reach **89 of 214 items** — the critical path. Ten more — the trains, the

@@ -96,6 +96,8 @@ public final class NauvisMilitaryData {
             addItem(ModItems.HEAVY_ARMOR, "Heavy armor");
             add("entity.nauvis_military.grenade", "Grenade");
 
+            add("tooltip.nauvis_military.gun.empty", "Not loaded");
+            add("tooltip.nauvis_military.gun.loaded", "Loaded: %s, %s rounds");
             add("status.nauvis_military.turret.no_ammo", "No ammunition");
             add("status.nauvis_military.turret.watching", "Watching, %s rounds");
             add("status.nauvis_military.turret.firing", "Firing, %s rounds");
@@ -137,9 +139,14 @@ public final class NauvisMilitaryData {
         @Override
         protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators items) {
             turret(blockModels, ModBlocks.GUN_TURRET.get());
-            for (Item item : List.of(ModItems.PISTOL.get(), ModItems.SUBMACHINE_GUN.get(),
-                    ModItems.FIREARM_MAGAZINE.get(), ModItems.PIERCING_ROUNDS_MAGAZINE.get(), ModItems.GRENADE.get(),
-                    ModItems.LIGHT_ARMOR.get(), ModItems.HEAVY_ARMOR.get())) {
+            // Held like a sword, muzzle forward: vanilla's handheld transform points a texture's
+            // top-right corner away from the player, and the guns are drawn to it. A flat item
+            // is held like a card and pointed its barrel across the hand.
+            for (Item gun : List.of(ModItems.PISTOL.get(), ModItems.SUBMACHINE_GUN.get())) {
+                items.generateFlatItem(gun, ModelTemplates.FLAT_HANDHELD_ITEM);
+            }
+            for (Item item : List.of(ModItems.FIREARM_MAGAZINE.get(), ModItems.PIERCING_ROUNDS_MAGAZINE.get(),
+                    ModItems.GRENADE.get(), ModItems.LIGHT_ARMOR.get(), ModItems.HEAVY_ARMOR.get())) {
                 items.generateFlatItem(item, ModelTemplates.FLAT_ITEM);
             }
         }

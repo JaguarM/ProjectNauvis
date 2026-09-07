@@ -8,8 +8,8 @@ import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 /**
  * A turret's one slot: a magazine and nothing else.
  *
- * <p>Factorio's gun turret holds one stack of ammunition; here a magazine has durability and so
- * stacks to one, which is one magazine in the turret at a time. An inserter keeps it topped up.
+ * <p>Factorio's gun turret holds one stack of ammunition, and so does this: the slot takes a stack
+ * of magazines and the turret chambers them one at a time. An inserter keeps it topped up.
  */
 public class TurretInventory extends ItemStacksResourceHandler {
 

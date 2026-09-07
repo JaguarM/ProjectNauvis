@@ -22,5 +22,7 @@
   "status.nauvis_military.turret.firing": "Firing, %s rounds",
   "status.nauvis_military.turret.no_ammo": "No ammunition",
   "status.nauvis_military.turret.watching": "Watching, %s rounds",
-  "tab.facrafting.group.combat": "Combat"
+  "tab.facrafting.group.combat": "Combat",
+  "tooltip.nauvis_military.gun.empty": "Not loaded",
+  "tooltip.nauvis_military.gun.loaded": "Loaded: %s, %s rounds"
 }
