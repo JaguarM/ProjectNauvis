@@ -542,6 +542,23 @@ More confirmed details:
 - `GameTestHelper.makeMockServerPlayer(GameType)` builds a `ServerPlayer` that is **not** in the
   player list, so anything sent to `getPlayerList().getPlayers()` never reaches it; it does have
   `getAdvancements()`, so an award can be asserted on it directly.
+- `ChunkMap.FORCED_TICKET_LEVEL` is `ChunkLevel.byStatus(FullChunkStatus.ENTITY_TICKING)`, so a
+  forced chunk - vanilla's `setChunkForced` and NeoForge's `TicketController` alike - ticks blocks
+  and entities both. `ServerChunkCache.chunkMap.getDistanceManager().inEntityTickingRange(long)` is
+  the question, and a mob's `tickCount` is the cheap proxy.
+- Mob AI: `Mob.goalSelector` and `targetSelector` are public; `GoalSelector.addGoal(priority, goal)`
+  and `removeAllGoals(Predicate<Goal>)`; `Goal` is `canUse`, `canContinueToUse`, `start`, `stop`,
+  `tick`, `requiresUpdateEveryTick` and `setFlags(EnumSet<Goal.Flag>)`, and a goal ticks only every
+  other tick unless it says otherwise. `NearestAttackableTargetGoal(mob, Player.class, mustSee,
+  (target, level) -> ...)` takes a `TargetingConditions.Selector`. A zombie's melee goal is
+  priority 3 and its stroll 7, so 4 runs whenever it has no target. `PathNavigation.moveTo(x, y,
+  z, speed)` returns a partial path to the nearest reachable point for a target it cannot reach,
+  but nothing at all while the mob is not on the ground - the tick it spawned on, for one - so a
+  goal re-paths on a timer; `MoveControl.setWantedPosition(x, y, z, speed)` walks straight at a
+  point with no path, which is how a mob presses against a wall. Vanilla's own goals path to the
+  block *above* the block they want, as `MoveToBlockGoal` does. `Level.destroyBlockProgress(entityId,
+  pos, 0..9 or -1)` draws the cracks a pickaxe would; `CommonHooks.canEntityDestroy(level, pos, mob)`
+  is the mob-griefing rule and the event behind it.
 
 Time is a world clock, and the gametest world's sky ignores it
 --------------------------------------------------------------

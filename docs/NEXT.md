@@ -24,27 +24,26 @@ input slots hold the thousand concrete and thousand steel it costs.
 The jobs
 --------
 
-### 1. From the first look at milestone 5
+### 1. Play it
 
-Yannic played the military build on 2026-09-07 and named three things, in this order.
+Two builds have passed their tests and nobody's eyes, and both want a client boot and an evening:
 
-- **Pollution needs work.** The numbers in `Attacks` and `PollutionState` were never played; the
-  absorption is flat and the attack chance is one formula. Play it, then move them.
-- **Machine health.** Hostiles do not touch a machine and a machine cannot be hurt, so an attack
-  is only ever on the player. A first version is a `Damageable` seam in `nauvis_lib` that a mob's
-  attack goal can reach, with the wall and the turret first.
-- **Mob targeting.** What pollution sends walks at the nearest player. Factorio's biters walk at
-  the polluters and fight whatever is in the way; that wants a target position rather than a
-  player, and the goal above to hit what they reach.
+- **The rocket.** The silo on its pad, the radar's dish, the nine module chips and the five new
+  item icons, and a launch watched from the ground. The whole road is playable in survival - the
+  tree reaches `rocket-silo`, every ingredient exists, and the silo is made in an assembling
+  machine 2, whose input slots hold the thousand concrete and thousand steel it costs. The things
+  most likely to want moving, none of them identity: the five-second countdown, the firework's
+  height, the rocket's colours, the placeholder textures, and whether a nine-by-nine pad reads as
+  a silo at all.
+- **The attack.** Since 2026-09-07 what pollution sends walks at the machine that made it, chews
+  through the wall in its way, hits the turret when it gets there, and turns on a player only within
+  six blocks. Every machine has health - a hundred times its hardness, the turret Factorio's four
+  hundred - and the repair pack mends it. The numbers in `Attacks`, `Absorption` and
+  `PollutionState` have still never been played: how often a group comes, how big, how far away it
+  appears, how hard a zombie hits a wall and how far it notices a player. Play a polluted evening
+  behind a wall with two turrets, then move them.
 
-### 2. What the first launch will name
-
-The silo is built to the dump and has passed its tests and nobody's eyes. The things most likely
-to want moving after a boot, none of them identity: the five-second countdown and the firework's
-height, the rocket's colours, the silo's placeholder textures, and whether a nine-by-nine pad
-reads as a silo at all. `GAPS.md`'s rocket section says what was left out and why.
-
-### 3. Later updates
+### 2. Later updates
 
 The robots (milestone 6), and what space science buys - the infinite research the tree does not
 transcribe. Neither is on the road to the rocket and both are `PLAN.md`'s to schedule.

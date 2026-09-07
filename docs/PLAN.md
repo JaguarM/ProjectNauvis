@@ -415,20 +415,30 @@ emits and never asks who is listening, and `nauvis_military` installs the one `S
 the military mod the number goes nowhere, which is what every machine did before.
 
 The clouds are Factorio's at chunk size: `PollutionState`, one per level, a number over each
-16-by-16. Once a minute every cloud gives two percent of itself to each of its four neighbours
-and the ground takes five off every chunk - a flat figure where Factorio's depends on the
-tiles, so a forest absorbs nothing more here. A cloud grows until its edges thin to nothing,
-which is the shape a Factorio cloud has. `/pollution` reads the chunk you stand in and the
-level's lifetime total; the hover readout says the same for any block.
+16-by-16 and the position of the last machine that breathed into it. Once a minute every cloud
+gives two percent of itself to each of its four neighbours and the ground takes some off every
+chunk by its biome - `Absorption`: a forest three times what a plain does, a beach a fifth. A
+cloud grows until its edges thin to nothing, which is the shape a Factorio cloud has.
+`/pollution` reads the chunk you stand in, where its cloud came from and the level's lifetime
+total; the hover readout says the same for any block.
 
 There are no spawners, so the cloud itself sends the attack. Once a minute a chunk holding at
 least fifty has a chance proportional to what it holds - certain at five hundred - of spending
-fifty a head on a group of up to six, which appears twenty-four to forty blocks from the
-chunk's middle with the nearest player as its target, and only if a player is within
-ninety-six blocks. What comes is the level's lifetime pollution standing in for evolution:
-zombies, skeletons among them past twenty thousand, creepers past sixty. They wear a cap so
-the sun does not do the turrets' job. None of those numbers is identity; they are the knobs,
-in `Attacks` and `PollutionState`, and the first playtest will move them.
+fifty a head on a group of up to six, and only if a player is within ninety-six blocks. The group
+appears twenty-four to forty blocks from the machine the cloud came from - the chunk's own
+polluter, or the thickest neighbour's followed uphill - and walks at it, chewing through
+whatever is in the way and hitting the machine when it gets there, through `nauvis_lib`'s
+`Health`; a player is fought only within six blocks or when they hit first, which is
+`AttackFactoryGoal` and Factorio's rule. What comes is the level's lifetime pollution standing
+in for evolution: zombies, skeletons among them past twenty thousand, creepers past sixty. They
+wear a cap so the sun does not do the turrets' job. None of those numbers is identity; they are
+the knobs, in `Attacks`, `Absorption` and `PollutionState`, and a playtest will move them.
+
+Everything a base is made of can be hurt. A machine that is `Damageable` says Factorio's health
+for itself - the turret's four hundred - and anything else is worth a hundred times its hardness,
+with its wounds kept in the level; a machine hurt to nothing comes down as one thing and hands
+back nothing, and the repair pack mends either. That is `nauvis_lib`'s `Health`, and it is the
+seam a mob's goal and a repair item meet at without naming each other.
 
 The weapons are Factorio's numbers on Minecraft's hits. A bullet is a line rather than an
 entity - the pistol, the submachine gun and the turret hit what they aim at on the tick they

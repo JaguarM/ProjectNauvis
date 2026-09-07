@@ -475,6 +475,17 @@ had before. The names are typed where they are used - on the machine that reads 
 tree that grants them - and nowhere in the library, which has no opinion about what any of them
 means. A gametest that needs a bonus installs a stand-in `Source` and puts the real one back.
 
+**Everything a base is made of can be hurt, and one class says how much.** `nauvis_lib`'s
+`Health` is the seam a mob's goal and a repair item meet at: `hurt` takes health off whatever
+stands at a position and `repair` puts it back. A machine that implements `Damageable` - a
+`MachineHealth` field, saved with the block entity - says Factorio's number for itself and is
+found through any of its cells by the anchor; anything else is worth a hundred times its hardness,
+with its wounds in `BlockHealth`, a `SavedData` keyed by position that remembers which block was
+wounded so a rebuilt wall starts whole. A machine hurt to nothing has its anchor destroyed with no
+drops and the teardown rule takes the rest. The military mod's `AttackFactoryGoal` is the one
+thing that hurts and the machines mod's repair pack the one thing that mends, and neither names
+the other.
+
 **A machine breathes out and never asks who is listening.** The same seam with the arrow the
 other way: `nauvis_lib`'s `Pollution` is a number in, and `nauvis_military` installs the one
 `Sink`. Every machine calls `Pollution.emitTick(level, pos, perMinute, factor)` on every tick it

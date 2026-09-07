@@ -213,6 +213,16 @@ Gametests
   that must own the world's state goes in one of its own. `nauvis_research:alone` holds one test.
   Restoring the tree afterwards is still needed, for whatever batch runs next; snapshot the
   completed set and put it back, because a test cannot clean up what it did not know it changed.
+- **A gametest's ground is only as big as its structure, and only its structure's chunk ticks
+  entities.** The tests here use vanilla's `minecraft:empty` structure, which is a point, so the
+  platform under a test is one block and everything the padding adds around it is air over the
+  world's floor thirty blocks down; and the runner forces only the structure's own chunk, so a mob
+  standing in the padded area is in a loaded chunk that is not entity-ticking and never runs a
+  single AI tick - `tickCount` stays at zero. A husk sent at a turret stood still for nineteen
+  seconds and the test said the goal was broken. Block entities are unaffected, which is why every
+  machine test passed for a year without noticing. A test that moves a mob lays its own floor
+  with `setBlock` and calls `level.setChunkForced(x, z, true)` on the chunks it walks across; the
+  runner unforces every forced chunk when the batch ends.
 - **`GameTestHelper.spawnItem(Item, BlockPos)` spawns at the block's corner, not its middle**, so an
   item over a one-block-wide thing hangs half off it. Use the `(float, float, float)` overload.
 - **`GameTestServer` force-enables every datapack, including ones shipped switched off.** Vanilla

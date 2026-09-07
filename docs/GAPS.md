@@ -261,23 +261,34 @@ Mining
 Military and pollution
 ----------------------
 
-- **The biters are zombies.** Minecraft's hostiles with a target, wearing a cap against the sun,
-  in place of Factorio's biters, spitters, nests, expansion and evolution. They do not attack
-  buildings - a zombie has no opinion about a furnace - so a base is never damaged by an attack,
-  only its player is, and creepers past sixty thousand lifetime pollution are the one thing that
-  breaks a wall. `PLAN.md`'s military note has the model and its knobs; a creature of the pack's
-  own is the version after this one.
-- **The ground absorbs a flat five a minute per chunk.** Factorio's absorption is per tile and a
-  forest takes far more than a desert; here every chunk is the same, and planting trees does
-  nothing for the air. Nothing about the terrain is read.
+- **The biters are zombies.** Minecraft's hostiles walking at the factory, wearing a cap against
+  the sun, in place of Factorio's biters, spitters, nests, expansion and evolution. They chew
+  through what is in their way and hit the machine they came for, through `nauvis_lib`'s
+  `Health`; they turn on a player only within six blocks or when hit. `PLAN.md`'s military note
+  has the model and its knobs; a creature of the pack's own is the version after this one.
+- **A hostile forgets the factory over a reload.** Which machine it was sent at is on its goal
+  and not saved, so a zombie that lives through a restart is a zombie again. The attacks that
+  matter are over in minutes; the case is a hostile left standing at a wall overnight.
+- **Health is a hundred times hardness, except where a machine says otherwise.** Only the turret
+  carries Factorio's own figure so far - four hundred, which is also its hardness times a
+  hundred. An assembler is three hundred by the rule and Factorio's is three hundred; a
+  cobblestone wall is two hundred and Factorio's stone wall is three hundred and fifty. Close
+  enough not to keep a table; a machine that wants its exact number implements `Damageable`.
+- **A repair pack is a charge, not a tool.** Factorio's has durability and mends at two a tick for
+  as long as the button is held; ours is spent whole on a click, mending up to three hundred,
+  and kept when there was nothing to mend. A scratch costs a whole pack, and a wall that lost
+  four hundred costs two clicks. Consumables stack here; a tool with durability would not.
+- **The ground absorbs by the biome at the chunk's middle.** Factorio's absorption is per tile;
+  reading every block once a minute is more than the model is worth, so a forest, jungle or taiga
+  chunk takes three times the flat five, a beach or badlands a fifth, water half again, and the
+  rest five. One tree does nothing; a forest does. A chunk that is not loaded takes the flat five.
 - **Nothing comes for an empty base.** An attack is only sent when a player is within ninety-six
   blocks of the polluted chunk, so a factory left running overnight is not found overrun - or
   defended - in the morning. Factorio's attacks do not care where you are.
-- **A turret does not turn, and nothing attacks it.** The barrels point the way it was placed
-  and the shots come from its middle whichever way the target is; it has no health, since
-  hostiles here do not hit blocks. And a loaded turret looks around twice a second whether or not
-  anything is near, which is the one bounded poll the mod has - Minecraft tells a block nothing
-  about a zombie walking into range.
+- **A turret does not turn.** The barrels point the way it was placed and the shots come from its
+  middle whichever way the target is. And a loaded turret looks around twice a second whether or
+  not anything is near, which is the one bounded poll the mod has - Minecraft tells a block
+  nothing about a zombie walking into range.
 - **Bullets are lines and go through nothing.** A shot hits the first living thing along it and
   stops; Factorio's bullets do the same. What it cannot do is miss - there is no spread and no
   travel time - and a player in the line of a turret's fire is not in it, because a turret only
