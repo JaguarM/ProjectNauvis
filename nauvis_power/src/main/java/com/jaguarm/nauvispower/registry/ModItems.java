@@ -32,7 +32,7 @@ public final class ModItems {
             ITEMS.registerSimpleBlockItem(ModBlocks.MEDIUM_ELECTRIC_POLE, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> BIG_ELECTRIC_POLE =
-            ITEMS.registerSimpleBlockItem(ModBlocks.BIG_ELECTRIC_POLE, () -> Stacks.of(20));
+            ITEMS.registerSimpleBlockItem(ModBlocks.BIG_ELECTRIC_POLE, () -> Stacks.of(50));
 
     /** Its recipe waits on the advanced circuit existing - see {@code SubstationBlock}. */
     public static final DeferredItem<BlockItem> SUBSTATION =

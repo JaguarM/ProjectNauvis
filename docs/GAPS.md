@@ -109,7 +109,7 @@ Military and pollution
 - A turret does not turn, shoots from its middle, and looks around twice a second while loaded.
 - Bullets are lines: no spread, no travel time, cannot miss, never hit a player.
 - The guns reach twice Factorio's range (thirty and thirty-six); the turret keeps eighteen. *Kept.*
-- Magazines stack to two hundred; rounds live on the gun or turret as a component.
+- Magazines stack to a hundred; rounds live on the gun or turret as a component.
 - Armour is a chestplate on vanilla's models (chainmail's five, netherite's eight). No modular
   armour, no equipment grid, no shotgun.
 - Only `physical-projectile-damage-1`; `weapon-shooting-speed` is not transcribed.

@@ -47,12 +47,12 @@ public final class ModItems {
     /** Ten rounds of five. Four iron plates. */
     public static final DeferredItem<MagazineItem> FIREARM_MAGAZINE = ITEMS.registerItem("firearm_magazine",
             properties -> new MagazineItem(properties, 10, 5.0F),
-            () -> Stacks.of(200));
+            () -> Stacks.of(100));
 
-    /** Ten rounds of eight. A firearm magazine, a steel plate and five copper. Behind {@code military-2}. */
+    /** Ten rounds of eight. Two firearm magazines, a steel plate and two copper make two. Behind {@code military-2}. */
     public static final DeferredItem<MagazineItem> PIERCING_ROUNDS_MAGAZINE = ITEMS.registerItem(
             "piercing_rounds_magazine", properties -> new MagazineItem(properties, 10, 8.0F),
-            () -> Stacks.of(200));
+            () -> Stacks.of(100));
 
     /** Ten coal and five iron plates, thrown. Behind {@code military-2}. */
     public static final DeferredItem<GrenadeItem> GRENADE = ITEMS.registerItem("grenade",

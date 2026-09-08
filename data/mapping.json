@@ -210,7 +210,7 @@
         2,
         2
       ],
-      "stack": 20
+      "stack": 50
     },
     "blueprint": {
       "skip": true,
@@ -566,7 +566,7 @@
       "name": "Firearm magazine",
       "owner": "nauvis_military",
       "item": "nauvis_military:firearm_magazine",
-      "stack": 200
+      "stack": 100
     },
     "fission-reactor-equipment": {
       "name": "Portable fission reactor",
@@ -893,7 +893,7 @@
       "name": "Piercing rounds magazine",
       "owner": "nauvis_military",
       "item": "nauvis_military:piercing_rounds_magazine",
-      "stack": 200
+      "stack": 100
     },
     "piercing-shotgun-shell": {
       "name": "Piercing shotgun shells",
