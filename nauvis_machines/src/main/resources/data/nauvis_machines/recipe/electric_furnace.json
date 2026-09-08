@@ -12,15 +12,15 @@
   "type": "facrafting:facraft",
   "craft_ticks": 100,
   "group": "production",
-  "order": "0075",
+  "order": "0053",
   "ingredients": [
-    {
-      "ingredient": "nauvis_materials:advanced_circuit",
-      "count": 5
-    },
     {
       "ingredient": "nauvis_materials:steel_plate",
       "count": 10
+    },
+    {
+      "ingredient": "nauvis_materials:advanced_circuit",
+      "count": 5
     },
     {
       "ingredient": "minecraft:stone_bricks",

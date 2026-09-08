@@ -272,24 +272,6 @@ ROCKET_FUEL = """
 
 # A square unit with a window in it and one bright lamp: the thing that steers a rocket, and
 # not another circuit board.
-ROCKET_CONTROL_UNIT = """
-................
-..dddddddddddd..
-..dmmmmmmmmmmd..
-..dmddddddddmd..
-..dmdllllllldmd.
-..dmdlhhhhlldmd.
-..dmdlhhhhlldmd.
-..dmdllllllldmd.
-..dmddddddddmd..
-..dmmmmmmmmmmd..
-..dmmgmmmmmmmd..
-..dmmmmmmmmmmd..
-..dddddddddddd..
-...d..d..d..d...
-................
-................
-"""
 
 # Two iron rods, leaning the way a stick does, one lit along its length.
 IRON_STICK = """
@@ -484,7 +466,6 @@ ITEMS = {
     "electric_engine_unit": (ENGINE_UNIT, ELECTRIC_IRON, "nauvis_materials"),
     "low_density_structure": (LOW_DENSITY_STRUCTURE, COPPER, "nauvis_materials"),
     "rocket_fuel": (ROCKET_FUEL, ROCKET_ORANGE, "nauvis_materials"),
-    "rocket_control_unit": (ROCKET_CONTROL_UNIT, CONTROL_UNIT, "nauvis_materials"),
     "iron_stick": (IRON_STICK, IRON, "nauvis_materials"),
     "solid_fuel": (SOLID_FUEL, COAL_BLACK, "nauvis"),
     "repair_pack": (REPAIR_PACK, TOOLBOX, "nauvis_machines"),

@@ -12,16 +12,16 @@
   "type": "facrafting:facraft",
   "craft_ticks": 20,
   "group": "intermediate",
-  "order": "0168",
+  "order": "0081",
   "category": "chemistry",
   "ingredients": [
     {
-      "ingredient": "minecraft:iron_ingot",
-      "count": 1
-    },
-    {
       "ingredient": "nauvis_materials:sulfur",
       "count": 5
+    },
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 1
     }
   ],
   "fluid_ingredients": [

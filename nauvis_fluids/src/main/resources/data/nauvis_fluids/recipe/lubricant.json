@@ -8,7 +8,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 20,
   "group": "intermediate",
-  "order": "0140",
+  "order": "0080",
   "category": "chemistry",
   "ingredients": [],
   "fluid_ingredients": [

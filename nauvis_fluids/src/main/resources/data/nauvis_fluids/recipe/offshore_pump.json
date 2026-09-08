@@ -12,19 +12,15 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "production",
-  "order": "0081",
+  "order": "0049",
   "ingredients": [
     {
-      "ingredient": "nauvis_materials:electronic_circuit",
-      "count": 2
+      "ingredient": "nauvis_fluids:pipe",
+      "count": 3
     },
     {
       "ingredient": "nauvis_materials:iron_gear_wheel",
-      "count": 1
-    },
-    {
-      "ingredient": "nauvis_fluids:pipe",
-      "count": 1
+      "count": 2
     }
   ],
   "result": {

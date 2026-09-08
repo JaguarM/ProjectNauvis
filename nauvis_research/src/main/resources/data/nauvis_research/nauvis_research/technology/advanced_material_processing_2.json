@@ -3,7 +3,7 @@
   "order": "0043",
   "prerequisites": [
     "nauvis_research:advanced_material_processing",
-    "nauvis_research:science_pack_3"
+    "nauvis_research:chemical_science_pack"
   ],
   "units": 250,
   "ticks_per_unit": 600,

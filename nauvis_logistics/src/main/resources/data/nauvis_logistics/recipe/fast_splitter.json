@@ -12,19 +12,19 @@
   "type": "facrafting:facraft",
   "craft_ticks": 40,
   "group": "logistics",
-  "order": "0018",
+  "order": "0008",
   "ingredients": [
     {
-      "ingredient": "nauvis_materials:electronic_circuit",
-      "count": 10
+      "ingredient": "nauvis_logistics:splitter",
+      "count": 1
     },
     {
       "ingredient": "nauvis_materials:iron_gear_wheel",
       "count": 10
     },
     {
-      "ingredient": "nauvis_logistics:splitter",
-      "count": 1
+      "ingredient": "nauvis_materials:electronic_circuit",
+      "count": 10
     }
   ],
   "result": {

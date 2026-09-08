@@ -877,7 +877,7 @@ public final class NauvisResearchGameTests {
 
             ResourceKey<Technology> target = ModTechnologies.key("automation_2");
             ResourceKey<Technology> steel = ModTechnologies.key("steel_processing");
-            ResourceKey<Technology> green = ModTechnologies.key("science_pack_2");
+            ResourceKey<Technology> green = ModTechnologies.key("logistic_science_pack");
 
             // **Snapshotted, not just cleared.** One SavedData is shared by every test in the
             // run, and `grant` cascades - granting automation-2 completes automation, which is

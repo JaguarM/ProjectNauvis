@@ -1,0 +1,18 @@
+{
+  "name": "Low density structure",
+  "order": "0062",
+  "prerequisites": [
+    "nauvis_research:advanced_material_processing",
+    "nauvis_research:chemical_science_pack"
+  ],
+  "units": 300,
+  "ticks_per_unit": 900,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3"
+  ],
+  "unlocks": [
+    "nauvis_materials:low_density_structure"
+  ]
+}

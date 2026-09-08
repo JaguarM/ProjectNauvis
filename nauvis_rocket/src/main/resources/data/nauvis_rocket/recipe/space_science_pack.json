@@ -8,7 +8,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 6000,
   "group": "intermediate",
-  "order": "0163",
+  "order": "0123",
   "category": "rocket-building",
   "ingredients": [
     {

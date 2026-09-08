@@ -8,7 +8,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 20,
   "group": "combat",
-  "order": "0199",
+  "order": "0130",
   "ingredients": [
     {
       "ingredient": "minecraft:iron_ingot",

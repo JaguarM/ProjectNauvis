@@ -12,14 +12,14 @@
   "type": "facrafting:facraft",
   "craft_ticks": 160,
   "group": "combat",
-  "order": "0205",
+  "order": "0173",
   "ingredients": [
     {
-      "ingredient": "minecraft:copper_ingot",
+      "ingredient": "nauvis_materials:iron_gear_wheel",
       "count": 10
     },
     {
-      "ingredient": "nauvis_materials:iron_gear_wheel",
+      "ingredient": "minecraft:copper_ingot",
       "count": 10
     },
     {

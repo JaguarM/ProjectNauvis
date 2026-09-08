@@ -83,9 +83,6 @@ public final class ModItems {
      */
     public static final DeferredItem<Item> ROCKET_FUEL = ITEMS.registerSimpleItem("rocket_fuel", () -> Stacks.of(20));
 
-    /** A processing unit and a speed module, thirty seconds: the third thing a rocket part costs. */
-    public static final DeferredItem<Item> ROCKET_CONTROL_UNIT = ITEMS.registerSimpleItem("rocket_control_unit", () -> Stacks.of(10));
-
     /**
      * One iron plate makes two, in half a second. Its recipe shipped for a while before the item
      * did and failed to load every start; it is here so the recipe the concrete technology
@@ -112,7 +109,6 @@ public final class ModItems {
                         output.accept(PROCESSING_UNIT.get());
                         output.accept(LOW_DENSITY_STRUCTURE.get());
                         output.accept(ROCKET_FUEL.get());
-                        output.accept(ROCKET_CONTROL_UNIT.get());
                         output.accept(IRON_STICK.get());
                     })
                     .build());

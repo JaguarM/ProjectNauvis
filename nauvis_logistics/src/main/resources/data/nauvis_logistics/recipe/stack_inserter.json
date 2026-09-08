@@ -12,23 +12,23 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "logistics",
-  "order": "0051",
+  "order": "0014",
   "ingredients": [
     {
-      "ingredient": "nauvis_materials:advanced_circuit",
-      "count": 1
+      "ingredient": "nauvis_materials:iron_gear_wheel",
+      "count": 15
     },
     {
       "ingredient": "nauvis_materials:electronic_circuit",
       "count": 15
     },
     {
-      "ingredient": "nauvis_logistics:fast_inserter",
+      "ingredient": "nauvis_materials:advanced_circuit",
       "count": 1
     },
     {
-      "ingredient": "nauvis_materials:iron_gear_wheel",
-      "count": 15
+      "ingredient": "nauvis_logistics:fast_inserter",
+      "count": 1
     }
   ],
   "result": {

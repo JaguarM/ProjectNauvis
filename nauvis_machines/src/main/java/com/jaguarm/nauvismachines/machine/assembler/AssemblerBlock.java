@@ -76,7 +76,7 @@ public abstract class AssemblerBlock extends BaseEntityBlock implements Multiblo
      * machine only what this says, and the block entity refuses the rest.
      */
     public boolean accepts(FacraftRecipe recipe) {
-        if (recipe.isHandcraftable()) {
+        if (recipe.isHandcraftable() || ADVANCED_CRAFTING.equals(recipe.category())) {
             return true;
         }
         return fluidBoxes()
@@ -87,6 +87,9 @@ public abstract class AssemblerBlock extends BaseEntityBlock implements Multiblo
 
     /** Factorio's category for a recipe with a fluid in it that an assembler runs. */
     public static final String CRAFTING_WITH_FLUID = "crafting-with-fluid";
+
+    /** Factorio's category for what every assembler makes and no hand may: the engine unit. */
+    public static final String ADVANCED_CRAFTING = "advanced-crafting";
 
     @Override
     public Direction facing(BlockState state) {

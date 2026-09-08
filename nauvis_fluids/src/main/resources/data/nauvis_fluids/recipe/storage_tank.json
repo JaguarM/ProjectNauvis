@@ -12,7 +12,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 60,
   "group": "logistics",
-  "order": "0055",
+  "order": "0003",
   "ingredients": [
     {
       "ingredient": "minecraft:iron_ingot",

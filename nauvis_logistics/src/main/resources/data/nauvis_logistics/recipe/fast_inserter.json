@@ -12,19 +12,19 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "logistics",
-  "order": "0017",
+  "order": "0013",
   "ingredients": [
     {
       "ingredient": "nauvis_materials:electronic_circuit",
       "count": 2
     },
     {
-      "ingredient": "nauvis_logistics:inserter",
-      "count": 1
-    },
-    {
       "ingredient": "minecraft:iron_ingot",
       "count": 2
+    },
+    {
+      "ingredient": "nauvis_logistics:inserter",
+      "count": 1
     }
   ],
   "result": {

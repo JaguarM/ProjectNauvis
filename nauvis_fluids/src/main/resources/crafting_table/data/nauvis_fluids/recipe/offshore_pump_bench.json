@@ -12,10 +12,11 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "nauvis_materials:electronic_circuit",
-    "nauvis_materials:electronic_circuit",
+    "nauvis_fluids:pipe",
+    "nauvis_fluids:pipe",
+    "nauvis_fluids:pipe",
     "nauvis_materials:iron_gear_wheel",
-    "nauvis_fluids:pipe"
+    "nauvis_materials:iron_gear_wheel"
   ],
   "result": {
     "id": "nauvis_fluids:offshore_pump",

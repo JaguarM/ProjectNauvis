@@ -16,11 +16,11 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
+    "nauvis_machines:stone_furnace",
     "nauvis_fluids:pipe",
     "nauvis_fluids:pipe",
     "nauvis_fluids:pipe",
-    "nauvis_fluids:pipe",
-    "nauvis_machines:stone_furnace"
+    "nauvis_fluids:pipe"
   ],
   "result": {
     "id": "nauvis_power:boiler",

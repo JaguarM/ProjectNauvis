@@ -126,8 +126,7 @@ Modules and the rocket
 - A launch's thousand packs are owed to the output slot and paid as it clears; breaking the silo
   spills what is owed.
 - A silo with no recipe logs one warning and looks again every ten seconds.
-- The rocket part is 1.1's: rocket control units, a hundred parts. Stacks follow 2.0.7 where the
-  item survived it (low density structure fifty, rocket fuel twenty); the control unit stays at ten.
+- No cargo landing pad: the silo's output slot is where a launch's science comes back.
 - Only the silo applies Factorio's insertion limit to automation; an assembler's view fills an
   ingredient slot to its capacity.
 - The radar keeps a seven-by-seven of chunks loaded while powered and charts nothing.
@@ -163,6 +162,10 @@ Vanilla, and what is left alone
   vanilla's for good, the dropper included.
 - One tool: four planks is a stone pickaxe, the wooden one has no recipe, `mineable/pickaxe`
   absorbs axe, shovel and hoe. Tiers are untouched.
+- Rails exist, as vanilla's rail at Factorio's price, because production science asks for thirty;
+  trains do not. Coal liquefaction is left out: the refinery has no third input port. The pistol
+  is craftable though 2.0 hides its recipe, since a new player here carries nothing. Fluids share
+  the intermediates tab in the crafting panel; Factorio gives them a fifth.
 - Stacks are Factorio's; Minecraft's ninety-nine is lifted to ten thousand by `nauvis_lib`'s
   mixins and a count of three or four digits is scaled to fit. Not lifted: minecart chests,
   bundles, another mod's container that answers ninety-nine itself. Cobblestone, coal and raw ore

@@ -12,9 +12,9 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "nauvis_logistics:inserter",
     "nauvis_materials:iron_gear_wheel",
-    "minecraft:iron_ingot"
+    "minecraft:iron_ingot",
+    "nauvis_logistics:inserter"
   ],
   "result": {
     "id": "nauvis_logistics:long_handed_inserter",

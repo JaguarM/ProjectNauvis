@@ -2,7 +2,14 @@
 """
 Generate the technology tree from Factorio's tree plus the mapping table (CLAUDE.md, rule 2).
 
-    data/technologies.json + data/mapping.json -> nauvis_research technology JSON
+    reference/factorio/data-raw-<version>.json + data/technologies.json + data/mapping.json
+        -> nauvis_research technology JSON
+
+`data/technologies.json` is a selection: the Factorio technology names the pack has, in the order
+the research screen lists them. Everything about each - prerequisites, cost or trigger, unlocks,
+modifiers - is read from data.raw. A prerequisite outside the selection is dropped and named in
+the summary, which is what curating the tree means: the pack has no robots, so utility science
+does not wait for them.
 
 Two files per technology: the technology, in the datapack registry `nauvis_research:technology`
 at `nauvis_research/src/main/resources/data/nauvis_research/nauvis_research/technology/<name>.json`
@@ -13,12 +20,11 @@ vanilla's. The icon is the first unlocked item that is vanilla, else the lab, be
 registry-validated and most unlocks are unregistered.
 
 A technology is paid for by exactly one of a cost (units, packs, seconds a unit) or a trigger
-(`craft-item` with an item and a count, or `mine-entity` with a resource id). `modifiers` go
+(`craft-item` with an item and a count, or `mine-entity` with a resource id). Modifiers go
 through whole, with `ammo_category` / `turret_id` folded into `target`; the summary counts them by
-type. Dropped, and named in the summary: technologies whose prerequisites are not in the tree
-(transitively) and unlocks of `skip` items. An `unlock_recipes` name in neither the items nor the
-`unlocks` table is a GenError. The tree must be bootstrappable from an empty world, or the
-generator fails.
+type. An unlock of a recipe the pack does not generate is named in the summary. The tree must be
+bootstrappable from an empty world, or the generator fails; and a recipe Factorio gates that is
+on disk and unlocked by nothing here fails `--check`, because it would be free from the first tick.
 
 Usage:
     python tools/gen_technologies.py                summary only
@@ -34,9 +40,12 @@ import json
 import sys
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import factorio_data  # noqa: E402
+from factorio_data import GenError, recipe_key, resolve_item, slug  # noqa: E402
+
+REPO = factorio_data.REPO
 TECHNOLOGIES = REPO / "data" / "technologies.json"
-MAPPING = REPO / "data" / "mapping.json"
 
 TICKS_PER_SECOND = 20
 
@@ -60,18 +69,9 @@ CRITERION = "researched"
 # Always registered by the mod that ships these files, so it is the safe icon.
 FALLBACK_ICON = f"{OWNER}:lab"
 
-# `order` is zero-padded so a plain string sort is a numeric one, and it is simply the tree's own
-# order - the research screen then lists technologies the way Factorio lists them.
+# `order` is zero-padded so a plain string sort is a numeric one, and it is simply the selection's
+# own order - the research screen then lists technologies the way Factorio lists them.
 ORDER_DIGITS = 4
-
-
-class GenError(Exception):
-    """A fault in the inputs. Always fatal: a wrong tree is worse than no tree."""
-
-
-def slug(factorio_id: str) -> str:
-    """`steel-processing` -> `steel_processing`. Ids derive mechanically, never by hand."""
-    return factorio_id.replace("-", "_")
 
 
 def display_name(factorio_id: str) -> str:
@@ -90,181 +90,101 @@ def display_name(factorio_id: str) -> str:
     return words[:1].upper() + words[1:]
 
 
-def fluid_recipe_keys() -> dict[str, str]:
-    """
-    The recipe key of every recipe in data/fluid_recipes.json, by its Factorio name.
-
-    The same rule gen_recipes.py names the file by: `<owner>:<id with underscores>`. These are
-    recipes rather than items, so they are not in the mapping's items table and need no alias -
-    a technology that unlocks `basic-oil-processing` unlocks exactly that file.
-    """
-    path = REPO / "data" / "fluid_recipes.json"
-    if not path.exists():
-        raise GenError(f"{path} is missing.")
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    return {r["id"]: f"{r['owner']}:{slug(r['id'])}" for r in raw["recipes"]}
-
-
-def load_inputs() -> tuple[list, dict, dict]:
-    for path in (TECHNOLOGIES, MAPPING):
-        if not path.exists():
-            raise GenError(f"{path} is missing.")
-
-    tree = json.loads(TECHNOLOGIES.read_text(encoding="utf-8"))
-    mapping = json.loads(MAPPING.read_text(encoding="utf-8"))
-    unlocks = mapping.get("unlocks")
-    if unlocks is None:
-        raise GenError(
-            "data/mapping.json has no `unlocks` table. It maps a Factorio recipe name to the "
-            "item whose recipe file it is - see docs/MAPPING.md."
-        )
-    return tree, mapping["items"], unlocks
+def load_inputs() -> tuple[list[str], factorio_data.Data, dict]:
+    if not TECHNOLOGIES.exists():
+        raise GenError(f"{TECHNOLOGIES} is missing.")
+    data = factorio_data.load()
+    recipes, _ = factorio_data.entries(data)
+    selection = json.loads(TECHNOLOGIES.read_text(encoding="utf-8"))["technologies"]
+    if len(set(selection)) != len(selection):
+        raise GenError("data/technologies.json names a technology twice.")
+    for name in selection:
+        if name not in data.raw["technology"]:
+            raise GenError(f"'{name}' is in data/technologies.json but not a technology in data.raw.")
+    return selection, data, recipes
 
 
-def item_id(factorio_item: str, items: dict) -> str:
-    """The Minecraft item a Factorio id stands for."""
-    entry = items.get(factorio_item)
-    if entry is None:
-        raise GenError(f"'{factorio_item}' is named by a technology but is not in the mapping table.")
-    item = entry.get("item")
-    if not item:
-        raise GenError(f"'{factorio_item}' has no `item` in the mapping table.")
-    return item
-
-
-def recipe_key(factorio_item: str, items: dict) -> str | None:
-    """
-    The Minecraft recipe key `gen_recipes.py` writes for this Factorio item, or None.
-
-    The two generators have to agree about this or a technology unlocks nothing, so the rule is
-    stated the same way in both: the file is `data/<owner>/recipe/<item path>.json`, named after
-    the *item* rather than the Factorio id, because a released mod's item name is permanent and
-    the dump's is not - Neo Progressive Automation ships `burner_drill` for `burner-mining-drill`.
-
-    None when the pack deliberately has no recipe for it: an entry the mapping marks `skip`, or
-    one with no recipe at all (an ore, a fluid, a filled barrel).
-    """
-    entry = items.get(factorio_item)
-    if entry is None:
-        raise GenError(f"'{factorio_item}' is named by a technology but is not in the mapping table.")
-    if entry.get("skip") or entry.get("raw"):
-        return None
-    owner = entry.get("owner")
-    if not owner:
-        raise GenError(f"'{factorio_item}' has no `owner` in the mapping table.")
-    return f"{owner}:{item_id(factorio_item, items).split(':', 1)[1]}"
-
-
-def unlocks_of(technology: dict, items: dict, aliases: dict, report: dict) -> list[str]:
+def unlocks_of(technology: dict, recipes: dict, data: factorio_data.Data, report: dict) -> list[str]:
     """The recipe keys this technology hands the player, in the order the tree lists them."""
-    fluid_keys = fluid_recipe_keys()
     keys: list[str] = []
-    for name in technology.get("unlock_recipes", []):
-        if name in fluid_keys:
-            if fluid_keys[name] not in keys:
-                keys.append(fluid_keys[name])
+    for effect in technology.get("effects", []):
+        if effect.get("type") != "unlock-recipe":
             continue
-        if name in aliases:
-            # An alias, because Factorio's recipe name is not its item name here. A null says the
-            # pack does not model this recipe at all.
-            target = aliases[name]
-            if target is None:
-                report["unmodelled"].setdefault(name, []).append(technology["id"])
-                continue
-        elif name in items:
-            target = name
-        else:
-            raise GenError(
-                f"'{technology['id']}' unlocks the recipe '{name}', which is neither an item in "
-                f"the mapping table, nor a line in its `unlocks` table, nor a recipe in "
-                f"data/fluid_recipes.json. Add it to one of them - the `unlocks` table with null "
-                f"if the pack does not model that recipe - rather than letting it vanish."
-            )
-
-        key = recipe_key(target, items)
-        if key is None:
-            report["not_registered"].setdefault(name, []).append(technology["id"])
+        name = effect["recipe"]
+        entry = recipes.get(name)
+        if entry is None:
+            if name not in data.raw["recipe"] and name not in data.recipe_rows:
+                raise GenError(f"'{technology['name']}' unlocks '{name}', which is not a recipe in data.raw.")
+            # Skipped, hidden or unmapped: the pack does not model it, and says so in the summary.
+            report["not_generated"].setdefault(name, []).append(technology["name"])
             continue
+        key = recipe_key(entry)
         if key not in keys:
             keys.append(key)
     return keys
 
 
-def cost_of(technology: dict, items: dict) -> dict:
+def cost_of(technology: dict, data: factorio_data.Data) -> dict:
     """
     What one technology asks for: a trigger, or units of science.
 
-    Exactly one of the two. A technology with both would have two answers to "am I done", and one
-    with neither could never be finished at all.
+    Exactly one of the two in data.raw. A technology with a `count_formula` is one of Factorio's
+    infinite ones and has no place in a tree that ends.
     """
     trigger = technology.get("research_trigger")
-    cost = technology.get("cost")
-
-    if trigger and cost:
-        raise GenError(f"'{technology['id']}' has both a cost and a research trigger.")
-    if not trigger and not cost:
-        raise GenError(f"'{technology['id']}' has neither a cost nor a research trigger.")
+    unit = technology.get("unit")
+    name = technology["name"]
 
     if trigger:
         kind = trigger.get("type")
         if kind == "craft-item":
-            return {"trigger": {
-                "item": item_id(trigger["item"], items),
-                "count": trigger.get("count", 1),
-            }}
+            return {"trigger": {"item": resolve_item(trigger["item"], data), "count": trigger.get("count", 1)}}
         if kind == "mine-entity":
             # The resource's id in the mapping is what the machine reports having mined - for
             # crude oil the well block, which shares its id with the fluid.
-            return {"trigger": {
-                "mine": item_id(trigger["entity"], items),
-                "count": trigger.get("count", 1),
-            }}
+            return {"trigger": {"mine": resolve_item(trigger["entity"], data), "count": trigger.get("count", 1)}}
         raise GenError(
-            f"'{technology['id']}' has a {kind!r} trigger; the ones this pack can watch for are "
-            "craft-item and mine-entity."
+            f"'{name}' has a {kind!r} trigger; the ones this pack can watch for are craft-item and mine-entity."
         )
+    if not unit:
+        raise GenError(f"'{name}' has neither a unit cost nor a research trigger.")
+    if "count" not in unit:
+        raise GenError(f"'{name}' has a count formula: it is an infinite technology, and the tree here ends.")
 
-    seconds = cost["time_seconds"]
+    seconds = unit["time"]
     ticks = seconds * TICKS_PER_SECOND
     if ticks != int(ticks):
-        raise GenError(f"'{technology['id']}' takes {seconds}s a unit, which is not a whole tick.")
+        raise GenError(f"'{name}' takes {seconds}s a unit, which is not a whole tick.")
 
     packs = []
-    for ingredient in cost["ingredients"]:
-        if ingredient["count"] != 1:
+    for pack, count in unit["ingredients"]:
+        if count != 1:
             # Factorio's rule is one of each pack per unit. A two would mean the lab's model is
             # wrong, not that this line needs a multiplier.
-            raise GenError(
-                f"'{technology['id']}' wants {ingredient['count']} of "
-                f"'{ingredient['science_pack']}' per unit; the lab consumes one of each and "
-                "nothing here can express more."
-            )
-        packs.append(item_id(ingredient["science_pack"], items))
-
-    return {"units": cost["count"], "ticks_per_unit": int(ticks), "packs": packs}
+            raise GenError(f"'{name}' wants {count} of '{pack}' per unit; the lab consumes one of each.")
+        packs.append(resolve_item(pack, data))
+    return {"units": unit["count"], "ticks_per_unit": int(ticks), "packs": packs}
 
 
-def modifier_of(modifier: dict, technology_id: str) -> dict:
+def modifier_of(effect: dict, technology_id: str) -> dict:
     """
     One effect that is not a recipe, as the research mod reads it: a type, a number, and for the
     two kinds Factorio qualifies - a damage bonus is per ammo category, a turret bonus per turret -
-    the qualifier as `target`. Anything else on the modifier is dropped here on purpose: the type
+    the qualifier as `target`. Anything else on the effect is dropped here on purpose: the type
     names are Wube's, and a machine that reads one names the same string.
     """
-    kind = modifier.get("type")
-    if not kind:
-        raise GenError(f"'{technology_id}' has a modifier with no type.")
-    amount = modifier.get("modifier")
+    kind = effect.get("type")
+    amount = effect.get("modifier")
     if not isinstance(amount, (int, float)) or isinstance(amount, bool):
-        raise GenError(f"'{technology_id}' has a {kind!r} modifier with no number on it.")
+        raise GenError(f"'{technology_id}' has a {kind!r} effect with no number on it.")
     out = {"type": kind, "modifier": amount}
-    target = modifier.get("ammo_category") or modifier.get("turret_id")
+    target = effect.get("ammo_category") or effect.get("turret_id")
     if target:
         out["target"] = target
     return out
 
 
-def reachable(tree: list, items: dict, aliases: dict) -> set[str]:
+def reachable(selection: list[str], techs: dict, recipes: dict, data: factorio_data.Data) -> set[str]:
     """
     Every technology a new world could eventually get to, walked from an empty one.
 
@@ -273,101 +193,97 @@ def reachable(tree: list, items: dict, aliases: dict) -> set[str]:
     watches for. Anything left over is unreachable, which is the one way this tree can be broken
     beyond repair - it looks perfectly normal in the list and can never be started.
     """
+    selected = set(selection)
     gated_by: dict[str, str] = {}
-    for technology in tree:
-        for name in technology.get("unlock_recipes", []):
-            target = aliases.get(name, name)
-            # A skipped entry has no item at all - those are the ones the pack never registers.
-            if target is not None and items.get(target, {}).get("item"):
-                gated_by.setdefault(items[target]["item"], technology["id"])
+    for name in selection:
+        for effect in techs[name].get("effects", []):
+            entry = recipes.get(effect.get("recipe", "")) if effect.get("type") == "unlock-recipe" else None
+            if entry and entry["product"]:
+                gated_by.setdefault(resolve_item(entry["product"], data), name)
 
     found: set[str] = set()
     changed = True
     while changed:
         changed = False
-        for technology in tree:
-            if technology["id"] in found:
+        for name in selection:
+            if name in found:
                 continue
-            if any(p not in found for p in technology.get("prerequisites", [])):
+            if any(p not in found for p in techs[name].get("prerequisites", []) if p in selected):
                 continue
-            # A mine-entity trigger waits on a resource in the world, which nothing gates, so
-            # it is reachable as soon as its prerequisites are.
-            trigger = technology.get("research_trigger")
+            trigger = techs[name].get("research_trigger")
             if trigger and trigger.get("type") == "craft-item":
-                item = items.get(trigger["item"], {}).get("item")
-                owner = gated_by.get(item)
+                owner = gated_by.get(resolve_item(trigger["item"], data))
                 if owner is not None and owner not in found:
                     continue
-            found.add(technology["id"])
+            found.add(name)
             changed = True
     return found
 
 
-def plan(tree: list, items: dict, aliases: dict) -> tuple[list, dict]:
+def plan(selection: list[str], data: factorio_data.Data, recipes: dict) -> tuple[list, dict]:
+    techs = data.raw["technology"]
+    selected = set(selection)
     report = {
-        "dropped": [],
+        "dropped_prerequisites": {},  # technology -> the prerequisites outside the selection
         "modifiers": {},
-        "unmodelled": {},      # a recipe the pack has no counterpart for
-        "not_registered": {},  # an item the mapping marks skip or raw
+        "not_generated": {},          # a recipe unlock the pack does not generate
         "no_unlocks": [],
+        "free": [],                   # gated by Factorio, unlocked by nothing here, and on disk
     }
 
-    for technology in tree:
-        for modifier in technology.get("modifiers", []):
-            kind = modifier.get("type")
-            report["modifiers"][kind] = report["modifiers"].get(kind, 0) + 1
-
-    # Drop anything whose prerequisites are not all present, transitively. A dangling edge is a
-    # technology nobody can ever start.
-    kept = {t["id"]: t for t in tree}
-    while True:
-        dangling = [i for i, t in kept.items()
-                    if any(p not in kept for p in t.get("prerequisites", []))]
-        if not dangling:
-            break
-        for i in dangling:
-            report["dropped"].append(i)
-            del kept[i]
-
-    order = {t["id"]: i for i, t in enumerate(tree)}
+    unlocked: set[str] = set()
     files = []
-    for technology in sorted(kept.values(), key=lambda t: order[t["id"]]):
-        recipes = unlocks_of(technology, items, aliases, report)
-        if not recipes:
-            report["no_unlocks"].append(technology["id"])
+    for index, name in enumerate(selection):
+        technology = techs[name]
+        prerequisites = [p for p in technology.get("prerequisites", []) if p in selected]
+        dropped = [p for p in technology.get("prerequisites", []) if p not in selected]
+        if dropped:
+            report["dropped_prerequisites"][name] = dropped
+
+        keys = unlocks_of(technology, recipes, data, report)
+        unlocked.update(keys)
+        if not keys:
+            report["no_unlocks"].append(name)
 
         entry = {
-            "name": display_name(technology["id"]),
-            "order": str(order[technology["id"]]).zfill(ORDER_DIGITS),
-            "prerequisites": [f"{OWNER}:{slug(p)}" for p in technology.get("prerequisites", [])],
+            "name": display_name(name),
+            "order": str(index).zfill(ORDER_DIGITS),
+            "prerequisites": [f"{OWNER}:{slug(p)}" for p in prerequisites],
         }
-        entry.update(cost_of(technology, items))
-        entry["unlocks"] = recipes
-        modifiers = [modifier_of(m, technology["id"]) for m in technology.get("modifiers", [])]
+        entry.update(cost_of(technology, data))
+        entry["unlocks"] = keys
+        modifiers = [modifier_of(e, name) for e in technology.get("effects", []) if e.get("type") != "unlock-recipe"]
         if modifiers:
             entry["modifiers"] = modifiers
-        files.append((REGISTRY_PATH / f"{slug(technology['id'])}.json", entry))
-        files.append((ADVANCEMENT_PATH / f"{slug(technology['id'])}.json",
-                      advancement(technology["id"], entry, items, tree)))
+            for m in modifiers:
+                report["modifiers"][m["type"]] = report["modifiers"].get(m["type"], 0) + 1
+        files.append((REGISTRY_PATH / f"{slug(name)}.json", entry))
+        files.append((ADVANCEMENT_PATH / f"{slug(name)}.json", advancement(name, entry, recipes, data)))
 
     files.append((ADVANCEMENT_PATH / "root.json", root_advancement()))
 
-    unreached = sorted(set(kept) - reachable(list(kept.values()), items, aliases))
+    unreached = sorted(selected - reachable(selection, techs, recipes, data))
     if unreached:
         raise GenError(
             "these technologies cannot be reached from an empty world, so a save could never "
             f"research them: {unreached}. Every run starts at a trigger whose item nothing gates."
         )
 
+    for entry in recipes.values():
+        if entry["enabled"] or recipe_key(entry) in unlocked:
+            continue
+        on_disk = REPO / entry["owner"] / "src" / "main" / "resources" / "data" / entry["owner"] / "recipe" / f"{entry['file']}.json"
+        if on_disk.exists():
+            report["free"].append(entry["id"])
     return files, report
 
 
-def advancement(name: str, entry: dict, items: dict, tree: list) -> dict:
+def advancement(name: str, entry: dict, recipes: dict, data: factorio_data.Data) -> dict:
     """One technology's advancement: a toast, a line in a log, and nothing else."""
     return {
         "parent": ROOT,
         "display": {
-            "icon": {"id": icon_for(entry, items)},
+            "icon": {"id": icon_for(entry, recipes, data)},
             "title": {"translate": f"technology.{OWNER}.{slug(name)}", "fallback": entry["name"]},
             "description": {"translate": f"advancements.{OWNER}.researched"},
             "frame": "task",
@@ -383,7 +299,7 @@ def advancement(name: str, entry: dict, items: dict, tree: list) -> dict:
     }
 
 
-def icon_for(entry: dict, items: dict) -> str:
+def icon_for(entry: dict, recipes: dict, data: factorio_data.Data) -> str:
     """
     The first vanilla item this technology unlocks, or the lab.
 
@@ -392,10 +308,12 @@ def icon_for(entry: dict, items: dict) -> str:
     of what this tree unlocks - would fail the advancement rather than fall back to anything.
     A `minecraft:` id is the one kind that is certain.
     """
+    by_key = {recipe_key(r): r for r in recipes.values()}
     for key in entry["unlocks"]:
-        for factorio_id, mapped in items.items():
-            item = mapped.get("item", "")
-            if item.startswith("minecraft:") and key == recipe_key(factorio_id, items):
+        recipe = by_key.get(key)
+        if recipe and recipe["product"]:
+            item = resolve_item(recipe["product"], data)
+            if item.startswith("minecraft:"):
                 return item
     return FALLBACK_ICON
 
@@ -438,7 +356,7 @@ def do_write(files: list, root: Path | None) -> int:
     return len(files)
 
 
-def do_check(files: list) -> int:
+def do_check(files: list, free: list) -> int:
     """
     Compare against what is on disk, semantically rather than byte for byte.
 
@@ -448,7 +366,6 @@ def do_check(files: list) -> int:
     base = resource_root()
     missing, wrong, matching = [], [], 0
     expected = {rel.name for rel, _ in files}
-
     for rel, obj in files:
         path = base / rel
         if not path.exists():
@@ -457,7 +374,6 @@ def do_check(files: list) -> int:
             matching += 1
         else:
             wrong.append((path, json.loads(path.read_text(encoding="utf-8")), obj))
-
     stale = []
     for directory in (base / REGISTRY_PATH, base / ADVANCEMENT_PATH):
         if directory.exists():
@@ -467,7 +383,7 @@ def do_check(files: list) -> int:
     print(f"  missing  {len(missing)}")
     print(f"  wrong    {len(wrong)}")
     print(f"  stale    {len(stale)}")
-
+    print(f"  free     {len(free)}")
     for path in missing[:10]:
         print(f"    missing: {path.name}")
     for path in stale[:10]:
@@ -479,8 +395,7 @@ def do_check(files: list) -> int:
                 print(f"    {key}:")
                 print(f"      on disk:   {json.dumps(on_disk.get(key))}")
                 print(f"      generated: {json.dumps(generated.get(key))}")
-
-    return 1 if (missing or wrong or stale) else 0
+    return 1 if (missing or wrong or stale or free) else 0
 
 
 def main() -> int:
@@ -491,8 +406,8 @@ def main() -> int:
     args = ap.parse_args()
 
     try:
-        tree, items, aliases = load_inputs()
-        files, report = plan(tree, items, aliases)
+        selection, data, recipes = load_inputs()
+        files, report = plan(selection, data, recipes)
     except GenError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
@@ -503,26 +418,25 @@ def main() -> int:
     print(f"{len(technologies)} technologies -> {total_unlocks} recipe unlocks, "
           f"{len(files) - len(technologies)} advancements")
     print(f"  finished by a trigger rather than by science : {triggered}")
-    print(f"  unlocking nothing yet                        : {len(report['no_unlocks'])}")
-    report["no_unlocks"] = [x for x in report["no_unlocks"]]
-    if report["dropped"]:
-        print(f"  dropped, prerequisites not in the tree       : {report['dropped']}")
+    print(f"  unlocking nothing                            : {len(report['no_unlocks'])}")
+    if report["dropped_prerequisites"]:
+        dropped = ", ".join(f"{k} without {'/'.join(v)}" for k, v in sorted(report["dropped_prerequisites"].items()))
+        print(f"  prerequisites outside the selection, dropped : {dropped}")
     if report["modifiers"]:
         kinds = ", ".join(f"{k} x{v}" for k, v in sorted(report["modifiers"].items()))
         print(f"  modifiers, by type, for whatever machine reads them: {kinds}")
-    for label, bucket in (("recipes the pack does not model", report["unmodelled"]),
-                          ("items the mapping skips or calls raw", report["not_registered"])):
-        if bucket:
-            print(f"  {label}: {', '.join(sorted(bucket))}")
+    if report["not_generated"]:
+        print(f"  recipe unlocks the pack does not generate: {', '.join(sorted(report['not_generated']))}")
+    if report["free"]:
+        print(f"  GATED BY FACTORIO, ON DISK, UNLOCKED BY NOTHING HERE: {report['free']}")
 
     if args.check:
         print("\nchecking against files on disk:")
-        return do_check(files)
+        return do_check(files, report["free"])
 
     if args.write or args.out:
         print()
         do_write(files, args.out)
-
     return 0
 
 

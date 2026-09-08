@@ -12,10 +12,14 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:copper_ingot",
-    "minecraft:copper_ingot",
+    "nauvis_materials:iron_stick",
+    "nauvis_materials:iron_stick",
+    "nauvis_materials:iron_stick",
+    "nauvis_materials:iron_stick",
     "nauvis_materials:steel_plate",
-    "nauvis_materials:steel_plate"
+    "nauvis_materials:steel_plate",
+    "nauvis_materials:copper_cable",
+    "nauvis_materials:copper_cable"
   ],
   "result": {
     "id": "nauvis_power:medium_electric_pole",

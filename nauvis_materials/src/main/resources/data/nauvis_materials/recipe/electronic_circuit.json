@@ -8,15 +8,15 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "intermediate",
-  "order": "0108",
+  "order": "0107",
   "ingredients": [
-    {
-      "ingredient": "nauvis_materials:copper_cable",
-      "count": 3
-    },
     {
       "ingredient": "minecraft:iron_ingot",
       "count": 1
+    },
+    {
+      "ingredient": "nauvis_materials:copper_cable",
+      "count": 3
     }
   ],
   "result": {

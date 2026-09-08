@@ -19,19 +19,19 @@
   ],
   "type": "facrafting:facraft",
   "craft_ticks": 100,
-  "group": "intermediate",
-  "order": "0155",
+  "group": "production",
+  "order": "0072",
   "ingredients": [
-    {
-      "ingredient": "nauvis_power:accumulator",
-      "count": 100
-    },
     {
       "ingredient": "nauvis_materials:low_density_structure",
       "count": 100
     },
     {
-      "ingredient": "nauvis_materials:processing_unit",
+      "ingredient": "nauvis_power:solar_panel",
+      "count": 100
+    },
+    {
+      "ingredient": "nauvis_power:accumulator",
       "count": 100
     },
     {
@@ -39,12 +39,12 @@
       "count": 5
     },
     {
-      "ingredient": "nauvis_materials:rocket_fuel",
-      "count": 50
+      "ingredient": "nauvis_materials:processing_unit",
+      "count": 100
     },
     {
-      "ingredient": "nauvis_power:solar_panel",
-      "count": 100
+      "ingredient": "nauvis_materials:rocket_fuel",
+      "count": 50
     }
   ],
   "result": {

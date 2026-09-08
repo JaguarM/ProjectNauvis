@@ -8,11 +8,11 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "logistics",
-  "order": "0061",
+  "order": "0000",
   "ingredients": [
     {
       "ingredient": "minecraft:oak_planks",
-      "count": 4
+      "count": 2
     }
   ],
   "result": {

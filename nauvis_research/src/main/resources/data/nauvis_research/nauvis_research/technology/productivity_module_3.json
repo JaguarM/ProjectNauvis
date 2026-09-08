@@ -2,7 +2,8 @@
   "name": "Productivity module 3",
   "order": "0059",
   "prerequisites": [
-    "nauvis_research:productivity_module_2"
+    "nauvis_research:productivity_module_2",
+    "nauvis_research:production_science_pack"
   ],
   "units": 300,
   "ticks_per_unit": 1200,

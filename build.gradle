@@ -25,13 +25,13 @@
         description = describe
 
         def script = file(scriptPath)
-        def dump = file('reference/factorio/recipes.json')
+        def dumps = fileTree('reference/factorio') { include 'data-raw-*.json' }
         inputs.file(script).withPropertyName('script')
         outputs.upToDateWhen { false }
 
         doLast {
-            if (name == 'checkRecipes' && !dump.exists()) {
-                logger.lifecycle("checkRecipes: skipped, ${dump} is absent (gitignored - see reference/README.md)")
+            if ((name == 'checkRecipes' || name == 'checkTechnologies') && dumps.isEmpty()) {
+                logger.lifecycle("${name}: skipped, reference/factorio/data-raw-<version>.json is absent (gitignored - see reference/factorio/README.md)")
                 return
             }
             // ProcessBuilder rather than exec {}, which is gone from task actions in Gradle 9.

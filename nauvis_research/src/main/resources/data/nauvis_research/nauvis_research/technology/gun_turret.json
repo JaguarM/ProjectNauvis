@@ -2,7 +2,7 @@
   "name": "Gun turret",
   "order": "0023",
   "prerequisites": [
-    "nauvis_research:science_pack_1"
+    "nauvis_research:automation_science_pack"
   ],
   "units": 10,
   "ticks_per_unit": 200,

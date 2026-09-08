@@ -12,7 +12,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "logistics",
-  "order": "0019",
+  "order": "0005",
   "ingredients": [
     {
       "ingredient": "nauvis_materials:iron_gear_wheel",

@@ -11,14 +11,14 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "nauvis_materials:copper_cable",
-    "nauvis_materials:copper_cable",
-    "nauvis_materials:copper_cable",
-    "nauvis_materials:copper_cable",
     "nauvis_materials:electronic_circuit",
     "nauvis_materials:electronic_circuit",
     "nauvis_materials:plastic_bar",
-    "nauvis_materials:plastic_bar"
+    "nauvis_materials:plastic_bar",
+    "nauvis_materials:copper_cable",
+    "nauvis_materials:copper_cable",
+    "nauvis_materials:copper_cable",
+    "nauvis_materials:copper_cable"
   ],
   "result": {
     "id": "nauvis_materials:advanced_circuit",

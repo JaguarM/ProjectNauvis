@@ -8,16 +8,16 @@
   "type": "facrafting:facraft",
   "craft_ticks": 200,
   "group": "logistics",
-  "order": "0010",
+  "order": "0032",
   "category": "crafting-with-fluid",
   "ingredients": [
     {
-      "ingredient": "minecraft:raw_iron",
-      "count": 1
-    },
-    {
       "ingredient": "minecraft:stone_bricks",
       "count": 5
+    },
+    {
+      "ingredient": "minecraft:raw_iron",
+      "count": 1
     }
   ],
   "fluid_ingredients": [

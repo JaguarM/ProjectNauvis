@@ -12,26 +12,26 @@
   "type": "facrafting:facraft",
   "craft_ticks": 160,
   "group": "production",
-  "order": "0082",
+  "order": "0057",
   "ingredients": [
     {
-      "ingredient": "nauvis_materials:electronic_circuit",
-      "count": 10
+      "ingredient": "nauvis_materials:steel_plate",
+      "count": 15
     },
     {
       "ingredient": "nauvis_materials:iron_gear_wheel",
       "count": 10
     },
     {
-      "ingredient": "nauvis_fluids:pipe",
+      "ingredient": "minecraft:stone_bricks",
       "count": 10
     },
     {
-      "ingredient": "nauvis_materials:steel_plate",
-      "count": 15
+      "ingredient": "nauvis_materials:electronic_circuit",
+      "count": 10
     },
     {
-      "ingredient": "minecraft:stone_bricks",
+      "ingredient": "nauvis_fluids:pipe",
       "count": 10
     }
   ],

@@ -12,19 +12,19 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "combat",
-  "order": "0203",
+  "order": "0170",
   "ingredients": [
     {
-      "ingredient": "nauvis_materials:electronic_circuit",
-      "count": 2
+      "ingredient": "minecraft:cobblestone_wall",
+      "count": 1
     },
     {
       "ingredient": "nauvis_materials:steel_plate",
       "count": 2
     },
     {
-      "ingredient": "minecraft:cobblestone_wall",
-      "count": 1
+      "ingredient": "nauvis_materials:electronic_circuit",
+      "count": 2
     }
   ],
   "result": {

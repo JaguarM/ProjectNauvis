@@ -8,12 +8,8 @@
   "type": "facrafting:facraft",
   "craft_ticks": 120,
   "group": "intermediate",
-  "order": "0097",
+  "order": "0108",
   "ingredients": [
-    {
-      "ingredient": "nauvis_materials:copper_cable",
-      "count": 4
-    },
     {
       "ingredient": "nauvis_materials:electronic_circuit",
       "count": 2
@@ -21,6 +17,10 @@
     {
       "ingredient": "nauvis_materials:plastic_bar",
       "count": 2
+    },
+    {
+      "ingredient": "nauvis_materials:copper_cable",
+      "count": 4
     }
   ],
   "result": {

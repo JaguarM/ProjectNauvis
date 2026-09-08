@@ -12,10 +12,10 @@
   "type": "facrafting:facraft",
   "craft_ticks": 200,
   "group": "production",
-  "order": "0088",
+  "order": "0041",
   "ingredients": [
     {
-      "ingredient": "minecraft:copper_ingot",
+      "ingredient": "nauvis_materials:steel_plate",
       "count": 5
     },
     {
@@ -23,7 +23,7 @@
       "count": 15
     },
     {
-      "ingredient": "nauvis_materials:steel_plate",
+      "ingredient": "minecraft:copper_ingot",
       "count": 5
     }
   ],

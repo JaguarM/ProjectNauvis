@@ -2,7 +2,7 @@
   "name": "Electric mining drill",
   "order": "0003",
   "prerequisites": [
-    "nauvis_research:science_pack_1"
+    "nauvis_research:automation_science_pack"
   ],
   "units": 25,
   "ticks_per_unit": 200,

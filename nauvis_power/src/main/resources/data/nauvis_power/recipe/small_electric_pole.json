@@ -12,14 +12,14 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "logistics",
-  "order": "0048",
+  "order": "0015",
   "ingredients": [
     {
-      "ingredient": "nauvis_materials:copper_cable",
-      "count": 2
+      "ingredient": "minecraft:oak_planks",
+      "count": 1
     },
     {
-      "ingredient": "minecraft:oak_planks",
+      "ingredient": "nauvis_materials:copper_cable",
       "count": 2
     }
   ],

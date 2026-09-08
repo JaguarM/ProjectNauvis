@@ -15,16 +15,14 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:copper_ingot",
-    "minecraft:copper_ingot",
-    "minecraft:copper_ingot",
-    "minecraft:copper_ingot",
-    "minecraft:copper_ingot",
     "nauvis_military:firearm_magazine",
-    "nauvis_materials:steel_plate"
+    "nauvis_military:firearm_magazine",
+    "nauvis_materials:steel_plate",
+    "minecraft:copper_ingot",
+    "minecraft:copper_ingot"
   ],
   "result": {
     "id": "nauvis_military:piercing_rounds_magazine",
-    "count": 1
+    "count": 2
   }
 }

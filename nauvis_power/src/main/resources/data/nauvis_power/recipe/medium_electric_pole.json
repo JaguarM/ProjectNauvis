@@ -12,14 +12,18 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "logistics",
-  "order": "0033",
+  "order": "0016",
   "ingredients": [
     {
-      "ingredient": "minecraft:copper_ingot",
-      "count": 2
+      "ingredient": "nauvis_materials:iron_stick",
+      "count": 4
     },
     {
       "ingredient": "nauvis_materials:steel_plate",
+      "count": 2
+    },
+    {
+      "ingredient": "nauvis_materials:copper_cable",
       "count": 2
     }
   ],

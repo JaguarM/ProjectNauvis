@@ -12,16 +12,16 @@
   "type": "facrafting:facraft",
   "craft_ticks": 200,
   "group": "intermediate",
-  "order": "0107",
+  "order": "0111",
   "category": "crafting-with-fluid",
   "ingredients": [
     {
-      "ingredient": "nauvis_materials:electronic_circuit",
-      "count": 2
-    },
-    {
       "ingredient": "nauvis_materials:engine_unit",
       "count": 1
+    },
+    {
+      "ingredient": "nauvis_materials:electronic_circuit",
+      "count": 2
     }
   ],
   "fluid_ingredients": [

@@ -12,15 +12,15 @@
   "type": "facrafting:facraft",
   "craft_ticks": 60,
   "group": "intermediate",
-  "order": "0154",
+  "order": "0115",
   "category": "rocket-building",
   "ingredients": [
     {
-      "ingredient": "nauvis_materials:low_density_structure",
+      "ingredient": "nauvis_materials:processing_unit",
       "count": 10
     },
     {
-      "ingredient": "nauvis_materials:rocket_control_unit",
+      "ingredient": "nauvis_materials:low_density_structure",
       "count": 10
     },
     {

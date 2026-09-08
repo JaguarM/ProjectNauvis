@@ -1,10 +1,15 @@
 {
   "name": "Rocket silo",
-  "order": "0062",
+  "order": "0066",
   "prerequisites": [
-    "nauvis_research:advanced_electronics_2",
+    "nauvis_research:concrete",
+    "nauvis_research:rocket_fuel",
+    "nauvis_research:electric_energy_accumulators",
+    "nauvis_research:solar_energy",
+    "nauvis_research:utility_science_pack",
     "nauvis_research:speed_module_3",
-    "nauvis_research:productivity_module_3"
+    "nauvis_research:productivity_module_3",
+    "nauvis_research:radar"
   ],
   "units": 1000,
   "ticks_per_unit": 1200,
@@ -12,15 +17,11 @@
     "nauvis_research:science_pack_1",
     "nauvis_research:science_pack_2",
     "nauvis_research:science_pack_3",
-    "nauvis_research:military_science_pack",
     "nauvis_research:production_science_pack",
     "nauvis_research:high_tech_science_pack"
   ],
   "unlocks": [
     "nauvis_rocket:rocket_silo",
-    "nauvis_materials:low_density_structure",
-    "nauvis_materials:rocket_fuel",
-    "nauvis_materials:rocket_control_unit",
     "nauvis_rocket:rocket_part",
     "nauvis_rocket:satellite"
   ]

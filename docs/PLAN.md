@@ -28,6 +28,9 @@ Settled decisions, not to be re-litigated
   the pack, `compileOnly` in each mod). Applied Energistics 2 and KubeJS are on 26.1.2; Create,
   Mekanism, Immersive Engineering and the rest stopped at 1.21.1 and are read, never shipped.
   Redo the survey (last 2026-08-25) when a milestone needs it, not before.
+- **Factorio is the 2.0 base game, from its own data.raw.** `factorio --dump-data` writes it;
+  `tools/factorio_data.py` names the version it reads. Space Age is not in the dump and not in
+  the pack. A number from another version is a stale file, not a choice.
 - **A footprint is identity; height is ours.** `size` in `data/mapping.json`, checked against
   each `*Shape` by `check_models.py`.
 - **Ranges and tunables are balance, not identity.** The guns reach twice Factorio's range, a

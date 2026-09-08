@@ -12,19 +12,19 @@
   "type": "facrafting:facraft",
   "craft_ticks": 200,
   "group": "intermediate",
-  "order": "0142",
+  "order": "0119",
   "ingredients": [
+    {
+      "ingredient": "nauvis_military:piercing_rounds_magazine",
+      "count": 1
+    },
     {
       "ingredient": "nauvis_military:grenade",
       "count": 1
     },
     {
-      "ingredient": "nauvis_military:gun_turret",
-      "count": 1
-    },
-    {
-      "ingredient": "nauvis_military:piercing_rounds_magazine",
-      "count": 1
+      "ingredient": "minecraft:cobblestone_wall",
+      "count": 2
     }
   ],
   "result": {

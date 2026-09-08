@@ -11,7 +11,7 @@
     "nauvis_research:science_pack_2"
   ],
   "unlocks": [
-    "nauvis_materials:sulfur",
-    "nauvis_fluids:sulfuric_acid"
+    "nauvis_fluids:sulfuric_acid",
+    "nauvis_materials:sulfur"
   ]
 }

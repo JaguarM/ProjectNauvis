@@ -16,19 +16,19 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "production",
-  "order": "0092",
+  "order": "0040",
   "ingredients": [
     {
       "ingredient": "nauvis_materials:iron_gear_wheel",
       "count": 8
     },
     {
-      "ingredient": "minecraft:iron_ingot",
-      "count": 10
-    },
-    {
       "ingredient": "nauvis_fluids:pipe",
       "count": 5
+    },
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 10
     }
   ],
   "result": {

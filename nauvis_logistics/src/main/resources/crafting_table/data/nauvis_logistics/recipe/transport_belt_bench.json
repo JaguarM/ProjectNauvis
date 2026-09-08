@@ -12,8 +12,8 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "nauvis_materials:iron_gear_wheel",
-    "minecraft:iron_ingot"
+    "minecraft:iron_ingot",
+    "nauvis_materials:iron_gear_wheel"
   ],
   "result": {
     "id": "nauvis_logistics:transport_belt",

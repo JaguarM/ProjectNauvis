@@ -8,15 +8,15 @@
   "type": "facrafting:facraft",
   "craft_ticks": 160,
   "group": "combat",
-  "order": "0204",
+  "order": "0144",
   "ingredients": [
-    {
-      "ingredient": "minecraft:coal",
-      "count": 10
-    },
     {
       "ingredient": "minecraft:iron_ingot",
       "count": 5
+    },
+    {
+      "ingredient": "minecraft:coal",
+      "count": 10
     }
   ],
   "result": {

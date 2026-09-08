@@ -8,7 +8,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 100,
   "group": "combat",
-  "order": "0217",
+  "order": "0124",
   "ingredients": [
     {
       "ingredient": "minecraft:copper_ingot",

@@ -12,8 +12,13 @@
   "type": "facrafting:facraft",
   "craft_ticks": 200,
   "group": "intermediate",
-  "order": "0117",
+  "order": "0110",
+  "category": "advanced-crafting",
   "ingredients": [
+    {
+      "ingredient": "nauvis_materials:steel_plate",
+      "count": 1
+    },
     {
       "ingredient": "nauvis_materials:iron_gear_wheel",
       "count": 1
@@ -21,10 +26,6 @@
     {
       "ingredient": "nauvis_fluids:pipe",
       "count": 2
-    },
-    {
-      "ingredient": "nauvis_materials:steel_plate",
-      "count": 1
     }
   ],
   "result": {

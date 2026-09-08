@@ -8,7 +8,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 64,
   "group": "intermediate",
-  "order": "0133",
+  "order": "0082",
   "category": "smelting",
   "ingredients": [
     {

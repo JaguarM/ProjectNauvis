@@ -16,15 +16,15 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "production",
-  "order": "0068",
+  "order": "0039",
   "ingredients": [
-    {
-      "ingredient": "nauvis_fluids:pipe",
-      "count": 4
-    },
     {
       "ingredient": "nauvis_machines:stone_furnace",
       "count": 1
+    },
+    {
+      "ingredient": "nauvis_fluids:pipe",
+      "count": 4
     }
   ],
   "result": {

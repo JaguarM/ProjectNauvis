@@ -14,21 +14,21 @@
     }
   ],
   "type": "facrafting:facraft",
-  "craft_ticks": 80,
+  "craft_ticks": 40,
   "group": "production",
-  "order": "0069",
+  "order": "0047",
   "ingredients": [
     {
       "ingredient": "nauvis_materials:iron_gear_wheel",
       "count": 3
     },
     {
-      "ingredient": "minecraft:iron_ingot",
-      "count": 3
-    },
-    {
       "ingredient": "nauvis_machines:stone_furnace",
       "count": 1
+    },
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 3
     }
   ],
   "result": {

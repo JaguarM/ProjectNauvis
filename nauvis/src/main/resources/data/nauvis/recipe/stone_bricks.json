@@ -8,7 +8,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 64,
   "group": "logistics",
-  "order": "0053",
+  "order": "0031",
   "category": "smelting",
   "ingredients": [
     {

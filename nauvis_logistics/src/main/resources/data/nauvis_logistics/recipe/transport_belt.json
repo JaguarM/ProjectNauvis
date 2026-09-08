@@ -12,14 +12,14 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "logistics",
-  "order": "0059",
+  "order": "0004",
   "ingredients": [
     {
-      "ingredient": "nauvis_materials:iron_gear_wheel",
+      "ingredient": "minecraft:iron_ingot",
       "count": 1
     },
     {
-      "ingredient": "minecraft:iron_ingot",
+      "ingredient": "nauvis_materials:iron_gear_wheel",
       "count": 1
     }
   ],

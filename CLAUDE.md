@@ -12,13 +12,15 @@ Non-negotiables
 
 1. **Identity is Factorio's; implementation is free.** Item and block ids, ingredient lists, craft
    times, footprints and stack sizes are Factorio's from the first commit, because they live in
-   world saves and in the player's head. Everything behind them may be crude and rewritten later.
+   world saves and in the player's head. Factorio means the 2.0 base game, read from its own
+   `data.raw`. Everything behind them may be crude and rewritten later.
 2. **Recipes, technologies and vanilla removals are generated, never typed.** `tools/gen_recipes.py`
-   turns `reference/factorio/recipes.json` plus `data/mapping.json` into recipe JSON;
-   `tools/gen_technologies.py` turns `data/technologies.json` into the tree; `tools/gen_removals.py`
-   turns `data/removals.json` into the vanilla-replacement datapack. Each has `--check`, which
-   diffs against disk, and `./gradlew build` runs all three. A vanilla recipe is removed only
-   when the pack already does that job.
+   turns Factorio's own `data.raw` (`reference/factorio/data-raw-<version>.json`, written by
+   `factorio --dump-data`) plus `data/mapping.json` into recipe JSON; `tools/gen_technologies.py`
+   turns the selection in `data/technologies.json` and the same dump into the tree;
+   `tools/gen_removals.py` turns `data/removals.json` into the vanilla-replacement datapack. Each
+   has `--check`, which diffs against disk, and `./gradlew build` runs all three. A vanilla recipe
+   is removed only when the pack already does that job.
 3. **One mod per subsystem, arrows one way.** Subsystem mods never compile against each other;
    they meet through capabilities, `nauvis_lib`, Facrafting's hooks and `neoforge:mod_loaded`
    recipe conditions. The only compile-time dependencies allowed are `nauvis_lib` (the framework;

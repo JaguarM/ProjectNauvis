@@ -134,6 +134,11 @@
       "kind": "conflict",
       "replaced_by": "nauvis_military:iron_door",
       "note": "Factorio's gate is a stone wall, two steel plates and two circuits; vanilla's iron door is six iron ingots. The door is the gate, behind gate research."
+    },
+    "minecraft:rail": {
+      "kind": "conflict",
+      "replaced_by": "nauvis:rail",
+      "note": "Factorio's rail is a stone, an iron stick and a steel plate for two; vanilla's is six iron and a stick for sixteen. The mapping makes minecraft:rail the rail, so vanilla's price is the wrong one. Trains are out of scope, but production science asks for thirty rails."
     }
   }
 }

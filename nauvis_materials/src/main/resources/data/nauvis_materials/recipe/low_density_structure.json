@@ -6,21 +6,21 @@
     }
   ],
   "type": "facrafting:facraft",
-  "craft_ticks": 600,
+  "craft_ticks": 300,
   "group": "intermediate",
-  "order": "0139",
+  "order": "0113",
   "ingredients": [
     {
+      "ingredient": "nauvis_materials:steel_plate",
+      "count": 2
+    },
+    {
       "ingredient": "minecraft:copper_ingot",
-      "count": 5
+      "count": 20
     },
     {
       "ingredient": "nauvis_materials:plastic_bar",
       "count": 5
-    },
-    {
-      "ingredient": "nauvis_materials:steel_plate",
-      "count": 10
     }
   ],
   "result": {

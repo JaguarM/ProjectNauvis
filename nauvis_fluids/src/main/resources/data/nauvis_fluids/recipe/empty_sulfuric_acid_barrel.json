@@ -8,7 +8,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 4,
   "group": "intermediate",
-  "order": "0115",
+  "order": "0102",
   "category": "crafting-with-fluid",
   "ingredients": [
     {

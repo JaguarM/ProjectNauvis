@@ -11,10 +11,10 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
+    "minecraft:iron_ingot",
     "nauvis_materials:copper_cable",
     "nauvis_materials:copper_cable",
-    "nauvis_materials:copper_cable",
-    "minecraft:iron_ingot"
+    "nauvis_materials:copper_cable"
   ],
   "result": {
     "id": "nauvis_materials:electronic_circuit",

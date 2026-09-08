@@ -10,17 +10,17 @@
     }
   ],
   "type": "facrafting:facraft",
-  "craft_ticks": 100,
+  "craft_ticks": 80,
   "group": "intermediate",
-  "order": "0118",
+  "order": "0088",
   "category": "chemistry",
   "ingredients": [
     {
-      "ingredient": "minecraft:coal",
+      "ingredient": "nauvis_materials:sulfur",
       "count": 1
     },
     {
-      "ingredient": "nauvis_materials:sulfur",
+      "ingredient": "minecraft:coal",
       "count": 1
     }
   ],

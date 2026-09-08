@@ -12,7 +12,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 60,
   "group": "production",
-  "order": "0095",
+  "order": "0052",
   "ingredients": [
     {
       "ingredient": "nauvis_materials:steel_plate",

@@ -2,7 +2,7 @@
   "name": "Inserter capacity bonus 1",
   "order": "0007",
   "prerequisites": [
-    "nauvis_research:stack_inserter"
+    "nauvis_research:bulk_inserter"
   ],
   "units": 200,
   "ticks_per_unit": 600,

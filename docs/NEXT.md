@@ -61,6 +61,7 @@ How to run everything
 | `python tools/gen_recipes.py --check` | recipes against the generator; `--write` to update disk |
 | `python tools/gen_technologies.py --check` | the tree; `--write` to regenerate. Fails on a stale file too |
 | `python tools/gen_removals.py --check` | the vanilla removals; `--write` to regenerate |
+| `factorio.exe --dump-data` | Factorio writes its `data.raw` as JSON to its script-output folder; copy it to `reference/factorio/data-raw-<version>.json` and name the version in `tools/factorio_data.py` |
 | `python tools/check_models.py` | every model, texture and blockstate reference, plus footprints, belt speeds, stack sizes, opacity, rotation |
 | `python tools/check_gui_layout.py` | every machine screen's boxes, for overlaps |
 | `python tools/render_model.py <model> out.png` | draws a model from the item slot's angle; `--view side` or `top`. Needs Pillow and numpy |

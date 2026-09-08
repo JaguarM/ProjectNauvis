@@ -1,0 +1,15 @@
+{
+  "name": "Logistic science pack",
+  "order": "0011",
+  "prerequisites": [
+    "nauvis_research:automation_science_pack"
+  ],
+  "units": 75,
+  "ticks_per_unit": 100,
+  "packs": [
+    "nauvis_research:science_pack_1"
+  ],
+  "unlocks": [
+    "nauvis_research:science_pack_2"
+  ]
+}

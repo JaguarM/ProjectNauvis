@@ -12,7 +12,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 20,
   "group": "intermediate",
-  "order": "0147",
+  "order": "0085",
   "category": "chemistry",
   "ingredients": [
     {

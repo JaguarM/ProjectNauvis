@@ -12,11 +12,11 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "nauvis_materials:electronic_circuit",
-    "nauvis_materials:electronic_circuit",
+    "minecraft:cobblestone_wall",
     "nauvis_materials:steel_plate",
     "nauvis_materials:steel_plate",
-    "minecraft:cobblestone_wall"
+    "nauvis_materials:electronic_circuit",
+    "nauvis_materials:electronic_circuit"
   ],
   "result": {
     "id": "minecraft:iron_door",

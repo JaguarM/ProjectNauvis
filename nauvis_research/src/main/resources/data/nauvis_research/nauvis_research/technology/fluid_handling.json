@@ -14,19 +14,19 @@
   "unlocks": [
     "nauvis_fluids:storage_tank",
     "nauvis_fluids:empty_barrel",
-    "nauvis_fluids:fill_water_barrel",
+    "nauvis_fluids:water_barrel",
     "nauvis_fluids:empty_water_barrel",
-    "nauvis_fluids:fill_crude_oil_barrel",
+    "nauvis_fluids:sulfuric_acid_barrel",
+    "nauvis_fluids:empty_sulfuric_acid_barrel",
+    "nauvis_fluids:crude_oil_barrel",
     "nauvis_fluids:empty_crude_oil_barrel",
-    "nauvis_fluids:fill_heavy_oil_barrel",
+    "nauvis_fluids:heavy_oil_barrel",
     "nauvis_fluids:empty_heavy_oil_barrel",
-    "nauvis_fluids:fill_light_oil_barrel",
+    "nauvis_fluids:light_oil_barrel",
     "nauvis_fluids:empty_light_oil_barrel",
-    "nauvis_fluids:fill_lubricant_barrel",
-    "nauvis_fluids:empty_lubricant_barrel",
-    "nauvis_fluids:fill_petroleum_gas_barrel",
+    "nauvis_fluids:petroleum_gas_barrel",
     "nauvis_fluids:empty_petroleum_gas_barrel",
-    "nauvis_fluids:fill_sulfuric_acid_barrel",
-    "nauvis_fluids:empty_sulfuric_acid_barrel"
+    "nauvis_fluids:lubricant_barrel",
+    "nauvis_fluids:empty_lubricant_barrel"
   ]
 }

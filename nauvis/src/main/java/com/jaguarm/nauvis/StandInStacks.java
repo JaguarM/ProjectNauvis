@@ -23,7 +23,6 @@ final class StandInStacks {
         stack(Items.COBBLESTONE, 50);
         stack(Items.STONE_BRICKS, 100);
         stack(Items.COBBLESTONE_WALL, 100);
-        stack(Items.OAK_LOG, 100);
         stack(Items.OAK_PLANKS, 100);
         stack(Items.CHEST, 50);
         stack(Items.IRON_DOOR, 50);
@@ -31,6 +30,7 @@ final class StandInStacks {
         stack(Items.CONCRETE.pick(DyeColor.YELLOW), 100);
         stack(Items.DIRT, 100);
         stack(Items.COD, 100);
+        stack(Items.RAIL, 100);
     }
 
     private StandInStacks() {}

@@ -15,13 +15,13 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "nauvis_materials:battery",
-    "nauvis_materials:battery",
-    "nauvis_materials:battery",
-    "nauvis_materials:battery",
-    "nauvis_materials:battery",
     "minecraft:iron_ingot",
-    "minecraft:iron_ingot"
+    "minecraft:iron_ingot",
+    "nauvis_materials:battery",
+    "nauvis_materials:battery",
+    "nauvis_materials:battery",
+    "nauvis_materials:battery",
+    "nauvis_materials:battery"
   ],
   "result": {
     "id": "nauvis_power:accumulator",

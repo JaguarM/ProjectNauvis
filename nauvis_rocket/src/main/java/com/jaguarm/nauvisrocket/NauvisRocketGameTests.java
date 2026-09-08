@@ -66,18 +66,18 @@ public final class NauvisRocketGameTests {
             ResourceHandler<ItemResource> view = silo.automationView();
             helper.assertValueEqual(insert(view, item(helper, "nauvis_materials:low_density_structure"), 10), 10,
                     "low density structures accepted");
-            helper.assertValueEqual(insert(view, item(helper, "nauvis_materials:rocket_control_unit"), 10), 10,
-                    "rocket control units accepted");
+            helper.assertValueEqual(insert(view, item(helper, "nauvis_materials:processing_unit"), 10), 10,
+                    "processing units accepted");
             helper.assertValueEqual(insert(view, item(helper, "nauvis_materials:rocket_fuel"), 10), 10,
                     "rocket fuel accepted");
-            // One ingredient a slot, in the recipe's order, so a belt of one thing cannot fill the machine.
-            helper.assertValueEqual(silo.inventory().getAmountAsInt(0), 10, "low density structures in the first slot");
-            helper.assertValueEqual(silo.inventory().getAmountAsInt(1), 10, "rocket control units in the second slot");
+            // One ingredient a slot, in the recipe's order - processing units first - so a belt of one thing cannot fill the machine.
+            helper.assertValueEqual(silo.inventory().getAmountAsInt(1), 10, "low density structures in the second slot");
+            helper.assertValueEqual(silo.inventory().getAmountAsInt(0), 10, "processing units in the first slot");
             helper.assertValueEqual(silo.inventory().getAmountAsInt(2), 10, "rocket fuel in the third slot");
             helper.assertValueEqual(insert(view, item(helper, "nauvis_materials:low_density_structure"), 200), 10,
                     "more low density structures accepted: automation stops at twice a part's worth and the other slots refuse it");
             try (Transaction transaction = Transaction.openRoot()) {
-                helper.assertValueEqual(silo.inventory().insert(0,
+                helper.assertValueEqual(silo.inventory().insert(1,
                         ItemResource.of(item(helper, "nauvis_materials:low_density_structure")), 200, transaction), 30,
                         "low density structures a hand may add past the limit: up to the stack of fifty");
                 // Not committed: the part below is built from the twenty an inserter left.
@@ -91,9 +91,9 @@ public final class NauvisRocketGameTests {
             // Three seconds is sixty ticks; the first tick's check and a tick of slack.
             helper.runAfterDelay(70, () -> {
                 helper.assertValueEqual(silo.parts(), 1, "rocket parts built");
-                // One part's worth taken from each slot: the first held two parts' worth and keeps one.
-                helper.assertValueEqual(silo.inventory().getAmountAsInt(0), 10, "low density structures left after one part");
-                helper.assertValueEqual(silo.inventory().getAmountAsInt(1), 0, "rocket control units left after one part");
+                // One part's worth taken from each slot: the second held two parts' worth and keeps one.
+                helper.assertValueEqual(silo.inventory().getAmountAsInt(1), 10, "low density structures left after one part");
+                helper.assertValueEqual(silo.inventory().getAmountAsInt(0), 0, "processing units left after one part");
                 helper.assertValueEqual(silo.inventory().getAmountAsInt(2), 0, "rocket fuel left after one part");
                 helper.assertTrue(silo.energyStored() < RocketSiloBlockEntity.ENERGY_CAPACITY,
                         "the silo built a part for nothing");
@@ -185,13 +185,13 @@ public final class NauvisRocketGameTests {
             });
         });
 
-        // What an inserter fills the slots to survives a save: twice a part's worth of a ten-stack
+        // What an inserter fills the slots to survives a save: twice a part's worth of an
         // ingredient, and a launch's science in the output.
         tests.add("a_silo_keeps_its_slots_through_a_save", 20, PADDING, helper -> {
             RocketSiloBlockEntity silo = placeSilo(helper);
-            Item unit = item(helper, "nauvis_materials:rocket_control_unit");
+            Item unit = item(helper, "nauvis_materials:processing_unit");
             helper.assertValueEqual(insert(silo.automationView(), unit, 20), 20,
-                    "two parts' worth of rocket control units accepted");
+                    "two parts' worth of processing units accepted");
             try (Transaction transaction = Transaction.openRoot()) {
                 silo.inventory().insert(RocketSiloBlockEntity.OUTPUT_SLOT,
                         ItemResource.of(ModItems.SPACE_SCIENCE_PACK.get()), 1000, transaction);
@@ -201,8 +201,8 @@ public final class NauvisRocketGameTests {
             CompoundTag saved = silo.saveWithoutMetadata(registries);
             RocketSiloBlockEntity reloaded = new RocketSiloBlockEntity(silo.getBlockPos(), silo.getBlockState());
             reloaded.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, registries, saved));
-            helper.assertValueEqual(reloaded.inventory().getAmountAsInt(1), 20,
-                    "rocket control units after a save and reload; saved as " + saved.get("Inventory"));
+            helper.assertValueEqual(reloaded.inventory().getAmountAsInt(0), 20,
+                    "processing units after a save and reload; saved as " + saved.get("Inventory"));
             helper.assertValueEqual(reloaded.inventory().getAmountAsInt(RocketSiloBlockEntity.OUTPUT_SLOT), 1000,
                     "space science after a save and reload; saved as " + saved.get("Inventory"));
             helper.succeed();

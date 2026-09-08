@@ -8,7 +8,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 100,
   "group": "intermediate",
-  "order": "0098",
+  "order": "0074",
   "category": "oil-processing",
   "ingredients": [],
   "fluid_ingredients": [

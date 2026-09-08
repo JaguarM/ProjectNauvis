@@ -10,25 +10,25 @@
     }
   ],
   "type": "facrafting:facraft",
-  "craft_ticks": 60,
+  "craft_ticks": 120,
   "group": "combat",
-  "order": "0215",
+  "order": "0131",
   "ingredients": [
     {
-      "ingredient": "minecraft:copper_ingot",
-      "count": 5
-    },
-    {
       "ingredient": "nauvis_military:firearm_magazine",
-      "count": 1
+      "count": 2
     },
     {
       "ingredient": "nauvis_materials:steel_plate",
       "count": 1
+    },
+    {
+      "ingredient": "minecraft:copper_ingot",
+      "count": 2
     }
   ],
   "result": {
     "id": "nauvis_military:piercing_rounds_magazine",
-    "count": 1
+    "count": 2
   }
 }

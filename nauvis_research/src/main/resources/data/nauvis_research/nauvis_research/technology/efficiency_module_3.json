@@ -1,0 +1,19 @@
+{
+  "name": "Efficiency module 3",
+  "order": "0057",
+  "prerequisites": [
+    "nauvis_research:efficiency_module_2",
+    "nauvis_research:production_science_pack"
+  ],
+  "units": 300,
+  "ticks_per_unit": 1200,
+  "packs": [
+    "nauvis_research:science_pack_1",
+    "nauvis_research:science_pack_2",
+    "nauvis_research:science_pack_3",
+    "nauvis_research:production_science_pack"
+  ],
+  "unlocks": [
+    "nauvis_machines:effectivity_module_3"
+  ]
+}

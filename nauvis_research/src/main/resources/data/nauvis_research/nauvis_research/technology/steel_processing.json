@@ -2,7 +2,7 @@
   "name": "Steel processing",
   "order": "0012",
   "prerequisites": [
-    "nauvis_research:science_pack_1"
+    "nauvis_research:automation_science_pack"
   ],
   "units": 50,
   "ticks_per_unit": 100,

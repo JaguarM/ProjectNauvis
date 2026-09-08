@@ -12,14 +12,14 @@
   "type": "facrafting:facraft",
   "craft_ticks": 1200,
   "group": "production",
-  "order": "0074",
+  "order": "0067",
   "ingredients": [
     {
-      "ingredient": "nauvis_materials:advanced_circuit",
-      "count": 5
+      "ingredient": "nauvis_machines:effectivity_module_2",
+      "count": 4
     },
     {
-      "ingredient": "nauvis_machines:effectivity_module_2",
+      "ingredient": "nauvis_materials:advanced_circuit",
       "count": 5
     },
     {

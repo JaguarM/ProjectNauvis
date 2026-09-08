@@ -3,7 +3,7 @@
   "order": "0030",
   "prerequisites": [
     "nauvis_research:steel_processing",
-    "nauvis_research:science_pack_2"
+    "nauvis_research:logistic_science_pack"
   ],
   "units": 100,
   "ticks_per_unit": 300,

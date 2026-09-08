@@ -17,9 +17,9 @@
   "ingredients": [
     "nauvis_materials:electronic_circuit",
     "nauvis_materials:electronic_circuit",
-    "nauvis_logistics:inserter",
     "minecraft:iron_ingot",
-    "minecraft:iron_ingot"
+    "minecraft:iron_ingot",
+    "nauvis_logistics:inserter"
   ],
   "result": {
     "id": "nauvis_logistics:fast_inserter",

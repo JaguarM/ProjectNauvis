@@ -644,7 +644,8 @@ public final class NauvisGameTests {
             helper.assertValueEqual(insert(handler(helper, INSERTER), Items.COAL, 1), 1, "coal the inserter took");
 
             helper.runAfterDelay(SWINGS_TICKS, () -> {
-                int inSilo = silo.getAmountAsInt(0);
+                // The structures are the rocket part's second ingredient, so its second slot.
+                int inSilo = silo.getAmountAsInt(1);
                 int inChest = countIn(chest, structure);
                 helper.assertValueEqual(inSilo, 20, "low density structures in the silo: twice a part's worth is the limit");
                 helper.assertValueEqual(inChest, 2, "low density structures left in the chest");

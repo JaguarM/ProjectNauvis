@@ -12,11 +12,11 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "production",
-  "order": "0064",
+  "order": "0055",
   "ingredients": [
     {
-      "ingredient": "nauvis_machines:assembling_machine_1",
-      "count": 1
+      "ingredient": "nauvis_materials:steel_plate",
+      "count": 2
     },
     {
       "ingredient": "nauvis_materials:electronic_circuit",
@@ -27,8 +27,8 @@
       "count": 5
     },
     {
-      "ingredient": "minecraft:iron_ingot",
-      "count": 9
+      "ingredient": "nauvis_machines:assembling_machine_1",
+      "count": 1
     }
   ],
   "result": {

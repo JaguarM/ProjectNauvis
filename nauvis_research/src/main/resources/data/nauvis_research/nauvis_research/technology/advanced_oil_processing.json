@@ -2,7 +2,7 @@
   "name": "Advanced oil processing",
   "order": "0038",
   "prerequisites": [
-    "nauvis_research:science_pack_3"
+    "nauvis_research:chemical_science_pack"
   ],
   "units": 75,
   "ticks_per_unit": 600,

@@ -1,4 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": { "layer0": "nauvis_materials:item/rocket_control_unit" }
-}

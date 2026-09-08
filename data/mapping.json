@@ -1,28 +1,80 @@
 {
   "_": "Factorio id -> Minecraft item. Hand-maintained; see docs/MAPPING.md.",
-  "_generated_from": "reference/factorio/recipes.json (214 entries)",
+  "_generated_from": "reference/factorio/data-raw-2.0.77.json, Factorio 2.0.77 base game (tools/factorio_data.py)",
   "_size": "Factorio tile footprint [width, depth], for entities larger than one tile. Absent means 1x1. One Minecraft block per tile - see docs/NEXT.md.",
   "_speed": "Factorio belt speed in tiles per second. Identity: it decides what a factory looks like, and throughput follows from it - four items a tile a lane, two lanes, so 1.875 tiles/s is the wiki's 15 items/s. tools/check_models.py holds each belt block's SPEED constant to this.",
-  "_category": "Factorio's recipe category, for a recipe only a machine runs: `smelting` is the four the furnaces do - plates, steel and stone brick - `chemistry` is the chemical plant's, `oil-processing` the refinery's, and `crafting-with-fluid` is a recipe with one fluid in or out that only an assembler with a fluid box - assembling machine 2 - runs: the electric engine unit, the processing unit, concrete and the barrels; `rocket-building` is the rocket silo's alone - the rocket part, and the launch that turns a hundred of them and a satellite into space science. Absent means hand-craftable, which is Factorio's `crafting`. Not in the dump, so entered by hand against the wiki like `size`. gen_recipes.py writes it into the recipe as Facrafting's `category`, and Facrafting keeps such a recipe out of the hand panel; a machine names the category it runs. A recipe that takes or makes a fluid is a machine's whatever its category, and the recipes that make only fluids or several things are in data/fluid_recipes.json.",
-  "_unlocks": "A technology effect names a *recipe*, and Factorio's recipe names are not always its item names. This maps the ones that differ to the item whose recipe file gen_recipes.py writes - `small-lamp` makes a lamp, `solar-panel-equipment` makes a portable solar panel. null means the pack has no counterpart at all. A name in data/fluid_recipes.json needs no line here: it resolves to that recipe's own key, which is how the barrel recipes are unlocked. Any name in none of the three is a GenError in tools/gen_technologies.py rather than a silently dropped unlock.",
-  "_stack": "Factorio's stack size: a fact a player carries in their head, so it is written here and tools/check_models.py holds the code to it. An item the pack registers says it through nauvis_lib's Stacks.of(n); a vanilla stand-in gets it from the pack mod's StandInStacks. Minecraft's own ceiling of 99 is lifted by nauvis_lib's mixins, so the number here is the number in a chest. Where 2.0.7 raised a 1.1 number - low density structure to fifty, rocket fuel to twenty - the pack takes the raise; an item 2.0 removed keeps its 1.1 number. Entered by hand, like size.",
-  "unlocks": {
-    "small-lamp": "lamp",
-    "shotgun-shell": "shotgun-shells",
-    "piercing-shotgun-shell": "piercing-shotgun-shells",
-    "night-vision-equipment": "nightvision",
-    "battery-equipment": "battery-mk1",
-    "battery-mk2-equipment": "battery-mk2",
-    "energy-shield-equipment": "energy-shield",
-    "energy-shield-mk2-equipment": "energy-shield-mk2",
-    "exoskeleton-equipment": "exoskeleton",
-    "discharge-defense-equipment": "discharge-defense",
-    "personal-laser-defense-equipment": "personal-laser-defense",
-    "personal-roboport-equipment": "personal-roboport",
-    "personal-roboport-mk2-equipment": "personal-roboport-mk2",
-    "fusion-reactor-equipment": "portable-fusion-reactor",
-    "solar-panel-equipment": "portable-solar-panel",
-    "coal-liquefaction": null
+  "_stack": "Factorio's stack size: a fact a player carries in their head, so it is written here and tools/check_models.py holds the code to it. An item the pack registers says it through nauvis_lib's Stacks.of(n); a vanilla stand-in gets it from the pack mod's StandInStacks. Minecraft's own ceiling of 99 is lifted by nauvis_lib's mixins, so the number here is the number in a chest. Entered by hand, like size; data.raw's stack_size is the source.",
+  "_recipes": "A recipe that makes the item it is named after needs only that item's entry. Any other recipe - the refinery's, cracking, the solid-fuel routes, emptying a barrel - is filed under its own name and needs a row here: an owner, or a skip and a reason. `launch` names the cargo of a launch that data.raw has no recipe for, and `show` generates a recipe data.raw hides. tools/factorio_data.py refuses a new recipe with neither an item entry nor a row, so a new dump cannot drop one silently.",
+  "recipes": {
+    "basic-oil-processing": {
+      "owner": "nauvis_fluids"
+    },
+    "advanced-oil-processing": {
+      "owner": "nauvis_fluids"
+    },
+    "heavy-oil-cracking": {
+      "owner": "nauvis_fluids"
+    },
+    "light-oil-cracking": {
+      "owner": "nauvis_fluids"
+    },
+    "solid-fuel-from-heavy-oil": {
+      "owner": "nauvis_fluids"
+    },
+    "solid-fuel-from-light-oil": {
+      "owner": "nauvis_fluids"
+    },
+    "solid-fuel-from-petroleum-gas": {
+      "owner": "nauvis_fluids"
+    },
+    "empty-water-barrel": {
+      "owner": "nauvis_fluids"
+    },
+    "empty-crude-oil-barrel": {
+      "owner": "nauvis_fluids"
+    },
+    "empty-heavy-oil-barrel": {
+      "owner": "nauvis_fluids"
+    },
+    "empty-light-oil-barrel": {
+      "owner": "nauvis_fluids"
+    },
+    "empty-lubricant-barrel": {
+      "owner": "nauvis_fluids"
+    },
+    "empty-petroleum-gas-barrel": {
+      "owner": "nauvis_fluids"
+    },
+    "empty-sulfuric-acid-barrel": {
+      "owner": "nauvis_fluids"
+    },
+    "coal-liquefaction": {
+      "skip": true,
+      "why": "Left out on purpose: it wants an item and two fluids in, and the refinery has ports for two fluids in and three out. A job for when the refinery grows a third port."
+    },
+    "uranium-processing": {
+      "skip": true,
+      "why": "Uranium is unscheduled (docs/MAPPING.md); this one makes several things, one of them by chance."
+    },
+    "kovarex-enrichment-process": {
+      "skip": true,
+      "why": "Uranium is unscheduled (docs/MAPPING.md); this one makes several things, one of them by chance."
+    },
+    "nuclear-fuel-reprocessing": {
+      "skip": true,
+      "why": "Uranium is unscheduled (docs/MAPPING.md); this one makes several things, one of them by chance."
+    },
+    "space-science-pack": {
+      "launch": "satellite"
+    },
+    "pistol": {
+      "show": true,
+      "why": "Hidden in Factorio because a new character carries one; here nobody does, and the recipe is Factorio's own."
+    },
+    "nuclear-fuel": {
+      "skip": true,
+      "why": "Uranium is unscheduled (docs/MAPPING.md); the centrifuge is its machine."
+    }
   },
   "items": {
     "accumulator": {
@@ -33,43 +85,32 @@
         2,
         2
       ],
-      "craft": {
-        "time": 10,
-        "yield": 1
-      },
       "stack": 50
+    },
+    "active-provider-chest": {
+      "name": "Active provider chest",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:logistic_chest_active_provider"
     },
     "advanced-circuit": {
       "name": "Advanced circuit",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:advanced_circuit",
-      "craft": {
-        "time": 6,
-        "yield": 1
-      },
       "stack": 200
     },
     "arithmetic-combinator": {
       "skip": true,
-      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system",
+      "name": "Arithmetic combinator"
     },
     "artillery-shell": {
       "name": "Artillery shell",
       "owner": "nauvis_military",
-      "item": "nauvis_military:artillery_shell",
-      "craft": {
-        "time": 15,
-        "yield": 1
-      }
+      "item": "nauvis_military:artillery_shell"
     },
     "artillery-targeting-remote": {
-      "name": "Artillery targeting remote",
-      "owner": "nauvis_military",
-      "item": "nauvis_military:artillery_targeting_remote",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: 2.0 hands it out through a shortcut and has no recipe for it."
     },
     "artillery-turret": {
       "name": "Artillery turret",
@@ -78,15 +119,12 @@
       "size": [
         3,
         3
-      ],
-      "craft": {
-        "time": 40,
-        "yield": 1
-      }
+      ]
     },
     "artillery-wagon": {
       "skip": true,
-      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about",
+      "name": "Artillery wagon"
     },
     "assembling-machine-1": {
       "name": "Assembling machine 1",
@@ -96,10 +134,6 @@
         3,
         3
       ],
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "assembling-machine-2": {
@@ -110,10 +144,6 @@
         3,
         3
       ],
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "assembling-machine-3": {
@@ -123,49 +153,40 @@
       "size": [
         3,
         3
-      ],
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      ]
     },
     "atomic-bomb": {
       "name": "Atomic bomb",
       "owner": "nauvis_military",
-      "item": "nauvis_military:atomic_bomb",
-      "craft": {
-        "time": 50,
-        "yield": 1
-      }
+      "item": "nauvis_military:atomic_bomb"
+    },
+    "automation-science-pack": {
+      "name": "Automation science pack",
+      "owner": "nauvis_research",
+      "item": "nauvis_research:science_pack_1",
+      "stack": 200
+    },
+    "barrel": {
+      "name": "Barrel",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:empty_barrel",
+      "stack": 10
     },
     "battery": {
       "name": "Battery",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:battery",
-      "craft": {
-        "time": 5,
-        "yield": 1
-      },
-      "category": "chemistry",
       "stack": 200
     },
-    "battery-mk1": {
-      "name": "Battery MK1",
+    "battery-equipment": {
+      "name": "Personal battery",
       "owner": "nauvis_military",
-      "item": "nauvis_military:battery_mk1",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:battery_mk1"
     },
-    "battery-mk2": {
-      "name": "Battery MK2",
+    "battery-mk2-equipment": {
+      "name": "Personal battery MK2",
       "owner": "nauvis_military",
-      "item": "nauvis_military:battery_mk2",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:battery_mk2"
     },
     "beacon": {
       "name": "Beacon",
@@ -174,11 +195,12 @@
       "size": [
         3,
         3
-      ],
-      "craft": {
-        "time": 15,
-        "yield": 1
-      }
+      ]
+    },
+    "belt-immunity-equipment": {
+      "name": "Belt immunity equipment",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:belt_immunity_equipment"
     },
     "big-electric-pole": {
       "name": "Big electric pole",
@@ -188,19 +210,17 @@
         2,
         2
       ],
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 20
     },
     "blueprint": {
       "skip": true,
-      "why": "Factorio UI tool, no Minecraft analogue"
+      "why": "Factorio UI tool, no Minecraft analogue",
+      "name": "Blueprint"
     },
     "blueprint-book": {
       "skip": true,
-      "why": "Factorio UI tool, no Minecraft analogue"
+      "why": "Factorio UI tool, no Minecraft analogue",
+      "name": "Blueprint book"
     },
     "boiler": {
       "name": "Boiler",
@@ -210,20 +230,23 @@
         3,
         2
       ],
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
+      "stack": 50
+    },
+    "buffer-chest": {
+      "name": "Buffer chest",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:logistic_chest_buffer"
+    },
+    "bulk-inserter": {
+      "name": "Bulk inserter",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:stack_inserter",
       "stack": 50
     },
     "burner-inserter": {
       "name": "Burner inserter",
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:burner_inserter",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "burner-mining-drill": {
@@ -234,28 +257,26 @@
         2,
         2
       ],
-      "craft": {
-        "time": 4,
-        "yield": 1
-      },
       "stack": 50
     },
     "cannon-shell": {
       "name": "Cannon shell",
       "owner": "nauvis_military",
-      "item": "nauvis_military:cannon_shell",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      }
+      "item": "nauvis_military:cannon_shell"
     },
     "car": {
       "skip": true,
-      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about",
+      "name": "Car"
+    },
+    "cargo-landing-pad": {
+      "skip": true,
+      "why": "Not in this pack: the silo's output slot is where a launch's science comes back, so a pad would be a second machine for the same job (docs/GAPS.md)."
     },
     "cargo-wagon": {
       "skip": true,
-      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about",
+      "name": "Cargo wagon"
     },
     "centrifuge": {
       "name": "Centrifuge",
@@ -264,11 +285,7 @@
       "size": [
         3,
         3
-      ],
-      "craft": {
-        "time": 4,
-        "yield": 1
-      }
+      ]
     },
     "chemical-plant": {
       "name": "Chemical plant",
@@ -278,29 +295,23 @@
         3,
         3
       ],
-      "craft": {
-        "time": 5,
-        "yield": 1
-      },
       "stack": 10
+    },
+    "chemical-science-pack": {
+      "name": "Chemical science pack",
+      "owner": "nauvis_research",
+      "item": "nauvis_research:science_pack_3",
+      "stack": 200
     },
     "cliff-explosives": {
       "name": "Cliff explosives",
       "owner": "nauvis",
-      "item": "nauvis:cliff_explosives",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      }
+      "item": "nauvis:cliff_explosives"
     },
     "cluster-grenade": {
       "name": "Cluster grenade",
       "owner": "nauvis_military",
-      "item": "nauvis_military:cluster_grenade",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      }
+      "item": "nauvis_military:cluster_grenade"
     },
     "coal": {
       "name": "Coal",
@@ -313,45 +324,29 @@
     "combat-shotgun": {
       "name": "Combat shotgun",
       "owner": "nauvis_military",
-      "item": "nauvis_military:combat_shotgun",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:combat_shotgun"
     },
     "concrete": {
       "name": "Concrete",
       "owner": "nauvis",
       "item": "minecraft:gray_concrete",
       "stand_in": true,
-      "craft": {
-        "time": 10,
-        "yield": 10
-      },
-      "category": "crafting-with-fluid",
       "stack": 100
     },
     "constant-combinator": {
       "skip": true,
-      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system",
+      "name": "Constant combinator"
     },
     "construction-robot": {
       "name": "Construction robot",
       "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:construction_robot",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "item": "nauvis_logistics:construction_robot"
     },
     "copper-cable": {
       "name": "Copper cable",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:copper_cable",
-      "craft": {
-        "time": 0.5,
-        "yield": 2
-      },
       "stack": 200
     },
     "copper-ore": {
@@ -367,11 +362,6 @@
       "owner": "nauvis_materials",
       "item": "minecraft:copper_ingot",
       "stand_in": true,
-      "category": "smelting",
-      "craft": {
-        "time": 3.2,
-        "yield": 1
-      },
       "stack": 100
     },
     "crude-oil": {
@@ -384,101 +374,74 @@
       "name": "Crude oil barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:crude_oil_barrel",
-      "raw": true,
       "stack": 10
     },
     "decider-combinator": {
       "skip": true,
-      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system",
+      "name": "Decider combinator"
     },
     "deconstruction-planner": {
       "skip": true,
-      "why": "Factorio UI tool, no Minecraft analogue"
+      "why": "Factorio UI tool, no Minecraft analogue",
+      "name": "Deconstruction planner"
     },
     "defender-capsule": {
       "name": "Defender capsule",
       "owner": "nauvis_military",
-      "item": "nauvis_military:defender_capsule",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      }
+      "item": "nauvis_military:defender_capsule"
+    },
+    "depleted-uranium-fuel-cell": {
+      "name": "Depleted uranium fuel cell",
+      "owner": "nauvis_fluids",
+      "item": "nauvis_fluids:used_up_uranium_fuel_cell",
+      "raw": true
     },
     "destroyer-capsule": {
       "name": "Destroyer capsule",
       "owner": "nauvis_military",
-      "item": "nauvis_military:destroyer_capsule",
-      "craft": {
-        "time": 15,
-        "yield": 1
-      }
+      "item": "nauvis_military:destroyer_capsule"
     },
-    "discharge-defense": {
+    "discharge-defense-equipment": {
       "name": "Discharge defense",
       "owner": "nauvis_military",
-      "item": "nauvis_military:discharge_defense",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:discharge_defense"
     },
     "discharge-defense-remote": {
-      "name": "Discharge defense remote",
-      "owner": "nauvis_military",
-      "item": "nauvis_military:discharge_defense_remote",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "skip": true,
+      "why": "Not in this pack: 2.0 hands it out through a shortcut and has no recipe for it."
+    },
+    "display-panel": {
+      "skip": true,
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
     },
     "distractor-capsule": {
       "name": "Distractor capsule",
       "owner": "nauvis_military",
-      "item": "nauvis_military:distractor_capsule",
-      "craft": {
-        "time": 15,
-        "yield": 1
-      }
+      "item": "nauvis_military:distractor_capsule"
     },
-    "effectivity-module": {
+    "efficiency-module": {
       "name": "Efficiency module",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:effectivity_module",
-      "craft": {
-        "time": 15,
-        "yield": 1
-      },
       "stack": 50
     },
-    "effectivity-module-2": {
+    "efficiency-module-2": {
       "name": "Efficiency module 2",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:effectivity_module_2",
-      "craft": {
-        "time": 30,
-        "yield": 1
-      },
       "stack": 50
     },
-    "effectivity-module-3": {
+    "efficiency-module-3": {
       "name": "Efficiency module 3",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:effectivity_module_3",
-      "craft": {
-        "time": 60,
-        "yield": 1
-      },
       "stack": 50
     },
     "electric-engine-unit": {
       "name": "Electric engine unit",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:electric_engine_unit",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      },
-      "category": "crafting-with-fluid",
       "stack": 50
     },
     "electric-furnace": {
@@ -489,10 +452,6 @@
         3,
         3
       ],
-      "craft": {
-        "time": 5,
-        "yield": 1
-      },
       "stack": 50
     },
     "electric-mining-drill": {
@@ -503,105 +462,54 @@
         3,
         3
       ],
-      "craft": {
-        "time": 2,
-        "yield": 1
-      },
       "stack": 50
     },
     "electronic-circuit": {
       "name": "Electronic circuit",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:electronic_circuit",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 200
     },
-    "empty-barrel": {
-      "name": "Empty barrel",
-      "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:empty_barrel",
-      "craft": {
-        "time": 1,
-        "yield": 1
-      },
-      "stack": 10
-    },
-    "energy-shield": {
+    "energy-shield-equipment": {
       "name": "Energy shield",
       "owner": "nauvis_military",
-      "item": "nauvis_military:energy_shield",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:energy_shield"
     },
-    "energy-shield-mk2": {
+    "energy-shield-mk2-equipment": {
       "name": "Energy shield MK2",
       "owner": "nauvis_military",
-      "item": "nauvis_military:energy_shield_mk2",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:energy_shield_mk2"
     },
     "engine-unit": {
       "name": "Engine unit",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:engine_unit",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      },
       "stack": 50
     },
-    "exoskeleton": {
+    "exoskeleton-equipment": {
       "name": "Exoskeleton",
       "owner": "nauvis_military",
-      "item": "nauvis_military:exoskeleton",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:exoskeleton"
     },
     "explosive-cannon-shell": {
       "name": "Explosive cannon shell",
       "owner": "nauvis_military",
-      "item": "nauvis_military:explosive_cannon_shell",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      }
+      "item": "nauvis_military:explosive_cannon_shell"
     },
     "explosive-rocket": {
       "name": "Explosive rocket",
       "owner": "nauvis_military",
-      "item": "nauvis_military:explosive_rocket",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      }
+      "item": "nauvis_military:explosive_rocket"
     },
     "explosive-uranium-cannon-shell": {
       "name": "Explosive uranium cannon shell",
       "owner": "nauvis_military",
-      "item": "nauvis_military:explosive_uranium_cannon_shell",
-      "craft": {
-        "time": 12,
-        "yield": 1
-      }
+      "item": "nauvis_military:explosive_uranium_cannon_shell"
     },
     "explosives": {
       "name": "Explosives",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:explosives",
-      "craft": {
-        "time": 5,
-        "yield": 2
-      },
-      "category": "chemistry",
       "stack": 50
     },
     "express-splitter": {
@@ -612,34 +520,23 @@
       "size": [
         2,
         1
-      ],
-      "craft": {
-        "time": 2,
-        "yield": 1
-      }
+      ]
     },
     "express-transport-belt": {
       "name": "Express transport belt",
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:express_transport_belt",
-      "speed": 5.625,
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "speed": 5.625
     },
     "express-underground-belt": {
       "skip": true,
-      "why": "See underground-belt"
+      "why": "See underground-belt",
+      "name": "Express underground belt"
     },
     "fast-inserter": {
       "name": "Fast inserter",
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:fast_inserter",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "fast-splitter": {
@@ -651,10 +548,6 @@
         2,
         1
       ],
-      "craft": {
-        "time": 2,
-        "yield": 1
-      },
       "stack": 50
     },
     "fast-transport-belt": {
@@ -662,52 +555,33 @@
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:fast_transport_belt",
       "speed": 3.75,
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 100
     },
     "fast-underground-belt": {
       "skip": true,
-      "why": "See underground-belt"
-    },
-    "filter-inserter": {
-      "name": "Filter inserter",
-      "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:filter_inserter",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "why": "See underground-belt",
+      "name": "Fast underground belt"
     },
     "firearm-magazine": {
       "name": "Firearm magazine",
       "owner": "nauvis_military",
       "item": "nauvis_military:firearm_magazine",
-      "craft": {
-        "time": 1,
-        "yield": 1
-      },
       "stack": 200
+    },
+    "fission-reactor-equipment": {
+      "name": "Portable fission reactor",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:portable_fusion_reactor"
     },
     "flamethrower": {
       "name": "Flamethrower",
       "owner": "nauvis_military",
-      "item": "nauvis_military:flamethrower",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:flamethrower"
     },
     "flamethrower-ammo": {
       "name": "Flamethrower ammo",
       "owner": "nauvis_military",
-      "item": "nauvis_military:flamethrower_ammo",
-      "craft": {
-        "time": 6,
-        "yield": 1
-      }
+      "item": "nauvis_military:flamethrower_ammo"
     },
     "flamethrower-turret": {
       "name": "Flamethrower turret",
@@ -716,48 +590,35 @@
       "size": [
         2,
         3
-      ],
-      "craft": {
-        "time": 20,
-        "yield": 1
-      }
+      ]
     },
     "fluid-wagon": {
       "skip": true,
-      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about",
+      "name": "Fluid wagon"
     },
     "flying-robot-frame": {
       "name": "Flying robot frame",
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:flying_robot_frame",
-      "craft": {
-        "time": 20,
-        "yield": 1
-      }
+      "pending": true
     },
     "gate": {
       "name": "Gate",
       "owner": "nauvis_military",
       "item": "minecraft:iron_door",
       "stand_in": true,
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "green-wire": {
       "skip": true,
-      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system",
+      "name": "Green wire"
     },
     "grenade": {
       "name": "Grenade",
       "owner": "nauvis_military",
       "item": "nauvis_military:grenade",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      },
       "stack": 100
     },
     "gun-turret": {
@@ -768,10 +629,6 @@
         2,
         2
       ],
-      "craft": {
-        "time": 8,
-        "yield": 1
-      },
       "stack": 50
     },
     "hazard-concrete": {
@@ -779,10 +636,6 @@
       "owner": "nauvis",
       "item": "minecraft:yellow_concrete",
       "stand_in": true,
-      "craft": {
-        "time": 0.25,
-        "yield": 10
-      },
       "stack": 100
     },
     "heat-exchanger": {
@@ -792,29 +645,17 @@
       "size": [
         3,
         2
-      ],
-      "craft": {
-        "time": 3,
-        "yield": 1
-      }
+      ]
     },
     "heat-pipe": {
       "name": "Heat pipe",
       "owner": "nauvis_power",
-      "item": "nauvis_power:heat_pipe",
-      "craft": {
-        "time": 1,
-        "yield": 1
-      }
+      "item": "nauvis_power:heat_pipe"
     },
     "heavy-armor": {
       "name": "Heavy armor",
       "owner": "nauvis_military",
       "item": "nauvis_military:heavy_armor",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      },
       "stack": 1
     },
     "heavy-oil": {
@@ -827,27 +668,12 @@
       "name": "Heavy oil barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:heavy_oil_barrel",
-      "raw": true,
       "stack": 10
-    },
-    "high-tech-science-pack": {
-      "name": "High tech science pack",
-      "owner": "nauvis_research",
-      "item": "nauvis_research:high_tech_science_pack",
-      "craft": {
-        "time": 14,
-        "yield": 2
-      },
-      "stack": 200
     },
     "inserter": {
       "name": "Inserter",
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:inserter",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "iron-axe": {
@@ -858,20 +684,12 @@
       "name": "Iron chest",
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:iron_chest",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "iron-gear-wheel": {
       "name": "Iron gear wheel",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:iron_gear_wheel",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 100
     },
     "iron-ore": {
@@ -887,31 +705,13 @@
       "owner": "nauvis_materials",
       "item": "minecraft:iron_ingot",
       "stand_in": true,
-      "category": "smelting",
-      "craft": {
-        "time": 3.2,
-        "yield": 1
-      },
       "stack": 100
     },
     "iron-stick": {
       "name": "Iron stick",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:iron_stick",
-      "craft": {
-        "time": 0.5,
-        "yield": 2
-      },
       "stack": 100
-    },
-    "kovarex-enrichment-process": {
-      "name": "Kovarex enrichment process",
-      "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:kovarex_enrichment_process",
-      "craft": {
-        "time": 50,
-        "yield": null
-      }
     },
     "lab": {
       "name": "Lab",
@@ -921,34 +721,18 @@
         3,
         3
       ],
-      "craft": {
-        "time": 2,
-        "yield": 1
-      },
       "stack": 10
-    },
-    "lamp": {
-      "skip": true,
-      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
     },
     "land-mine": {
       "name": "Land mine",
       "owner": "nauvis_military",
-      "item": "nauvis_military:land_mine",
-      "craft": {
-        "time": 5,
-        "yield": 4
-      }
+      "item": "nauvis_military:land_mine"
     },
     "landfill": {
       "name": "Landfill",
       "owner": "nauvis",
       "item": "minecraft:dirt",
       "stand_in": true,
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 100
     },
     "laser-turret": {
@@ -958,20 +742,12 @@
       "size": [
         2,
         2
-      ],
-      "craft": {
-        "time": 20,
-        "yield": 1
-      }
+      ]
     },
     "light-armor": {
       "name": "Light armor",
       "owner": "nauvis_military",
       "item": "nauvis_military:light_armor",
-      "craft": {
-        "time": 3,
-        "yield": 1
-      },
       "stack": 1
     },
     "light-oil": {
@@ -984,159 +760,73 @@
       "name": "Light oil barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:light_oil_barrel",
-      "raw": true,
       "stack": 10
     },
     "locomotive": {
       "skip": true,
-      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
-    },
-    "logistic-chest-active-provider": {
-      "name": "Active provider chest",
-      "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:logistic_chest_active_provider",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
-    },
-    "logistic-chest-buffer": {
-      "name": "Buffer chest",
-      "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:logistic_chest_buffer",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
-    },
-    "logistic-chest-passive-provider": {
-      "name": "Passive provider chest",
-      "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:logistic_chest_passive_provider",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
-    },
-    "logistic-chest-requester": {
-      "name": "Requester chest",
-      "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:logistic_chest_requester",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
-    },
-    "logistic-chest-storage": {
-      "name": "Storage chest",
-      "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:logistic_chest_storage",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about",
+      "name": "Locomotive"
     },
     "logistic-robot": {
       "name": "Logistic robot",
       "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:logistic_robot",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
+      "item": "nauvis_logistics:logistic_robot"
+    },
+    "logistic-science-pack": {
+      "name": "Logistic science pack",
+      "owner": "nauvis_research",
+      "item": "nauvis_research:science_pack_2",
+      "stack": 200
     },
     "long-handed-inserter": {
-      "name": "Long handed inserter",
+      "name": "Long-handed inserter",
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:long_handed_inserter",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "low-density-structure": {
       "name": "Low density structure",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:low_density_structure",
-      "craft": {
-        "time": 30,
-        "yield": 1
-      },
       "stack": 50
     },
     "lubricant": {
       "name": "Lubricant",
       "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:lubricant",
-      "craft": {
-        "time": 1,
-        "yield": 10
-      },
-      "category": "chemistry"
+      "item": "nauvis_fluids:lubricant"
     },
     "lubricant-barrel": {
       "name": "Lubricant barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:lubricant_barrel",
-      "raw": true,
       "stack": 10
     },
     "medium-electric-pole": {
       "name": "Medium electric pole",
       "owner": "nauvis_power",
       "item": "nauvis_power:medium_electric_pole",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "military-science-pack": {
       "name": "Military science pack",
       "owner": "nauvis_research",
       "item": "nauvis_research:military_science_pack",
-      "craft": {
-        "time": 10,
-        "yield": 2
-      },
       "stack": 200
     },
     "modular-armor": {
       "name": "Modular armor",
       "owner": "nauvis_military",
-      "item": "nauvis_military:modular_armor",
-      "craft": {
-        "time": 15,
-        "yield": 1
-      }
+      "item": "nauvis_military:modular_armor"
     },
-    "nightvision": {
+    "night-vision-equipment": {
       "name": "Nightvision",
       "owner": "nauvis_military",
-      "item": "nauvis_military:nightvision",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:nightvision"
     },
     "nuclear-fuel": {
       "name": "Nuclear fuel",
       "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:nuclear_fuel",
-      "craft": {
-        "time": 60,
-        "yield": 1
-      }
-    },
-    "nuclear-fuel-reprocessing": {
-      "name": "Nuclear fuel reprocessing",
-      "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:nuclear_fuel_reprocessing",
-      "craft": {
-        "time": 50,
-        "yield": null
-      }
+      "item": "nauvis_fluids:nuclear_fuel"
     },
     "nuclear-reactor": {
       "name": "Nuclear reactor",
@@ -1145,11 +835,7 @@
       "size": [
         5,
         5
-      ],
-      "craft": {
-        "time": 8,
-        "yield": 1
-      }
+      ]
     },
     "offshore-pump": {
       "name": "Offshore pump",
@@ -1159,10 +845,6 @@
         1,
         2
       ],
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 20
     },
     "oil-refinery": {
@@ -1173,38 +855,27 @@
         5,
         5
       ],
-      "craft": {
-        "time": 8,
-        "yield": 1
-      },
       "stack": 10
     },
-    "personal-laser-defense": {
+    "passive-provider-chest": {
+      "name": "Passive provider chest",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:logistic_chest_passive_provider"
+    },
+    "personal-laser-defense-equipment": {
       "name": "Personal laser defense",
       "owner": "nauvis_military",
-      "item": "nauvis_military:personal_laser_defense",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:personal_laser_defense"
     },
-    "personal-roboport": {
+    "personal-roboport-equipment": {
       "name": "Personal roboport",
       "owner": "nauvis_military",
-      "item": "nauvis_military:personal_roboport",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:personal_roboport"
     },
-    "personal-roboport-mk2": {
+    "personal-roboport-mk2-equipment": {
       "name": "Personal roboport MK2",
       "owner": "nauvis_military",
-      "item": "nauvis_military:personal_roboport_mk2",
-      "craft": {
-        "time": 20,
-        "yield": 1
-      }
+      "item": "nauvis_military:personal_roboport_mk2"
     },
     "petroleum-gas": {
       "name": "Petroleum gas",
@@ -1216,175 +887,101 @@
       "name": "Petroleum gas barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:petroleum_gas_barrel",
-      "raw": true,
       "stack": 10
     },
     "piercing-rounds-magazine": {
       "name": "Piercing rounds magazine",
       "owner": "nauvis_military",
       "item": "nauvis_military:piercing_rounds_magazine",
-      "craft": {
-        "time": 3,
-        "yield": 1
-      },
       "stack": 200
     },
-    "piercing-shotgun-shells": {
+    "piercing-shotgun-shell": {
       "name": "Piercing shotgun shells",
       "owner": "nauvis_military",
-      "item": "nauvis_military:piercing_shotgun_shells",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      }
+      "item": "nauvis_military:piercing_shotgun_shells"
     },
     "pipe": {
       "name": "Pipe",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:pipe",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 100
     },
     "pipe-to-ground": {
       "skip": true,
-      "why": "Not in this pack: Minecraft has a Y axis, so a pipe crosses another by changing level rather than diving under it"
+      "why": "Not in this pack: Minecraft has a Y axis, so a pipe crosses another by changing level rather than diving under it",
+      "name": "Pipe to ground"
     },
     "pistol": {
       "name": "Pistol",
       "owner": "nauvis_military",
       "item": "nauvis_military:pistol",
-      "craft": {
-        "time": 5,
-        "yield": 1
-      },
       "stack": 5
     },
     "plastic-bar": {
       "name": "Plastic bar",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:plastic_bar",
-      "craft": {
-        "time": 1,
-        "yield": 2
-      },
-      "category": "chemistry",
       "stack": 100
     },
     "poison-capsule": {
       "name": "Poison capsule",
       "owner": "nauvis_military",
-      "item": "nauvis_military:poison_capsule",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      }
-    },
-    "portable-fusion-reactor": {
-      "name": "Portable fusion reactor",
-      "owner": "nauvis_military",
-      "item": "nauvis_military:portable_fusion_reactor",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
-    },
-    "portable-solar-panel": {
-      "name": "Portable solar panel",
-      "owner": "nauvis_military",
-      "item": "nauvis_military:portable_solar_panel",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:poison_capsule"
     },
     "power-armor": {
       "name": "Power armor",
       "owner": "nauvis_military",
-      "item": "nauvis_military:power_armor",
-      "craft": {
-        "time": 20,
-        "yield": 1
-      }
+      "item": "nauvis_military:power_armor"
     },
     "power-armor-mk2": {
       "name": "Power armor MK2",
       "owner": "nauvis_military",
-      "item": "nauvis_military:power_armor_mk2",
-      "craft": {
-        "time": 25,
-        "yield": 1
-      }
+      "item": "nauvis_military:power_armor_mk2"
     },
     "power-switch": {
       "name": "Power switch",
       "owner": "nauvis_power",
-      "item": "nauvis_power:power_switch",
-      "craft": {
-        "time": 2,
-        "yield": 1
-      }
+      "item": "nauvis_power:power_switch"
     },
     "processing-unit": {
       "name": "Processing unit",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:processing_unit",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      },
-      "category": "crafting-with-fluid",
       "stack": 100
     },
     "production-science-pack": {
       "name": "Production science pack",
       "owner": "nauvis_research",
       "item": "nauvis_research:production_science_pack",
-      "craft": {
-        "time": 14,
-        "yield": 2
-      },
       "stack": 200
     },
     "productivity-module": {
       "name": "Productivity module",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:productivity_module",
-      "craft": {
-        "time": 15,
-        "yield": 1
-      },
       "stack": 50
     },
     "productivity-module-2": {
       "name": "Productivity module 2",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:productivity_module_2",
-      "craft": {
-        "time": 30,
-        "yield": 1
-      },
       "stack": 50
     },
     "productivity-module-3": {
       "name": "Productivity module 3",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:productivity_module_3",
-      "craft": {
-        "time": 60,
-        "yield": 1
-      },
       "stack": 50
     },
     "programmable-speaker": {
       "skip": true,
-      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system",
+      "name": "Programmable speaker"
     },
     "pump": {
       "skip": true,
-      "why": "Not in this pack: the pump exists to load and unload fluid wagons, and trains are out of scope (Yannic, 2026-09-06)"
+      "why": "Not in this pack: the pump exists to load and unload fluid wagons, and trains are out of scope (Yannic, 2026-09-06)",
+      "name": "Pump"
     },
     "pumpjack": {
       "name": "Pumpjack",
@@ -1394,10 +991,6 @@
         3,
         3
       ],
-      "craft": {
-        "time": 5,
-        "yield": 1
-      },
       "stack": 20
     },
     "radar": {
@@ -1408,23 +1001,24 @@
         3,
         3
       ],
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "rail": {
-      "skip": true,
-      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
+      "name": "Rail",
+      "owner": "nauvis",
+      "item": "minecraft:rail",
+      "stand_in": true,
+      "stack": 100
     },
     "rail-chain-signal": {
       "skip": true,
-      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about",
+      "name": "Rail chain signal"
     },
     "rail-signal": {
       "skip": true,
-      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about",
+      "name": "Rail signal"
     },
     "raw-fish": {
       "name": "Raw fish",
@@ -1434,45 +1028,31 @@
       "raw": true,
       "stack": 100
     },
-    "raw-wood": {
-      "name": "Raw wood",
-      "owner": "nauvis",
-      "item": "minecraft:oak_log",
-      "stand_in": true,
-      "raw": true,
-      "stack": 100
-    },
     "red-wire": {
       "skip": true,
-      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system",
+      "name": "Red wire"
     },
     "refined-concrete": {
       "name": "Refined concrete",
       "owner": "nauvis",
-      "item": "nauvis:refined_concrete",
-      "craft": {
-        "time": 15,
-        "yield": 10
-      }
+      "item": "nauvis:refined_concrete"
     },
     "refined-hazard-concrete": {
       "name": "Refined hazard concrete",
       "owner": "nauvis",
-      "item": "nauvis:refined_hazard_concrete",
-      "craft": {
-        "time": 0.25,
-        "yield": 10
-      }
+      "item": "nauvis:refined_hazard_concrete"
     },
     "repair-pack": {
       "name": "Repair pack",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:repair_pack",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 100
+    },
+    "requester-chest": {
+      "name": "Requester chest",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:logistic_chest_requester"
     },
     "roboport": {
       "name": "Roboport",
@@ -1481,59 +1061,28 @@
       "size": [
         4,
         4
-      ],
-      "craft": {
-        "time": 5,
-        "yield": 1
-      }
+      ]
     },
     "rocket": {
       "name": "Rocket",
       "owner": "nauvis_military",
-      "item": "nauvis_military:rocket",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      }
-    },
-    "rocket-control-unit": {
-      "name": "Rocket control unit",
-      "owner": "nauvis_materials",
-      "item": "nauvis_materials:rocket_control_unit",
-      "craft": {
-        "time": 30,
-        "yield": 1
-      },
-      "stack": 10
+      "item": "nauvis_military:rocket"
     },
     "rocket-fuel": {
       "name": "Rocket fuel",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:rocket_fuel",
-      "craft": {
-        "time": 30,
-        "yield": 1
-      },
       "stack": 20
     },
     "rocket-launcher": {
       "name": "Rocket launcher",
       "owner": "nauvis_military",
-      "item": "nauvis_military:rocket_launcher",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:rocket_launcher"
     },
     "rocket-part": {
       "name": "Rocket part",
       "owner": "nauvis_rocket",
       "item": "nauvis_rocket:rocket_part",
-      "craft": {
-        "time": 3,
-        "yield": 1
-      },
-      "category": "rocket-building",
       "stack": 5
     },
     "rocket-silo": {
@@ -1544,88 +1093,43 @@
         9,
         9
       ],
-      "craft": {
-        "time": 30,
-        "yield": 1
-      },
       "stack": 1
     },
     "satellite": {
       "name": "Satellite",
       "owner": "nauvis_rocket",
       "item": "nauvis_rocket:satellite",
-      "craft": {
-        "time": 5,
-        "yield": 1
-      },
       "stack": 1
     },
-    "science-pack-1": {
-      "name": "Science pack 1",
-      "owner": "nauvis_research",
-      "item": "nauvis_research:science_pack_1",
-      "craft": {
-        "time": 5,
-        "yield": 1
-      },
-      "stack": 200
-    },
-    "science-pack-2": {
-      "name": "Science pack 2",
-      "owner": "nauvis_research",
-      "item": "nauvis_research:science_pack_2",
-      "craft": {
-        "time": 6,
-        "yield": 1
-      },
-      "stack": 200
-    },
-    "science-pack-3": {
-      "name": "Science pack 3",
-      "owner": "nauvis_research",
-      "item": "nauvis_research:science_pack_3",
-      "craft": {
-        "time": 12,
-        "yield": 1
-      },
-      "stack": 200
+    "selector-combinator": {
+      "skip": true,
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system"
     },
     "shotgun": {
       "name": "Shotgun",
       "owner": "nauvis_military",
-      "item": "nauvis_military:shotgun",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:shotgun"
     },
-    "shotgun-shells": {
+    "shotgun-shell": {
       "name": "Shotgun shells",
       "owner": "nauvis_military",
-      "item": "nauvis_military:shotgun_shells",
-      "craft": {
-        "time": 3,
-        "yield": 1
-      }
+      "item": "nauvis_military:shotgun_shells"
     },
     "slowdown-capsule": {
       "name": "Slowdown capsule",
       "owner": "nauvis_military",
-      "item": "nauvis_military:slowdown_capsule",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      }
+      "item": "nauvis_military:slowdown_capsule"
     },
     "small-electric-pole": {
       "name": "Small electric pole",
       "owner": "nauvis_power",
       "item": "nauvis_power:small_electric_pole",
-      "craft": {
-        "time": 0.5,
-        "yield": 2
-      },
       "stack": 50
+    },
+    "small-lamp": {
+      "skip": true,
+      "why": "Not in this pack: Factorio's circuit network is out of scope (Yannic, 2026-09-07) - vanilla redstone stays, with its vanilla crafting-table recipes, and Factorio's required progression is enough work without a second signal system",
+      "name": "Lamp"
     },
     "solar-panel": {
       "name": "Solar panel",
@@ -1635,11 +1139,12 @@
         3,
         3
       ],
-      "craft": {
-        "time": 10,
-        "yield": 1
-      },
       "stack": 50
+    },
+    "solar-panel-equipment": {
+      "name": "Portable solar panel",
+      "owner": "nauvis_military",
+      "item": "nauvis_military:portable_solar_panel"
     },
     "solid-fuel": {
       "name": "Solid fuel",
@@ -1652,42 +1157,29 @@
       "name": "Space science pack",
       "owner": "nauvis_rocket",
       "item": "nauvis_rocket:space_science_pack",
-      "craft": {
-        "time": 300,
-        "yield": 1000
-      },
-      "category": "rocket-building",
       "stack": 2000
     },
     "speed-module": {
       "name": "Speed module",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:speed_module",
-      "craft": {
-        "time": 15,
-        "yield": 1
-      },
       "stack": 50
     },
     "speed-module-2": {
       "name": "Speed module 2",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:speed_module_2",
-      "craft": {
-        "time": 30,
-        "yield": 1
-      },
       "stack": 50
     },
     "speed-module-3": {
       "name": "Speed module 3",
       "owner": "nauvis_machines",
       "item": "nauvis_machines:speed_module_3",
-      "craft": {
-        "time": 60,
-        "yield": 1
-      },
       "stack": 50
+    },
+    "spidertron": {
+      "skip": true,
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
     },
     "splitter": {
       "name": "Splitter",
@@ -1698,29 +1190,6 @@
         2,
         1
       ],
-      "craft": {
-        "time": 1,
-        "yield": 1
-      },
-      "stack": 50
-    },
-    "stack-filter-inserter": {
-      "name": "Stack filter inserter",
-      "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:stack_filter_inserter",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      }
-    },
-    "stack-inserter": {
-      "name": "Stack inserter",
-      "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:stack_inserter",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "steam": {
@@ -1737,10 +1206,6 @@
         5,
         3
       ],
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 10
     },
     "steam-turbine": {
@@ -1750,11 +1215,7 @@
       "size": [
         5,
         3
-      ],
-      "craft": {
-        "time": 3,
-        "yield": 1
-      }
+      ]
     },
     "steel-axe": {
       "skip": true,
@@ -1764,10 +1225,6 @@
       "name": "Steel chest",
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:steel_chest",
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "steel-furnace": {
@@ -1778,21 +1235,12 @@
         2,
         2
       ],
-      "craft": {
-        "time": 3,
-        "yield": 1
-      },
       "stack": 50
     },
     "steel-plate": {
       "name": "Steel plate",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:steel_plate",
-      "category": "smelting",
-      "craft": {
-        "time": 16,
-        "yield": 1
-      },
       "stack": 100
     },
     "stone": {
@@ -1808,11 +1256,6 @@
       "owner": "nauvis",
       "item": "minecraft:stone_bricks",
       "stand_in": true,
-      "category": "smelting",
-      "craft": {
-        "time": 3.2,
-        "yield": 1
-      },
       "stack": 100
     },
     "stone-furnace": {
@@ -1823,22 +1266,19 @@
         2,
         2
       ],
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "stone-wall": {
-      "name": "Stone wall",
+      "name": "Wall",
       "owner": "nauvis_military",
       "item": "minecraft:cobblestone_wall",
       "stand_in": true,
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 100
+    },
+    "storage-chest": {
+      "name": "Storage chest",
+      "owner": "nauvis_logistics",
+      "item": "nauvis_logistics:logistic_chest_storage"
     },
     "storage-tank": {
       "name": "Storage tank",
@@ -1848,20 +1288,12 @@
         3,
         3
       ],
-      "craft": {
-        "time": 3,
-        "yield": 1
-      },
       "stack": 50
     },
     "submachine-gun": {
       "name": "Submachine gun",
       "owner": "nauvis_military",
       "item": "nauvis_military:submachine_gun",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      },
       "stack": 5
     },
     "substation": {
@@ -1872,67 +1304,46 @@
         2,
         2
       ],
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     },
     "sulfur": {
       "name": "Sulfur",
       "owner": "nauvis_materials",
       "item": "nauvis_materials:sulfur",
-      "craft": {
-        "time": 1,
-        "yield": 2
-      },
-      "category": "chemistry",
       "stack": 50
     },
     "sulfuric-acid": {
       "name": "Sulfuric acid",
       "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:sulfuric_acid",
-      "craft": {
-        "time": 1,
-        "yield": 50
-      },
-      "category": "chemistry"
+      "item": "nauvis_fluids:sulfuric_acid"
     },
     "sulfuric-acid-barrel": {
       "name": "Sulfuric acid barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:sulfuric_acid_barrel",
-      "raw": true,
       "stack": 10
     },
     "tank": {
       "name": "Tank",
       "owner": "nauvis_military",
-      "item": "nauvis_military:tank",
-      "craft": {
-        "time": 8,
-        "yield": 1
-      }
+      "item": "nauvis_military:tank"
     },
     "train-stop": {
       "skip": true,
-      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about"
+      "why": "Not in this pack: trains and vehicles are out of scope (Yannic, 2026-09-06) - a great deal of work for something the pack is not about",
+      "name": "Train stop"
     },
     "transport-belt": {
       "name": "Transport belt",
       "owner": "nauvis_logistics",
       "item": "nauvis_logistics:transport_belt",
       "speed": 1.875,
-      "craft": {
-        "time": 0.5,
-        "yield": 2
-      },
       "stack": 100
     },
     "underground-belt": {
       "skip": true,
-      "why": "Not in this pack: Minecraft has a Y axis, so a belt crosses another by changing level rather than diving under it"
+      "why": "Not in this pack: Minecraft has a Y axis, so a belt crosses another by changing level rather than diving under it",
+      "name": "Underground belt"
     },
     "uranium-235": {
       "name": "Uranium-235",
@@ -1949,20 +1360,12 @@
     "uranium-cannon-shell": {
       "name": "Uranium cannon shell",
       "owner": "nauvis_military",
-      "item": "nauvis_military:uranium_cannon_shell",
-      "craft": {
-        "time": 12,
-        "yield": 1
-      }
+      "item": "nauvis_military:uranium_cannon_shell"
     },
     "uranium-fuel-cell": {
       "name": "Uranium fuel cell",
       "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:uranium_fuel_cell",
-      "craft": {
-        "time": 10,
-        "yield": 10
-      }
+      "item": "nauvis_fluids:uranium_fuel_cell"
     },
     "uranium-ore": {
       "name": "Uranium ore",
@@ -1970,32 +1373,16 @@
       "item": "nauvis:uranium_ore",
       "raw": true
     },
-    "uranium-processing": {
-      "name": "Uranium processing",
-      "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:uranium_processing",
-      "craft": {
-        "time": 10,
-        "yield": null
-      }
-    },
     "uranium-rounds-magazine": {
       "name": "Uranium rounds magazine",
       "owner": "nauvis_military",
-      "item": "nauvis_military:uranium_rounds_magazine",
-      "craft": {
-        "time": 10,
-        "yield": 1
-      }
+      "item": "nauvis_military:uranium_rounds_magazine"
     },
-    "used-up-uranium-fuel-cell": {
-      "name": "Used up uranium fuel cell",
-      "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:used_up_uranium_fuel_cell",
-      "craft": {
-        "time": 200,
-        "yield": 1
-      }
+    "utility-science-pack": {
+      "name": "Utility science pack",
+      "owner": "nauvis_research",
+      "item": "nauvis_research:high_tech_science_pack",
+      "stack": 200
     },
     "water": {
       "name": "Water",
@@ -2008,7 +1395,6 @@
       "name": "Water barrel",
       "owner": "nauvis_fluids",
       "item": "nauvis_fluids:water_barrel",
-      "raw": true,
       "stack": 10
     },
     "wood": {
@@ -2016,21 +1402,14 @@
       "owner": "nauvis_materials",
       "item": "minecraft:oak_planks",
       "stand_in": true,
-      "craft": {
-        "time": 0.5,
-        "yield": 2
-      },
-      "stack": 100
+      "stack": 100,
+      "raw": true
     },
     "wooden-chest": {
       "name": "Wooden chest",
       "owner": "nauvis_logistics",
       "item": "minecraft:chest",
       "stand_in": true,
-      "craft": {
-        "time": 0.5,
-        "yield": 1
-      },
       "stack": 50
     }
   }

@@ -12,10 +12,10 @@
   "type": "facrafting:facraft",
   "craft_ticks": 100,
   "group": "production",
-  "order": "0086",
+  "order": "0050",
   "ingredients": [
     {
-      "ingredient": "nauvis_materials:electronic_circuit",
+      "ingredient": "nauvis_materials:steel_plate",
       "count": 5
     },
     {
@@ -23,12 +23,12 @@
       "count": 10
     },
     {
-      "ingredient": "nauvis_fluids:pipe",
-      "count": 10
+      "ingredient": "nauvis_materials:electronic_circuit",
+      "count": 5
     },
     {
-      "ingredient": "nauvis_materials:steel_plate",
-      "count": 5
+      "ingredient": "nauvis_fluids:pipe",
+      "count": 10
     }
   ],
   "result": {

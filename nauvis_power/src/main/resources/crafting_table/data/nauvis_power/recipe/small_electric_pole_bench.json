@@ -12,10 +12,9 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "nauvis_materials:copper_cable",
-    "nauvis_materials:copper_cable",
     "minecraft:oak_planks",
-    "minecraft:oak_planks"
+    "nauvis_materials:copper_cable",
+    "nauvis_materials:copper_cable"
   ],
   "result": {
     "id": "nauvis_power:small_electric_pole",

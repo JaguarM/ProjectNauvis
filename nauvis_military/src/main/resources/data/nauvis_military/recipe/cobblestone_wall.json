@@ -8,7 +8,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "combat",
-  "order": "0230",
+  "order": "0169",
   "ingredients": [
     {
       "ingredient": "minecraft:stone_bricks",

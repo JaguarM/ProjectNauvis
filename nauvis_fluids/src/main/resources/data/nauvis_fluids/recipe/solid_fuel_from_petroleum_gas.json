@@ -10,9 +10,9 @@
     }
   ],
   "type": "facrafting:facraft",
-  "craft_ticks": 40,
+  "craft_ticks": 20,
   "group": "intermediate",
-  "order": "0162",
+  "order": "0077",
   "category": "chemistry",
   "ingredients": [],
   "fluid_ingredients": [

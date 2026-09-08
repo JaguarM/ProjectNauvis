@@ -2,7 +2,7 @@
   "name": "Repair pack",
   "order": "0004",
   "prerequisites": [
-    "nauvis_research:science_pack_1"
+    "nauvis_research:automation_science_pack"
   ],
   "units": 25,
   "ticks_per_unit": 200,

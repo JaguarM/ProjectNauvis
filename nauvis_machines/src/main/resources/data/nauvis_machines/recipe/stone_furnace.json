@@ -8,7 +8,7 @@
   "type": "facrafting:facraft",
   "craft_ticks": 10,
   "group": "production",
-  "order": "0096",
+  "order": "0051",
   "ingredients": [
     {
       "ingredient": "minecraft:cobblestone",

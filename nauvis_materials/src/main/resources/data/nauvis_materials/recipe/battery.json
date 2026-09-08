@@ -10,17 +10,17 @@
     }
   ],
   "type": "facrafting:facraft",
-  "craft_ticks": 100,
+  "craft_ticks": 80,
   "group": "intermediate",
-  "order": "0100",
+  "order": "0087",
   "category": "chemistry",
   "ingredients": [
     {
-      "ingredient": "minecraft:copper_ingot",
+      "ingredient": "minecraft:iron_ingot",
       "count": 1
     },
     {
-      "ingredient": "minecraft:iron_ingot",
+      "ingredient": "minecraft:copper_ingot",
       "count": 1
     }
   ],
