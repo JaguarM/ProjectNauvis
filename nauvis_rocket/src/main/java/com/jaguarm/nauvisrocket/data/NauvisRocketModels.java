@@ -1,6 +1,7 @@
 package com.jaguarm.nauvisrocket.data;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.google.gson.JsonArray;
@@ -26,7 +27,6 @@ import net.minecraft.client.renderer.block.dispatch.VariantMutator;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 
 /** The silo's models, generated from its shape, and flat icons for the three items. */
@@ -53,9 +53,9 @@ public class NauvisRocketModels extends ModelProvider {
                 RocketSiloShape.NOSE_EDGE, nose,
                 RocketSiloShape.NOSE_TIP, nose));
 
-        itemModels.generateFlatItem(ModItems.ROCKET_PART.get(), Items.FIREWORK_ROCKET, ModelTemplates.FLAT_ITEM);
-        itemModels.generateFlatItem(ModItems.SATELLITE.get(), Items.NETHER_STAR, ModelTemplates.FLAT_ITEM);
-        itemModels.generateFlatItem(ModItems.SPACE_SCIENCE_PACK.get(), Items.QUARTZ, ModelTemplates.FLAT_ITEM);
+        for (var item : List.of(ModItems.ROCKET_PART, ModItems.SATELLITE, ModItems.SPACE_SCIENCE_PACK)) {
+            itemModels.generateFlatItem(item.get(), ModelTemplates.FLAT_ITEM);
+        }
     }
 
     /** The three texture slots every model here has. */

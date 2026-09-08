@@ -1,6 +1,7 @@
 package com.jaguarm.nauvisresearch.data;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.google.gson.JsonArray;
@@ -27,11 +28,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
-/** The lab's models, generated from its shape, and a flat icon for the science pack. */
+/** The lab's models, generated from its shape, and a flat icon for each science pack. */
 public class NauvisResearchModels extends ModelProvider {
 
     public NauvisResearchModels(PackOutput output) {
@@ -44,34 +44,13 @@ public class NauvisResearchModels extends ModelProvider {
                 TextureMapping.getBlockTexture(Blocks.PRISMARINE_BRICKS).sprite(),
                 TextureMapping.getBlockTexture(Blocks.SEA_LANTERN).sprite());
 
-        // A flat icon, the way every item that is not a block is drawn, borrowing redstone's
-        // texture. Borrowing rather than shipping one: a model naming a texture this mod does not
-        // have is the magenta checkerboard, and red dust is at least the right colour for red
-        // science until there is art. tools/check_models.py caught this file pointing at a PNG
-        // that was never drawn, which is exactly what it is for.
-        itemModels.generateFlatItem(ModItems.AUTOMATION_SCIENCE_PACK.get(), Items.REDSTONE,
-                ModelTemplates.FLAT_ITEM);
-
-        // Green science, borrowed the same way. What matters until there is art is that the two
-        // packs are a colour apart at a glance, because a lab that is short of one of them is a
-        // thing a player reads off a slot rather than off a number.
-        itemModels.generateFlatItem(ModItems.LOGISTIC_SCIENCE_PACK.get(), Items.EMERALD,
-                ModelTemplates.FLAT_ITEM);
-
-        // Blue science, on lapis. Red, green, blue: Factorio's own colours for the three.
-        itemModels.generateFlatItem(ModItems.CHEMICAL_SCIENCE_PACK.get(), Items.LAPIS_LAZULI,
-                ModelTemplates.FLAT_ITEM);
-
-        // Military science, on gunpowder: grey, which is Factorio's colour for it.
-        itemModels.generateFlatItem(ModItems.MILITARY_SCIENCE_PACK.get(), Items.GUNPOWDER,
-                ModelTemplates.FLAT_ITEM);
-
-        // Production science is purple and utility science is yellow, in Factorio; an
-        // amethyst shard and glowstone dust are the nearest vanilla has.
-        itemModels.generateFlatItem(ModItems.PRODUCTION_SCIENCE_PACK.get(), Items.AMETHYST_SHARD,
-                ModelTemplates.FLAT_ITEM);
-        itemModels.generateFlatItem(ModItems.UTILITY_SCIENCE_PACK.get(), Items.GLOWSTONE_DUST,
-                ModelTemplates.FLAT_ITEM);
+        // Seven flasks off one map in texture-workshop/make_science_textures.py; the space pack
+        // is the rocket mod's.
+        for (var pack : List.of(ModItems.AUTOMATION_SCIENCE_PACK, ModItems.LOGISTIC_SCIENCE_PACK,
+                ModItems.CHEMICAL_SCIENCE_PACK, ModItems.MILITARY_SCIENCE_PACK,
+                ModItems.PRODUCTION_SCIENCE_PACK, ModItems.UTILITY_SCIENCE_PACK)) {
+            itemModels.generateFlatItem(pack.get(), ModelTemplates.FLAT_ITEM);
+        }
     }
 
     private void machine(BlockModelGenerators blockModels, Block block, MachineShape shape,

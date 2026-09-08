@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "minecraft:item/gunpowder"
+    "layer0": "nauvis_research:item/military_science_pack"
   }
 }

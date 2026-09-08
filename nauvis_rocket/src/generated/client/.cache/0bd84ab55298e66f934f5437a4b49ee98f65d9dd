@@ -1,4 +1,4 @@
-// 26.2	2026-09-07T21:55:09.4822603	Model Definitions - nauvis_rocket
+// 26.2	2026-09-08T23:18:28.9108835	Model Definitions - nauvis_rocket
 124c5a9f209fe90d482ce62b69f75e8abb3cc2d9 assets/nauvis_rocket/blockstates/rocket_silo.json
 50913c20c7f7446fc1dd482e4c943c4766f0f8b9 assets/nauvis_rocket/items/rocket_part.json
 50b218cefc65e81fe12049161f18aca4082d5e9d assets/nauvis_rocket/items/rocket_silo.json
@@ -15,6 +15,6 @@ c3b1e80a70cc64000884cfbad27cddf6489f50cf assets/nauvis_rocket/models/block/rocke
 cac75238e6e5f45463548e4a6164905d2b944144 assets/nauvis_rocket/models/block/rocket_silo_nose_corner.json
 9ee142bc54244f4313eb7121eba80ccc09e04be0 assets/nauvis_rocket/models/block/rocket_silo_nose_edge.json
 dfddcb89527a6ea96b62280e9c4f2e767de79a76 assets/nauvis_rocket/models/block/rocket_silo_nose_tip.json
-19974f44fc723810a6b800af4b44900e3eb65597 assets/nauvis_rocket/models/item/rocket_part.json
-54f61cffb70a48d41c7987afdab6eb9f5af75e5e assets/nauvis_rocket/models/item/satellite.json
-b4ec6a5c1356385e7d9f18a6ff4e26fd930bff07 assets/nauvis_rocket/models/item/space_science_pack.json
+be981eeaf386a00131c2f2f4ec2e24010d8fd6f6 assets/nauvis_rocket/models/item/rocket_part.json
+a19a5c193308622928fddfcdb0513bfceaffa764 assets/nauvis_rocket/models/item/satellite.json
+dcf4c46b2537e52abca8f97730b6aedbb501ee64 assets/nauvis_rocket/models/item/space_science_pack.json

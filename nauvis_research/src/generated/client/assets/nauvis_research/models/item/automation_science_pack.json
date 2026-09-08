@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "minecraft:item/redstone"
+    "layer0": "nauvis_research:item/automation_science_pack"
   }
 }

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "minecraft:item/lapis_lazuli"
+    "layer0": "nauvis_research:item/chemical_science_pack"
   }
 }
