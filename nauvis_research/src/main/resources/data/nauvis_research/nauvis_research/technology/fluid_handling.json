@@ -8,12 +8,12 @@
   "units": 50,
   "ticks_per_unit": 300,
   "packs": [
-    "nauvis_research:science_pack_1",
-    "nauvis_research:science_pack_2"
+    "nauvis_research:automation_science_pack",
+    "nauvis_research:logistic_science_pack"
   ],
   "unlocks": [
     "nauvis_fluids:storage_tank",
-    "nauvis_fluids:empty_barrel",
+    "nauvis_fluids:barrel",
     "nauvis_fluids:water_barrel",
     "nauvis_fluids:empty_water_barrel",
     "nauvis_fluids:sulfuric_acid_barrel",

@@ -81,13 +81,13 @@ for tiered in (MODULE_2, MODULE_3):
 # name -> (map, palette)
 ITEMS = {
     "speed_module": (MODULE, BLUE),
-    "effectivity_module": (MODULE, GREEN),
+    "efficiency_module": (MODULE, GREEN),
     "productivity_module": (MODULE, RED),
     "speed_module_2": (MODULE_2, BLUE),
-    "effectivity_module_2": (MODULE_2, GREEN),
+    "efficiency_module_2": (MODULE_2, GREEN),
     "productivity_module_2": (MODULE_2, RED),
     "speed_module_3": (MODULE_3, BLUE),
-    "effectivity_module_3": (MODULE_3, GREEN),
+    "efficiency_module_3": (MODULE_3, GREEN),
     "productivity_module_3": (MODULE_3, RED),
 }
 

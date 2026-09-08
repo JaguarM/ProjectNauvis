@@ -7,11 +7,11 @@
   "units": 10,
   "ticks_per_unit": 300,
   "packs": [
-    "nauvis_research:science_pack_1"
+    "nauvis_research:automation_science_pack"
   ],
   "unlocks": [
     "nauvis_military:submachine_gun",
     "nauvis_military:shotgun",
-    "nauvis_military:shotgun_shells"
+    "nauvis_military:shotgun_shell"
   ]
 }

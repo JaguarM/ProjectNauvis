@@ -37,7 +37,7 @@ public final class ModBlockEntities {
                             ModBlocks.INSERTER.get(),
                             ModBlocks.LONG_HANDED_INSERTER.get(),
                             ModBlocks.FAST_INSERTER.get(),
-                            ModBlocks.STACK_INSERTER.get()));
+                            ModBlocks.BULK_INSERTER.get()));
 
     /**
      * One type per chest tier, which is the opposite of the inserters above and for a reason: an

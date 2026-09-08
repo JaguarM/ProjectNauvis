@@ -1,4 +1,5 @@
-// 26.2	2026-09-07T00:07:59.141596	Loot Tables
+// 26.2	2026-09-08T21:35:33.3845916	Loot Tables
+337b701d5e4e8b4a49a8855ec6ec6bac199fb946 data/nauvis_logistics/loot_table/blocks/bulk_inserter.json
 809d202122724e2aed272034566324ea3f38f57f data/nauvis_logistics/loot_table/blocks/burner_inserter.json
 593eeea53fe42fff54c35ded46cfbfd2b0b404f0 data/nauvis_logistics/loot_table/blocks/fast_inserter.json
 f2adc608ca02646b40356aedd8bf75638f9557ab data/nauvis_logistics/loot_table/blocks/fast_splitter.json
@@ -7,6 +8,5 @@ f2adc608ca02646b40356aedd8bf75638f9557ab data/nauvis_logistics/loot_table/blocks
 b5d38753fba484cb754d377178ee672a5bbf3d10 data/nauvis_logistics/loot_table/blocks/iron_chest.json
 54bc9e5e6a8d235b61390bdca0022d88cd1d65eb data/nauvis_logistics/loot_table/blocks/long_handed_inserter.json
 dfe45f77d645f8891c43b1bf277951d64e1a2a3e data/nauvis_logistics/loot_table/blocks/splitter.json
-13342ffcd9aae2a15330d1a21b2df879568fa3aa data/nauvis_logistics/loot_table/blocks/stack_inserter.json
 8df6542d6cfea19b2df637a31193036239827caa data/nauvis_logistics/loot_table/blocks/steel_chest.json
 b1c824ad917d25af00895991ab01e80e67953990 data/nauvis_logistics/loot_table/blocks/transport_belt.json

@@ -7,7 +7,7 @@
   "units": 25,
   "ticks_per_unit": 200,
   "packs": [
-    "nauvis_research:science_pack_1"
+    "nauvis_research:automation_science_pack"
   ],
   "unlocks": [
     "nauvis_mining:electric_mining_drill"

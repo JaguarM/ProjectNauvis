@@ -51,7 +51,7 @@ public abstract class InserterBlock extends BaseEntityBlock {
      *
      * <p>Granted by the second level of {@code inserter-capacity-bonus} and nowhere else the pack
      * reaches, so an inserter moves one item at a time until then and two afterwards. The stack
-     * inserter has a bonus of its own - see {@link StackInserterBlock}.
+     * inserter has a bonus of its own - see {@link BulkInserterBlock}.
      */
     public static final String STACK_SIZE_BONUS = "inserter-stack-size-bonus";
 

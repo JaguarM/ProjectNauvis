@@ -56,7 +56,7 @@ public final class ResearchHud {
 
     /** The flask beside it, which is what a player's eye actually finds in the corner. */
     private static final Identifier ICON_ITEM =
-            Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "science_pack_1");
+            Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "automation_science_pack");
 
     @SubscribeEvent
     static void registerGuiLayers(RegisterGuiLayersEvent event) {

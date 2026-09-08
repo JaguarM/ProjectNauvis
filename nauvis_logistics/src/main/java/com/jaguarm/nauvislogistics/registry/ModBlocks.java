@@ -11,7 +11,7 @@ import com.jaguarm.nauvislogistics.transport.BurnerInserterBlock;
 import com.jaguarm.nauvislogistics.transport.ElectricInserterBlock;
 import com.jaguarm.nauvislogistics.transport.FastInserterBlock;
 import com.jaguarm.nauvislogistics.transport.LongHandedInserterBlock;
-import com.jaguarm.nauvislogistics.transport.StackInserterBlock;
+import com.jaguarm.nauvislogistics.transport.BulkInserterBlock;
 
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.MapColor;
@@ -82,12 +82,12 @@ public final class ModBlocks {
                     .requiresCorrectToolForDrops());
 
     /**
-     * The stack inserter: the fast inserter's swing with a hand that holds several, and grows with
+     * The bulk inserter: the fast inserter's swing with a hand that holds several, and grows with
      * research. Behind {@code stack-inserter}, which is behind the advanced circuit.
      */
-    public static final DeferredBlock<StackInserterBlock> STACK_INSERTER = BLOCKS.registerBlock(
-            "stack_inserter",
-            StackInserterBlock::new,
+    public static final DeferredBlock<BulkInserterBlock> BULK_INSERTER = BLOCKS.registerBlock(
+            "bulk_inserter",
+            BulkInserterBlock::new,
             properties -> properties
                     .mapColor(MapColor.COLOR_GREEN)
                     .strength(2.0F, 6.0F)

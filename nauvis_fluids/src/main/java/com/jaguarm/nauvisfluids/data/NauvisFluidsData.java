@@ -143,7 +143,7 @@ public final class NauvisFluidsData {
             add("fluid.nauvis_fluids.lubricant", "Lubricant");
             add("fluid.nauvis_fluids.sulfuric_acid", "Sulfuric acid");
             addItem(ModItems.EXPLOSIVES, "Explosives");
-            addItem(ModItems.EMPTY_BARREL, "Empty barrel");
+            addItem(ModItems.BARREL, "Barrel");
             addItem(ModItems.WATER_BARREL, "Water barrel");
             addItem(ModItems.CRUDE_OIL_BARREL, "Crude oil barrel");
             addItem(ModItems.HEAVY_OIL_BARREL, "Heavy oil barrel");

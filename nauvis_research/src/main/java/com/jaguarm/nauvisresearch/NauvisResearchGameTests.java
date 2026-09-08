@@ -89,7 +89,7 @@ public final class NauvisResearchGameTests {
                     helper.getLevel(), helper.absolutePos(LAB.offset(-1, 0, -1)), null, null,
                     Direction.WEST);
             helper.assertTrue(corner != null, "no item capability at a lab's corner");
-            helper.assertValueEqual(insert(corner, ModItems.SCIENCE_PACK_1.get(), 3), 3,
+            helper.assertValueEqual(insert(corner, ModItems.AUTOMATION_SCIENCE_PACK.get(), 3), 3,
                     "packs taken at the far corner");
             helper.succeed();
         });
@@ -111,7 +111,7 @@ public final class NauvisResearchGameTests {
             LabBlockEntity lab = placeLab(helper);
             charge(lab);
             helper.assertValueEqual(insert(lab.automationView(),
-                    ModItems.SCIENCE_PACK_1.get(), 2), 2, "packs accepted");
+                    ModItems.AUTOMATION_SCIENCE_PACK.get(), 2), 2, "packs accepted");
 
             helper.assertValueEqual(lab.cycles(), 0, "research before it has done any");
 
@@ -146,7 +146,7 @@ public final class NauvisResearchGameTests {
             research(helper, "automation");
 
             LabBlockEntity lab = placeLab(helper);
-            insert(lab.automationView(), ModItems.SCIENCE_PACK_1.get(), 4);
+            insert(lab.automationView(), ModItems.AUTOMATION_SCIENCE_PACK.get(), 4);
 
             helper.runAfterDelay(40, () -> {
                 helper.assertValueEqual(lab.progress(), 0, "progress on an unpowered lab");
@@ -170,7 +170,7 @@ public final class NauvisResearchGameTests {
             helper.runAfterDelay(5, () -> {
                 helper.assertFalse(isScheduled(helper), "an empty lab is still ticking");
 
-                insert(lab.automationView(), ModItems.SCIENCE_PACK_1.get(), 1);
+                insert(lab.automationView(), ModItems.AUTOMATION_SCIENCE_PACK.get(), 1);
                 helper.assertTrue(isScheduled(helper), "a pack arriving did not wake the lab");
 
                 helper.runAfterDelay(5, () -> {
@@ -192,12 +192,12 @@ public final class NauvisResearchGameTests {
         // put under a lab to feed it would drain it instead, which looks like the lab eating nothing.
         tests.add("lab_keeps_its_packs", 40, PADDING, helper -> {
             LabBlockEntity lab = placeLab(helper);
-            insert(lab.automationView(), ModItems.SCIENCE_PACK_1.get(), 5);
+            insert(lab.automationView(), ModItems.AUTOMATION_SCIENCE_PACK.get(), 5);
 
             try (Transaction transaction = Transaction.openRoot()) {
                 helper.assertValueEqual(
                         lab.automationView().extract(
-                                ItemResource.of(ModItems.SCIENCE_PACK_1.get()), 5, transaction),
+                                ItemResource.of(ModItems.AUTOMATION_SCIENCE_PACK.get()), 5, transaction),
                         0, "packs taken back out of a lab");
                 transaction.commit();
             }
@@ -208,7 +208,7 @@ public final class NauvisResearchGameTests {
         // Break any one of the ten and the whole lab comes down, giving back one lab and its packs.
         tests.add("lab_breaks_as_one", 40, PADDING, helper -> {
             LabBlockEntity lab = placeLab(helper);
-            insert(lab.automationView(), ModItems.SCIENCE_PACK_1.get(), 7);
+            insert(lab.automationView(), ModItems.AUTOMATION_SCIENCE_PACK.get(), 7);
 
             // A corner, which has no block entity and no loot entry of its own.
             helper.getLevel().destroyBlock(helper.absolutePos(LAB.offset(-1, 0, -1)), true);
@@ -219,7 +219,7 @@ public final class NauvisResearchGameTests {
                             LabShape.SHAPE.cellPos(LAB, part, Direction.NORTH));
                 }
                 helper.assertItemEntityCountIs(ModItems.LAB.get(), LAB, 4.0, 1);
-                helper.assertItemEntityCountIs(ModItems.SCIENCE_PACK_1.get(), LAB, 4.0, 7);
+                helper.assertItemEntityCountIs(ModItems.AUTOMATION_SCIENCE_PACK.get(), LAB, 4.0, 7);
                 helper.succeed();
             });
         });
@@ -262,7 +262,7 @@ public final class NauvisResearchGameTests {
             helper.assertValueEqual(automation.ticksPerUnit(), 200, "ticks a unit of automation");
             helper.assertValueEqual(automation.packs().size(), 1, "kinds of pack automation wants");
             helper.assertValueEqual(automation.packs().get(0),
-                    Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "science_pack_1"),
+                    Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "automation_science_pack"),
                     "the pack automation wants");
             helper.assertTrue(
                     automation.unlocks().contains(recipe("nauvis_machines", "assembling_machine_1")),
@@ -647,7 +647,7 @@ public final class NauvisResearchGameTests {
         //
         // Two research-speed technologies at a fifth and three tenths are half again as fast, and a
         // lab's unit is shorter by exactly that. The inserter capacity line is the other one anything
-        // reads: the stack inserter's technology and its first two bonus levels make three, and the
+        // reads: the bulk inserter's technology and its first two bonus levels make three, and the
         // ordinary inserter's single bonus arrives with the second level and not before.
         //
         // Asked through Bonuses as well as Research, because the wiring between the
@@ -685,19 +685,19 @@ public final class NauvisResearchGameTests {
                 helper.assertValueEqual(LabBlockEntity.cycleTicksFor(engine, helper.getLevel()), 400,
                         "ticks a 600-tick unit takes at half again the research speed");
 
-                // Stack inserter, capacity 1, capacity 2: one from each for the stack inserter's
+                // Bulk inserter, capacity 1, capacity 2: one from each for the bulk inserter's
                 // hand, and the ordinary inserter's single bonus from the second level only.
                 finish(server, state, ModTechnologies.key("inserter_capacity_bonus_1"), false);
                 Research.changedExternally(server);
                 helper.assertValueEqual(Bonuses.count(helper.getLevel(), "bulk-inserter-capacity-bonus"), 2,
-                        "stack inserter bonus after its technology and the first capacity level");
+                        "bulk inserter bonus after its technology and the first capacity level");
                 helper.assertValueEqual(Bonuses.count(helper.getLevel(), "inserter-stack-size-bonus"), 0,
                         "an ordinary inserter's bonus before the second capacity level");
 
                 finish(server, state, ModTechnologies.key("inserter_capacity_bonus_2"), false);
                 Research.changedExternally(server);
                 helper.assertValueEqual(Bonuses.count(helper.getLevel(), "bulk-inserter-capacity-bonus"), 3,
-                        "stack inserter bonus after the second capacity level");
+                        "bulk inserter bonus after the second capacity level");
                 helper.assertValueEqual(Bonuses.count(helper.getLevel(), "inserter-stack-size-bonus"), 1,
                         "an ordinary inserter's bonus after the second capacity level");
             } finally {
@@ -1241,7 +1241,7 @@ public final class NauvisResearchGameTests {
             Technology technology = technology(helper, "electric_engine");
             helper.assertTrue(technology != null, "electric engine is not in the tree");
 
-            Identifier blue = Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "science_pack_3");
+            Identifier blue = Identifier.fromNamespaceAndPath(NauvisResearch.MODID, "chemical_science_pack");
             helper.assertValueEqual(technology.packs().size(), 3, "kinds of pack electric engine wants");
             helper.assertTrue(technology.packs().contains(blue), "electric engine does not cost blue science");
             helper.assertTrue(technology.isResearchable(),
@@ -1255,8 +1255,8 @@ public final class NauvisResearchGameTests {
 
             LabBlockEntity lab = placeLab(helper);
             helper.onEachTick(() -> charge(lab));
-            insert(lab.automationView(), ModItems.SCIENCE_PACK_1.get(), 2);
-            insert(lab.automationView(), ModItems.SCIENCE_PACK_2.get(), 2);
+            insert(lab.automationView(), ModItems.AUTOMATION_SCIENCE_PACK.get(), 2);
+            insert(lab.automationView(), ModItems.LOGISTIC_SCIENCE_PACK.get(), 2);
 
             // Two of the three: not a unit. The lab is fed and powered and must sit still.
             helper.runAfterDelay(30, () -> {
@@ -1264,7 +1264,7 @@ public final class NauvisResearchGameTests {
                         "progress on a lab holding red and green but no blue science");
                 helper.assertValueEqual(lab.cycles(), 0, "units done without blue science");
 
-                insert(lab.automationView(), ModItems.SCIENCE_PACK_3.get(), 2);
+                insert(lab.automationView(), ModItems.CHEMICAL_SCIENCE_PACK.get(), 2);
 
                 // A fed lab with nothing to research looks again once a second, and the pack
                 // arriving cannot bring that look forward - a scheduled tick is kept, not moved -
@@ -1274,8 +1274,8 @@ public final class NauvisResearchGameTests {
                 helper.runAfterDelay(unitTicks + 3, () -> {
                     try {
                         helper.assertValueEqual(lab.cycles(), 1, "units after one unit's worth of ticks");
-                        for (Item pack : List.of(ModItems.SCIENCE_PACK_1.get(),
-                                ModItems.SCIENCE_PACK_2.get(), ModItems.SCIENCE_PACK_3.get())) {
+                        for (Item pack : List.of(ModItems.AUTOMATION_SCIENCE_PACK.get(),
+                                ModItems.LOGISTIC_SCIENCE_PACK.get(), ModItems.CHEMICAL_SCIENCE_PACK.get())) {
                             helper.assertValueEqual(count(lab, pack), 1,
                                     pack + " left after one unit - a unit is one of each");
                         }

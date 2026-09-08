@@ -43,14 +43,14 @@ public final class ModItems {
 
     /**
      * The three first-tier modules, Factorio's colours and Factorio 2.0's numbers. The ids are the
-     * dump's - {@code effectivity_module}, which Factorio has since renamed to efficiency - and
+     * dump's - {@code efficiency_module}, which Factorio has since renamed to efficiency - and
      * the display names are the modern ones, the same rule as the science packs.
      */
     public static final DeferredItem<ModuleItem> SPEED_MODULE = ITEMS.registerItem("speed_module",
             properties -> new ModuleItem(properties, ModuleItem.SPEED),
             () -> Stacks.of(50));
 
-    public static final DeferredItem<ModuleItem> EFFECTIVITY_MODULE = ITEMS.registerItem("effectivity_module",
+    public static final DeferredItem<ModuleItem> EFFICIENCY_MODULE = ITEMS.registerItem("efficiency_module",
             properties -> new ModuleItem(properties, ModuleItem.EFFICIENCY),
             () -> Stacks.of(50));
 
@@ -72,11 +72,11 @@ public final class ModItems {
             properties -> new ModuleItem(properties, ModuleItem.SPEED_3),
             () -> Stacks.of(50));
 
-    public static final DeferredItem<ModuleItem> EFFECTIVITY_MODULE_2 = ITEMS.registerItem("effectivity_module_2",
+    public static final DeferredItem<ModuleItem> EFFICIENCY_MODULE_2 = ITEMS.registerItem("efficiency_module_2",
             properties -> new ModuleItem(properties, ModuleItem.EFFICIENCY_2),
             () -> Stacks.of(50));
 
-    public static final DeferredItem<ModuleItem> EFFECTIVITY_MODULE_3 = ITEMS.registerItem("effectivity_module_3",
+    public static final DeferredItem<ModuleItem> EFFICIENCY_MODULE_3 = ITEMS.registerItem("efficiency_module_3",
             properties -> new ModuleItem(properties, ModuleItem.EFFICIENCY_3),
             () -> Stacks.of(50));
 
@@ -98,9 +98,9 @@ public final class ModItems {
 
     /** Every module, first tier to third, for the model provider and the tab. */
     public static List<DeferredItem<ModuleItem>> modules() {
-        return List.of(SPEED_MODULE, EFFECTIVITY_MODULE, PRODUCTIVITY_MODULE,
-                SPEED_MODULE_2, EFFECTIVITY_MODULE_2, PRODUCTIVITY_MODULE_2,
-                SPEED_MODULE_3, EFFECTIVITY_MODULE_3, PRODUCTIVITY_MODULE_3);
+        return List.of(SPEED_MODULE, EFFICIENCY_MODULE, PRODUCTIVITY_MODULE,
+                SPEED_MODULE_2, EFFICIENCY_MODULE_2, PRODUCTIVITY_MODULE_2,
+                SPEED_MODULE_3, EFFICIENCY_MODULE_3, PRODUCTIVITY_MODULE_3);
     }
 
     /**

@@ -68,7 +68,7 @@ EMPTY = dict(STEEL, c=STEEL["m"], b=STEEL["l"])
 # lubricant's green, petroleum gas's mauve, sulfuric acid's yellow: the colours the fluids
 # are drawn with, so a barrel reads as the pipe it came from.
 ITEMS = {
-    "empty_barrel": EMPTY,
+    "barrel": EMPTY,
     "water_barrel": palette((48, 108, 196, 255), (110, 170, 240, 255)),
     "crude_oil_barrel": palette((24, 22, 26, 255), (70, 66, 74, 255)),
     "heavy_oil_barrel": palette((150, 62, 30, 255), (210, 110, 60, 255)),

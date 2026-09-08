@@ -33,14 +33,14 @@ public final class ModItems {
      * from before that, so the whole mapping speaks the old names - see {@code docs/MAPPING.md}.
      * An id is permanent; the display name is not, and says "Automation science pack".
      */
-    public static final DeferredItem<Item> SCIENCE_PACK_1 = ITEMS.registerSimpleItem("science_pack_1", () -> Stacks.of(200));
+    public static final DeferredItem<Item> AUTOMATION_SCIENCE_PACK = ITEMS.registerSimpleItem("automation_science_pack", () -> Stacks.of(200));
 
     /**
      * Green science, and the gate in front of the whole of milestone 3 - every technology that
      * unlocks a steel furnace, a solar panel, a medium pole or the second assembler is paid for
      * partly in this.
      */
-    public static final DeferredItem<Item> SCIENCE_PACK_2 = ITEMS.registerSimpleItem("science_pack_2", () -> Stacks.of(200));
+    public static final DeferredItem<Item> LOGISTIC_SCIENCE_PACK = ITEMS.registerSimpleItem("logistic_science_pack", () -> Stacks.of(200));
 
     /**
      * Blue science, and the gate in front of everything the oil chain was for.
@@ -50,7 +50,7 @@ public final class ModItems {
      * science pack" like the other two. It is the first pack whose ingredients cannot be made
      * by hand: the advanced circuit is plastic, and plastic is a chemical plant.
      */
-    public static final DeferredItem<Item> SCIENCE_PACK_3 = ITEMS.registerSimpleItem("science_pack_3", () -> Stacks.of(200));
+    public static final DeferredItem<Item> CHEMICAL_SCIENCE_PACK = ITEMS.registerSimpleItem("chemical_science_pack", () -> Stacks.of(200));
 
     /**
      * Military science: a piercing rounds magazine, a grenade and a gun turret make two, in ten
@@ -73,7 +73,7 @@ public final class ModItems {
      * The dump's id, like the rest; the display name is the dump's too, because "utility" would
      * be a name for a different recipe.
      */
-    public static final DeferredItem<Item> HIGH_TECH_SCIENCE_PACK = ITEMS.registerSimpleItem("high_tech_science_pack", () -> Stacks.of(200));
+    public static final DeferredItem<Item> UTILITY_SCIENCE_PACK = ITEMS.registerSimpleItem("utility_science_pack", () -> Stacks.of(200));
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
             "nauvis_research",
@@ -82,12 +82,12 @@ public final class ModItems {
                     .icon(() -> new ItemStack(LAB.get()))
                     .displayItems((parameters, output) -> {
                         output.accept(LAB.get());
-                        output.accept(SCIENCE_PACK_1.get());
-                        output.accept(SCIENCE_PACK_2.get());
-                        output.accept(SCIENCE_PACK_3.get());
+                        output.accept(AUTOMATION_SCIENCE_PACK.get());
+                        output.accept(LOGISTIC_SCIENCE_PACK.get());
+                        output.accept(CHEMICAL_SCIENCE_PACK.get());
                         output.accept(MILITARY_SCIENCE_PACK.get());
                         output.accept(PRODUCTION_SCIENCE_PACK.get());
-                        output.accept(HIGH_TECH_SCIENCE_PACK.get());
+                        output.accept(UTILITY_SCIENCE_PACK.get());
                     })
                     .build());
 

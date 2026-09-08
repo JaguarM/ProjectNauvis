@@ -14,7 +14,7 @@ import com.jaguarm.nauvislogistics.transport.ElectricInserterBlockEntity;
 import com.jaguarm.nauvislogistics.transport.FastInserterBlock;
 import com.jaguarm.nauvislogistics.transport.InserterBlockEntity;
 import com.jaguarm.nauvislogistics.transport.LongHandedInserterBlock;
-import com.jaguarm.nauvislogistics.transport.StackInserterBlock;
+import com.jaguarm.nauvislogistics.transport.BulkInserterBlock;
 import com.jaguarm.nauvislib.bonus.Bonuses;
 import com.jaguarm.nauvislib.test.GameTests;
 import com.jaguarm.nauvislib.test.PackGameTest;
@@ -505,7 +505,7 @@ public final class NauvisLogisticsGameTests {
                     })
                     .thenSucceed();
         });
-        tests.add("stack_inserter_moves_a_handful", StackInserterMovesAHandfulTest::new, 100, PADDING);
+        tests.add("bulk_inserter_moves_a_handful", BulkInserterMovesAHandfulTest::new, 100, PADDING);
     }
 
     /** A chest, an inserter pointing east, and a chest. The whole of milestone 1 in three blocks. */
@@ -688,35 +688,35 @@ public final class NauvisLogisticsGameTests {
     }
 
     /**
-     * A stack inserter moves as many items in one swing as the world's research says its hand
+     * A bulk inserter moves as many items in one swing as the world's research says its hand
      * holds.
      */
-    public static class StackInserterMovesAHandfulTest extends PackGameTest {
+    public static class BulkInserterMovesAHandfulTest extends PackGameTest {
 
         private static final int BONUS = 4;
 
-        StackInserterMovesAHandfulTest(Info info) { super(info); }
+        BulkInserterMovesAHandfulTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
             Bonuses.Source world = Bonuses.source();
-            Bonuses.install((level, effect) -> StackInserterBlock.CAPACITY_BONUS.equals(effect) ? BONUS : 0);
+            Bonuses.install((level, effect) -> BulkInserterBlock.CAPACITY_BONUS.equals(effect) ? BONUS : 0);
 
             helper.assertValueEqual(
-                    ModBlocks.STACK_INSERTER.get().handSize(helper.getLevel()), 1 + BONUS,
-                    "a stack inserter's hand with four capacity bonuses researched");
+                    ModBlocks.BULK_INSERTER.get().handSize(helper.getLevel()), 1 + BONUS,
+                    "a bulk inserter's hand with four capacity bonuses researched");
             helper.assertValueEqual(ModBlocks.INSERTER.get().handSize(helper.getLevel()), 1,
-                    "an ordinary inserter's hand, which the stack inserter's bonus does not grow");
+                    "an ordinary inserter's hand, which the bulk inserter's bonus does not grow");
 
-            buildTierLine(helper, ModBlocks.STACK_INSERTER.get());
+            buildTierLine(helper, ModBlocks.BULK_INSERTER.get());
             helper.assertValueEqual(insert(container(helper, SOURCE), Items.IRON_INGOT, 12), 12,
                     "iron accepted by the source chest");
 
             helper.startSequence()
-                    .thenExecuteAfter(StackInserterBlock.SWING_TICKS + 3, () -> {
+                    .thenExecuteAfter(BulkInserterBlock.SWING_TICKS + 3, () -> {
                         try {
                             helper.assertValueEqual(countIn(container(helper, DESTINATION), Items.IRON_INGOT),
-                                    1 + BONUS, "iron delivered by one swing of a stack inserter");
+                                    1 + BONUS, "iron delivered by one swing of a bulk inserter");
                             helper.assertValueEqual(countIn(container(helper, SOURCE), Items.IRON_INGOT),
                                     12 - 1 - BONUS, "iron left behind after one swing");
                         } finally {

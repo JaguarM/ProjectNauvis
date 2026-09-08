@@ -337,7 +337,7 @@ public final class NauvisMachinesGameTests {
         // and nothing fills. The barrels are the fluids mod's items, so this passes on nothing when
         // they are not here and runs both ways in the pack.
         tests.add("assembling_machine_2_fills_and_empties_a_barrel", 100, PADDING, helper -> {
-            Item empty = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "empty_barrel"));
+            Item empty = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "barrel"));
             Item full = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "water_barrel"));
             if (empty == Items.AIR || full == Items.AIR) {
                 helper.succeed();

@@ -49,28 +49,28 @@ public class NauvisResearchModels extends ModelProvider {
         // have is the magenta checkerboard, and red dust is at least the right colour for red
         // science until there is art. tools/check_models.py caught this file pointing at a PNG
         // that was never drawn, which is exactly what it is for.
-        itemModels.generateFlatItem(ModItems.SCIENCE_PACK_1.get(), Items.REDSTONE,
+        itemModels.generateFlatItem(ModItems.AUTOMATION_SCIENCE_PACK.get(), Items.REDSTONE,
                 ModelTemplates.FLAT_ITEM);
 
         // Green science, borrowed the same way. What matters until there is art is that the two
         // packs are a colour apart at a glance, because a lab that is short of one of them is a
         // thing a player reads off a slot rather than off a number.
-        itemModels.generateFlatItem(ModItems.SCIENCE_PACK_2.get(), Items.EMERALD,
+        itemModels.generateFlatItem(ModItems.LOGISTIC_SCIENCE_PACK.get(), Items.EMERALD,
                 ModelTemplates.FLAT_ITEM);
 
         // Blue science, on lapis. Red, green, blue: Factorio's own colours for the three.
-        itemModels.generateFlatItem(ModItems.SCIENCE_PACK_3.get(), Items.LAPIS_LAZULI,
+        itemModels.generateFlatItem(ModItems.CHEMICAL_SCIENCE_PACK.get(), Items.LAPIS_LAZULI,
                 ModelTemplates.FLAT_ITEM);
 
         // Military science, on gunpowder: grey, which is Factorio's colour for it.
         itemModels.generateFlatItem(ModItems.MILITARY_SCIENCE_PACK.get(), Items.GUNPOWDER,
                 ModelTemplates.FLAT_ITEM);
 
-        // Production science is purple and high tech science is yellow, in Factorio; an
+        // Production science is purple and utility science is yellow, in Factorio; an
         // amethyst shard and glowstone dust are the nearest vanilla has.
         itemModels.generateFlatItem(ModItems.PRODUCTION_SCIENCE_PACK.get(), Items.AMETHYST_SHARD,
                 ModelTemplates.FLAT_ITEM);
-        itemModels.generateFlatItem(ModItems.HIGH_TECH_SCIENCE_PACK.get(), Items.GLOWSTONE_DUST,
+        itemModels.generateFlatItem(ModItems.UTILITY_SCIENCE_PACK.get(), Items.GLOWSTONE_DUST,
                 ModelTemplates.FLAT_ITEM);
     }
 

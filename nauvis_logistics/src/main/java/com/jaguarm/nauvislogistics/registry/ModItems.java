@@ -34,8 +34,8 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> FAST_INSERTER =
             ITEMS.registerSimpleBlockItem(ModBlocks.FAST_INSERTER, () -> Stacks.of(50));
 
-    public static final DeferredItem<BlockItem> STACK_INSERTER =
-            ITEMS.registerSimpleBlockItem(ModBlocks.STACK_INSERTER, () -> Stacks.of(50));
+    public static final DeferredItem<BlockItem> BULK_INSERTER =
+            ITEMS.registerSimpleBlockItem(ModBlocks.BULK_INSERTER, () -> Stacks.of(50));
 
     public static final DeferredItem<BlockItem> IRON_CHEST =
             ITEMS.registerSimpleBlockItem(ModBlocks.IRON_CHEST, () -> Stacks.of(50));
@@ -70,7 +70,7 @@ public final class ModItems {
                         output.accept(INSERTER.get());
                         output.accept(LONG_HANDED_INSERTER.get());
                         output.accept(FAST_INSERTER.get());
-                        output.accept(STACK_INSERTER.get());
+                        output.accept(BULK_INSERTER.get());
                         output.accept(IRON_CHEST.get());
                         output.accept(STEEL_CHEST.get());
                     })

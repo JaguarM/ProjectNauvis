@@ -68,7 +68,7 @@ barrels, storage tank, plastic, advanced circuit, engine unit, blue science, ele
 **5** military (pistol, SMG, magazines, turret, wall, armour, grenade, military science,
 pollution and attacks, machine health); **6** robots, a later update; **7** rocket (silo, rocket
 part, satellite, space science, low density structure, rocket fuel, control unit, production and
-high tech science, radar, module tiers 2 and 3).
+utility science, radar, module tiers 2 and 3).
 
 Not built and not scheduled: nuclear, artillery, modular armour, the beacon, the shotgun, the
 infinite research that space science pays for. All are breadth: cheap once their tier 1 exists.

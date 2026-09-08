@@ -163,13 +163,13 @@
     "automation-science-pack": {
       "name": "Automation science pack",
       "owner": "nauvis_research",
-      "item": "nauvis_research:science_pack_1",
+      "item": "nauvis_research:automation_science_pack",
       "stack": 200
     },
     "barrel": {
       "name": "Barrel",
       "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:empty_barrel",
+      "item": "nauvis_fluids:barrel",
       "stack": 10
     },
     "battery": {
@@ -181,12 +181,12 @@
     "battery-equipment": {
       "name": "Personal battery",
       "owner": "nauvis_military",
-      "item": "nauvis_military:battery_mk1"
+      "item": "nauvis_military:battery_equipment"
     },
     "battery-mk2-equipment": {
       "name": "Personal battery MK2",
       "owner": "nauvis_military",
-      "item": "nauvis_military:battery_mk2"
+      "item": "nauvis_military:battery_mk2_equipment"
     },
     "beacon": {
       "name": "Beacon",
@@ -240,7 +240,7 @@
     "bulk-inserter": {
       "name": "Bulk inserter",
       "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:stack_inserter",
+      "item": "nauvis_logistics:bulk_inserter",
       "stack": 50
     },
     "burner-inserter": {
@@ -300,7 +300,7 @@
     "chemical-science-pack": {
       "name": "Chemical science pack",
       "owner": "nauvis_research",
-      "item": "nauvis_research:science_pack_3",
+      "item": "nauvis_research:chemical_science_pack",
       "stack": 200
     },
     "cliff-explosives": {
@@ -394,7 +394,7 @@
     "depleted-uranium-fuel-cell": {
       "name": "Depleted uranium fuel cell",
       "owner": "nauvis_fluids",
-      "item": "nauvis_fluids:used_up_uranium_fuel_cell",
+      "item": "nauvis_fluids:depleted_uranium_fuel_cell",
       "raw": true
     },
     "destroyer-capsule": {
@@ -405,7 +405,7 @@
     "discharge-defense-equipment": {
       "name": "Discharge defense",
       "owner": "nauvis_military",
-      "item": "nauvis_military:discharge_defense"
+      "item": "nauvis_military:discharge_defense_equipment"
     },
     "discharge-defense-remote": {
       "skip": true,
@@ -423,19 +423,19 @@
     "efficiency-module": {
       "name": "Efficiency module",
       "owner": "nauvis_machines",
-      "item": "nauvis_machines:effectivity_module",
+      "item": "nauvis_machines:efficiency_module",
       "stack": 50
     },
     "efficiency-module-2": {
       "name": "Efficiency module 2",
       "owner": "nauvis_machines",
-      "item": "nauvis_machines:effectivity_module_2",
+      "item": "nauvis_machines:efficiency_module_2",
       "stack": 50
     },
     "efficiency-module-3": {
       "name": "Efficiency module 3",
       "owner": "nauvis_machines",
-      "item": "nauvis_machines:effectivity_module_3",
+      "item": "nauvis_machines:efficiency_module_3",
       "stack": 50
     },
     "electric-engine-unit": {
@@ -473,12 +473,12 @@
     "energy-shield-equipment": {
       "name": "Energy shield",
       "owner": "nauvis_military",
-      "item": "nauvis_military:energy_shield"
+      "item": "nauvis_military:energy_shield_equipment"
     },
     "energy-shield-mk2-equipment": {
       "name": "Energy shield MK2",
       "owner": "nauvis_military",
-      "item": "nauvis_military:energy_shield_mk2"
+      "item": "nauvis_military:energy_shield_mk2_equipment"
     },
     "engine-unit": {
       "name": "Engine unit",
@@ -489,7 +489,7 @@
     "exoskeleton-equipment": {
       "name": "Exoskeleton",
       "owner": "nauvis_military",
-      "item": "nauvis_military:exoskeleton"
+      "item": "nauvis_military:exoskeleton_equipment"
     },
     "explosive-cannon-shell": {
       "name": "Explosive cannon shell",
@@ -571,7 +571,7 @@
     "fission-reactor-equipment": {
       "name": "Portable fission reactor",
       "owner": "nauvis_military",
-      "item": "nauvis_military:portable_fusion_reactor"
+      "item": "nauvis_military:fission_reactor_equipment"
     },
     "flamethrower": {
       "name": "Flamethrower",
@@ -775,7 +775,7 @@
     "logistic-science-pack": {
       "name": "Logistic science pack",
       "owner": "nauvis_research",
-      "item": "nauvis_research:science_pack_2",
+      "item": "nauvis_research:logistic_science_pack",
       "stack": 200
     },
     "long-handed-inserter": {
@@ -821,7 +821,7 @@
     "night-vision-equipment": {
       "name": "Nightvision",
       "owner": "nauvis_military",
-      "item": "nauvis_military:nightvision"
+      "item": "nauvis_military:night_vision_equipment"
     },
     "nuclear-fuel": {
       "name": "Nuclear fuel",
@@ -865,17 +865,17 @@
     "personal-laser-defense-equipment": {
       "name": "Personal laser defense",
       "owner": "nauvis_military",
-      "item": "nauvis_military:personal_laser_defense"
+      "item": "nauvis_military:personal_laser_defense_equipment"
     },
     "personal-roboport-equipment": {
       "name": "Personal roboport",
       "owner": "nauvis_military",
-      "item": "nauvis_military:personal_roboport"
+      "item": "nauvis_military:personal_roboport_equipment"
     },
     "personal-roboport-mk2-equipment": {
       "name": "Personal roboport MK2",
       "owner": "nauvis_military",
-      "item": "nauvis_military:personal_roboport_mk2"
+      "item": "nauvis_military:personal_roboport_mk2_equipment"
     },
     "petroleum-gas": {
       "name": "Petroleum gas",
@@ -898,7 +898,7 @@
     "piercing-shotgun-shell": {
       "name": "Piercing shotgun shells",
       "owner": "nauvis_military",
-      "item": "nauvis_military:piercing_shotgun_shells"
+      "item": "nauvis_military:piercing_shotgun_shell"
     },
     "pipe": {
       "name": "Pipe",
@@ -1113,7 +1113,7 @@
     "shotgun-shell": {
       "name": "Shotgun shells",
       "owner": "nauvis_military",
-      "item": "nauvis_military:shotgun_shells"
+      "item": "nauvis_military:shotgun_shell"
     },
     "slowdown-capsule": {
       "name": "Slowdown capsule",
@@ -1144,7 +1144,7 @@
     "solar-panel-equipment": {
       "name": "Portable solar panel",
       "owner": "nauvis_military",
-      "item": "nauvis_military:portable_solar_panel"
+      "item": "nauvis_military:solar_panel_equipment"
     },
     "solid-fuel": {
       "name": "Solid fuel",
@@ -1381,7 +1381,7 @@
     "utility-science-pack": {
       "name": "Utility science pack",
       "owner": "nauvis_research",
-      "item": "nauvis_research:high_tech_science_pack",
+      "item": "nauvis_research:utility_science_pack",
       "stack": 200
     },
     "water": {

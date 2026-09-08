@@ -1,0 +1,42 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_logistics"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_materials"
+    },
+    {
+      "type": "neoforge:registered",
+      "value": "nauvis_logistics:flying_robot_frame"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 420,
+  "group": "intermediate",
+  "order": "0122",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_materials:low_density_structure",
+      "count": 3
+    },
+    {
+      "ingredient": "nauvis_materials:processing_unit",
+      "count": 2
+    },
+    {
+      "ingredient": "nauvis_logistics:flying_robot_frame",
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "nauvis_research:utility_science_pack",
+    "count": 3
+  }
+}

@@ -268,7 +268,7 @@ public class NauvisLogisticsModels extends ModelProvider {
         inserter(blockModels, ModBlocks.INSERTER.get(), "block/yellow_terracotta");
         inserter(blockModels, ModBlocks.LONG_HANDED_INSERTER.get(), "block/red_terracotta");
         inserter(blockModels, ModBlocks.FAST_INSERTER.get(), "block/blue_terracotta");
-        inserter(blockModels, ModBlocks.STACK_INSERTER.get(), "block/green_terracotta");
+        inserter(blockModels, ModBlocks.BULK_INSERTER.get(), "block/green_terracotta");
 
         // The belts: a bottom slab each, because they are half a block high and you walk over
         // them. Two tiers, one call apiece - a belt tier is a name and a palette, and the tread's

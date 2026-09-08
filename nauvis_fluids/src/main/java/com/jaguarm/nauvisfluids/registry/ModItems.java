@@ -57,7 +57,7 @@ public final class ModItems {
      * belt or by hand. The dump carries the filled ones as raw items, so their recipes are
      * {@code data/fluid_recipes.json}'s, one pair a fluid.
      */
-    public static final DeferredItem<Item> EMPTY_BARREL = ITEMS.registerSimpleItem("empty_barrel", () -> Stacks.of(10));
+    public static final DeferredItem<Item> BARREL = ITEMS.registerSimpleItem("barrel", () -> Stacks.of(10));
     public static final DeferredItem<Item> WATER_BARREL = ITEMS.registerSimpleItem("water_barrel", () -> Stacks.of(10));
     public static final DeferredItem<Item> CRUDE_OIL_BARREL = ITEMS.registerSimpleItem("crude_oil_barrel", () -> Stacks.of(10));
     public static final DeferredItem<Item> HEAVY_OIL_BARREL = ITEMS.registerSimpleItem("heavy_oil_barrel", () -> Stacks.of(10));
@@ -89,7 +89,7 @@ public final class ModItems {
                         output.accept(CHEMICAL_PLANT.get());
                         output.accept(CRUDE_OIL.get());
                         output.accept(EXPLOSIVES.get());
-                        output.accept(EMPTY_BARREL.get());
+                        output.accept(BARREL.get());
                         FILLED_BARRELS.forEach(barrel -> output.accept(barrel.get()));
                     })
                     .build());

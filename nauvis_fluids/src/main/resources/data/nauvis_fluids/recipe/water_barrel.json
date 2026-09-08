@@ -12,7 +12,7 @@
   "category": "crafting-with-fluid",
   "ingredients": [
     {
-      "ingredient": "nauvis_fluids:empty_barrel",
+      "ingredient": "nauvis_fluids:barrel",
       "count": 1
     }
   ],

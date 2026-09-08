@@ -530,7 +530,7 @@ public final class NauvisGameTests {
                     "nauvis_logistics:burner_inserter",
                     "nauvis_power:small_electric_pole",
                     "nauvis_fluids:pipe",
-                    "nauvis_research:science_pack_1",
+                    "nauvis_research:automation_science_pack",
                     "nauvis_materials:iron_gear_wheel",
                     "nauvis_mining:burner_mining_drill")) {
 

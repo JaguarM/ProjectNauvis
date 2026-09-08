@@ -55,7 +55,7 @@ public class NauvisFluidsModels extends ModelProvider {
         // The one flat item. Its art is texture-workshop/make_material_textures.py's.
         itemModels.generateFlatItem(ModItems.EXPLOSIVES.get(), ModelTemplates.FLAT_ITEM);
         // The barrels: one drum in eight bands, from texture-workshop/make_barrel_textures.py.
-        itemModels.generateFlatItem(ModItems.EMPTY_BARREL.get(), ModelTemplates.FLAT_ITEM);
+        itemModels.generateFlatItem(ModItems.BARREL.get(), ModelTemplates.FLAT_ITEM);
         for (var barrel : ModItems.FILLED_BARRELS) {
             itemModels.generateFlatItem(barrel.get(), ModelTemplates.FLAT_ITEM);
         }

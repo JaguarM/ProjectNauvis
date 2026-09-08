@@ -100,12 +100,12 @@ public final class NauvisMachinesData {
             addBlock(ModBlocks.ELECTRIC_FURNACE, "Electric furnace");
             addBlock(ModBlocks.RADAR, "Radar");
             addItem(ModItems.SPEED_MODULE, "Speed module");
-            addItem(ModItems.EFFECTIVITY_MODULE, "Efficiency module");
+            addItem(ModItems.EFFICIENCY_MODULE, "Efficiency module");
             addItem(ModItems.PRODUCTIVITY_MODULE, "Productivity module");
             addItem(ModItems.SPEED_MODULE_2, "Speed module 2");
             addItem(ModItems.SPEED_MODULE_3, "Speed module 3");
-            addItem(ModItems.EFFECTIVITY_MODULE_2, "Efficiency module 2");
-            addItem(ModItems.EFFECTIVITY_MODULE_3, "Efficiency module 3");
+            addItem(ModItems.EFFICIENCY_MODULE_2, "Efficiency module 2");
+            addItem(ModItems.EFFICIENCY_MODULE_3, "Efficiency module 3");
             addItem(ModItems.PRODUCTIVITY_MODULE_2, "Productivity module 2");
             addItem(ModItems.PRODUCTIVITY_MODULE_3, "Productivity module 3");
             addItem(ModItems.REPAIR_PACK, "Repair pack");

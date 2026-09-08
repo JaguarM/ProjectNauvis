@@ -8,12 +8,12 @@
   "units": 300,
   "ticks_per_unit": 1200,
   "packs": [
-    "nauvis_research:science_pack_1",
-    "nauvis_research:science_pack_2",
-    "nauvis_research:science_pack_3",
+    "nauvis_research:automation_science_pack",
+    "nauvis_research:logistic_science_pack",
+    "nauvis_research:chemical_science_pack",
     "nauvis_research:production_science_pack"
   ],
   "unlocks": [
-    "nauvis_machines:effectivity_module_3"
+    "nauvis_machines:efficiency_module_3"
   ]
 }

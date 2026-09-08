@@ -1,4 +1,4 @@
-// 26.2	2026-09-07T18:25:11.3678768	Model Definitions - nauvis_fluids
+// 26.2	2026-09-08T21:35:24.5658411	Model Definitions - nauvis_fluids
 14bc8d47c53f9740da6a2dfda27fc88d59166795 assets/nauvis_fluids/blockstates/chemical_plant.json
 6f2b9b06ccdefbeb3a87a3fc50608829a3d99ede assets/nauvis_fluids/blockstates/crude_oil.json
 48fe089e4e4243db2b7d20eee61c2b696f78228e assets/nauvis_fluids/blockstates/offshore_pump.json
@@ -7,10 +7,10 @@ a096613a8a32e84d748d57552a3b9e9b37251b44 assets/nauvis_fluids/blockstates/oil_re
 cf07bd4e2bd51f8d3c7f48272f031143864a16bf assets/nauvis_fluids/blockstates/pumpjack.json
 8faf0216f3fd767ff74fc39fa24c296b9bc71823 assets/nauvis_fluids/blockstates/storage_tank.json
 b77a24e73c697a2cb5655f1f236b647e278c271e assets/nauvis_fluids/blockstates/water.json
+9dc3de48cd79161d163fbcb41b0f71678e7a6be9 assets/nauvis_fluids/items/barrel.json
 31c843aed3df9428be06f3babd9a74fee0d7fd82 assets/nauvis_fluids/items/chemical_plant.json
 6ad9f135c51734c86e28cf3e96cff32dcc4b1ea5 assets/nauvis_fluids/items/crude_oil.json
 cbbd5401709ba4c9a1dc522e79e4838bc0adfbf5 assets/nauvis_fluids/items/crude_oil_barrel.json
-f04c518e4f5e0895aec6d78310d80bb52af64ac7 assets/nauvis_fluids/items/empty_barrel.json
 6aa3049af81eda228b73d185026dc639532f66cf assets/nauvis_fluids/items/explosives.json
 9e91ac4f65fbd38788518bd6c61d7afad2a73afb assets/nauvis_fluids/items/heavy_oil_barrel.json
 cfe5f007d557ef2ca79b0d8d4526d64ca9aad452 assets/nauvis_fluids/items/light_oil_barrel.json
@@ -58,8 +58,8 @@ ca461b08a6ce2578c061af256f2ec031a8898461 assets/nauvis_fluids/models/block/pumpj
 c3489f963f009be5a07a49a979fd3b474a5f0004 assets/nauvis_fluids/models/block/storage_tank_inventory.json
 018ff9ceea596df8e4f62bf06708b4835ab61315 assets/nauvis_fluids/models/block/storage_tank_port_corner_left.json
 50812bd51e14ec5ea223afe239c89730a63e43b1 assets/nauvis_fluids/models/block/water.json
+beec130fee12e0e448b5ceb994abdebc26ee733b assets/nauvis_fluids/models/item/barrel.json
 870ca107841817773537e094a367c7b924799302 assets/nauvis_fluids/models/item/crude_oil_barrel.json
-4ac64528ae76d3cbcf53ae21de6df4317c85a60d assets/nauvis_fluids/models/item/empty_barrel.json
 4c795c6201f3c0a4c17b5a2aa74822bf3add6161 assets/nauvis_fluids/models/item/explosives.json
 9f497e6df0213890b03166b9f84845b438bcc2da assets/nauvis_fluids/models/item/heavy_oil_barrel.json
 39ea8dd5e4a9a8406eff564d7254505d056d2e9b assets/nauvis_fluids/models/item/light_oil_barrel.json

@@ -7,8 +7,8 @@
   "units": 100,
   "ticks_per_unit": 600,
   "packs": [
-    "nauvis_research:science_pack_1",
-    "nauvis_research:science_pack_2"
+    "nauvis_research:automation_science_pack",
+    "nauvis_research:logistic_science_pack"
   ],
   "unlocks": []
 }
