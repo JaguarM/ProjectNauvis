@@ -6,7 +6,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "facrafting:facraft",
@@ -15,7 +15,7 @@
   "order": "0062",
   "ingredients": [
     {
-      "ingredient": "neoprogressivematerials:battery",
+      "ingredient": "nauvis_materials:battery",
       "count": 5
     },
     {

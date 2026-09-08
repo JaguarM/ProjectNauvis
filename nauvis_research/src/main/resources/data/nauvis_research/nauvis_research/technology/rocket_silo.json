@@ -18,9 +18,9 @@
   ],
   "unlocks": [
     "nauvis_rocket:rocket_silo",
-    "neoprogressivematerials:low_density_structure",
-    "neoprogressivematerials:rocket_fuel",
-    "neoprogressivematerials:rocket_control_unit",
+    "nauvis_materials:low_density_structure",
+    "nauvis_materials:rocket_fuel",
+    "nauvis_materials:rocket_control_unit",
     "nauvis_rocket:rocket_part",
     "nauvis_rocket:satellite"
   ]

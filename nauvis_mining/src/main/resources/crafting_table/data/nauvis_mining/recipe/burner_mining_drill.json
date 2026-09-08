@@ -6,7 +6,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     },
     {
       "type": "neoforge:mod_loaded",
@@ -16,7 +16,7 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "g": "neoprogressivematerials:iron_gear_wheel",
+    "g": "nauvis_materials:iron_gear_wheel",
     "i": "minecraft:iron_ingot",
     "f": "nauvis_machines:stone_furnace"
   },

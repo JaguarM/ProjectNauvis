@@ -6,16 +6,16 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "neoprogressivematerials:electronic_circuit",
-    "neoprogressivematerials:electronic_circuit",
-    "neoprogressivematerials:steel_plate",
-    "neoprogressivematerials:steel_plate",
+    "nauvis_materials:electronic_circuit",
+    "nauvis_materials:electronic_circuit",
+    "nauvis_materials:steel_plate",
+    "nauvis_materials:steel_plate",
     "minecraft:cobblestone_wall"
   ],
   "result": {

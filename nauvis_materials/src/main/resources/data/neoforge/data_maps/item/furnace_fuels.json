@@ -1,0 +1,7 @@
+{
+  "values": {
+    "nauvis_materials:rocket_fuel": {
+      "burn_time": 40000
+    }
+  }
+}

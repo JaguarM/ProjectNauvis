@@ -722,7 +722,7 @@ public final class NauvisResearchGameTests {
         public void run(GameTestHelper helper) {
             MinecraftServer server = helper.getLevel().getServer();
             ResourceKey<Technology> steel = ModTechnologies.key("steel_processing");
-            ResourceKey<Recipe<?>> steelPlate = recipe("neoprogressivematerials", "steel_plate");
+            ResourceKey<Recipe<?>> steelPlate = recipe("nauvis_materials", "steel_plate");
             ResourceKey<Recipe<?>> belt = recipe("nauvis_logistics", "transport_belt");
 
             Research.state(server).forget(steel);
@@ -1026,8 +1026,8 @@ public final class NauvisResearchGameTests {
             for (String[] free : new String[][] {
                     {"nauvis_logistics", "transport_belt"}, {"nauvis_logistics", "burner_inserter"},
                     {"nauvis_logistics", "chest"}, {"nauvis_machines", "stone_furnace"},
-                    {"neoprogressivematerials", "iron_gear_wheel"},
-                    {"neoprogressivematerials", "iron_ingot"}}) {
+                    {"nauvis_materials", "iron_gear_wheel"},
+                    {"nauvis_materials", "iron_ingot"}}) {
                 helper.assertTrue(Research.isUnlocked(server, recipe(free[0], free[1])),
                         free[0] + ":" + free[1] + " is gated, but nothing in the tree unlocks it, "
                                 + "so a new world could never craft it at all");

@@ -1,0 +1,27 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:mod_loaded",
+        "modid": "facrafting"
+      }
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_fluids"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "nauvis_materials:iron_gear_wheel",
+    "nauvis_fluids:pipe",
+    "nauvis_fluids:pipe",
+    "nauvis_materials:steel_plate"
+  ],
+  "result": {
+    "id": "nauvis_materials:engine_unit",
+    "count": 1
+  }
+}

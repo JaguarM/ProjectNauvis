@@ -10,7 +10,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "facrafting:facraft",
@@ -19,7 +19,7 @@
   "order": "0149",
   "ingredients": [
     {
-      "ingredient": "neoprogressivematerials:electric_engine_unit",
+      "ingredient": "nauvis_materials:electric_engine_unit",
       "count": 1
     },
     {

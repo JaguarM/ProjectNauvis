@@ -69,7 +69,7 @@ dependencies {
     // a steam engine in gear wheels, so a standalone run needs the mods that have them for those
     // recipes to load. The blocks themselves work regardless.
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
-    runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
+    runtimeOnly project(':nauvis_materials')
     runtimeOnly project(':nauvis_fluids')
     // And the boiler is paid for in a stone furnace, which is a machine of nauvis_machines.
     runtimeOnly project(':nauvis_machines')

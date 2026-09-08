@@ -50,11 +50,11 @@ packs of it, out of the silo's output.
     ordering="AFTER"
     side="BOTH"
 
-# Optional: a rocket part is paid for in Neo Progressive Materials' items. Without that mod the
+# Optional: a rocket part is paid for in Nauvis Materials' items. Without that mod the
 # recipe simply does not load, and the silo has nothing to build.
 [[dependencies.${mod_id}]]
-    modId="neoprogressivematerials"
+    modId="nauvis_materials"
     type="optional"
-    versionRange="[1.0.0,)"
+    versionRange="[0.1.0,)"
     ordering="AFTER"
     side="BOTH"

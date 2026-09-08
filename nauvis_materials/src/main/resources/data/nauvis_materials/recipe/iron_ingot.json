@@ -1,0 +1,23 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 64,
+  "group": "intermediate",
+  "order": "0133",
+  "category": "smelting",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:raw_iron",
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+  }
+}

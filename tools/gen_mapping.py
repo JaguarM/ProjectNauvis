@@ -49,7 +49,7 @@ BY_ID = {
 }
 BY_GROUP = {
     ("Combat", None): "military",
-    ("Intermediate product", "Intermediate product"): "neoprogressivematerials",
+    ("Intermediate product", "Intermediate product"): "nauvis_materials",
     ("Intermediate product", "Liquid"): "fluids",
     ("Intermediate product", "Process"): "fluids",
     ("Intermediate product", "Resource"): "nauvis",
@@ -67,7 +67,7 @@ MODID = {
     "power": "nauvis_power", "research": "nauvis_research", "fluids": "nauvis_fluids",
     "trains": "nauvis_trains", "circuits": "nauvis_circuits",
     "military": "nauvis_military", "rocket": "nauvis_rocket",
-    "neoprogressivematerials": "neoprogressivematerials",
+    "nauvis_materials": "nauvis_materials",
     "nauvis_mining": "nauvis_mining",
 }
 

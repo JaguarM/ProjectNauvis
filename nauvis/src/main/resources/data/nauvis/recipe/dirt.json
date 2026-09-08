@@ -1,0 +1,22 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "logistics",
+  "order": "0029",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:cobblestone",
+      "count": 20
+    }
+  ],
+  "result": {
+    "id": "minecraft:dirt",
+    "count": 1
+  }
+}

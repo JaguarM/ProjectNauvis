@@ -1,0 +1,25 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:mod_loaded",
+        "modid": "facrafting"
+      }
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "nauvis_military:cannon_shell",
+    "nauvis:uranium_238"
+  ],
+  "result": {
+    "id": "nauvis_military:uranium_cannon_shell",
+    "count": 1
+  }
+}

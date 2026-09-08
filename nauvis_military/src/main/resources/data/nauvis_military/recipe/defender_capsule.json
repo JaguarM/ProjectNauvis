@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_materials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 160,
+  "group": "combat",
+  "order": "0188",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_materials:electronic_circuit",
+      "count": 2
+    },
+    {
+      "ingredient": "nauvis_materials:iron_gear_wheel",
+      "count": 3
+    },
+    {
+      "ingredient": "nauvis_military:piercing_rounds_magazine",
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "nauvis_military:defender_capsule",
+    "count": 1
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_fluids"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_materials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "logistics",
+  "order": "0015",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_logistics:fast_transport_belt",
+      "count": 1
+    },
+    {
+      "ingredient": "nauvis_materials:iron_gear_wheel",
+      "count": 10
+    }
+  ],
+  "fluid_ingredients": [
+    {
+      "ingredient": "nauvis_fluids:lubricant",
+      "amount": 20
+    }
+  ],
+  "result": {
+    "id": "nauvis_logistics:express_transport_belt",
+    "count": 1
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_materials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 160,
+  "group": "combat",
+  "order": "0218",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:coal",
+      "count": 10
+    },
+    {
+      "ingredient": "nauvis_materials:electronic_circuit",
+      "count": 3
+    },
+    {
+      "ingredient": "nauvis_materials:steel_plate",
+      "count": 3
+    }
+  ],
+  "result": {
+    "id": "nauvis_military:poison_capsule",
+    "count": 1
+  }
+}

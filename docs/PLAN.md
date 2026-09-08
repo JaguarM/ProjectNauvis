@@ -123,17 +123,16 @@ author before copying a line of it. Reading it is fine either way.
 The mods
 --------
 
-Three already exist in their own repos; Crumbling Ore is released and its ids are permanent.
-The other eleven are subprojects here — a library and ten subsystem mods, eight of which exist
-so far.
+Two exist in their own repos; Crumbling Ore is released and its ids are permanent. The other
+twelve are subprojects here — a library and eleven subsystem mods, nine of which exist so far.
 
 | Mod id | Owns | Items |
 |---|---|---|
 | `facrafting` | the timed crafting model | — |
-| `neoprogressivematerials` | intermediate products | 18 |
 | `crumblingore` | ore depletion | — |
 | `nauvis_lib` | the framework: multi-blocks, transfer views, the machine screen, bench packs | — |
 | `nauvis` | pack policy, vanilla replacement, raw resources, terrain | 16 |
+| `nauvis_materials` | intermediate products | 18 |
 | `nauvis_logistics` | belts, inserters, splitters, chests, robots | 28 |
 | `nauvis_machines` | assemblers, furnaces, modules, beacon, radar | 18 |
 | `nauvis_power` | boiler, steam engine, solar, accumulator, poles | 13 |
@@ -151,10 +150,11 @@ The workspace
 -------------
 
 Project Nauvis is a **Gradle multi-project build**. Every new mod is a subproject here; each
-still produces its own jar with its own mod id and is publishable standalone. The three
-sibling mods stay in their own repos and are pulled in with
-`includeBuild("../NeoProgressiveMaterials")` and friends, so one `./gradlew runServer` puts
-the whole pack on the classpath and cross-mod edits are possible in one pass.
+still produces its own jar with its own mod id and is publishable standalone. The two sibling
+mods stay in their own repos and are pulled in with `includeBuild("../Facrafting")` and its
+twin, so one `./gradlew runServer` puts the whole pack on the classpath and cross-mod edits are
+possible in one pass. Neo Progressive Materials was a third until 2026-09-08, when it was folded
+in as `nauvis_materials` - it had never been published, so its ids were the pack's to rename.
 
 **Settled: ModDevGradle does not fight composite builds**, so the `run/mods` fallback is not
 needed. One thing has to be spelled out — Gradle matches an included build by its project name,
@@ -190,7 +190,7 @@ models, language and loot tables.
 
 `assembling-machine-1`, `burner-inserter`, `inserter`, `iron-chest`, `boiler`, `steam-engine`,
 `small-electric-pole`, `pipe`, plus intermediates already owned by
-`neoprogressivematerials`. `wooden-chest` is vanilla; `stone-furnace` was, until milestone 3.
+`nauvis_materials`. `wooden-chest` is vanilla; `stone-furnace` was, until milestone 3.
 
 Chest → inserter → assembler → inserter → chest, burning coal. **This is the whole point of
 the pack and it costs eleven items.** Get here fast.

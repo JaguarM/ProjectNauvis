@@ -2239,7 +2239,7 @@ public final class NauvisFluidsGameTests {
 
     /**
      * A chemical plant on plastic turns twenty petroleum gas and a coal into two plastic bars a
-     * second, and stops when the coal runs out. The recipe is Neo Progressive Materials', and
+     * second, and stops when the coal runs out. The recipe is Nauvis Materials', and
      * the test says so rather than failing when that mod is not in the run.
      */
     public static class ChemicalPlantMakesPlasticTest extends GameTestInstance {
@@ -2257,14 +2257,14 @@ public final class NauvisFluidsGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            if (!ModList.get().isLoaded("neoprogressivematerials")) {
+            if (!ModList.get().isLoaded("nauvis_materials")) {
                 helper.succeed();  // no plastic to make without the mod that owns it
                 return;
             }
             platform(helper, 7);
             ChemicalPlantBlockEntity plant = chemicalPlant(helper, MACHINE);
             charge(plant);
-            plant.setRecipe(recipe("neoprogressivematerials", "plastic_bar"));
+            plant.setRecipe(recipe("nauvis_materials", "plastic_bar"));
             helper.assertTrue(plant.recipeKey() != null, "the chemical plant refused plastic");
             Fluid petroleum = ModFluids.PETROLEUM_GAS.get();
             helper.assertValueEqual(fill(plant.inputAccess(0), petroleum, 100), 100, "petroleum gas into the first port");
@@ -2277,7 +2277,7 @@ public final class NauvisFluidsGameTests {
                     .thenExecuteAfter(25, () -> {
                         helper.assertValueEqual(plant.items().getAmountAsInt(OUTPUT_SLOT), 2, "plastic after one craft");
                         helper.assertValueEqual(BuiltInRegistries.ITEM.getKey(plant.items().getResource(OUTPUT_SLOT).toStack(1).getItem()),
-                                Identifier.fromNamespaceAndPath("neoprogressivematerials", "plastic_bar"), "what the plant made");
+                                Identifier.fromNamespaceAndPath("nauvis_materials", "plastic_bar"), "what the plant made");
                         helper.assertValueEqual(plant.inputTank(0).getAmountAsInt(0), 80, "petroleum gas after one craft");
                     })
                     .thenExecuteAfter(65, () -> {

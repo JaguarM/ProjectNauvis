@@ -55,8 +55,8 @@ and it goes straight back to sleep when the chest runs dry.
 # Optional: the inserter is paid for in an iron gear wheel. Without this mod that one recipe
 # does not load; the block still works if you get one another way.
 [[dependencies.${mod_id}]]
-    modId="neoprogressivematerials"
+    modId="nauvis_materials"
     type="optional"
-    versionRange="[1.0.0,)"
+    versionRange="[0.1.0,)"
     ordering="AFTER"
     side="BOTH"

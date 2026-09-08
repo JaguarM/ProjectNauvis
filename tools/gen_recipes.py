@@ -7,7 +7,7 @@ Generate recipe JSON from Factorio's recipe dump plus the mapping table.
 Non-negotiable #2: recipes are generated, never hand-written. Ingredient lists, counts and
 craft times come straight from the dump, so nothing in the pack is balanced by hand.
 
-Up to three files come out per craftable item, matching the shape Neo Progressive Materials
+Up to three files come out per craftable item, matching the shape Nauvis Materials
 already ships. `<ns>` is the owning mod and `<name>` is the item the recipe produces:
 
   data/<ns>/recipe/<name>.json                 facrafting:facraft, timed, the real recipe.
@@ -107,11 +107,10 @@ ORDER_DIGITS = 4
 # panel.
 CATEGORIES = {"smelting", "chemistry", "oil-processing", "crafting-with-fluid", "rocket-building"}
 
-# The three released mods live in their own repos beside this one; everything else is a
+# The two sibling mods live in their own repos beside this one; everything else is a
 # subproject here. Both are resolved to a `src/main/resources` root.
 SIBLING_REPOS = {
     "facrafting": "Facrafting",
-    "neoprogressivematerials": "NeoProgressiveMaterials",
     "crumblingore": "CrumblingOre",
 }
 
@@ -302,7 +301,7 @@ def required_mods(entry: dict, mapping: dict) -> list[str]:
     Which mods have to be present for this recipe to mean anything.
 
     Facrafting always, plus any mod other than this one supplying an ingredient or taking a
-    product - a recipe naming `neoprogressivematerials:iron_gear_wheel` is nonsense without that
+    product - a recipe naming `nauvis_materials:iron_gear_wheel` is nonsense without that
     mod loaded, and so is one making `nauvis:solid_fuel`. Arrows point one way, so the file's
     own namespace is never listed.
     """
@@ -600,7 +599,7 @@ def do_check(files: dict) -> int:
     """
     Compare against what is on disk, semantically rather than byte for byte.
 
-    Neo Progressive Materials ships three recipes written by hand before this script existed.
+    Nauvis Materials ships three recipes written by hand before this script existed.
     They are the acceptance test: if the generator reproduces them, it is reading the dump
     the same way a person did.
     """

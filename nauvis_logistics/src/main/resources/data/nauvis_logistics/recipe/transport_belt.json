@@ -6,7 +6,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "facrafting:facraft",
@@ -15,7 +15,7 @@
   "order": "0059",
   "ingredients": [
     {
-      "ingredient": "neoprogressivematerials:iron_gear_wheel",
+      "ingredient": "nauvis_materials:iron_gear_wheel",
       "count": 1
     },
     {

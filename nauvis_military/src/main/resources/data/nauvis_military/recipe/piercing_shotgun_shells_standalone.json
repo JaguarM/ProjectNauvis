@@ -1,0 +1,32 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:mod_loaded",
+        "modid": "facrafting"
+      }
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_materials"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:copper_ingot",
+    "minecraft:copper_ingot",
+    "minecraft:copper_ingot",
+    "minecraft:copper_ingot",
+    "minecraft:copper_ingot",
+    "nauvis_military:shotgun_shells",
+    "nauvis_military:shotgun_shells",
+    "nauvis_materials:steel_plate",
+    "nauvis_materials:steel_plate"
+  ],
+  "result": {
+    "id": "nauvis_military:piercing_shotgun_shells",
+    "count": 1
+  }
+}

@@ -7,8 +7,7 @@ change to the map moves every item drawn from it and they cannot drift apart.
     python texture-workshop/make_material_textures.py            # write the PNGs
     python texture-workshop/make_material_textures.py --preview  # also write material-preview.png
 
-Most of these go into `../NeoProgressiveMaterials`, which is a sibling repo rather than a
-subproject -- see CLAUDE.md -- and two go into mods here, because an item lives in the mod the
+Most of these go into `nauvis_materials` and two into other mods, because an item lives in the mod the
 mapping gives it: solid fuel is the pack mod's and explosives are the fluids mod's. Only the
 items with a map below are written; the copper cable and the iron gear wheel were drawn by hand
 before this file existed and are left alone rather than redrawn from a guess at their maps. The
@@ -47,11 +46,10 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.join(HERE, os.pardir)
 
-# Where each mod keeps its item textures. The sibling repo is beside this one.
+# Where each mod keeps its item textures.
 OUT = {
-    "neoprogressivematerials": os.path.join(
-        REPO, os.pardir, "NeoProgressiveMaterials", "src", "main", "resources",
-        "assets", "neoprogressivematerials", "textures", "item"),
+    "nauvis_materials": os.path.join(
+        REPO, "nauvis_materials", "src", "main", "resources", "assets", "nauvis_materials", "textures", "item"),
     "nauvis": os.path.join(REPO, "nauvis", "src", "main", "resources", "assets", "nauvis", "textures", "item"),
     "nauvis_fluids": os.path.join(
         REPO, "nauvis_fluids", "src", "main", "resources", "assets", "nauvis_fluids", "textures", "item"),
@@ -473,21 +471,21 @@ CONTROL_UNIT = {
 
 # name -> (map, palette, the mod whose item it is)
 ITEMS = {
-    "steel_plate": (STEEL_PLATE, STEEL, "neoprogressivematerials"),
-    "plastic_bar": (PLASTIC_BAR, PLASTIC, "neoprogressivematerials"),
-    "sulfur": (SULFUR, YELLOW, "neoprogressivematerials"),
-    "battery": (BATTERY, BLACK_AND_RED, "neoprogressivematerials"),
-    "electronic_circuit": (ADVANCED_CIRCUIT, GREEN_BOARD, "neoprogressivematerials"),
-    "advanced_circuit": (ADVANCED_CIRCUIT, RED_BOARD, "neoprogressivematerials"),
-    "processing_unit": (ADVANCED_CIRCUIT, BLUE_BOARD, "neoprogressivematerials"),
-    "engine_unit": (ENGINE_UNIT, IRON, "neoprogressivematerials"),
+    "steel_plate": (STEEL_PLATE, STEEL, "nauvis_materials"),
+    "plastic_bar": (PLASTIC_BAR, PLASTIC, "nauvis_materials"),
+    "sulfur": (SULFUR, YELLOW, "nauvis_materials"),
+    "battery": (BATTERY, BLACK_AND_RED, "nauvis_materials"),
+    "electronic_circuit": (ADVANCED_CIRCUIT, GREEN_BOARD, "nauvis_materials"),
+    "advanced_circuit": (ADVANCED_CIRCUIT, RED_BOARD, "nauvis_materials"),
+    "processing_unit": (ADVANCED_CIRCUIT, BLUE_BOARD, "nauvis_materials"),
+    "engine_unit": (ENGINE_UNIT, IRON, "nauvis_materials"),
     # The same engine in the blue-grey of Factorio's electric one: one map, so the two read as
     # the same part with a different drive, which they are.
-    "electric_engine_unit": (ENGINE_UNIT, ELECTRIC_IRON, "neoprogressivematerials"),
-    "low_density_structure": (LOW_DENSITY_STRUCTURE, COPPER, "neoprogressivematerials"),
-    "rocket_fuel": (ROCKET_FUEL, ROCKET_ORANGE, "neoprogressivematerials"),
-    "rocket_control_unit": (ROCKET_CONTROL_UNIT, CONTROL_UNIT, "neoprogressivematerials"),
-    "iron_stick": (IRON_STICK, IRON, "neoprogressivematerials"),
+    "electric_engine_unit": (ENGINE_UNIT, ELECTRIC_IRON, "nauvis_materials"),
+    "low_density_structure": (LOW_DENSITY_STRUCTURE, COPPER, "nauvis_materials"),
+    "rocket_fuel": (ROCKET_FUEL, ROCKET_ORANGE, "nauvis_materials"),
+    "rocket_control_unit": (ROCKET_CONTROL_UNIT, CONTROL_UNIT, "nauvis_materials"),
+    "iron_stick": (IRON_STICK, IRON, "nauvis_materials"),
     "solid_fuel": (SOLID_FUEL, COAL_BLACK, "nauvis"),
     "repair_pack": (REPAIR_PACK, TOOLBOX, "nauvis_machines"),
     "explosives": (EXPLOSIVES, DYNAMITE, "nauvis_fluids"),

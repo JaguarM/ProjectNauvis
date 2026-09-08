@@ -59,7 +59,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # repo, and a Factorio entity's footprint is worth checking wherever it is registered. Forking it
 # in put them under the same rule as everything else, and none of the three mods left over there
 # registers a machine.
-MODS = ['nauvis', 'nauvis_machines', 'nauvis_logistics', 'nauvis_fluids', 'nauvis_power',
+MODS = ['nauvis', 'nauvis_materials', 'nauvis_machines', 'nauvis_logistics', 'nauvis_fluids', 'nauvis_power',
         'nauvis_research', 'nauvis_mining', 'nauvis_military', 'nauvis_rocket']
 
 # Where datagen writes, and where anything hand-written lives. Both are shipped, so both count.

@@ -35,12 +35,13 @@ Where things are
 | `nauvis_fluids/` | pipes, oil, chemistry, nuclear |
 | `nauvis_research/` | labs, science packs, the technology tree |
 | `nauvis_mining/` | the two mining drills |
+| `nauvis_materials/` | Factorio's intermediate products: cable, gears, circuits, steel, plastic, batteries |
 | `reference/` | Factorio's data and other people's source. Gitignored, not ours |
 
-Three mods live in their own repos alongside this one: [Facrafting][fc],
-[Neo Progressive Materials][npm] and [Crumbling Ore][co]. A fourth,
-[Neo Progressive Automation][npa], is where the mining drills came from; `nauvis_mining/` is a
-fork of it carrying Factorio's ids, and the original is still its own released mod.
+Two mods live in their own repos alongside this one: [Facrafting][fc] and [Crumbling Ore][co].
+Two more used to: [Neo Progressive Automation][npa] is where the mining drills came from, and
+`nauvis_mining/` is a fork of it carrying Factorio's ids, while Neo Progressive Materials was
+folded in whole as `nauvis_materials/`. The originals are still their own mods.
 
 The shape of it
 ---------------
@@ -63,6 +64,5 @@ this repo copies either — Create is read for architecture and reimplemented, a
 recipe data under our own item ids is committed.
 
 [fc]: https://github.com/JaguarM/Facrafting
-[npm]: https://github.com/JaguarM/NeoProgressiveMaterials
 [npa]: https://github.com/JaguarM/NeoProgressiveAutomation
 [co]: https://github.com/JaguarM/CrumblingOre

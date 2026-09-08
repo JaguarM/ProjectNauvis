@@ -9,7 +9,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "minecraft:crafting_shapeless",
@@ -21,7 +21,7 @@
     "minecraft:copper_ingot",
     "minecraft:copper_ingot",
     "nauvis_military:firearm_magazine",
-    "neoprogressivematerials:steel_plate"
+    "nauvis_materials:steel_plate"
   ],
   "result": {
     "id": "nauvis_military:piercing_rounds_magazine",

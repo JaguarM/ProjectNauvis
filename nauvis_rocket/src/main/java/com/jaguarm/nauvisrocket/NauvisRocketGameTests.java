@@ -188,17 +188,17 @@ public final class NauvisRocketGameTests {
             RocketSiloBlockEntity silo = placeSilo(helper);
             charge(silo);
             ResourceHandler<ItemResource> view = silo.automationView();
-            helper.assertValueEqual(insert(view, item(helper, "neoprogressivematerials:low_density_structure"), 10), 10,
+            helper.assertValueEqual(insert(view, item(helper, "nauvis_materials:low_density_structure"), 10), 10,
                     "low density structures accepted");
-            helper.assertValueEqual(insert(view, item(helper, "neoprogressivematerials:rocket_control_unit"), 10), 10,
+            helper.assertValueEqual(insert(view, item(helper, "nauvis_materials:rocket_control_unit"), 10), 10,
                     "rocket control units accepted");
-            helper.assertValueEqual(insert(view, item(helper, "neoprogressivematerials:rocket_fuel"), 10), 10,
+            helper.assertValueEqual(insert(view, item(helper, "nauvis_materials:rocket_fuel"), 10), 10,
                     "rocket fuel accepted");
             // One ingredient a slot, in the recipe's order, so a belt of one thing cannot fill the machine.
             helper.assertValueEqual(silo.inventory().getAmountAsInt(0), 10, "low density structures in the first slot");
             helper.assertValueEqual(silo.inventory().getAmountAsInt(1), 10, "rocket control units in the second slot");
             helper.assertValueEqual(silo.inventory().getAmountAsInt(2), 10, "rocket fuel in the third slot");
-            helper.assertValueEqual(insert(view, item(helper, "neoprogressivematerials:low_density_structure"), 200), 10,
+            helper.assertValueEqual(insert(view, item(helper, "nauvis_materials:low_density_structure"), 200), 10,
                     "more low density structures accepted: the slot holds twice a part's worth and the others refuse it");
             helper.assertValueEqual(insert(view, Items.STICK, 1), 0, "sticks accepted by a silo");
 

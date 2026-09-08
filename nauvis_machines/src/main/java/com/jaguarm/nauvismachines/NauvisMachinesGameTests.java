@@ -266,7 +266,7 @@ public final class NauvisMachinesGameTests {
         ResourceKey<Recipe<?>> recipe = AssemblerBlockEntity.recipeProducing(helper.getLevel(), product);
         helper.assertTrue(recipe != null,
                 "no timed recipe makes this item - is the generated recipe on disk, and are "
-                        + "facrafting and neoprogressivematerials both loaded?");
+                        + "facrafting and nauvis_materials both loaded?");
         assembler.setRecipe(recipe);
         charge(assembler);
         return assembler;
@@ -299,10 +299,10 @@ public final class NauvisMachinesGameTests {
     /** One craft's worth of ingredients, put in the way an inserter will. */
     private static void feedOneCraft(GameTestHelper helper, ResourceHandler<ItemResource> view) {
         helper.assertValueEqual(
-                insert(view, item(helper, "neoprogressivematerials:electronic_circuit"), 3), 3,
+                insert(view, item(helper, "nauvis_materials:electronic_circuit"), 3), 3,
                 "circuits accepted");
         helper.assertValueEqual(
-                insert(view, item(helper, "neoprogressivematerials:iron_gear_wheel"), 5), 5,
+                insert(view, item(helper, "nauvis_materials:iron_gear_wheel"), 5), 5,
                 "gear wheels accepted");
         helper.assertValueEqual(insert(view, Items.IRON_INGOT, 9), 9, "iron plates accepted");
     }
@@ -1314,7 +1314,7 @@ public final class NauvisMachinesGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
-            Item gear = item(helper, "neoprogressivematerials:iron_gear_wheel");
+            Item gear = item(helper, "nauvis_materials:iron_gear_wheel");
             ResourceKey<Recipe<?>> recipe = AssemblerBlockEntity.recipeProducing(helper.getLevel(), gear);
             helper.assertTrue(recipe != null, "no timed recipe makes an iron gear wheel");
 
@@ -1382,7 +1382,7 @@ public final class NauvisMachinesGameTests {
         @Override
         public void run(GameTestHelper helper) {
             ResourceKey<Recipe<?>> gear = AssemblerBlockEntity.recipeProducing(
-                    helper.getLevel(), item(helper, "neoprogressivematerials:iron_gear_wheel"));
+                    helper.getLevel(), item(helper, "nauvis_materials:iron_gear_wheel"));
             ResourceKey<Recipe<?>> furnace = AssemblerBlockEntity.recipeProducing(
                     helper.getLevel(), ModItems.STONE_FURNACE.get());
             helper.assertTrue(gear != null && furnace != null, "the gear and the stone furnace recipes");
@@ -1535,7 +1535,7 @@ public final class NauvisMachinesGameTests {
         @Override
         public void run(GameTestHelper helper) {
             Item product = BuiltInRegistries.ITEM.getValue(
-                    Identifier.fromNamespaceAndPath("neoprogressivematerials", "electric_engine_unit"));
+                    Identifier.fromNamespaceAndPath("nauvis_materials", "electric_engine_unit"));
             Fluid lubricant = BuiltInRegistries.FLUID.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "lubricant"));
             ResourceKey<Recipe<?>> recipe = product == Items.AIR ? null
                     : AssemblerBlockEntity.recipeProducing(helper.getLevel(), product);
@@ -1575,9 +1575,9 @@ public final class NauvisMachinesGameTests {
                         helper.assertValueEqual(fill(in, Fluids.WATER, 100), 0, "water taken by a box pointed at lubricant");
                         helper.assertValueEqual(fill(in, lubricant, 100), 100, "lubricant taken by the input box");
                         helper.assertValueEqual(insert(machine[0].automationView(),
-                                item(helper, "neoprogressivematerials:electronic_circuit"), 2), 2, "circuits accepted");
+                                item(helper, "nauvis_materials:electronic_circuit"), 2), 2, "circuits accepted");
                         helper.assertValueEqual(insert(machine[0].automationView(),
-                                item(helper, "neoprogressivematerials:engine_unit"), 1), 1, "an engine unit accepted");
+                                item(helper, "nauvis_materials:engine_unit"), 1), 1, "an engine unit accepted");
                     })
                     .thenExecuteAfter(ticks + 3, () -> {
                         helper.assertValueEqual(machine[0].inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 1,

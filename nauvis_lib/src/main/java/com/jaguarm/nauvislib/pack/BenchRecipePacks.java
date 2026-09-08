@@ -17,7 +17,7 @@ import net.neoforged.neoforge.event.AddPackFindersEvent;
  * ships one of these, from its {@code crafting_table/} resource directory, which needs a
  * {@code pack.mcmeta} or the finder throws a bare NPE naming neither the mod nor the directory.
  *
- * <p>Both the recipes and this arrangement come from Neo Progressive Materials, which did it
+ * <p>Both the recipes and this arrangement come from Nauvis Materials, which did it
  * first; {@code tools/gen_recipes.py} generates all three files for every item that can fit a
  * crafting grid.
  *

@@ -10,7 +10,7 @@
     "nauvis_research:science_pack_1"
   ],
   "unlocks": [
-    "neoprogressivematerials:steel_plate",
+    "nauvis_materials:steel_plate",
     "nauvis_logistics:steel_chest"
   ]
 }

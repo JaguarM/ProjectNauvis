@@ -9,14 +9,14 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "neoprogressivematerials:electronic_circuit",
-    "neoprogressivematerials:electronic_circuit",
+    "nauvis_materials:electronic_circuit",
+    "nauvis_materials:electronic_circuit",
     "nauvis_logistics:inserter",
     "minecraft:iron_ingot",
     "minecraft:iron_ingot"

@@ -41,8 +41,8 @@
     },
     "advanced-circuit": {
       "name": "Advanced circuit",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:advanced_circuit",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:advanced_circuit",
       "craft": {
         "time": 6,
         "yield": 1
@@ -140,8 +140,8 @@
     },
     "battery": {
       "name": "Battery",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:battery",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:battery",
       "craft": {
         "time": 5,
         "yield": 1
@@ -344,8 +344,8 @@
     },
     "copper-cable": {
       "name": "Copper cable",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:copper_cable",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:copper_cable",
       "craft": {
         "time": 0.5,
         "yield": 2
@@ -361,7 +361,7 @@
     },
     "copper-plate": {
       "name": "Copper plate",
-      "owner": "neoprogressivematerials",
+      "owner": "nauvis_materials",
       "item": "minecraft:copper_ingot",
       "stand_in": true,
       "category": "smelting",
@@ -468,8 +468,8 @@
     },
     "electric-engine-unit": {
       "name": "Electric engine unit",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:electric_engine_unit",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:electric_engine_unit",
       "craft": {
         "time": 10,
         "yield": 1
@@ -507,8 +507,8 @@
     },
     "electronic-circuit": {
       "name": "Electronic circuit",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:electronic_circuit",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:electronic_circuit",
       "craft": {
         "time": 0.5,
         "yield": 1
@@ -545,8 +545,8 @@
     },
     "engine-unit": {
       "name": "Engine unit",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:engine_unit",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:engine_unit",
       "craft": {
         "time": 10,
         "yield": 1
@@ -860,8 +860,8 @@
     },
     "iron-gear-wheel": {
       "name": "Iron gear wheel",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:iron_gear_wheel",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:iron_gear_wheel",
       "craft": {
         "time": 0.5,
         "yield": 1
@@ -877,7 +877,7 @@
     },
     "iron-plate": {
       "name": "Iron plate",
-      "owner": "neoprogressivematerials",
+      "owner": "nauvis_materials",
       "item": "minecraft:iron_ingot",
       "stand_in": true,
       "category": "smelting",
@@ -888,8 +888,8 @@
     },
     "iron-stick": {
       "name": "Iron stick",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:iron_stick",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:iron_stick",
       "craft": {
         "time": 0.5,
         "yield": 2
@@ -1048,8 +1048,8 @@
     },
     "low-density-structure": {
       "name": "Low density structure",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:low_density_structure",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:low_density_structure",
       "craft": {
         "time": 30,
         "yield": 1
@@ -1255,8 +1255,8 @@
     },
     "plastic-bar": {
       "name": "Plastic bar",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:plastic_bar",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:plastic_bar",
       "craft": {
         "time": 1,
         "yield": 2
@@ -1320,8 +1320,8 @@
     },
     "processing-unit": {
       "name": "Processing unit",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:processing_unit",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:processing_unit",
       "craft": {
         "time": 10,
         "yield": 1
@@ -1487,8 +1487,8 @@
     },
     "rocket-control-unit": {
       "name": "Rocket control unit",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:rocket_control_unit",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:rocket_control_unit",
       "craft": {
         "time": 30,
         "yield": 1
@@ -1497,8 +1497,8 @@
     },
     "rocket-fuel": {
       "name": "Rocket fuel",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:rocket_fuel",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:rocket_fuel",
       "craft": {
         "time": 30,
         "yield": 1
@@ -1775,8 +1775,8 @@
     },
     "steel-plate": {
       "name": "Steel plate",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:steel_plate",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:steel_plate",
       "category": "smelting",
       "craft": {
         "time": 16,
@@ -1866,8 +1866,8 @@
     },
     "sulfur": {
       "name": "Sulfur",
-      "owner": "neoprogressivematerials",
-      "item": "neoprogressivematerials:sulfur",
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:sulfur",
       "craft": {
         "time": 1,
         "yield": 2
@@ -1999,7 +1999,7 @@
     },
     "wood": {
       "name": "Wood",
-      "owner": "neoprogressivematerials",
+      "owner": "nauvis_materials",
       "item": "minecraft:oak_planks",
       "stand_in": true,
       "craft": {

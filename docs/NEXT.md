@@ -98,7 +98,9 @@ ids changed and `implementation project(':nauvis_lib')` in it, a
 if the mod has no bench recipe, since the finder throws without one. Every item it registers takes
 `Stacks.of(n)` with Factorio's stack size and a matching `stack` in `data/mapping.json`. `nauvis_rocket/` is the
 newest written from scratch by following exactly that list, so its first commit is what adding a
-mod costs.
+mod costs; `nauvis_materials/` is the newest folded in from a sibling repo, and the commit that did
+it is what a rename across the pack costs - the ids in every recipe, test and mods.toml, and the
+generators run again.
 
 **Recipes** generate into a staging directory —
 `python tools/gen_recipes.py --only <modid> --out <tmp>` — then copy across only the files for items

@@ -118,8 +118,8 @@ public final class NauvisGameTests {
                 new RegistryPresenceTest(
                         new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE),
                         List.of(
-                                "neoprogressivematerials:iron_gear_wheel",
-                                "neoprogressivematerials:electronic_circuit",
+                                "nauvis_materials:iron_gear_wheel",
+                                "nauvis_materials:electronic_circuit",
                                 "nauvis_mining:burner_mining_drill",
                                 "nauvis_military:gun_turret",
                                 "nauvis_machines:assembling_machine_1",
@@ -490,7 +490,7 @@ public final class NauvisGameTests {
             // And replaced: the pack's own recipe for each thing it took away.
             for (String id : List.of("nauvis_logistics:chest", "nauvis_machines:stone_furnace",
                     "nauvis_logistics:burner_inserter", "nauvis:stone_pickaxe",
-                    "neoprogressivematerials:iron_ingot", "nauvis:stone_bricks")) {
+                    "nauvis_materials:iron_ingot", "nauvis:stone_bricks")) {
                 helper.assertTrue(hasRecipe(helper, id),
                         id + " is missing, so the pack has taken something away and left nothing");
             }
@@ -656,7 +656,7 @@ public final class NauvisGameTests {
                     "nauvis_power:small_electric_pole",
                     "nauvis_fluids:pipe",
                     "nauvis_research:science_pack_1",
-                    "neoprogressivematerials:iron_gear_wheel",
+                    "nauvis_materials:iron_gear_wheel",
                     "nauvis_mining:burner_mining_drill")) {
 
                 Identifier type = typeOf(helper, id);

@@ -21,7 +21,7 @@ produced by another entry or is one of 23 genuine raw inputs. Nothing dangles.
 So the mapping only has to make real decisions about the raw inputs and about which items
 vanilla already covers. The other ~170 derive mechanically — kebab-case id to snake_case,
 namespaced to the owning mod, `iron-gear-wheel` becoming
-`neoprogressivematerials:iron_gear_wheel`.
+`nauvis_materials:iron_gear_wheel`.
 
 Entry shape
 -----------
@@ -29,8 +29,8 @@ Entry shape
 ```json
 "electronic-circuit": {
   "name": "Electronic circuit",
-  "owner": "neoprogressivematerials",
-  "item": "neoprogressivematerials:electronic_circuit",
+  "owner": "nauvis_materials",
+  "item": "nauvis_materials:electronic_circuit",
   "craft": { "time": 0.5, "yield": 1 }
 }
 ```
@@ -266,7 +266,7 @@ Factorio's furnace.
 | `copper-ore` | `minecraft:raw_copper` | |
 | `coal` | `minecraft:coal` | |
 | `stone` | `minecraft:cobblestone` | what mining stone actually yields |
-| `iron-plate` | `minecraft:iron_ingot` | already shipped in `neoprogressivematerials` |
+| `iron-plate` | `minecraft:iron_ingot` | its smelting recipe is `nauvis_materials`' |
 | `copper-plate` | `minecraft:copper_ingot` | already shipped |
 | `raw-wood` | `minecraft:oak_log` | consider the `#minecraft:logs` tag on the input side |
 | `wood` | `minecraft:oak_planks` | |

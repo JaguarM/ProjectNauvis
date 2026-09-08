@@ -1,0 +1,30 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 240,
+  "group": "combat",
+  "order": "0232",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_military:cannon_shell",
+      "count": 1
+    },
+    {
+      "ingredient": "nauvis:uranium_238",
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "nauvis_military:uranium_cannon_shell",
+    "count": 1
+  }
+}

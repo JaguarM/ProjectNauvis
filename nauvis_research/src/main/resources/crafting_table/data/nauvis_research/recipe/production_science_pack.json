@@ -10,13 +10,13 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "neoprogressivematerials:electric_engine_unit",
+    "nauvis_materials:electric_engine_unit",
     "nauvis_machines:electric_furnace"
   ],
   "result": {

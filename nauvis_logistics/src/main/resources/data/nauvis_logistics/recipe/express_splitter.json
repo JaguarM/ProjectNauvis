@@ -1,0 +1,44 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_fluids"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_materials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 40,
+  "group": "logistics",
+  "order": "0014",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_materials:advanced_circuit",
+      "count": 10
+    },
+    {
+      "ingredient": "nauvis_logistics:fast_splitter",
+      "count": 1
+    },
+    {
+      "ingredient": "nauvis_materials:iron_gear_wheel",
+      "count": 10
+    }
+  ],
+  "fluid_ingredients": [
+    {
+      "ingredient": "nauvis_fluids:lubricant",
+      "amount": 80
+    }
+  ],
+  "result": {
+    "id": "nauvis_logistics:express_splitter",
+    "count": 1
+  }
+}

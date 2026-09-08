@@ -6,20 +6,20 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "neoprogressivematerials:steel_plate",
-    "neoprogressivematerials:steel_plate",
-    "neoprogressivematerials:steel_plate",
-    "neoprogressivematerials:steel_plate",
-    "neoprogressivematerials:steel_plate",
-    "neoprogressivematerials:steel_plate",
-    "neoprogressivematerials:steel_plate",
-    "neoprogressivematerials:steel_plate"
+    "nauvis_materials:steel_plate",
+    "nauvis_materials:steel_plate",
+    "nauvis_materials:steel_plate",
+    "nauvis_materials:steel_plate",
+    "nauvis_materials:steel_plate",
+    "nauvis_materials:steel_plate",
+    "nauvis_materials:steel_plate",
+    "nauvis_materials:steel_plate"
   ],
   "result": {
     "id": "nauvis_logistics:steel_chest",

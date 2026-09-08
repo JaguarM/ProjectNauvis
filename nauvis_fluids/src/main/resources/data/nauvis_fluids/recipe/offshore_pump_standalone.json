@@ -9,15 +9,15 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "neoprogressivematerials:electronic_circuit",
-    "neoprogressivematerials:electronic_circuit",
-    "neoprogressivematerials:iron_gear_wheel",
+    "nauvis_materials:electronic_circuit",
+    "nauvis_materials:electronic_circuit",
+    "nauvis_materials:iron_gear_wheel",
     "nauvis_fluids:pipe"
   ],
   "result": {

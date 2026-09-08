@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_materials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 200,
+  "group": "combat",
+  "order": "0195",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_materials:electric_engine_unit",
+      "count": 30
+    },
+    {
+      "ingredient": "nauvis_materials:processing_unit",
+      "count": 10
+    },
+    {
+      "ingredient": "nauvis_materials:steel_plate",
+      "count": 20
+    }
+  ],
+  "result": {
+    "id": "nauvis_military:exoskeleton",
+    "count": 1
+  }
+}

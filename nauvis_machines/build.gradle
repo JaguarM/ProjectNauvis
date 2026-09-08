@@ -71,7 +71,7 @@ dependencies {
 
     // Not a code dependency: the assembler's own recipe is paid for in electronic circuits
     // and iron gear wheels, so a standalone run of this mod needs the mod that has them.
-    runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
+    runtimeOnly project(':nauvis_materials')
 }
 
 neoForge {

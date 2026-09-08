@@ -6,17 +6,17 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "neoprogressivematerials:battery",
-    "neoprogressivematerials:battery",
-    "neoprogressivematerials:battery",
-    "neoprogressivematerials:battery",
-    "neoprogressivematerials:battery",
+    "nauvis_materials:battery",
+    "nauvis_materials:battery",
+    "nauvis_materials:battery",
+    "nauvis_materials:battery",
+    "nauvis_materials:battery",
     "minecraft:iron_ingot",
     "minecraft:iron_ingot"
   ],

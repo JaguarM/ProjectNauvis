@@ -1,0 +1,26 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_materials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "combat",
+  "order": "0191",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_materials:electronic_circuit",
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "nauvis_military:discharge_defense_remote",
+    "count": 1
+  }
+}

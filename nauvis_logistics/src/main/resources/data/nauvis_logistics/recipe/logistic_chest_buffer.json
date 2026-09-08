@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_materials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 10,
+  "group": "logistics",
+  "order": "0005",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_materials:advanced_circuit",
+      "count": 1
+    },
+    {
+      "ingredient": "nauvis_materials:electronic_circuit",
+      "count": 3
+    },
+    {
+      "ingredient": "nauvis_logistics:steel_chest",
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "nauvis_logistics:logistic_chest_buffer",
+    "count": 1
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 5,
+  "group": "logistics",
+  "order": "0024",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:gray_concrete",
+      "count": 10
+    }
+  ],
+  "result": {
+    "id": "minecraft:yellow_concrete",
+    "count": 10
+  }
+}

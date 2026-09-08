@@ -6,7 +6,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "facrafting:facraft",
@@ -20,7 +20,7 @@
       "count": 1
     },
     {
-      "ingredient": "neoprogressivematerials:sulfur",
+      "ingredient": "nauvis_materials:sulfur",
       "count": 5
     }
   ],

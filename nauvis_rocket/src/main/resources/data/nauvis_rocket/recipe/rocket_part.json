@@ -6,7 +6,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "facrafting:facraft",
@@ -16,15 +16,15 @@
   "category": "rocket-building",
   "ingredients": [
     {
-      "ingredient": "neoprogressivematerials:low_density_structure",
+      "ingredient": "nauvis_materials:low_density_structure",
       "count": 10
     },
     {
-      "ingredient": "neoprogressivematerials:rocket_control_unit",
+      "ingredient": "nauvis_materials:rocket_control_unit",
       "count": 10
     },
     {
-      "ingredient": "neoprogressivematerials:rocket_fuel",
+      "ingredient": "nauvis_materials:rocket_fuel",
       "count": 10
     }
   ],

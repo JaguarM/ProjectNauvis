@@ -1,0 +1,38 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_materials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 160,
+  "group": "production",
+  "order": "0080",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_materials:advanced_circuit",
+      "count": 500
+    },
+    {
+      "ingredient": "minecraft:gray_concrete",
+      "count": 500
+    },
+    {
+      "ingredient": "minecraft:copper_ingot",
+      "count": 500
+    },
+    {
+      "ingredient": "nauvis_materials:steel_plate",
+      "count": 500
+    }
+  ],
+  "result": {
+    "id": "nauvis_power:nuclear_reactor",
+    "count": 1
+  }
+}

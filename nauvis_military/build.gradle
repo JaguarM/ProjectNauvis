@@ -52,7 +52,7 @@ dependencies {
     // supplies the timed recipe type, Neo Progressive Materials the gears a turret is paid for
     // in, and nauvis_machines the stone brick a wall is made of.
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
-    runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
+    runtimeOnly project(':nauvis_materials')
     runtimeOnly project(':nauvis_machines')
 
     // Jade, for the look-at readout: compileOnly, never implementation. The @WailaPlugin

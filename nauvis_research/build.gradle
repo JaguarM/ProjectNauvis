@@ -63,7 +63,7 @@ dependencies {
     // standalone run has the mods its recipes name.
     compileOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
-    runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
+    runtimeOnly project(':nauvis_materials')
 }
 
 neoForge {

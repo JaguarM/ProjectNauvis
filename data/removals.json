@@ -27,62 +27,62 @@
     },
     "minecraft:iron_ingot_from_smelting_raw_iron": {
       "kind": "conflict",
-      "replaced_by": "neoprogressivematerials:iron_ingot",
+      "replaced_by": "nauvis_materials:iron_ingot",
       "note": "Iron plate is one iron ore in 3.5 seconds, in a furnace of the pack's. Vanilla's is the same ore in ten."
     },
     "minecraft:iron_ingot_from_blasting_raw_iron": {
       "kind": "conflict",
-      "replaced_by": "neoprogressivematerials:iron_ingot",
+      "replaced_by": "nauvis_materials:iron_ingot",
       "note": "The blast furnace's copy of the same recipe."
     },
     "minecraft:iron_ingot_from_smelting_iron_ore": {
       "kind": "conflict",
-      "replaced_by": "neoprogressivematerials:iron_ingot",
+      "replaced_by": "nauvis_materials:iron_ingot",
       "note": "The silk-touched ore block. Factorio's iron ore is the raw item, and the pack maps it there; a block that smelts into a plate would be a second ore."
     },
     "minecraft:iron_ingot_from_blasting_iron_ore": {
       "kind": "conflict",
-      "replaced_by": "neoprogressivematerials:iron_ingot",
+      "replaced_by": "nauvis_materials:iron_ingot",
       "note": "The blast furnace's copy."
     },
     "minecraft:iron_ingot_from_smelting_deepslate_iron_ore": {
       "kind": "conflict",
-      "replaced_by": "neoprogressivematerials:iron_ingot",
+      "replaced_by": "nauvis_materials:iron_ingot",
       "note": "The deepslate ore block, the same argument."
     },
     "minecraft:iron_ingot_from_blasting_deepslate_iron_ore": {
       "kind": "conflict",
-      "replaced_by": "neoprogressivematerials:iron_ingot",
+      "replaced_by": "nauvis_materials:iron_ingot",
       "note": "The blast furnace's copy."
     },
     "minecraft:copper_ingot_from_smelting_raw_copper": {
       "kind": "conflict",
-      "replaced_by": "neoprogressivematerials:copper_ingot",
+      "replaced_by": "nauvis_materials:copper_ingot",
       "note": "Copper plate, the same as iron's."
     },
     "minecraft:copper_ingot_from_blasting_raw_copper": {
       "kind": "conflict",
-      "replaced_by": "neoprogressivematerials:copper_ingot",
+      "replaced_by": "nauvis_materials:copper_ingot",
       "note": "The blast furnace's copy."
     },
     "minecraft:copper_ingot_from_smelting_copper_ore": {
       "kind": "conflict",
-      "replaced_by": "neoprogressivematerials:copper_ingot",
+      "replaced_by": "nauvis_materials:copper_ingot",
       "note": "The silk-touched ore block."
     },
     "minecraft:copper_ingot_from_blasting_copper_ore": {
       "kind": "conflict",
-      "replaced_by": "neoprogressivematerials:copper_ingot",
+      "replaced_by": "nauvis_materials:copper_ingot",
       "note": "The blast furnace's copy."
     },
     "minecraft:copper_ingot_from_smelting_deepslate_copper_ore": {
       "kind": "conflict",
-      "replaced_by": "neoprogressivematerials:copper_ingot",
+      "replaced_by": "nauvis_materials:copper_ingot",
       "note": "The deepslate ore block."
     },
     "minecraft:copper_ingot_from_blasting_deepslate_copper_ore": {
       "kind": "conflict",
-      "replaced_by": "neoprogressivematerials:copper_ingot",
+      "replaced_by": "nauvis_materials:copper_ingot",
       "note": "The blast furnace's copy."
     },
     "minecraft:stone_bricks": {

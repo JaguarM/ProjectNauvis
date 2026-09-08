@@ -1,0 +1,33 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_fluids"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 20,
+  "group": "intermediate",
+  "order": "0147",
+  "category": "chemistry",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:coal",
+      "count": 1
+    }
+  ],
+  "fluid_ingredients": [
+    {
+      "ingredient": "nauvis_fluids:petroleum_gas",
+      "amount": 20
+    }
+  ],
+  "result": {
+    "id": "nauvis_materials:plastic_bar",
+    "count": 2
+  }
+}

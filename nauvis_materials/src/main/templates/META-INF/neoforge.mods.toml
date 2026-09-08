@@ -1,0 +1,54 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="JaguarM"
+displayURL="https://github.com/JaguarM/ProjectNauvis"
+issueTrackerURL="https://github.com/JaguarM/ProjectNauvis/issues"
+
+description='''
+Factorio's intermediate products.
+
+Copper cable, iron gear wheels and electronic circuits, steel, plastic, batteries, the circuit
+ladder, engine units and what a rocket part is made of - with Factorio's own ingredient counts,
+craft times and stack sizes. They exist as timed Facrafting recipes, so they cost seconds rather
+than a click, and the electronic circuit is the gate in front of every electric machine.
+
+Crafting-table versions of the same recipes ship as a datapack that is switched off. Enable
+"Nauvis Materials: Crafting Table Recipes" if you want a bench to skip the craft times.
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# The pack's library: the stack sizes and the bench-recipe pack.
+[[dependencies.${mod_id}]]
+    modId="nauvis_lib"
+    type="required"
+    versionRange="[0.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+# Optional: without Facrafting the timed recipes drop out and plain bench recipes take over,
+# so the items stay craftable rather than becoming decoration.
+[[dependencies.${mod_id}]]
+    modId="facrafting"
+    type="optional"
+    versionRange="[${facrafting_version},)"
+    ordering="AFTER"
+    side="BOTH"

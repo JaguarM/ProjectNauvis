@@ -6,7 +6,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "minecraft:crafting_shapeless",
@@ -14,8 +14,8 @@
   "ingredients": [
     "minecraft:copper_ingot",
     "minecraft:copper_ingot",
-    "neoprogressivematerials:steel_plate",
-    "neoprogressivematerials:steel_plate"
+    "nauvis_materials:steel_plate",
+    "nauvis_materials:steel_plate"
   ],
   "result": {
     "id": "nauvis_power:medium_electric_pole",

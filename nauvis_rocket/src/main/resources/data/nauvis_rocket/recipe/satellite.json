@@ -10,11 +10,11 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "nauvis_power"
+      "modid": "nauvis_materials"
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_power"
     }
   ],
   "type": "facrafting:facraft",
@@ -27,11 +27,11 @@
       "count": 100
     },
     {
-      "ingredient": "neoprogressivematerials:low_density_structure",
+      "ingredient": "nauvis_materials:low_density_structure",
       "count": 100
     },
     {
-      "ingredient": "neoprogressivematerials:processing_unit",
+      "ingredient": "nauvis_materials:processing_unit",
       "count": 100
     },
     {
@@ -39,7 +39,7 @@
       "count": 5
     },
     {
-      "ingredient": "neoprogressivematerials:rocket_fuel",
+      "ingredient": "nauvis_materials:rocket_fuel",
       "count": 50
     },
     {

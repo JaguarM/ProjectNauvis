@@ -1,0 +1,34 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_materials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 200,
+  "group": "combat",
+  "order": "0225",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_materials:electronic_circuit",
+      "count": 5
+    },
+    {
+      "ingredient": "nauvis_materials:iron_gear_wheel",
+      "count": 5
+    },
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 5
+    }
+  ],
+  "result": {
+    "id": "nauvis_military:rocket_launcher",
+    "count": 1
+  }
+}

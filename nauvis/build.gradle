@@ -14,7 +14,7 @@ ext {
     // a classpath that has the whole pack on it.
     // The sibling repos would count too if any of them had tests the pack cares about; the
     // drills' did, and they are nauvis_mining's now.
-    pack_gametest_namespaces = 'nauvis,nauvis_machines,nauvis_logistics,nauvis_fluids,' +
+    pack_gametest_namespaces = 'nauvis,nauvis_materials,nauvis_machines,nauvis_logistics,nauvis_fluids,' +
             'nauvis_power,nauvis_research,nauvis_mining,nauvis_military,nauvis_rocket'
 }
 
@@ -63,18 +63,18 @@ repositories {
 }
 
 dependencies {
-    // The three released mods, pulled in to run the pack from one classpath. runtimeOnly, not
+    // The two sibling mods, pulled in to run the pack from one classpath. runtimeOnly, not
     // implementation, because the pack mod has no compile-time dependency on any of them and
     // must not grow one - the coupling is recipe conditions, not Java. settings.gradle
     // substitutes each of these with the local checkout beside this repo.
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
-    runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
     runtimeOnly "com.jaguarm.crumblingore:crumblingore:${crumblingore_version}"
 
     // The subsystem mods in this repo, on the same terms. This is what makes
     // :nauvis:runServer and :nauvis:runGameTestServer the whole pack rather than the pack mod
     // on its own; each subsystem still builds and runs standalone.
     runtimeOnly project(':nauvis_lib')
+    runtimeOnly project(':nauvis_materials')
     runtimeOnly project(':nauvis_machines')
     runtimeOnly project(':nauvis_logistics')
     runtimeOnly project(':nauvis_fluids')

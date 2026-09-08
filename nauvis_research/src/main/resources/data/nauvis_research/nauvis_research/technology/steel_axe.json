@@ -5,7 +5,7 @@
     "nauvis_research:steel_processing"
   ],
   "trigger": {
-    "item": "neoprogressivematerials:steel_plate",
+    "item": "nauvis_materials:steel_plate",
     "count": 50
   },
   "unlocks": [],

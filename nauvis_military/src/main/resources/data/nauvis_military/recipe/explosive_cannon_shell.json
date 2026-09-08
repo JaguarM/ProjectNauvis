@@ -1,0 +1,38 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "facrafting"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_fluids"
+    },
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "nauvis_materials"
+    }
+  ],
+  "type": "facrafting:facraft",
+  "craft_ticks": 160,
+  "group": "combat",
+  "order": "0196",
+  "ingredients": [
+    {
+      "ingredient": "nauvis_fluids:explosives",
+      "count": 2
+    },
+    {
+      "ingredient": "nauvis_materials:plastic_bar",
+      "count": 2
+    },
+    {
+      "ingredient": "nauvis_materials:steel_plate",
+      "count": 2
+    }
+  ],
+  "result": {
+    "id": "nauvis_military:explosive_cannon_shell",
+    "count": 1
+  }
+}

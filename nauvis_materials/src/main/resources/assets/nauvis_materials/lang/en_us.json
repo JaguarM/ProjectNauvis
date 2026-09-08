@@ -1,0 +1,20 @@
+{
+  "itemGroup.nauvis_materials": "Nauvis Materials",
+  "item.nauvis_materials.copper_cable": "Copper Cable",
+  "item.nauvis_materials.iron_gear_wheel": "Iron Gear Wheel",
+  "item.nauvis_materials.electronic_circuit": "Electronic Circuit",
+  "item.nauvis_materials.steel_plate": "Steel Plate",
+  "item.nauvis_materials.engine_unit": "Engine Unit",
+  "item.nauvis_materials.plastic_bar": "Plastic Bar",
+  "item.nauvis_materials.sulfur": "Sulfur",
+  "item.nauvis_materials.battery": "Battery",
+  "item.nauvis_materials.advanced_circuit": "Advanced Circuit",
+  "item.nauvis_materials.electric_engine_unit": "Electric Engine Unit",
+  "item.nauvis_materials.processing_unit": "Processing Unit",
+  "item.nauvis_materials.low_density_structure": "Low Density Structure",
+  "item.nauvis_materials.rocket_fuel": "Rocket Fuel",
+  "item.nauvis_materials.rocket_control_unit": "Rocket Control Unit",
+  "item.nauvis_materials.iron_stick": "Iron Stick",
+  "pack.nauvis_materials.crafting_table": "Nauvis Materials: Crafting Table Recipes",
+  "tab.facrafting.group.intermediate": "Intermediate products"
+}

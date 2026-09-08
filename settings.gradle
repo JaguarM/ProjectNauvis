@@ -10,28 +10,24 @@ plugins {
 
 rootProject.name = 'ProjectNauvis'
 
-// The three released mods the pack still ships keep their own repos and their own release
-// cycles. Neo Progressive Automation was the fourth; `nauvis_mining` below is a fork of it, so
-// the pack builds the fork and the original is left alone in its own repo. Including their
-// builds substitutes their published coordinates with the local checkout, so an edit to one
-// is picked up here without publishing, and each still produces its own jar on its own.
+// The two sibling mods the pack still ships keep their own repos and their own release
+// cycles. Neo Progressive Automation was a third; `nauvis_mining` below is a fork of it, and
+// Neo Progressive Materials a fourth, folded in whole as `nauvis_materials`. Including the
+// builds of the two that are left substitutes their published coordinates with the local
+// checkout, so an edit to one is picked up here without publishing, and each still produces
+// its own jar on its own.
 //
 // Nothing here compiles against them except Facrafting, which owns the timed recipe type a
 // machine has to name (CLAUDE.md, non-negotiable #3); the rest of the coupling is data - optional
 // entries in neoforge.mods.toml and neoforge:mod_loaded conditions on recipes. Including them
 // buys one classpath to run the pack from, nothing more.
 // The substitution has to be spelled out. Gradle matches an included build by its project
-// name, which defaults to the directory - Facrafting, NeoProgressiveMaterials - while the jar
+// name, which defaults to the directory - Facrafting, CrumblingOre - while the jar
 // each one publishes is named after its mod id. Without these lines the coordinates simply
 // fail to resolve.
 includeBuild('../Facrafting') {
     dependencySubstitution {
         substitute module('com.jaguarm.facrafting:facrafting') using project(':')
-    }
-}
-includeBuild('../NeoProgressiveMaterials') {
-    dependencySubstitution {
-        substitute module('com.jaguarm.neoprogressivematerials:neoprogressivematerials') using project(':')
     }
 }
 includeBuild('../CrumblingOre') {
@@ -48,6 +44,11 @@ include 'nauvis_lib'
 // Pack policy, vanilla replacement, raw resources, terrain. The other ten subsystem mods
 // join this list as their milestones come up.
 include 'nauvis'
+
+// Factorio's intermediate products: cable, gears, circuits, steel, plastic, batteries, engine
+// units, and what a rocket part is made of. Neo Progressive Materials until 2026-09-08, a
+// sibling repo that was never published, folded in under the pack's own ids as the drills were.
+include 'nauvis_materials'
 
 // Assemblers, furnaces, modules, beacon, radar. Owns `assembling_machine_1`, which
 // data/mapping.json names `nauvis_machines:assembling_machine_1` - an id is permanent, so the

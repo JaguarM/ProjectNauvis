@@ -55,8 +55,8 @@ modules when nauvis_machines ships them.
     side="BOTH"
 
 [[dependencies.${mod_id}]]
-    modId="neoprogressivematerials"
+    modId="nauvis_materials"
     type="optional"
-    versionRange="[1.0.0,)"
+    versionRange="[0.1.0,)"
     ordering="AFTER"
     side="BOTH"

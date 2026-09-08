@@ -94,7 +94,6 @@ NEOFORGE_JAR = str(Path.home() / ".gradle" / "caches" / "modules-2" / "files-2.1
 # Where each mod's recipes are, the same list gen_recipes.py resolves.
 SIBLING_REPOS = {
     "facrafting": "Facrafting",
-    "neoprogressivematerials": "NeoProgressiveMaterials",
     "crumblingore": "CrumblingOre",
 }
 

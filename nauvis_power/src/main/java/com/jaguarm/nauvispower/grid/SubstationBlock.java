@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.BaseEntityBlock;
  * and an advanced circuit is plastic, which is oil, which has a well and a pumpjack and no
  * refinery. So the circuit is {@code pending} in {@code data/mapping.json} and the generated
  * recipe carries a {@code neoforge:registered} condition on it - correct and complete, and dormant
- * until Neo Progressive Materials registers the circuit, when the flag comes off and the condition
+ * until Nauvis Materials registers the circuit, when the flag comes off and the condition
  * goes with it. Its technology, {@code electric-energy-distribution-2}, is in the tree at
  * Factorio's cost behind blue science. The block was here before either, because the four tiers
  * are one piece of work: the shapes, the reaches and the supply areas are the same mechanism four

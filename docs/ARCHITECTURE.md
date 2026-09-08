@@ -340,8 +340,8 @@ nothing to register. A button id the menu does not know is ignored.
 Factorio's own number, clamped to Minecraft's ninety-nine, so a registration reads
 `Stacks.of(200)` for a circuit and the day the ceiling moves nothing is retyped. The number is
 also `stack` on the item's entry in `data/mapping.json`, and `check_models.py` holds each
-registration to it the way it holds footprints. Neo Progressive Materials and the pack mod
-compile against nothing of ours and say the same thing in vanilla's `stacksTo`.
+registration to it the way it holds footprints. The pack mod compiles against nothing of ours
+and says the same thing in vanilla's `stacksTo`.
 
 **A machine that holds chunks holds tickets, and the tickets outlive it.** The radar keeps its
 seven-by-seven chunks loaded through NeoForge's `TicketController`, one per mod, with the radar's

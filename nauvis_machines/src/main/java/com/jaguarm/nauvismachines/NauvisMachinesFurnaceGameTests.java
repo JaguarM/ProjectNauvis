@@ -47,7 +47,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * follows their shape; the two are separate files because each is long enough on its own.
  *
  * <p>Every smelt here is iron: raw iron to an ingot, Factorio's 3.2 seconds, from the generated
- * recipe in Neo Progressive Materials. The numbers are asserted on the tick they should land on,
+ * recipe in Nauvis Materials. The numbers are asserted on the tick they should land on,
  * so a craft time or a crafting speed that drifted fails here rather than being felt in a world.
  */
 @EventBusSubscriber(modid = NauvisMachines.MODID)

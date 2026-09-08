@@ -61,8 +61,8 @@ furnace runs the four recipes no hand can.
 # wheels. Without this mod that one recipe simply does not load; the machine still works on
 # every other recipe in the pack.
 [[dependencies.${mod_id}]]
-    modId="neoprogressivematerials"
+    modId="nauvis_materials"
     type="optional"
-    versionRange="[1.0.0,)"
+    versionRange="[0.1.0,)"
     ordering="AFTER"
     side="BOTH"

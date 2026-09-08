@@ -10,7 +10,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "facrafting:facraft",
@@ -19,15 +19,15 @@
   "order": "0130",
   "ingredients": [
     {
-      "ingredient": "neoprogressivematerials:battery",
+      "ingredient": "nauvis_materials:battery",
       "count": 1
     },
     {
-      "ingredient": "neoprogressivematerials:copper_cable",
+      "ingredient": "nauvis_materials:copper_cable",
       "count": 30
     },
     {
-      "ingredient": "neoprogressivematerials:processing_unit",
+      "ingredient": "nauvis_materials:processing_unit",
       "count": 3
     },
     {

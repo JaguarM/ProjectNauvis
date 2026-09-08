@@ -68,7 +68,7 @@ dependencies {
 
     // Not a code dependency: a rocket part is paid for in Neo Progressive Materials' items, so
     // a standalone run of this mod needs the mod that has them.
-    runtimeOnly "com.jaguarm.neoprogressivematerials:neoprogressivematerials:${neoprogressivematerials_version}"
+    runtimeOnly project(':nauvis_materials')
 }
 
 neoForge {

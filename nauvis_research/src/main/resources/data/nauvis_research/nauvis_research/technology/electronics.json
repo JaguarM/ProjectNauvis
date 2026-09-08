@@ -7,8 +7,8 @@
     "count": 10
   },
   "unlocks": [
-    "neoprogressivematerials:copper_cable",
-    "neoprogressivematerials:electronic_circuit",
+    "nauvis_materials:copper_cable",
+    "nauvis_materials:electronic_circuit",
     "nauvis_research:lab",
     "nauvis_logistics:inserter",
     "nauvis_power:small_electric_pole"

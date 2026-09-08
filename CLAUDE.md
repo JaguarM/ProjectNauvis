@@ -85,40 +85,36 @@ The same applies to any mod worth learning from. Most of the tech ecosystem is s
 licence before adapting a line of it — MIT wants attribution, and assets are almost always
 reserved regardless of what the code says. Ours are ours.
 
-The three sibling mods
-----------------------
+The two sibling mods
+--------------------
 
 They live in their own repos at `../` and Project Nauvis consumes them via `includeBuild`, which
 means an edit to one is picked up here immediately — no publishing step. **One of them is
-released and two are not, and that is the whole difference:**
+released and one is not, and that is the whole difference:**
 
 | Repo | Mod id | Owns | |
 |---|---|---|---|
 | `../Facrafting` | `facrafting` | The timed crafting model, and the crafting UI. | **ours to change** |
-| `../NeoProgressiveMaterials` | `neoprogressivematerials` | Intermediate products. | **ours to change** |
 | `../CrumblingOre` | `crumblingore` | Ore depletion. | released |
 
-**Facrafting and Neo Progressive Materials are not published** — no remote, no tags, and NPM is
-not even a git repository. Change them freely: they are part of this project, and Facrafting in
-particular is the foundation the rest builds on. Its crafting panel is the interface every
-machine screen should grow out of rather than sit beside.
+**Facrafting is not published** — no remote, no tags. Change it freely: it is part of this
+project and the foundation the rest builds on. Its crafting panel is the interface every machine
+screen should grow out of rather than sit beside. Folding it into this repo is a reasonable thing
+to want and a separate job from changing it — ask before doing it, because its git history is not
+this repo's to rewrite.
 
 **Crumbling Ore is on GitHub and in players' worlds.** Its ids are permanent and its behaviour
 should not change under an existing save.
 
-**Neo Progressive Automation was the fourth, and `nauvis_mining` is a fork of it.** The drills
-are a subproject here now, under Factorio's ids — `nauvis_mining:burner_mining_drill`, not
-`neoprogressiveautomation:burner_drill`, which is a thing a released mod could never be given.
-NPA still exists at `../NeoProgressiveAutomation`, still released and still in players' worlds;
-the pack does not build it, and nothing here should change it.
+**Two more were siblings once, and both are subprojects now.** Neo Progressive Automation is
+released; `nauvis_mining` is a fork of it, under Factorio's ids — `nauvis_mining:burner_mining_drill`,
+not `neoprogressiveautomation:burner_drill`, which is a thing a released mod could never be given.
+Neo Progressive Materials was never published or even a git repository, so on 2026-09-08 it was
+folded in whole as `nauvis_materials`, with the pack's own ids: `nauvis_materials:iron_gear_wheel`.
+The originals still exist at `../NeoProgressiveAutomation` and `../NeoProgressiveMaterials`, and
+the released NPA names the old materials ids in its shipped recipes, which is why the old NPM is
+left where it is; the pack builds neither, and nothing here should change them.
 
-Three ids are frozen anyway, whatever the above says, because the released NPA names them in its
-own shipped recipes: **`facrafting:facraft`**, **`neoprogressivematerials:electronic_circuit`**
-and **`neoprogressivematerials:iron_gear_wheel`**. Forking did not unfreeze them — the mod that
-names them is out there either way. Check
-`grep -rho "neoprogressivematerials:[a-z_]*\|facrafting:[a-z_]*"
-../NeoProgressiveAutomation/src/main/resources` before assuming an id in those two mods is free.
-
-The three repos are still three repos. Folding the two unreleased ones into this one is a
-reasonable thing to want and a separate job from changing them — ask before doing it, because
-their git history is not this repo's to rewrite.
+One id is frozen anyway, whatever the above says, because the released NPA names it in its own
+shipped recipes: **`facrafting:facraft`**. The pack's own ids are permanent from the first world
+that holds them, which is the reason to get them right before that world exists.

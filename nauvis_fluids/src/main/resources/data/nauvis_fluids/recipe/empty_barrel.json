@@ -6,7 +6,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "facrafting:facraft",
@@ -15,7 +15,7 @@
   "order": "0109",
   "ingredients": [
     {
-      "ingredient": "neoprogressivematerials:steel_plate",
+      "ingredient": "nauvis_materials:steel_plate",
       "count": 1
     }
   ],

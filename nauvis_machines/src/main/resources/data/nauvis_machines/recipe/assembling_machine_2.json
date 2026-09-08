@@ -6,7 +6,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "neoprogressivematerials"
+      "modid": "nauvis_materials"
     }
   ],
   "type": "facrafting:facraft",
@@ -19,11 +19,11 @@
       "count": 1
     },
     {
-      "ingredient": "neoprogressivematerials:electronic_circuit",
+      "ingredient": "nauvis_materials:electronic_circuit",
       "count": 3
     },
     {
-      "ingredient": "neoprogressivematerials:iron_gear_wheel",
+      "ingredient": "nauvis_materials:iron_gear_wheel",
       "count": 5
     },
     {
