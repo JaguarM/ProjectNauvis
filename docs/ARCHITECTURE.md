@@ -330,6 +330,14 @@ and `ClientSiloRules`, so a shift-click lands where the server will put it and a
 thousand concrete draws the same on both sides. Vanilla's stack codec stops at ninety-nine, so
 the assembler's slots are saved as a resource and an amount, and read back from either form.
 
+**A multiblock announces an inventory change from every cell.** `setChanged()` tells the six
+blocks around the anchor, and that is the signal an inserter wakes on; a machine wider than one
+block has cells the anchor never speaks for. `Multiblock.announce(level, anchor, state)` sends
+`onNeighborChange` to every block outside the machine that touches a cell, naming the cell as the
+neighbour, and every machine with slots calls it from the hook its inventory runs - and from
+`setRecipe`, since a recipe is a slot rule and an inserter refused a moment ago is asleep. Not
+from `setChanged` itself, which a craft calls every tick.
+
 **A screen's button is vanilla's menu button.** The silo's launch controls - the automatic-launch
 toggle and Launch - are `clickMenuButton(player, id)` on the menu, which holds the block entity on
 the server and nothing on the client, and `handleInventoryButtonClick(containerId, id)` from the

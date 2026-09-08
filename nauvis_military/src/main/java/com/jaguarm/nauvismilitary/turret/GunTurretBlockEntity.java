@@ -1,5 +1,6 @@
 package com.jaguarm.nauvismilitary.turret;
 
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvislib.bonus.Bonuses;
 import com.jaguarm.nauvislib.health.Damageable;
 import com.jaguarm.nauvislib.health.MachineHealth;
@@ -294,6 +295,7 @@ public class GunTurretBlockEntity extends BlockEntity implements MenuProvider, D
 
     private void onInventoryChanged() {
         setChanged();
+        Multiblock.announce(level, worldPosition, getBlockState());
         wake();
     }
 

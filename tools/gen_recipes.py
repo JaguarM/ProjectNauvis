@@ -15,10 +15,14 @@ already ships. `<ns>` is the owning mod and `<name>` is the item the recipe prod
   data/<ns>/recipe/<name>_standalone.json      minecraft:crafting_shapeless, for playing the
                                                mod without Facrafting. Only when the
                                                ingredients fit nine grid slots.
-  crafting_table/data/<ns>/recipe/<name>.json  The same shapeless recipe, in the optional
+  crafting_table/data/<ns>/recipe/<name>_bench.json
+                                               The same shapeless recipe, in the optional
                                                built-in datapack that ships disabled, so a
                                                player can put bench crafting back if they
-                                               want it.
+                                               want it. Its own id, beside the timed recipe
+                                               rather than over it: under the timed id it
+                                               replaced the recipe, and a world with the pack
+                                               on had no timed recipes for its assemblers.
 
 Conditions are derived, not fixed: every recipe requires `facrafting`, plus `mod_loaded` for
 any other mod supplying an ingredient. The standalone copy negates only the Facrafting
@@ -28,9 +32,11 @@ come from.
 A recipe the mapping marks with a `category` is a machine's, not the hand's: Factorio's four
 smelting recipes - the plates, steel and stone brick - are `smelting`, and the character cannot
 craft them. The facraft recipe carries the category and Facrafting keeps it out of the hand
-panel; a furnace runs it. Its bench fallback is a vanilla furnace recipe where one can express it
-- one ingredient, one at a time - and the ordinary shapeless copy where it cannot, because a bench
-is the fallback for a world with no Facrafting and steel has to come from somewhere there.
+panel; a furnace runs it. Its standalone fallback, for a world with no Facrafting and so no
+machines, is a vanilla furnace recipe where one can express it - one ingredient, one at a time -
+and the ordinary shapeless copy where it cannot, because steel has to come from somewhere there.
+It gets no bench copy: the bench pack is for skipping the hand's craft times, and a bench does
+not smelt.
 
 Craft times need no rounding: every time in the dump is a whole number of ticks once
 multiplied by 20, from 5 (0.25s) to 6000 (300s), and Facrafting accepts 1..12000.
@@ -55,8 +61,15 @@ Usage:
     python tools/gen_recipes.py                     summary only, writes nothing
     python tools/gen_recipes.py --check             semantic diff against what is on disk
     python tools/gen_recipes.py --out DIR           write the tree to a staging directory
-    python tools/gen_recipes.py --write             write into each owning mod's resources
+    python tools/gen_recipes.py --write             update the recipes already on disk
+    python tools/gen_recipes.py --write --all       write every recipe, on disk or not
     python tools/gen_recipes.py --only MODID        restrict to one mod (repeatable)
+
+`--write` on its own rewrites the timed recipes that exist and adds their fallbacks, and leaves
+alone a timed recipe with no file yet: its product is usually an item nobody has registered, and
+a recipe naming an unregistered item is a load error on every start. It also leaves alone a
+fallback that differs from what it would write, because the drills' were written by hand on
+purpose. `--all` writes the lot, for a mod whose items all exist.
 """
 
 from __future__ import annotations
@@ -541,18 +554,20 @@ def plan(dump: dict, fluid_recipes: list, mapping: dict, only: set[str] | None) 
                     facraft_recipe(entry, mapping, dump)))
 
         standalone = Path("data") / namespace / "recipe" / f"{name}_standalone.json"
-        bench = Path("crafting_table") / "data" / namespace / "recipe" / f"{name}.json"
-        smelted = (category_of(mapped, factorio_id) == "smelting"
-                   and smelting_recipe(entry, mapping, without_facrafting=True))
+        bench = Path("crafting_table") / "data" / namespace / "recipe" / f"{name}_bench.json"
+        category = category_of(mapped, factorio_id)
+        smelted = category == "smelting" and smelting_recipe(entry, mapping, without_facrafting=True)
         flat = None if touches_fluid(entry, dump) else shapeless_ingredients(entry, mapping)
         if smelted:
             out.append((standalone, smelted))
-            out.append((bench, smelting_recipe(entry, mapping, without_facrafting=False)))
         elif flat is None:
             report["no_fallback"].append(factorio_id)
         else:
             out.append((standalone, shapeless_recipe(entry, mapping, flat, without_facrafting=True)))
-            out.append((bench, shapeless_recipe(entry, mapping, flat, without_facrafting=False)))
+            # A bench copy only for what the hand crafts: the pack is for skipping craft times,
+            # and a machine's recipe on a bench would be a machine nobody needs.
+            if category is None:
+                out.append((bench, shapeless_recipe(entry, mapping, flat, without_facrafting=False)))
 
         report["generated"] += 1
 
@@ -579,19 +594,48 @@ def render(obj: dict) -> str:
     return json.dumps(obj, indent=2) + "\n"
 
 
-def do_write(files: dict, root: Path | None) -> int:
+def timed_twin(rel: Path) -> Path:
+    """The timed recipe a fallback belongs to: `x_standalone` and `crafting_table/.../x_bench` -> `data/.../x`."""
+    name = rel.stem.removesuffix("_standalone").removesuffix("_bench")
+    parts = rel.parts[1:] if rel.parts[0] == "crafting_table" else rel.parts
+    return Path(*parts[:-1]) / f"{name}.json"
+
+
+def do_write(files: dict, root: Path | None, everything: bool) -> int:
+    """
+    Into a staging directory, everything. Into the mods, only what already has a timed recipe on
+    disk - a missing one is usually an item nobody has registered, and a recipe naming an
+    unregistered item is a load error - and never over a fallback that was written by hand.
+    """
     written = 0
+    unregistered, kept = [], []
     for mod_id, entries in sorted(files.items()):
         base = (root / mod_id) if root else mod_resource_root(mod_id)
         if root is None and not base.parent.parent.parent.exists():
             print(f"  ! {mod_id}: {base} does not exist yet, skipped", file=sys.stderr)
             continue
+        count = 0
         for rel, obj in entries:
             path = base / rel
+            if root is None and not everything:
+                if not (base / timed_twin(rel)).exists():
+                    unregistered.append(path)
+                    continue
+                if obj["type"] != "facrafting:facraft" and path.exists() \
+                        and json.loads(path.read_text(encoding="utf-8")) != obj:
+                    kept.append(path)
+                    continue
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(render(obj), encoding="utf-8", newline="\n")
             written += 1
-        print(f"  {mod_id}: {len(entries)} files -> {base}")
+            count += 1
+        print(f"  {mod_id}: {count} files -> {base}")
+    if unregistered:
+        names = sorted({timed_twin(Path(p.name)).stem for p in unregistered})
+        print(f"\n  {len(unregistered)} files left unwritten: no timed recipe on disk for "
+              f"{', '.join(names[:8])}{', ...' if len(names) > 8 else ''} - register the item, then --all")
+    for path in kept:
+        print(f"  kept as written by hand: {path.name}")
     return written
 
 
@@ -652,6 +696,7 @@ def main() -> int:
     ap.add_argument("--out", type=Path, help="write the tree into a staging directory")
     ap.add_argument("--write", action="store_true", help="write into each owning mod's resources")
     ap.add_argument("--only", action="append", default=[], metavar="MODID", help="restrict to one mod")
+    ap.add_argument("--all", action="store_true", help="with --write: recipes with no file on disk too")
     args = ap.parse_args()
 
     try:
@@ -677,7 +722,7 @@ def main() -> int:
 
     if args.write or args.out:
         print()
-        written = do_write(files, args.out)
+        written = do_write(files, args.out, args.all)
         print(f"\n{written} files written")
 
     return 0

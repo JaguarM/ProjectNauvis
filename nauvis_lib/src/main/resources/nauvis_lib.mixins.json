@@ -10,7 +10,8 @@
     "BaseContainerBlockEntityMixin",
     "ItemStacksResourceHandlerMixin",
     "ItemStackResourceHandlerMixin",
-    "ItemEntityMixin"
+    "ItemEntityMixin",
+    "StacksResourceHandlerMixin"
   ],
   "client": [
     "client.GuiGraphicsExtractorMixin"

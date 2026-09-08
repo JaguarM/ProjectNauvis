@@ -19,15 +19,19 @@ import net.neoforged.neoforge.event.AddPackFindersEvent;
  *
  * <p>Both the recipes and this arrangement come from Nauvis Materials, which did it
  * first; {@code tools/gen_recipes.py} generates all three files for every item that can fit a
- * crafting grid.
+ * crafting grid. A bench recipe is its own recipe, {@code <name>_bench}, beside the timed one
+ * rather than over it: the first version shipped it under the timed recipe's id, and a world
+ * that switched the pack on had replaced every timed recipe with a bench one - the hand panel
+ * and every assembler lost them. A machine-only recipe, one with a category, gets no bench
+ * copy at all; a bench does not smelt steel.
  *
  * <h2>Switched off entirely while gametests run</h2>
  *
  * <p><b>{@code GameTestServer} force-enables every datapack it can see.</b> Vanilla selects
  * {@code getAvailableIds()}, so the {@code false} below - which is what keeps this pack off in a
- * real world until somebody asks for it - means nothing there, and a bench copy of a recipe ships
- * under the <em>same id</em> as the timed one it replaces. The suite was quietly testing shapeless
- * recipes: nothing failed, and what was lost was every craft time in the pack.
+ * real world until somebody asks for it - means nothing there, and a bench copy of a recipe
+ * shipped, then, under the <em>same id</em> as the timed one. The suite was quietly testing
+ * shapeless recipes: nothing failed, and what was lost was every craft time in the pack.
  *
  * <p>So the pack is not offered at all when {@link #PROPERTY} is {@code false}, which every
  * {@code gameTestServer} run in the pack sets and nothing else does. Not offered rather than

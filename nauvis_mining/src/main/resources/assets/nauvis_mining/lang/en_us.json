@@ -3,6 +3,8 @@
   "tab.facrafting.group.production": "Production",
 
   "itemGroup.nauvis_mining": "Project Nauvis: Mining",
+  "config.jade.plugin_nauvis_mining": "Project Nauvis: Mining",
+  "config.jade.plugin_nauvis_mining.drill": "Mining drill",
   "block.nauvis_mining.burner_mining_drill": "Burner Mining Drill",
   "block.nauvis_mining.electric_mining_drill": "Electric Mining Drill",
   "gui.nauvis_mining.miner.status.idle": "Idle",

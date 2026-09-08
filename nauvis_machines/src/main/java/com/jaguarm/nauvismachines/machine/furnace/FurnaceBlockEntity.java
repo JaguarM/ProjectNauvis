@@ -1,5 +1,6 @@
 package com.jaguarm.nauvismachines.machine.furnace;
 
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvislib.pollution.Pollution;
 import com.jaguarm.nauvislib.module.ModuleEffect;
 import com.jaguarm.nauvislib.module.ModuleSlots;
@@ -604,6 +605,7 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
 
     private void onInventoryChanged() {
         setChanged();
+        Multiblock.announce(level, worldPosition, getBlockState());
         wake();
     }
 

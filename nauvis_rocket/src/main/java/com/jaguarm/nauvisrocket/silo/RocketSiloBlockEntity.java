@@ -6,6 +6,7 @@ import com.jaguarm.facrafting.queue.CraftListeners;
 import com.jaguarm.facrafting.recipe.CraftPlanner;
 import com.jaguarm.facrafting.recipe.FacraftRecipe;
 import com.jaguarm.facrafting.registry.ModRecipes;
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvislib.module.ModuleEffect;
 import com.jaguarm.nauvislib.module.ModuleSlots;
 import com.jaguarm.nauvislib.module.Productivity;
@@ -15,8 +16,10 @@ import com.jaguarm.nauvislib.transfer.MachinePower;
 import com.jaguarm.nauvislib.transfer.PowerAccess;
 import com.jaguarm.nauvisrocket.registry.ModBlockEntities;
 import com.jaguarm.nauvisrocket.registry.ModItems;
+import com.mojang.logging.LogUtils;
 
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import net.minecraft.core.BlockPos;
@@ -103,6 +106,14 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
 
     /** How long the countdown runs: five seconds of fire under the rocket, then it goes. */
     public static final int LAUNCH_TICKS = 100;
+
+    /** How often a silo with no recipe looks again: ten seconds. */
+    public static final int NO_RECIPE_RECHECK_TICKS = 200;
+
+    private static final Logger LOGGER = LogUtils.getLogger();
+
+    /** Whether the missing recipe has been said in the log, so it is said once per silo. */
+    private boolean noRecipeReported;
 
     private final RocketSiloInventory inventory = new RocketSiloInventory(this::onInventoryChanged,
             this::wanted, resource -> resource.is(ModItems.SATELLITE.get()));
@@ -272,10 +283,21 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
         FacraftRecipe part = partRecipe(level);
         FacraftRecipe launch = launchRecipe(level);
         if (part == null || launch == null) {
-            // A pack without the recipes. Nothing to schedule for; a reload wakes it.
+            // A pack without the recipes - or a recipe that arrives later than this tick did.
+            // Said once in the log, with what was found, and looked at again every ten seconds:
+            // one machine in a state the shipped pack never reaches costs nothing to re-check.
+            if (!noRecipeReported) {
+                noRecipeReported = true;
+                LOGGER.warn("Rocket silo at {} has no recipe to run: rocket part {}, launch {}, {} rocket-building "
+                        + "recipes among {} timed recipes", worldPosition, part == null ? "missing" : "found",
+                        launch == null ? "missing" : "found", countRocketBuilding(level),
+                        level.getServer().getRecipeManager().recipeMap().byType(ModRecipes.FACRAFT_TYPE.get()).size());
+            }
             settle(RocketSiloStatus.NO_RECIPE);
+            level.scheduleTick(worldPosition, getBlockState().getBlock(), NO_RECIPE_RECHECK_TICKS);
             return;
         }
+        noRecipeReported = false;
         partsNeeded = partsPerRocket(launch);
 
         if (parts >= partsNeeded) {
@@ -501,6 +523,18 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
         return holder != null && holder.value() instanceof FacraftRecipe facraft ? facraft : null;
     }
 
+    /** How many timed recipes this server has in the silo's category, for the log line. */
+    private static int countRocketBuilding(ServerLevel level) {
+        int count = 0;
+        for (RecipeHolder<FacraftRecipe> holder
+                : level.getServer().getRecipeManager().recipeMap().byType(ModRecipes.FACRAFT_TYPE.get())) {
+            if (ROCKET_BUILDING.equals(holder.value().category())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     /** The timed recipe in the silo's category that makes this item, or null. */
     public static @Nullable ResourceKey<Recipe<?>> recipeProducing(ServerLevel level, Item item) {
         for (RecipeHolder<FacraftRecipe> holder
@@ -545,6 +579,7 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
 
     private void onInventoryChanged() {
         setChanged();
+        Multiblock.announce(level, worldPosition, getBlockState());
         wake();
     }
 

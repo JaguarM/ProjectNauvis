@@ -1,5 +1,6 @@
 package com.jaguarm.nauvisfluids.processing;
 
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvislib.pollution.Pollution;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -406,6 +407,8 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
             unassign();
         }
         setChanged();
+        // A recipe is a slot rule: an inserter refused a moment ago is asleep against a cell that has to hear this.
+        Multiblock.announce(level, worldPosition, getBlockState());
         // The screen reads the chosen recipe off this block entity, so a change has to reach the
         // clients watching it. setChanged alone only marks the chunk for saving.
         if (level != null) {
@@ -651,6 +654,7 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
 
     private void onItemsChanged() {
         setChanged();
+        Multiblock.announce(level, worldPosition, getBlockState());
         wake();
     }
 

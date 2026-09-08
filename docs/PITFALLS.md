@@ -235,9 +235,34 @@ Gametests
   affected. **Fixed by not offering the pack at all**: `nauvis_lib`'s `BenchRecipePacks` returns early when
   `-Djaguarm.benchRecipePacks=false`, which each `gameTestServer` run sets and nothing else does.
   Off is no defence when the thing enabling it never asks whether it was off; the only state vanilla
-  cannot override is *absent*. Separate ids for the bench copies was the other fix and would have
-  changed a released mod's permanent ids. `nauvis:timed_recipes_are_timed` asks the running recipe
-  manager what type each of seven recipes is, so this cannot come back quietly.
+  cannot override is *absent*. `nauvis:timed_recipes_are_timed` asks the running recipe manager
+  what type each of seven recipes is, so this cannot come back quietly.
+- **A bench copy under the timed recipe's id replaced it, for the machines too.** A world that
+  switched the crafting-table packs on - Yannic's dev worlds all had - had no timed recipe left for
+  anything with a bench copy, so the assemblers had nothing to run and the panel nothing to show;
+  the silo's own message came from elsewhere, but every assembler was broken the same way. The
+  copies are their own recipes now, `<name>_bench`, beside the timed ones - the reason not to was
+  a released mod's ids, and the mod that was is a subproject with new ids. A machine-only recipe
+  gets no bench copy at all, so steel and stone brick can no longer be shaped on a bench. A world
+  that had the packs on keeps working the moment it loads the new jars.
+- **`setChanged()` reaches the anchor's six neighbours, and a multiblock has more sides than
+  that.** An inserter wakes on `onNeighborChange` with its target as the neighbour, and its target
+  is the cell it touches; on a nine-by-nine silo that cell is four blocks from the anchor, and on
+  a three-by-three assembler every edge cell but one is not beside it. So an inserter fed a machine
+  once, slept when the slot was full, and never heard the machine eat what it gave - the first
+  playtest's *inserters stop after the pad is fed*. `Multiblock.announce` sends the signal from
+  every cell to every block outside it, from the hook an inventory change runs, and
+  `an_inserter_hears_a_far_cell_of_a_machine` holds it there. Not from `setChanged` itself: a
+  craft calls that every tick.
+- **NeoForge's `StacksResourceHandler.deserialize` replaces the slot list with the saved one.** A
+  machine that gained a slot after a world saved it comes up one slot short, and the first menu on
+  it asks for the slot that is not there and throws inside `initMenu`, which is a right-click that
+  does nothing and a stack trace in the log. `StacksResourceHandlerMixin` in `nauvis_lib` pads or
+  cuts what was read to the size the handler was built with.
+- **`gen_recipes.py --write` used to write every recipe the dump has**, including a hundred and
+  thirty-six for items nobody has registered, each a parse error on every start. It writes only
+  what already has a timed recipe on disk now, and `--all` is the old behaviour for a mod whose
+  items all exist.
 
 Data, recipes and registries
 ----------------------------

@@ -1,5 +1,6 @@
 package com.jaguarm.nauvisresearch.lab;
 
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvislib.module.ModuleEffect;
 import com.jaguarm.nauvislib.module.ModuleSlots;
 import com.jaguarm.nauvislib.module.Productivity;
@@ -395,6 +396,7 @@ public class LabBlockEntity extends BlockEntity implements MenuProvider {
 
     private void onPacksChanged() {
         setChanged();
+        Multiblock.announce(level, worldPosition, getBlockState());
         wake();
     }
 

@@ -74,7 +74,7 @@ How to run everything
 | `./gradlew :<mod>:runGameTestServer` | one mod alone, to prove it still stands alone |
 | `./gradlew :<mod>:runClientData` / `runServerData` | models and language / loot and tags |
 | `./gradlew build` | everything, including the six checks |
-| `python tools/gen_recipes.py --check` | the recipe diff, on its own |
+| `python tools/gen_recipes.py --check` | the recipe diff, on its own. `--write` to update what is on disk |
 | `python tools/gen_technologies.py --check` | the same for the tree. `--write` to regenerate |
 | `python tools/gen_removals.py --check` | the vanilla recipes taken away. `--write` to regenerate |
 | `python tools/check_models.py` | every model, texture and blockstate reference resolved — and footprints, belt speeds and texture opacity |
@@ -108,10 +108,11 @@ mod costs; `nauvis_materials/` is the newest folded in from a sibling repo, and 
 it is what a rename across the pack costs - the ids in every recipe, test and mods.toml, and the
 generators run again.
 
-**Recipes** generate into a staging directory —
-`python tools/gen_recipes.py --only <modid> --out <tmp>` — then copy across only the files for items
-that exist. `--write` writes all of that mod's recipes, and a recipe naming an unregistered item is
-a load error.
+**Recipes**: `python tools/gen_recipes.py --write` rewrites every timed recipe that is on disk and
+adds its fallbacks, and leaves alone a recipe with no file yet - its item is usually unregistered,
+and a recipe naming an unregistered item is a load error on every start. For a new item, register
+it, then `--write --all --only <modid>`, or generate into a staging directory with `--out <tmp>` and
+copy the files across.
 
 **Pack settings** for a mod the pack ships go in `nauvis/pack/config/`, not `run/config`: `run/` is
 gitignored, so a setting edited there is a change nobody else sees. Keep each file in the form

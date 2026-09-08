@@ -27,6 +27,11 @@
  *       is drawn for two digits; three or four are scaled to fit.</li>
  * </ul>
  *
+ * <p>And one that is not about the ceiling:
+ * {@link com.jaguarm.nauvislib.mixin.StacksResourceHandlerMixin} keeps a handler the size its
+ * constructor gave it when a save of another size is read back, so a machine that gained a slot
+ * does not come up short and throw on its first menu.
+ *
  * <p>Read from Bigger Stacks for the list of places, and written fresh against 26.2's sources:
  * that mod is LGPL and this one is MIT, and its targets are 1.21's.
  */

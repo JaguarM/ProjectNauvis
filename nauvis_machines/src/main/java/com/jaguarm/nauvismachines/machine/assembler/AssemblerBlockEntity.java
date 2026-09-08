@@ -1,5 +1,6 @@
 package com.jaguarm.nauvismachines.machine.assembler;
 
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvislib.pollution.Pollution;
 import com.jaguarm.nauvislib.module.ModuleEffect;
 import com.jaguarm.nauvislib.module.ModuleSlots;
@@ -426,6 +427,9 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         progress = 0;
         craftTicks = 0;
         setChanged();
+        // A recipe is a slot rule: an inserter holding what the new recipe wants was refused a
+        // moment ago and is asleep against a cell that has to hear this.
+        Multiblock.announce(level, worldPosition, getBlockState());
 
         // The screen reads the chosen recipe off this block entity, so a change has to reach the
         // clients watching it. setChanged alone only marks the chunk for saving.
@@ -680,6 +684,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
     private void onInventoryChanged() {
         setChanged();
+        Multiblock.announce(level, worldPosition, getBlockState());
         wake();
     }
 

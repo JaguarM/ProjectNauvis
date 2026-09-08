@@ -354,6 +354,11 @@ The rocket
   offering a satellite finds the satellite slot. The first version let any ingredient into any
   slot, and Yannic's first look at the silo caught it. The assembler's slots follow the same rule;
   see *Crafting*.
+- **A silo with no recipe says so in the log and looks again every ten seconds.** The screen's
+  line is *no rocket part recipe - this pack has none*, which is what the first playtest saw on a
+  silo whose recipes were on disk and loaded; the cause was not found in the log, so the silo now
+  writes one warning naming which of the two recipes it could not find and how many timed
+  rocket-building recipes the server holds, and re-checks rather than sleeping on it.
 - **The radar keeps chunks loaded and charts nothing.** Factorio's radar reveals the map, and
   there is no map. What it keeps is the seven-by-seven chunks around it loaded and ticking while
   it has power - Factorio's continuously charted area at Minecraft's chunk size, the same rule

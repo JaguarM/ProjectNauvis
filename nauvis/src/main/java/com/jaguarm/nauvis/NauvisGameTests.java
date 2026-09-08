@@ -27,6 +27,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
@@ -97,6 +98,7 @@ public final class NauvisGameTests {
         TEST_TYPES.register("every_machine_takes_a_pickaxe", () -> EveryMachineTakesAPickaxeTest.CODEC);
         TEST_TYPES.register("timed_recipes_are_timed", () -> TimedRecipesAreTimedTest.CODEC);
         TEST_TYPES.register("accumulator_carries_the_night", () -> AccumulatorCarriesTheNightTest.CODEC);
+        TEST_TYPES.register("an_inserter_hears_a_far_cell_of_a_machine", () -> InserterHearsAFarCellTest.CODEC);
     }
 
     /** Called from the mod constructor so the test type registers with everything else. */
@@ -167,6 +169,12 @@ public final class NauvisGameTests {
                 Identifier.fromNamespaceAndPath(Nauvis.MODID, "timed_recipes_are_timed"),
                 new TimedRecipesAreTimedTest(
                         new TestData<>(environment, EMPTY_STRUCTURE, 20, 0, true, Rotation.NONE)));
+
+        // Padded: a silo is nine by nine, and the inserter stands beyond its edge.
+        event.registerTest(
+                Identifier.fromNamespaceAndPath(Nauvis.MODID, "an_inserter_hears_a_far_cell_of_a_machine"),
+                new InserterHearsAFarCellTest(new TestData<>(environment, EMPTY_STRUCTURE, 60, 0,
+                        true, Rotation.NONE, false, 1, 1, false, 24)));
     }
 
     /**
@@ -832,6 +840,80 @@ public final class NauvisGameTests {
         @Override
         protected MutableComponent typeDescription() {
             return Component.literal("an accumulator carries the night");
+        }
+    }
+
+    /**
+     * A machine's inventory change reaches the inserter at any of its cells, not only the six
+     * blocks around its anchor.
+     *
+     * <p>{@code setChanged()} tells the anchor's neighbours and nobody else, and an inserter wakes
+     * on exactly that signal. Against a nine-by-nine silo the inserter is four blocks from the
+     * anchor: it fed the silo once, went to sleep when the slot was full, and slept through the
+     * silo eating a part's worth - which was the bug on the first playtest. {@code
+     * Multiblock.announce} widens the signal to every block touching the machine. The whole-pack
+     * test because the inserter is the logistics mod's and the silo the rocket mod's, and neither
+     * may name the other.
+     */
+    public static class InserterHearsAFarCellTest extends GameTestInstance {
+
+        public static final MapCodec<InserterHearsAFarCellTest> CODEC = RecordCodecBuilder.<InserterHearsAFarCellTest>mapCodec(
+                i -> i.group(TestData.CODEC.forGetter(InserterHearsAFarCellTest::info)).apply(i, InserterHearsAFarCellTest::new));
+
+        /** The silo's anchor, the middle of its pad; the pad runs four blocks each way from it. */
+        private static final BlockPos SILO = new BlockPos(0, 1, 0);
+        /** Just past the pad's east edge, one of the inserter's two ends on the edge cell. */
+        private static final BlockPos INSERTER = new BlockPos(5, 1, 0);
+
+        public InserterHearsAFarCellTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
+            super(info);
+        }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, SILO, block(helper, "nauvis_rocket:rocket_silo"));
+            Block inserter = block(helper, "nauvis_logistics:burner_inserter");
+            helper.setBlock(INSERTER, inserter.defaultBlockState()
+                    .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.WEST));
+            Item structure = item(helper, "nauvis_materials:low_density_structure");
+
+            // The burner inserter has no coal: its first tick finds nothing to do and it sleeps.
+            helper.runAfterDelay(10, () -> {
+                helper.assertFalse(helper.getLevel().getBlockTicks().hasScheduledTick(helper.absolutePos(INSERTER), inserter),
+                        "the inserter is still awake, so the test proves nothing");
+
+                ResourceHandler<ItemResource> silo = Capabilities.Item.BLOCK.getCapability(
+                        helper.getLevel(), helper.absolutePos(SILO), null, null, null);
+                helper.assertTrue(silo != null, "no item capability on the silo");
+                int inserted;
+                try (Transaction transaction = Transaction.openRoot()) {
+                    inserted = silo.insert(ItemResource.of(structure), 1, transaction);
+                    transaction.commit();
+                }
+                helper.assertValueEqual(inserted, 1, "low density structures the silo took");
+
+                helper.assertTrue(helper.getLevel().getBlockTicks().hasScheduledTick(helper.absolutePos(INSERTER), inserter),
+                        "the silo's inventory changed and the inserter at its edge was not woken - "
+                                + "Multiblock.announce is not reaching the far cells");
+                helper.succeed();
+            });
+        }
+
+        /** An item by id, so the pack mod can name another mod's item without depending on it. */
+        private static Item item(GameTestHelper helper, String id) {
+            Item item = BuiltInRegistries.ITEM.getValue(Identifier.parse(id));
+            helper.assertTrue(item != Items.AIR, "expected " + id + " to be registered, got air");
+            return item;
+        }
+
+        @Override
+        public MapCodec<? extends GameTestInstance> codec() {
+            return CODEC;
+        }
+
+        @Override
+        protected MutableComponent typeDescription() {
+            return Component.literal("an inserter hears a far cell of a machine");
         }
     }
 }

@@ -1,6 +1,10 @@
 package com.jaguarm.nauvislib.multiblock;
 
+import java.util.HashSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.Set;
 
 import org.jspecify.annotations.Nullable;
 
@@ -255,6 +259,37 @@ public final class Multiblock {
         if (anchorState.getBlock() == state.getBlock() && isAnchor(block, anchorState)) {
             level.setBlock(anchor, Blocks.AIR.defaultBlockState(), 35);
             level.levelEvent(player, 2001, anchor, Block.getId(anchorState));
+        }
+    }
+
+    /**
+     * Tells every block touching the machine that its contents changed, from the cell it touches.
+     *
+     * <p>{@code BlockEntity.setChanged()} tells the anchor's six neighbours, through
+     * {@code onNeighborChange}, and an inserter wakes on exactly that - but an inserter against a
+     * nine-by-nine silo, or against any edge of a three-by-three assembler that is not beside the
+     * anchor, is touching a cell the anchor never speaks for. So it slept through the machine
+     * eating a part's worth and never fed it again. This is the anchor's {@code setChanged}
+     * widened to the whole footprint: each block outside the machine that touches a cell hears
+     * {@code onNeighborChange} with that cell as the neighbour, which is the position an inserter
+     * compares against. Call it from the hook an inventory change runs, not from every
+     * {@code setChanged} - a craft ticks {@code setChanged} every tick, and this is a few hundred
+     * lookups on a silo.
+     */
+    public static void announce(@Nullable Level level, BlockPos anchor, BlockState state) {
+        if (level == null || level.isClientSide() || !(state.getBlock() instanceof MachineBlock machine)) {
+            return;
+        }
+        List<BlockPos> cells = machine.shape().positions(anchor, machine.facing(state));
+        Set<BlockPos> inside = new HashSet<>(cells);
+        for (BlockPos cell : cells) {
+            for (Direction direction : Direction.values()) {
+                BlockPos outside = cell.relative(direction);
+                if (inside.contains(outside) || !level.hasChunkAt(outside)) {
+                    continue;
+                }
+                level.getBlockState(outside).onNeighborChange(level, outside, cell);
+            }
         }
     }
 

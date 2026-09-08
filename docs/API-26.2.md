@@ -569,6 +569,9 @@ More confirmed details:
   take a `Supplier<Item.Properties>` or a `UnaryOperator<Item.Properties>`, and so do
   `registerSimpleBlockItem(Holder<Block>, ...)` and `registerItem(String, Function, ...)`. A bare
   `Properties` is a compile error.
+- `StacksResourceHandler.deserialize` assigns the saved list to `stacks` outright: a handler
+  built with five slots and read from a four-slot save has four until something resizes it.
+  `nauvis_lib` mixes a resize in; a subclass could override `deserialize` instead.
 - Menu buttons: `AbstractContainerMenu.clickMenuButton(Player, int buttonId)` is what the server
   calls, returning false by default; the client sends the id with
   `minecraft.gameMode.handleInventoryButtonClick(menu.containerId, buttonId)`. The enchanting table

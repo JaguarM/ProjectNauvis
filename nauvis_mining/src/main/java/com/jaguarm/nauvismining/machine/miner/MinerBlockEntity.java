@@ -1,5 +1,6 @@
 package com.jaguarm.nauvismining.machine.miner;
 
+import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvislib.pollution.Pollution;
 import com.jaguarm.nauvislib.bonus.Bonuses;
 import com.jaguarm.nauvislib.module.ModuleEffect;
@@ -752,6 +753,7 @@ public class MinerBlockEntity extends BlockEntity implements MenuProvider {
     private void onInventoryChanged() {
         rescan = true;
         setChanged();
+        Multiblock.announce(level, worldPosition, getBlockState());
         wake();
     }
 

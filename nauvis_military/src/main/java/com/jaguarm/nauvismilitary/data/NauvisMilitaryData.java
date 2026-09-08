@@ -81,6 +81,11 @@ public final class NauvisMilitaryData {
         @Override
         protected void addTranslations() {
             add("itemGroup.nauvis_military", "Project Nauvis: Military");
+            // Jade's config screen names every plugin and provider, and asserts in a dev run
+            // when one has no name - a click on any screen crashed the moment the world loaded.
+            add("config.jade.plugin_nauvis_military", "Project Nauvis: Military");
+            add("config.jade.plugin_nauvis_military.pollution", "Pollution");
+            add("config.jade.plugin_nauvis_military.turret", "Gun turret");
             add("pack.nauvis_military.crafting_table", "Nauvis Military: bench recipes (skips research)");
             // Facrafting's crafting-panel tab for Factorio's combat category, which every recipe
             // here carries; see the other mods' lang files for the other three.
