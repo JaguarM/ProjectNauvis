@@ -297,11 +297,10 @@ Military and pollution
   the submachine gun, where Factorio's are fifteen and eighteen: Yannic's call after the first
   playtest, because a Factorio tile-range is a Minecraft yard. A range is balance, not identity,
   and the turret keeps Factorio's eighteen. Not debt.
-- **Magazines stack to ninety-nine, not Factorio's two hundred** - Minecraft's ceiling; see the
-  stack sizes under *Vanilla*. A gun loads one at a time and keeps the rounds on itself as a
-  component, drawn as the item's bar; a turret chambers one at a time out of the stack in its
-  slot. The first version made a magazine's rounds its durability, and durability does not stack -
-  Yannic's first look caught it.
+- **Magazines stack to Factorio's two hundred.** A gun loads one at a time and keeps the rounds
+  on itself as a component, drawn as the item's bar; a turret chambers one at a time out of the
+  stack in its slot. The first version made a magazine's rounds its durability, and durability
+  does not stack - Yannic's first look caught it.
 - **Armour is a chestplate, drawn as vanilla's.** Factorio's armour is one item for the whole
   body with a resistance table and, later, a grid; here light armour is chainmail's five points
   and heavy armour netherite's eight with its toughness, worn as chestplates and drawn with
@@ -345,9 +344,10 @@ The rocket
   comes back, which is what 0.16 and 1.1 allowed. Both go through vanilla's menu-button packet.
   Nothing comes back from a launch but space science, and nothing in the tree is paid for in space
   science yet - the packs are for the infinite research the tree does not transcribe.
-- **A thousand space science packs are owed, not stacked.** The launch recipe's result is a
-  thousand and a slot holds ninety-nine, so the silo keeps the rest as a number and pays it into
-  the output slot as fast as it is taken away. Break the silo and what is owed spills.
+- **A launch's thousand space science packs are owed to the output slot.** A pack stacks to
+  Factorio's two thousand, so a launch fits in the slot when the slot is empty; what does not fit
+  - a second launch with nobody taking - the silo keeps as a number and pays in as the slot
+  clears. Break the silo and what is owed spills.
 - **The silo's three ingredient slots are one ingredient each**, in the recipe's order, and each
   holds twice what a part takes - Factorio's rule for a machine with a fixed recipe, the reason a
   belt of low density structures cannot fill the machine and stall it, and the reason an inserter
@@ -469,14 +469,20 @@ Vanilla, and what is left alone
 - **One tool, and the ladder kept.** Four planks is a stone pickaxe, the wooden one has no recipe,
   and `mineable/pickaxe` absorbs the axe, shovel and hoe tags. Material tiers are untouched, and the
   other tools still exist — they are simply never necessary.
-- **Stacks are Factorio's sizes, capped at ninety-nine.** Every item the pack registers says
-  Factorio's stack size - machines fifty, a satellite one, rocket fuel ten - written as `stack` in
-  `data/mapping.json` and held to the code by `check_models.py`. Minecraft writes a stack's count
-  as one to ninety-nine in every codec that saves or sends one, and no mod lifts that, so a
-  hundred plates and two hundred circuits are both ninety-nine; everything under a hundred is
-  exact. A vanilla stand-in - the iron ingot that is a plate, coal, stone brick - keeps vanilla's
-  sixty-four, since a vanilla item's stack size is not the pack's to change. Space science is
-  written as Factorio's two thousand and stacks to ninety-nine, which is why the silo owes it.
+- **Stacks are Factorio's sizes, and Minecraft's ninety-nine is lifted.** Every item the pack
+  registers says Factorio's stack size - plates a hundred, circuits two hundred, machines fifty, a
+  satellite one - written as `stack` in `data/mapping.json` and held to the code by
+  `check_models.py`. Minecraft stops a stack at ninety-nine in the codecs that save and send one,
+  in every container, and in NeoForge's handlers; `nauvis_lib` carries the pack's one mixin
+  config to lift all of that to ten thousand, and a count of three or four digits is scaled to fit
+  its slot. Not lifted, because nothing of the pack's goes there: minecart chests, bundles, and
+  any other mod's container that answers ninety-nine on its own.
+- **The vanilla stand-ins have Factorio's sizes too, and three go down.** An iron ingot is a
+  plate and stacks to a hundred; so do copper, planks, logs, stone bricks and concrete. Factorio's
+  stone, coal and ore stack to fifty, so cobblestone, coal, raw iron and raw copper stack to fifty
+  here - less than vanilla's sixty-four, the one number in this list a player will feel, and kept
+  because a stack size is the same kind of fact as an ingredient count. Each is one line in the
+  pack mod's `StandInStacks` to move, and Yannic's to move.
 
 Smaller
 -------

@@ -5,7 +5,7 @@
   "_speed": "Factorio belt speed in tiles per second. Identity: it decides what a factory looks like, and throughput follows from it - four items a tile a lane, two lanes, so 1.875 tiles/s is the wiki's 15 items/s. tools/check_models.py holds each belt block's SPEED constant to this.",
   "_category": "Factorio's recipe category, for a recipe only a machine runs: `smelting` is the four the furnaces do - plates, steel and stone brick - `chemistry` is the chemical plant's, `oil-processing` the refinery's, and `crafting-with-fluid` is a recipe with one fluid in or out that only an assembler with a fluid box - assembling machine 2 - runs: the electric engine unit, the processing unit, concrete and the barrels; `rocket-building` is the rocket silo's alone - the rocket part, and the launch that turns a hundred of them and a satellite into space science. Absent means hand-craftable, which is Factorio's `crafting`. Not in the dump, so entered by hand against the wiki like `size`. gen_recipes.py writes it into the recipe as Facrafting's `category`, and Facrafting keeps such a recipe out of the hand panel; a machine names the category it runs. A recipe that takes or makes a fluid is a machine's whatever its category, and the recipes that make only fluids or several things are in data/fluid_recipes.json.",
   "_unlocks": "A technology effect names a *recipe*, and Factorio's recipe names are not always its item names. This maps the ones that differ to the item whose recipe file gen_recipes.py writes - `small-lamp` makes a lamp, `solar-panel-equipment` makes a portable solar panel. null means the pack has no counterpart at all. A name in data/fluid_recipes.json needs no line here: it resolves to that recipe's own key, which is how the barrel recipes are unlocked. Any name in none of the three is a GenError in tools/gen_technologies.py rather than a silently dropped unlock.",
-  "_stack": "Factorio's stack size, for every item the pack registers itself: a fact a player carries in their head, so it is written here and tools/check_models.py holds each registration's Stacks.of(n) to it. Minecraft caps a stack at 99 and nauvis_lib's Stacks clamps to that, so a 100 or a 200 here is 99 in a chest; a vanilla stand-in keeps vanilla's 64. Entered by hand, like size.",
+  "_stack": "Factorio's stack size: a fact a player carries in their head, so it is written here and tools/check_models.py holds the code to it. An item the pack registers says it through nauvis_lib's Stacks.of(n); a vanilla stand-in gets it from the pack mod's StandInStacks. Minecraft's own ceiling of 99 is lifted by nauvis_lib's mixins, so the number here is the number in a chest. Entered by hand, like size.",
   "unlocks": {
     "small-lamp": "lamp",
     "shotgun-shell": "shotgun-shells",
@@ -307,7 +307,8 @@
       "owner": "nauvis",
       "item": "minecraft:coal",
       "stand_in": true,
-      "raw": true
+      "raw": true,
+      "stack": 50
     },
     "combat-shotgun": {
       "name": "Combat shotgun",
@@ -327,7 +328,8 @@
         "time": 10,
         "yield": 10
       },
-      "category": "crafting-with-fluid"
+      "category": "crafting-with-fluid",
+      "stack": 100
     },
     "constant-combinator": {
       "skip": true,
@@ -357,7 +359,8 @@
       "owner": "nauvis",
       "item": "minecraft:raw_copper",
       "stand_in": true,
-      "raw": true
+      "raw": true,
+      "stack": 50
     },
     "copper-plate": {
       "name": "Copper plate",
@@ -368,7 +371,8 @@
       "craft": {
         "time": 3.2,
         "yield": 1
-      }
+      },
+      "stack": 100
     },
     "crude-oil": {
       "name": "Crude oil",
@@ -739,7 +743,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     },
     "green-wire": {
       "skip": true,
@@ -777,7 +782,8 @@
       "craft": {
         "time": 0.25,
         "yield": 10
-      }
+      },
+      "stack": 100
     },
     "heat-exchanger": {
       "name": "Heat exchanger",
@@ -873,7 +879,8 @@
       "owner": "nauvis",
       "item": "minecraft:raw_iron",
       "stand_in": true,
-      "raw": true
+      "raw": true,
+      "stack": 50
     },
     "iron-plate": {
       "name": "Iron plate",
@@ -884,7 +891,8 @@
       "craft": {
         "time": 3.2,
         "yield": 1
-      }
+      },
+      "stack": 100
     },
     "iron-stick": {
       "name": "Iron stick",
@@ -940,7 +948,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 100
     },
     "laser-turret": {
       "name": "Laser turret",
@@ -1422,14 +1431,16 @@
       "owner": "nauvis_fluids",
       "item": "minecraft:cod",
       "stand_in": true,
-      "raw": true
+      "raw": true,
+      "stack": 100
     },
     "raw-wood": {
       "name": "Raw wood",
       "owner": "nauvis",
       "item": "minecraft:oak_log",
       "stand_in": true,
-      "raw": true
+      "raw": true,
+      "stack": 100
     },
     "red-wire": {
       "skip": true,
@@ -1789,7 +1800,8 @@
       "owner": "nauvis",
       "item": "minecraft:cobblestone",
       "stand_in": true,
-      "raw": true
+      "raw": true,
+      "stack": 50
     },
     "stone-brick": {
       "name": "Stone brick",
@@ -1800,7 +1812,8 @@
       "craft": {
         "time": 3.2,
         "yield": 1
-      }
+      },
+      "stack": 100
     },
     "stone-furnace": {
       "name": "Stone furnace",
@@ -1824,7 +1837,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 100
     },
     "storage-tank": {
       "name": "Storage tank",
@@ -2005,7 +2019,8 @@
       "craft": {
         "time": 0.5,
         "yield": 2
-      }
+      },
+      "stack": 100
     },
     "wooden-chest": {
       "name": "Wooden chest",
@@ -2015,7 +2030,8 @@
       "craft": {
         "time": 0.5,
         "yield": 1
-      }
+      },
+      "stack": 50
     }
   }
 }

@@ -30,3 +30,8 @@ depending on each other.
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
+
+# Minecraft's ninety-nine-item stack, lifted to Factorio's sizes. The one place the pack
+# reaches into the engine; the package's javadoc says what each mixin touches.
+[[mixins]]
+    config="nauvis_lib.mixins.json"

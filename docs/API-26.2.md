@@ -510,6 +510,28 @@ changes neither, which two liquids with the same properties do not.
 `LevelChunk.postProcessGeneration` ticks every fluid the generator marked, reading the state that
 is there by then, so a swapped fluid still flows.
 
+Mixins on 26.2
+--------------
+
+NeoForge 26.2 runs Fabric's `sponge-mixin 0.17.3+mixin.0.8.7` with MixinExtras beside it, on
+official names at runtime, so a mixin needs no refmap and no annotation processor: a config JSON
+in the mod's resources, `[[mixins]] config="<mod_id>.mixins.json"` in `neoforge.mods.toml`, and
+`"compatibilityLevel": "JAVA_25"` - the classes are Java 25 bytecode and Mixin checks. The
+annotation classes are `org.spongepowered.asm.mixin.*` and already on the compile classpath.
+
+Things learned lifting the stack ceiling, in `nauvis_lib`:
+
+- A call inside a lambda is in a synthetic method, not the method the lambda is written in, so
+  `@ModifyArg` on `<clinit>` never finds it. Catch the callee instead: `@Inject` at `HEAD` of
+  `ExtraCodecs.intRange(II)`, `cancellable`, with a guard on the arguments.
+- `@ModifyArg` with `index` may take every argument of the invoked call, not only the one it
+  changes - `(ItemStack, ItemStack, int)` for a call to `merge(ItemStack, ItemStack, int)`.
+- A private final field is `@Shadow @Final`; a public method is `@Shadow public abstract`. A
+  private target method is named without a descriptor when nothing else has the name.
+- An interface mixin may add default methods but may not `@Inject`; a class mixin may add a
+  method that overrides an interface default it inherits, with no annotation at all.
+- The prefix convention is `modid$name` on handler methods.
+
 Keeping a chunk loaded
 ----------------------
 
@@ -534,7 +556,15 @@ More confirmed details:
 - A stack size is the `DataComponents.MAX_STACK_SIZE` component, set by
   `Item.Properties.stacksTo(int)`; its codec is `intRange(1, 99)` and `Item.ABSOLUTE_MAX_STACK_SIZE`
   is 99. Registration accepts a larger number - `validateComponent` checks a class's immutability,
-  not a value - and the count codecs cap it when a stack is saved or sent.
+  not a value - and the count codecs cap it when a stack is saved or sent. `ItemStack.MAP_CODEC`,
+  `ItemStackTemplate.MAP_CODEC` and that component are the only three callers of
+  `ExtraCodecs.intRange(1, 99)` in Minecraft and NeoForge together, each inside a lambda; the
+  stream codec writes the count as a VarInt with no ceiling. `Container.getMaxStackSize()` is a
+  default method returning 99, and NeoForge's `ItemStacksResourceHandler.getCapacity` returns
+  `min(stack size, ABSOLUTE_MAX_STACK_SIZE)`. `nauvis_lib` lifts all of it; see its mixin package.
+- `ModifyDefaultComponentsEvent`, on the mod bus, changes any item's default components:
+  `event.modify(Items.IRON_INGOT, (components, context, item) -> components.set(DataComponents.MAX_STACK_SIZE, 100))`.
+  The `Consumer` overload is deprecated for removal.
 - `DeferredRegister.Items` has **no `registerSimpleItem(String, Item.Properties)`**: the overloads
   take a `Supplier<Item.Properties>` or a `UnaryOperator<Item.Properties>`, and so do
   `registerSimpleBlockItem(Holder<Block>, ...)` and `registerItem(String, Function, ...)`. A bare

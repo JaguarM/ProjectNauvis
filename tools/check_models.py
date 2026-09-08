@@ -505,8 +505,9 @@ def check_stacks():
 
     A stack size is a fact a Factorio player carries in their head - plates in hundreds, machines
     in fifties, one satellite - so it is written in the mapping and the code is held to it, the
-    way footprints are. The code says `Stacks.of(n)` with Factorio's own n and the library clamps
-    it to Minecraft's ninety-nine, so the two numbers compared here are both Factorio's.
+    way footprints are. The code says `Stacks.of(n)` with Factorio's own n; a vanilla stand-in
+    says it as `stack(Items.X, n)` in the pack mod's StandInStacks.java, and that list is held
+    to the mapping's stand-in entries the same way.
 
     Registrations are read out of each mod's ModItems.java (and the pack mod's ModContent.java)
     one statement at a time: `registerSimpleItem("id", Stacks.of(n))` - or vanilla's own
@@ -563,6 +564,24 @@ def check_stacks():
                 elif stack and int(stack.group(1)) != wanted[item_id]:
                     fail(path.name, f'{item_id} says Stacks.of({stack.group(1)}), and data/mapping.json says '
                                     f'{wanted[item_id]}')
+
+    # The vanilla stand-ins, sized by the pack mod: one `stack(Items.X, n)` line each.
+    stand_ins = {entry['item']: entry['stack'] for entry in mapping.values()
+                 if entry.get('stand_in') and 'stack' in entry}
+    path = ROOT / 'nauvis' / 'src' / 'main' / 'java' / 'com' / 'jaguarm' / 'nauvis' / 'StandInStacks.java'
+    text = path.read_text(encoding='utf-8')
+    coded = {f'minecraft:{name.lower()}': int(n) for name, n in re.findall(r'stack\(Items\.(\w+),\s*(\d+)\)', text)}
+    # A coloured block's item is picked out of a colour collection: Items.CONCRETE.pick(DyeColor.GRAY).
+    coded.update({f'minecraft:{color.lower()}_{name.lower()}': int(n)
+                  for name, color, n in re.findall(r'stack\(Items\.(\w+)\.pick\(DyeColor\.(\w+)\),\s*(\d+)\)', text)})
+    for item_id, stack in stand_ins.items():
+        if item_id not in coded:
+            fail(path.name, f'{item_id} has a stack of {stack} in data/mapping.json and no line here')
+        elif coded[item_id] != stack:
+            fail(path.name, f'{item_id} says {coded[item_id]}, and data/mapping.json says {stack}')
+    for item_id, stack in coded.items():
+        if item_id not in stand_ins:
+            fail(path.name, f'{item_id} is sized {stack} here and data/mapping.json records no stand-in stack for it')
 
 
 # North, east, south, west, in quarter turns clockwise - the same order Boxes uses.

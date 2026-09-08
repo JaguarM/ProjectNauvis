@@ -336,12 +336,17 @@ the server and nothing on the client, and `handleInventoryButtonClick(containerI
 screen: the packet the enchanting table and the loom use, so there is no payload of ours and
 nothing to register. A button id the menu does not know is ignored.
 
-**An item says Factorio's stack size.** `Stacks.of(n)` in `nauvis_lib` is item properties with
-Factorio's own number, clamped to Minecraft's ninety-nine, so a registration reads
-`Stacks.of(200)` for a circuit and the day the ceiling moves nothing is retyped. The number is
-also `stack` on the item's entry in `data/mapping.json`, and `check_models.py` holds each
-registration to it the way it holds footprints. The pack mod compiles against nothing of ours
-and says the same thing in vanilla's `stacksTo`.
+**An item says Factorio's stack size, and the library lifts the ceiling.** `Stacks.of(n)` in
+`nauvis_lib` is item properties with Factorio's own number, so a registration reads
+`Stacks.of(200)` for a circuit; the number is also `stack` on the item's entry in
+`data/mapping.json`, and `check_models.py` holds each registration to it the way it holds
+footprints. A vanilla stand-in gets its number from the pack mod's `StandInStacks`, through
+NeoForge's `ModifyDefaultComponentsEvent` - pack policy, in the pack mod. Minecraft's own
+ninety-nine is lifted by the mixins in `com.jaguarm.nauvislib.mixin`, the one place the pack
+reaches into the engine: the count codecs where they are built, the player's inventory, the plain
+container and every chest and furnace, NeoForge's two handlers, the pile on the ground, and the
+count drawn in a slot. The package's javadoc says why each is where it is; a mixin is a thing to
+keep counting, and the count is eight.
 
 **A machine that holds chunks holds tickets, and the tickets outlive it.** The radar keeps its
 seven-by-seven chunks loaded through NeoForge's `TicketController`, one per mod, with the radar's

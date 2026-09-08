@@ -27,5 +27,6 @@ public class NauvisMaterials {
         ModItems.ITEMS.register(modEventBus);
         ModItems.CREATIVE_MODE_TABS.register(modEventBus);
         modEventBus.addListener((AddPackFindersEvent event) -> BenchRecipePacks.add(event, MODID));
+        NauvisMaterialsGameTests.register(modEventBus);
     }
 }

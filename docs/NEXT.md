@@ -18,9 +18,11 @@ Milestone 6, the robots, is a later update by decision.
 **The rocket has had one look and one round of polish.** Yannic's first look, 2026-09-08, found
 the silo filling every slot with one ingredient, no way to launch by hand, and stacks of
 sixty-four; now a slot is one ingredient's, the screen has an automatic-launch toggle and a Launch
-button, and every item stacks to Factorio's size or Minecraft's ninety-nine. The second look is
-owed: the two buttons on the silo's screen, the radar's dish, the nine module chips and the five
-new item icons, and a launch watched from the ground.
+button, and every item stacks to Factorio's size - Minecraft's ninety-nine is lifted by
+`nauvis_lib`'s mixins, and the vanilla stand-ins are sized too. The second look is owed: the two
+buttons on the silo's screen, a chest of two hundred circuits and its scaled count, cobblestone at
+fifty, the radar's dish, the nine module chips and the five new item icons, and a launch watched
+from the ground.
 
 The jobs
 --------
@@ -36,6 +38,10 @@ Two builds have passed their tests and nobody's eyes, and both want a client boo
   slots hold the thousand concrete and thousand steel it costs. The things most likely to want
   moving, none of them identity: the five-second countdown, the firework's height, the rocket's
   colours, the placeholder textures, and whether a nine-by-nine pad reads as a silo at all.
+- **The stacks.** Two hundred circuits in one slot, and how the three- and four-digit counts read
+  in a chest and on the hotbar - they are scaled to fit the slot. Cobblestone, coal and raw ore
+  stack to Factorio's fifty now, down from sixty-four; that is the one number here to feel out,
+  and it is one line each in the pack mod's `StandInStacks`.
 - **The attack.** Since 2026-09-07 what pollution sends walks at the machine that made it, chews
   through the wall in its way, hits the turret when it gets there, and turns on a player only within
   six blocks. Every machine has health - a hundred times its hardness, the turret Factorio's four

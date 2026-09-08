@@ -43,7 +43,7 @@ Entry shape
 | `craft` | `time` in seconds and `yield`, from the dump. Never edit these — they are the spec |
 | `size` | Factorio's tile footprint, `[width, depth]`. Absent means one tile |
 | `category` | Factorio's recipe category, for a recipe only a machine runs: `smelting` on the four the furnaces do. Absent means the hand crafts it. Not in the dump, entered by hand like `size` |
-| `stack` | Factorio's stack size, on every item the pack registers itself. `check_models.py` holds the registration's `Stacks.of(n)` to it; the library clamps to Minecraft's 99. Entered by hand like `size` |
+| `stack` | Factorio's stack size, on every item the pack registers and on every vanilla stand-in. `check_models.py` holds the registration's `Stacks.of(n)`, or the pack mod's `StandInStacks` line, to it. Entered by hand like `size` |
 | `stand_in` | true when an existing Minecraft item covers it and nothing new is registered |
 | `raw` | true when the dump gives it no recipe: an ore, a fluid, a filled barrel |
 | `skip` | true when it is never registered at all |
@@ -72,10 +72,11 @@ the space science pack's recipe - with the silo, which is the only machine that 
 
 `stack` is the third hand-entered field, and identity in the same sense `size` is: a stack of
 plates is a hundred and a stack of machines is fifty in every Factorio player's head, and it
-decides how a chest reads. Every item the pack registers itself has one; a vanilla stand-in does
-not, because its stack size is vanilla's. The code says the same number through `nauvis_lib`'s
-`Stacks.of(n)` and the library clamps it to Minecraft's ninety-nine - so a hundred and two hundred
-are both ninety-nine in a chest, and `check_models.py` compares Factorio's number on both sides.
+decides how a chest reads. Every item the pack registers has one, said in the code through
+`nauvis_lib`'s `Stacks.of(n)`; every vanilla stand-in has one too, said in the pack mod's
+`StandInStacks`, since an iron ingot that is a plate stacks like a plate. Minecraft's own ceiling
+of ninety-nine is lifted by `nauvis_lib`'s mixins, so the number here is the number in a chest,
+and `check_models.py` holds both lists to it.
 
 A fluid is a row like any other, `raw` where the dump gives it no recipe, and its `item` is the
 fluid's id — `nauvis_fluids:steam`, `nauvis_fluids:crude_oil` — because a pipe and a machine meet

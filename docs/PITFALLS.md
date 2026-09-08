@@ -222,7 +222,9 @@ Gametests
   seconds and the test said the goal was broken. Block entities are unaffected, which is why every
   machine test passed for a year without noticing. A test that moves a mob lays its own floor
   with `setBlock` and calls `level.setChunkForced(x, z, true)` on the chunks it walks across; the
-  runner unforces every forced chunk when the batch ends.
+  runner unforces every forced chunk when the batch ends. An entity in a chunk that does not tick
+  is not even *returned* by `getEntities`: two piles dropped a block diagonally from the origin
+  counted as none, and dropped on the origin they counted and merged.
 - **`GameTestHelper.spawnItem(Item, BlockPos)` spawns at the block's corner, not its middle**, so an
   item over a one-block-wide thing hangs half off it. Use the `(float, float, float)` overload.
 - **`GameTestServer` force-enables every datapack, including ones shipped switched off.** Vanilla
@@ -259,7 +261,19 @@ Data, recipes and registries
   would have loaded empty. `AssemblerInventory` saves a resource and an amount instead. **Anything
   that holds more than a stack has to name its own codec**, and a test that never saves and
   reloads will not see the difference. Registration does not check it: `stacksTo(200)` is
-  accepted, and the ninety-nine only bites when a stack is saved or sent, so `Stacks.of` clamps.
+  accepted, and the ninety-nine only bit when a stack was saved or sent. It is lifted now, by
+  `nauvis_lib`'s mixins, and `a_stack_is_factorios_size` walks two hundred circuits through the
+  codec, a handler, the player's inventory, a chest and the ground to prove each place.
+- **`Item.ABSOLUTE_MAX_STACK_SIZE` is a compile-time constant, so it is inlined wherever it is
+  read.** NeoForge's item handlers cap a slot at it; a mixin that changed the field would change
+  nothing, because their bytecode holds a literal ninety-nine. The methods that read it are what
+  the mixins replace. The same is true of any `static final int` with a literal initialiser.
+- **Mixin cannot inject into an interface.** `Container.getMaxStackSize()` is a default method
+  answering ninety-nine, and an interface mixin may add methods but not `@Inject` into one - the
+  applicator throws *not supported on interface mixin method*. The ceiling is answered by the
+  three classes that matter instead: the player's `Inventory`, `SimpleContainer` and
+  `BaseContainerBlockEntity`. A container that implements the interface on its own still says
+  ninety-nine.
 - **A slot rule that filters by ingredient changes what a test may feed a bare machine.** Three
   assembler tests put iron ingots into a machine with no recipe and expected them taken; once a
   slot took only its recipe's ingredient, a machine with no recipe took nothing and they failed
