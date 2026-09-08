@@ -20,21 +20,7 @@ import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
-/**
- * A gun: the pistol and the submachine gun.
- *
- * <p>Factorio's two: the pistol fires four rounds a second and the submachine gun ten, at twice
- * Factorio's reach - thirty blocks and thirty-six; see {@code ModItems.RANGE_SCALE}. Both take the
- * same magazines and do the
- * magazine's damage, raised by whatever physical projectile damage research the world has done -
- * Factorio's {@code ammo-damage} modifier for bullets, read through the library's hook.
- *
- * <p>A gun loads one magazine at a time and carries it as a component, the way Factorio's gun has
- * an ammunition slot: the rounds left are shown as the item's bar, and when they run out the next
- * magazine comes out of the inventory. The pistol fires once a click; the submachine gun fires for
- * as long as the button is held, which is the whole difference between them and the reason to
- * build one.
- */
+/** A gun: the pistol and the submachine gun. */
 public class GunItem extends Item {
 
     /** Factorio's modifier type for ammunition damage, and its category for these magazines. */

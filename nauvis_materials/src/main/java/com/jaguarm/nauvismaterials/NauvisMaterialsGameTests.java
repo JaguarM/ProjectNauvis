@@ -3,22 +3,15 @@ package com.jaguarm.nauvismaterials;
 import java.util.List;
 
 import com.jaguarm.nauvismaterials.registry.ModItems;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.jaguarm.nauvislib.test.GameTests;
+import com.jaguarm.nauvislib.test.PackGameTest;
+import com.jaguarm.nauvislib.test.PackGameTest.Info;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.GameTestInstance;
-import net.minecraft.gametest.framework.TestData;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -27,14 +20,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
-import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
@@ -46,34 +34,16 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * <p>Run with {@code ./gradlew :nauvis:runGameTestServer}, which puts every mod in the pack on one
  * classpath, or {@code :nauvis_materials:runGameTestServer} for this mod alone.
  */
-@EventBusSubscriber(modid = NauvisMaterials.MODID)
 public final class NauvisMaterialsGameTests {
 
     private NauvisMaterialsGameTests() {}
 
-    private static final Identifier EMPTY_STRUCTURE = Identifier.withDefaultNamespace("empty");
-    private static final int PADDING = 4;
-
-    private static final DeferredRegister<MapCodec<? extends GameTestInstance>> TEST_TYPES =
-            DeferredRegister.create(Registries.TEST_INSTANCE_TYPE, NauvisMaterials.MODID);
-
-    static {
-        TEST_TYPES.register("a_stack_is_factorios_size", () -> StackIsFactoriosSizeTest.CODEC);
-    }
-
     static void register(IEventBus modEventBus) {
-        TEST_TYPES.register(modEventBus);
+        GameTests tests = new GameTests(NauvisMaterials.MODID, modEventBus);
+        tests.add("a_stack_is_factorios_size", StackIsFactoriosSizeTest::new, 400, PADDING);
     }
 
-    @SubscribeEvent
-    static void registerTests(RegisterGameTestsEvent event) {
-        Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(
-                Identifier.fromNamespaceAndPath(NauvisMaterials.MODID, "default"),
-                new TestEnvironmentDefinition.AllOf(List.of()));
-        event.registerTest(Identifier.fromNamespaceAndPath(NauvisMaterials.MODID, "a_stack_is_factorios_size"),
-                new StackIsFactoriosSizeTest(new TestData<>(environment, EMPTY_STRUCTURE, 100, 0, true, Rotation.NONE,
-                        false, 1, 1, false, PADDING)));
-    }
+    private static final int PADDING = 4;
 
     /** Puts items in the way an inserter will: through a handler, in one transaction. */
     private static int insert(ResourceHandler<ItemResource> handler, Item item, int count) {
@@ -91,22 +61,12 @@ public final class NauvisMaterialsGameTests {
      * hundred become one. Each of those is a place Minecraft stops at ninety-nine or sixty-four
      * on its own, and a mixin in {@code nauvis_lib} is what makes each one say two hundred.
      */
-    public static class StackIsFactoriosSizeTest extends GameTestInstance {
-
-        public static final MapCodec<StackIsFactoriosSizeTest> CODEC = RecordCodecBuilder.<StackIsFactoriosSizeTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(StackIsFactoriosSizeTest::info)).apply(i, StackIsFactoriosSizeTest::new));
+    public static class StackIsFactoriosSizeTest extends PackGameTest {
 
         private static final BlockPos CHEST = new BlockPos(1, 1, 1);
-        /**
-         * The origin: its chunk is the one that ticks entities in a gametest, and an entity in a
-         * chunk that does not tick is not even returned by {@code getEntities}. The first version
-         * put the piles a block diagonally away and found none.
-         */
         private static final BlockPos GROUND = new BlockPos(0, 1, 0);
 
-        public StackIsFactoriosSizeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        StackIsFactoriosSizeTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -138,28 +98,22 @@ public final class NauvisMaterialsGameTests {
             helper.assertTrue(chest != null, "no item capability on a chest");
             helper.assertValueEqual(insert(chest, circuit, 200), 200, "circuits one slot of a vanilla chest takes");
 
-            Vec3 spot = Vec3.atBottomCenterOf(helper.absolutePos(GROUND));
+            BlockPos ground = helper.absolutePos(GROUND);
+            helper.getLevel().setChunkForced(ground.getX() >> 4, ground.getZ() >> 4, true);
+            Vec3 spot = Vec3.atBottomCenterOf(ground);
             for (int pile = 0; pile < 2; pile++) {
                 ItemEntity entity = new ItemEntity(helper.getLevel(), spot.x, spot.y, spot.z, new ItemStack(circuit, 100), 0, 0, 0);
                 entity.setPickUpDelay(10);
                 helper.getLevel().addFreshEntity(entity);
             }
-            helper.runAfterDelay(60, () -> {
+            // A resting item merges every forty ticks, once its chunk ticks entities, which the
+            // forced ticket makes true some ticks later; so poll rather than wait a fixed time.
+            helper.succeedWhen(() -> {
                 List<ItemEntity> piles = helper.getEntities(EntityTypes.ITEM, GROUND, 2.0);
                 helper.assertValueEqual(piles.size(), 1, "piles of circuits on the ground");
                 helper.assertValueEqual(piles.getFirst().getItem().getCount(), 200, "circuits in the one pile");
-                helper.succeed();
             });
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a stack is Factorio's size");
-        }
     }
 }

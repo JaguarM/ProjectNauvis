@@ -29,19 +29,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/**
- * The block half of the lab: three tiles by three, and ten blocks of it.
- *
- * <p>Right-click any of the ten to open it, holding anything or nothing, exactly like a chest.
- * Science packs go in its slots and it works its way through them.
- *
- * <p>No facing. A Factorio lab has no direction - it is fed from wherever the belt runs and has
- * nothing to point anywhere - so the blockstate is a tenth the size it would otherwise be, and
- * {@link LabShape} is only ever asked for its north frame.
- *
- * <p>Everything about being made of several blocks is {@link Multiblock}'s, and it is
- * {@code SmallElectricPoleBlock}'s four rules with two more axes.
- */
+/** The block half of the lab: three tiles by three, and ten blocks of it. */
 public class LabBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
     public static final MapCodec<LabBlock> CODEC = simpleCodec(LabBlock::new);

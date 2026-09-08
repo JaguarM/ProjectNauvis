@@ -28,21 +28,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.capabilities.Capabilities;
 
-/**
- * A length of pipe, which now actually carries something.
- *
- * <p>It used to be "an ingredient that happens to be placeable" - the boiler costs four of them.
- * What it carries is whatever the run it belongs to is holding, and the run is one object however
- * long it is: see {@link FluidNetwork}. The pipe itself never ticks.
- *
- * <h2>Connections</h2>
- *
- * <p>Six booleans, like a fence or a glass pane, and they say something true rather than
- * decorative: a face is connected when there is another pipe there or a machine that publishes
- * {@code Capabilities.Fluid.BLOCK} on that side. So a pipe run visibly reaches into a boiler and
- * visibly refuses the flank of a steam engine, which only offers steam along its own axis - and a
- * player can see a mistake instead of wondering why nothing flows.
- */
+/** A length of pipe, which now actually carries something. */
 public class PipeBlock extends BaseEntityBlock {
 
     public static final MapCodec<PipeBlock> CODEC = simpleCodec(PipeBlock::new);

@@ -15,21 +15,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
-/**
- * The fluids this mod owns: steam, the oil chain, and the water the world is made with.
- *
- * <p>A fluid is two registrations: NeoForge's {@link FluidType}, which is everything about how it
- * behaves as a substance, and Minecraft's {@link Fluid}, which is the thing a
- * {@code FluidResource} names. Seven of them are never in the world, so their types are left
- * almost entirely default - the properties that matter are all about swimming in it, and nobody
- * ever will. Natural water is nothing but in the world, and its type is vanilla water's with one
- * property turned off.
- *
- * <p>Every id here is the one {@code data/mapping.json} gives the Factorio fluid, so it is
- * identity and not ours to change: {@code heavy_oil}, {@code light_oil}, {@code petroleum_gas},
- * {@code lubricant}, {@code sulfuric_acid}. Water in a pipe is {@code minecraft:water}, which
- * the mapping stands in for Factorio's water.
- */
+/** The fluids this mod owns: steam, the oil chain, and the water the world is made with. */
 public final class ModFluids {
 
     public static final DeferredRegister<FluidType> FLUID_TYPES =

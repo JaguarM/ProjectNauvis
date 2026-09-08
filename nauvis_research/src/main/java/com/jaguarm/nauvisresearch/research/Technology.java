@@ -14,40 +14,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.Recipe;
 
-/**
- * One technology: what it costs, what it needs first, and what it hands over.
- *
- * <p>This is Factorio's model and not a simplification of it. A technology is worth <b>N units</b>;
- * a unit consumes <b>one of each</b> science pack it names and takes a fixed time; a lab works on
- * whichever technology the world is researching and reports units as it finishes them; at N units
- * the technology completes and its recipes unlock. Nothing here is a per-player fact - see
- * {@link ResearchState} for why research belongs to the world.
- *
- * <p><b>Or it has a {@link Trigger} instead, and no cost at all.</b> "Craft fifty iron plates",
- * "craft a lab", "pump crude oil once" - it finishes the moment that happens, with no lab and no
- * packs. That is what makes the opening work: the first technologies are triggered, so a new world
- * researches its way to the boiler and the lab with a pickaxe and a furnace, and only then does
- * science become a thing you build for. A technology has exactly one of the two, which
- * {@link #isTriggered()} answers.
- *
- * <p><b>Every field is generated.</b> {@code tools/gen_technologies.py} writes these from Wube's
- * own prototype data, the same way recipes are written from the recipe dump, and
- * {@code checkTechnologies} in the build fails if a file on disk disagrees with it. A research
- * cost is identity in exactly the sense an ingredient list is: it lives in world saves and in the
- * player's head. If you are about to edit one of these files by hand, you are doing it wrong.
- *
- * <h2>Why three of these fields are loose ids rather than registry objects</h2>
- *
- * <p>{@link #packs} is a list of item ids and not a list of {@code Item}s, and that is load-bearing.
- * A registry codec <em>throws</em> on an id nothing has registered, and it throws while loading the
- * file - so a single technology naming {@code nauvis_research:science_pack_2}, which no mod
- * registers yet, would fail to load. The whole tree ships from the first commit, most of it ahead
- * of the items it names, so the tree has to survive naming things that are not there. It does:
- * a technology whose packs do not all exist simply cannot be researched, which is the truth.
- *
- * <p>{@link #unlocks} and {@link #prerequisites} are keys for the same reason and get it for free -
- * a {@code ResourceKey} is a name and validates nothing.
- */
+/** One technology: what it costs, what it needs first, and what it hands over. */
 public record Technology(
         String name,
         String order,
@@ -60,17 +27,8 @@ public record Technology(
         List<Modifier> modifiers) {
 
     /**
-     * An effect that is not a recipe: so much more of some named thing, once this is researched.
-     *
-     * <p>Factorio's modifier types, by their own names - {@code inserter-stack-size-bonus},
-     * {@code laboratory-speed}, {@code ammo-damage} - and the world's answer to "how much of this
-     * has been earned" is the sum over every completed technology, which {@link Research#bonus}
-     * keeps and {@code nauvis_lib}'s {@code Bonuses} hands to whatever machine asks. The two kinds
-     * Factorio qualifies carry the qualifier as {@code target}: a damage bonus is per ammo
-     * category and a turret bonus per turret.
-     *
-     * <p>A type nothing reads is a number nobody asks for. Most of the tree's are in that state,
-     * and the screen says so beside them rather than hiding them.
+     * An effect that is not a recipe: so much more of some named thing, once this is
+     * researched.
      */
     public record Modifier(String type, Optional<String> target, double modifier) {
 
@@ -100,16 +58,6 @@ public record Technology(
 
     /**
      * Finish this technology when the world has done something {@code count} times over.
-     *
-     * <p>Two kinds, which are Factorio's two: <b>craft</b> an item, counted across everything that
-     * makes one - a bench, a furnace, a machine, the crafting panel - because in Factorio all four
-     * are "crafting"; and <b>mine</b> a resource, which is Factorio's {@code mine-entity} and here
-     * means a machine took it out of the world - a pumpjack's first cycle on an oil well is what
-     * finishes oil processing. The two tallies are kept apart: an item and a block may share an id,
-     * as crude oil's do, and crafting one is not mining the other.
-     *
-     * <p>On disk a craft trigger names its {@code item} and a mine trigger names what it
-     * {@code mine}s, and exactly one of the two is present.
      */
     public record Trigger(Kind kind, Identifier target, int count) {
 

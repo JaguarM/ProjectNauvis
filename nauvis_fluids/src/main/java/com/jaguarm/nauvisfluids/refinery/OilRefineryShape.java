@@ -14,26 +14,6 @@ import net.minecraft.core.Direction;
 /**
  * What an oil refinery looks like and how much room it takes: five tiles by five, the size
  * Factorio made it, with the column standing in the middle.
- *
- * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py}
- * holds this to the {@code size} recorded for {@code oil-refinery} in {@code data/mapping.json}.
- * Everything else here is ours.
- *
- * <h2>Two in at the front, three out at the back</h2>
- *
- * <p>Factorio's refinery takes its inputs on one side and gives its outputs on the opposite side,
- * and where each one is matters: the water comes in on the left and the crude on the right, and
- * heavy, light and petroleum leave in that order across the back. Here the inputs are the second
- * and fourth cells of the south row, on their south faces, and the outputs the first, third and
- * fifth cells of the north row, on their north faces - the same places, seen from the front. The
- * port cells are drawn with the wall opened and a stub of pipe in the gap, so where the pipes go
- * is visible before a pipe is there.
- *
- * <h2>Twenty-five blocks and a tower</h2>
- *
- * <p>Twenty-five at ground level in the shared {@link MachineParts} shell, walkable like every
- * machine here, and the distillation column three blocks high over the centre with a drum either
- * side of it. Tiled refineries leave lanes two blocks wide between the towers.
  */
 public final class OilRefineryShape {
     private OilRefineryShape() {}

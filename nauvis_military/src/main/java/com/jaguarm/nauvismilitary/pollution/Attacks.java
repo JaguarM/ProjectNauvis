@@ -20,26 +20,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.Heightmap;
 import org.jspecify.annotations.Nullable;
 
-/**
- * The biters: Minecraft's own hostiles, sent at the factory by its pollution.
- *
- * <p>Factorio's spawners absorb the pollution that drifts over them and send a biter for every so
- * much absorbed, and the group walks to the polluter. There are no spawners here, so the cloud
- * itself does the sending: once a minute, a chunk holding at least {@link #MOB_COST} has a chance
- * proportional to what it holds of spending it on a group, which appears outside the base and
- * walks at the machine the cloud came from - the chunk's own last polluter, or the thickest
- * neighbour's, followed uphill - and fights whatever is in its way; see {@link AttackFactoryGoal}.
- * Nothing comes if nobody is near - an attack on an empty base is a server spending ticks on mobs
- * nobody will meet - and nothing comes on peaceful.
- *
- * <p>What comes is decided by everything the level has ever emitted, which stands in for
- * Factorio's evolution: zombies to begin with, skeletons among them after twenty thousand,
- * creepers after sixty. They wear a cap so the sun does not do the turrets' job for them, and
- * they have eyes only for a player within a few blocks: the factory is what they came for.
- *
- * <p>All of it is tunable and none of it is identity; {@code PLAN.md} has the model and
- * {@code GAPS.md} what it leaves out.
- */
+/** The biters: Minecraft's own hostiles, sent at the factory by its pollution. */
 public final class Attacks {
 
     private Attacks() {}

@@ -9,20 +9,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
 
-/**
- * Factorio's stack sizes on the vanilla items that stand in for Factorio's.
- *
- * <p>An iron ingot is an iron plate here, and a plate stacks to a hundred: a stack size is a
- * fact a player carries in their head, the same kind as an ingredient count, so the stand-ins
- * get Factorio's numbers the way the pack's own items do. The numbers are written as
- * {@code stack} on each stand-in's entry in {@code data/mapping.json} and
- * {@code tools/check_models.py} holds this list to them. Pack policy, so the pack mod's: a
- * vanilla item's stack size is nobody else's to change.
- *
- * <p>Three of them go <em>down</em>: Factorio's stone, coal and ore stack to fifty, and vanilla's
- * cobblestone, coal and raw ore to sixty-four. That is Factorio's rule kept whole rather than
- * only where it is generous; see {@code GAPS.md}. Each is one line here to move.
- */
+/** Factorio's stack sizes on the vanilla items that stand in for Factorio's. */
 final class StandInStacks {
 
     private static final Map<Item, Integer> STACKS = new LinkedHashMap<>();

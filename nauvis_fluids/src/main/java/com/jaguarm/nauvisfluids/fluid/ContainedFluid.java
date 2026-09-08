@@ -17,21 +17,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.fluids.FluidType;
 
-/**
- * A fluid that exists only inside machines and pipes, and never in the world.
- *
- * <p>Steam was the first and crude oil the second; the refinery's three and the chemical
- * plant's two are the same thing again, and they differ only by their {@code FluidType}, which
- * is why this takes one rather than being subclassed seven times. None of them can be placed,
- * scooped, swum in or stood on, so every method below that describes fluid in the world is
- * answered as if there were none - because there never is. A {@code BaseFlowingFluid} would
- * demand a block and a bucket item and give nothing back for them.
- *
- * <p>Being a real {@link Fluid} rather than an int on a machine is what matters: it is what lets
- * a pumpjack, a pipe and a refinery from different jars agree on what is in them through
- * {@code Capabilities.Fluid.BLOCK}, which is NeoForge's. That is non-negotiable #3, and it is
- * the same trick FE plays for the electric network.
- */
+/** A fluid that exists only inside machines and pipes, and never in the world. */
 public class ContainedFluid extends Fluid {
 
     private final Supplier<? extends FluidType> type;

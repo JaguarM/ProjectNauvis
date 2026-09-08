@@ -11,58 +11,157 @@ import com.jaguarm.nauvismining.machine.miner.MinerBlockEntity;
 import com.jaguarm.nauvismining.machine.miner.MinerStatus;
 import com.jaguarm.nauvismining.registry.ModBlocks;
 import com.jaguarm.nauvismining.registry.ModItems;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.jaguarm.nauvislib.test.GameTests;
+import com.jaguarm.nauvislib.test.PackGameTest;
+import com.jaguarm.nauvislib.test.PackGameTest.Info;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.GameTestInstance;
-import net.minecraft.gametest.framework.TestData;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
-import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
-/**
- * Tests that run inside a real server, headless, reporting pass or fail on exit.
- *
- * <p>Half of them are about a drill being four or nine blocks - blocks left standing that nothing
- * can break, nine drills dropped where one was placed, a field you cannot walk across - and the
- * other half are about it being Factorio's drill: it takes ore from the ground under it and
- * leaves the ground, it puts the ore down in front of itself and nowhere else, it covers the
- * area Factorio gives it, and it sleeps when there is nothing to take.
- *
- * <p>Run with {@code ./gradlew runGameTestServer}, which exits non-zero if any of them fail.
- *
- * <p>The 26.2 shape is registry-driven: a test type is a registry entry, and its codec has to
- * exist even though these are registered in code and never serialised.
- */
-@EventBusSubscriber(modid = NauvisMining.MODID)
+/** Tests that run inside a real server, headless, reporting pass or fail on exit. */
 public final class NauvisMiningGameTests {
 
     private NauvisMiningGameTests() {}
 
-    /** A test whose structure is missing silently does not run. Minecraft ships an empty one. */
-    private static final Identifier EMPTY_STRUCTURE = Identifier.withDefaultNamespace("empty");
+    static void register(IEventBus modEventBus) {
+        GameTests tests = new GameTests(NauvisMining.MODID, modEventBus);
+        tests.add("drills_are_factorio_sized", DrillSizeTest::new, 40, PADDING);
+
+        // Break one block of a drill and the rest go, giving back exactly one drill.
+        //
+        // A corner is broken rather than the block that holds the machine: it has no block entity,
+        // its own loot entry is conditioned away, and everything after it is the teardown cascading
+        // across the footprint. Both ways that fails are quiet - blocks left standing that nothing
+        // can break, or nine drills dropped where one was placed.
+        tests.add("drill_breaks_as_one", 40, PADDING, helper -> {
+            MinerBlock block = ModBlocks.DRILLS.get(MachineTier.ELECTRIC).get();
+            MachineShape shape = block.shape();
+            place(helper, DRILL, MachineTier.ELECTRIC);
+
+            // A back corner: two blocks from the block entity and about as far from it as an
+            // electric drill goes.
+            helper.getLevel().destroyBlock(helper.absolutePos(DRILL.offset(-1, 0, 1)), true);
+
+            helper.runAfterDelay(2, () -> {
+                for (int part = 0; part < shape.cellCount(); part++) {
+                    helper.assertBlockPresent(Blocks.AIR,
+                            shape.cellPos(DRILL, part, Direction.NORTH));
+                }
+                helper.assertItemEntityCountIs(
+                        ModItems.DRILLS.get(MachineTier.ELECTRIC).get(), DRILL, 4.0, 1);
+                helper.succeed();
+            });
+        });
+        tests.add("drill_field_is_walkable", DrillFieldIsWalkableTest::new, 40, PADDING);
+
+        // A drill's slots are a pickaxe and, on a burner, fuel: nothing else goes in, and an electric
+        // drill's fuel slot takes nothing at all. The module slots are Factorio's count - none on a
+        // burner, three on an electric.
+        //
+        // Asked of the inventory's own rule, which is what the screen, the hopper and the inserter
+        // all go through, so one answer covers the three.
+        tests.add("drill_slots_are_a_pickaxe_and_fuel", 40, PADDING, helper -> {
+            MinerBlockEntity burner = place(helper, DRILL, MachineTier.BURNER);
+            MinerBlockEntity electric = place(helper, DRILL.offset(6, 0, 0), MachineTier.ELECTRIC);
+
+            ItemResource pickaxe = ItemResource.of(Items.IRON_PICKAXE);
+            ItemResource shovel = ItemResource.of(Items.IRON_SHOVEL);
+            ItemResource coal = ItemResource.of(Items.COAL);
+
+            helper.assertTrue(burner.inventory().isValid(MinerBlockEntity.PICKAXE_SLOT, pickaxe),
+                    "the pickaxe slot refused a pickaxe");
+            helper.assertFalse(burner.inventory().isValid(MinerBlockEntity.PICKAXE_SLOT, shovel),
+                    "the pickaxe slot took a shovel");
+            helper.assertFalse(burner.inventory().isValid(MinerBlockEntity.PICKAXE_SLOT, coal),
+                    "the pickaxe slot took coal");
+            helper.assertTrue(burner.inventory().isValid(MinerBlockEntity.FUEL_SLOT, coal),
+                    "a burner's fuel slot refused coal");
+            helper.assertFalse(burner.inventory().isValid(MinerBlockEntity.FUEL_SLOT, pickaxe),
+                    "a burner's fuel slot took a pickaxe");
+            helper.assertFalse(electric.inventory().isValid(MinerBlockEntity.FUEL_SLOT, coal),
+                    "an electric drill's fuel slot took coal");
+
+            helper.assertValueEqual(burner.modules().size(), 0, "module slots on a burner drill");
+            helper.assertValueEqual(electric.modules().size(), 3, "module slots on an electric drill");
+            helper.assertTrue(burner.gridView() == null, "a burner drill offered the grid a buffer");
+            helper.assertTrue(electric.gridView() != null, "an electric drill offered the grid nothing");
+            helper.succeed();
+        });
+        tests.add("drill_covers_factorios_area", DigAreaIsFactoriosTest::new, 40, PADDING);
+        tests.add("drill_takes_ore_from_under_it", DrillTakesOreTest::new, 160, PADDING);
+        tests.add("drill_outputs_to_the_front", DrillOutputsToTheFrontTest::new, 120, PADDING);
+
+        // A drill over plain rock walks its columns once, reports that there is nothing to mine, and
+        // stops ticking - non-negotiable #5, for the machine a base has most of.
+        tests.add("drill_sleeps_with_nothing_to_mine", 60, PADDING, helper -> {
+            MinerBlockEntity drill = place(helper, DRILL, MachineTier.BURNER);
+            bedrock(helper, drill.digArea(), 3);
+            handPickaxe(drill, Items.IRON_PICKAXE);
+            drill.inventory().set(MinerBlockEntity.FUEL_SLOT, ItemResource.of(Items.COAL), 4);
+
+            helper.runAfterDelay(30, () -> {
+                helper.assertValueEqual(drill.status(), MinerStatus.NO_ORE, "status over bare rock");
+                helper.assertFalse(helper.getBlockState(DRILL).getValue(MinerBlock.LIT),
+                        "a drill with nothing to mine is lit");
+                helper.assertFalse(helper.getLevel().getBlockTicks().hasScheduledTick(
+                                helper.absolutePos(DRILL), ModBlocks.DRILLS.get(MachineTier.BURNER).get()),
+                        "a drill with nothing to mine is still ticking");
+                helper.assertValueEqual(drill.inventory().getAmountAsInt(MinerBlockEntity.FUEL_SLOT), 4,
+                        "coal in a drill that never mined - fuel is spent only while working");
+                helper.succeed();
+            });
+        });
+
+        // An electric drill takes Factorio's modules and reads them the way every other machine does:
+        // a speed module shortens the cycle by its speed and raises the draw by its cost.
+        //
+        // The module is nauvis_machines' and this mod does not name it, so the item is
+        // looked up by id and the test passes trivially when it is not there - which it is not in a
+        // standalone run of this mod. The slot accepting it at all is the library's rule.
+        tests.add("drill_takes_modules", 60, PADDING, helper -> {
+            Item speed = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_machines", "speed_module"));
+            if (ModuleSlots.moduleOf(new ItemStack(speed)) == null) {
+                helper.succeed();
+                return;
+            }
+
+            MinerBlockEntity drill = place(helper, DRILL, MachineTier.ELECTRIC);
+            bedrock(helper, drill.digArea(), 2);
+            helper.setBlock(new BlockPos(0, 0, 0), Blocks.IRON_ORE);
+            handPickaxe(drill, Items.IRON_PICKAXE);
+            drill.modules().set(0, ItemResource.of(speed), 1);
+            charge(drill);
+
+            ModuleEffect effect = ModuleSlots.moduleOf(new ItemStack(speed)).effect();
+            helper.runAfterDelay(10, () -> {
+                helper.assertValueEqual(drill.status(), MinerStatus.MINING, "status with ore, power and a module");
+                helper.assertValueEqual(drill.cycleTicks(),
+                        MinerBlockEntity.cycleTicksFor(MachineTier.ELECTRIC, effect, 0),
+                        "ticks an ore takes with a speed module");
+                helper.assertTrue(drill.cycleTicks()
+                        < MinerBlockEntity.cycleTicksFor(MachineTier.ELECTRIC, ModuleEffect.NONE, 0),
+                        "a speed module did not shorten the cycle");
+                helper.assertValueEqual(drill.currentEnergyPerTick(),
+                        effect.scaleEnergy(MachineTier.ELECTRIC.energyPerTick()),
+                        "draw with a speed module");
+                helper.succeed();
+            });
+        });
+    }
 
     /** Where each test puts its drill: one block up, so the ground it mines is under it. */
     private static final BlockPos DRILL = new BlockPos(0, 1, 0);
@@ -75,55 +174,6 @@ public final class NauvisMiningGameTests {
      * next test along and the failure turns up in whichever ran second.
      */
     private static final int PADDING = 16;
-
-    private static final DeferredRegister<MapCodec<? extends GameTestInstance>> TEST_TYPES =
-            DeferredRegister.create(Registries.TEST_INSTANCE_TYPE, NauvisMining.MODID);
-
-    static {
-        TEST_TYPES.register("drills_are_factorio_sized", () -> DrillSizeTest.CODEC);
-        TEST_TYPES.register("drill_breaks_as_one", () -> DrillBreaksAsOneTest.CODEC);
-        TEST_TYPES.register("drill_field_is_walkable", () -> DrillFieldIsWalkableTest.CODEC);
-        TEST_TYPES.register("drill_slots_are_a_pickaxe_and_fuel", () -> DrillSlotsTest.CODEC);
-        TEST_TYPES.register("drill_covers_factorios_area", () -> DigAreaIsFactoriosTest.CODEC);
-        TEST_TYPES.register("drill_takes_ore_from_under_it", () -> DrillTakesOreTest.CODEC);
-        TEST_TYPES.register("drill_outputs_to_the_front", () -> DrillOutputsToTheFrontTest.CODEC);
-        TEST_TYPES.register("drill_sleeps_with_nothing_to_mine", () -> DrillSleepsTest.CODEC);
-        TEST_TYPES.register("drill_takes_modules", () -> DrillTakesModulesTest.CODEC);
-    }
-
-    /** Called from the mod constructor so the test types register with everything else. */
-    public static void register(IEventBus modEventBus) {
-        TEST_TYPES.register(modEventBus);
-    }
-
-    @SubscribeEvent
-    static void registerTests(RegisterGameTestsEvent event) {
-        Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(
-                Identifier.fromNamespaceAndPath(NauvisMining.MODID, "default"),
-                new TestEnvironmentDefinition.AllOf(List.of()));
-
-        register(event, environment, "drills_are_factorio_sized", DrillSizeTest::new, 40);
-        register(event, environment, "drill_breaks_as_one", DrillBreaksAsOneTest::new, 40);
-        register(event, environment, "drill_field_is_walkable", DrillFieldIsWalkableTest::new, 40);
-        register(event, environment, "drill_slots_are_a_pickaxe_and_fuel", DrillSlotsTest::new, 40);
-        register(event, environment, "drill_covers_factorios_area", DigAreaIsFactoriosTest::new, 40);
-        register(event, environment, "drill_takes_ore_from_under_it", DrillTakesOreTest::new, 160);
-        register(event, environment, "drill_outputs_to_the_front", DrillOutputsToTheFrontTest::new, 120);
-        register(event, environment, "drill_sleeps_with_nothing_to_mine", DrillSleepsTest::new, 60);
-        register(event, environment, "drill_takes_modules", DrillTakesModulesTest::new, 60);
-    }
-
-    private interface TestFactory {
-        GameTestInstance create(TestData<Holder<TestEnvironmentDefinition<?>>> info);
-    }
-
-    private static void register(RegisterGameTestsEvent event,
-            Holder<TestEnvironmentDefinition<?>> environment, String name, TestFactory factory, int maxTicks) {
-        event.registerTest(
-                Identifier.fromNamespaceAndPath(NauvisMining.MODID, name),
-                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true,
-                        Rotation.NONE, false, 1, 1, false, PADDING)));
-    }
 
     // --- helpers ------------------------------------------------------------------------------
 
@@ -205,16 +255,9 @@ public final class NauvisMiningGameTests {
      * asserted here against flat numbers, and Project Nauvis's {@code tools/check_models.py}
      * asserts the same shapes against Factorio's own figures a second time.
      */
-    public static class DrillSizeTest extends GameTestInstance {
+    public static class DrillSizeTest extends PackGameTest {
 
-        public static final MapCodec<DrillSizeTest> CODEC =
-                RecordCodecBuilder.<DrillSizeTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(DrillSizeTest::info))
-                                .apply(i, DrillSizeTest::new));
-
-        public DrillSizeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        DrillSizeTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -253,92 +296,15 @@ public final class NauvisMiningGameTests {
             }
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("drills are Factorio sized");
-        }
     }
 
-    /**
-     * Break one block of a drill and the rest go, giving back exactly one drill.
-     *
-     * <p>A corner is broken rather than the block that holds the machine: it has no block entity,
-     * its own loot entry is conditioned away, and everything after it is the teardown cascading
-     * across the footprint. Both ways that fails are quiet - blocks left standing that nothing
-     * can break, or nine drills dropped where one was placed.
-     */
-    public static class DrillBreaksAsOneTest extends GameTestInstance {
-
-        public static final MapCodec<DrillBreaksAsOneTest> CODEC =
-                RecordCodecBuilder.<DrillBreaksAsOneTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(DrillBreaksAsOneTest::info))
-                                .apply(i, DrillBreaksAsOneTest::new));
-
-        public DrillBreaksAsOneTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            MinerBlock block = ModBlocks.DRILLS.get(MachineTier.ELECTRIC).get();
-            MachineShape shape = block.shape();
-            place(helper, DRILL, MachineTier.ELECTRIC);
-
-            // A back corner: two blocks from the block entity and about as far from it as an
-            // electric drill goes.
-            helper.getLevel().destroyBlock(helper.absolutePos(DRILL.offset(-1, 0, 1)), true);
-
-            helper.runAfterDelay(2, () -> {
-                for (int part = 0; part < shape.cellCount(); part++) {
-                    helper.assertBlockPresent(Blocks.AIR,
-                            shape.cellPos(DRILL, part, Direction.NORTH));
-                }
-                helper.assertItemEntityCountIs(
-                        ModItems.DRILLS.get(MachineTier.ELECTRIC).get(), DRILL, 4.0, 1);
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a drill breaks as one");
-        }
-    }
-
-    /**
-     * Two electric drills side by side, and you walk straight over both.
-     *
-     * <p>The reason the deck is half a block. A mining field is dozens of drills covering the
-     * ground the player wants to be on, and there is nowhere else to put them - so at anything
-     * taller than the player's own step, a patch of ore becomes a patch you cannot cross. Half a
-     * block is under the 0.6 a player climbs for free, so the whole field is one floor.
-     *
-     * <p>The output heads are asserted to stand a full block, so this cannot come out green by the
-     * drill quietly flattening to nothing.
-     */
-    public static class DrillFieldIsWalkableTest extends GameTestInstance {
-
-        public static final MapCodec<DrillFieldIsWalkableTest> CODEC =
-                RecordCodecBuilder.<DrillFieldIsWalkableTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(DrillFieldIsWalkableTest::info))
-                                .apply(i, DrillFieldIsWalkableTest::new));
-
-        public DrillFieldIsWalkableTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+    /** Two electric drills side by side, and you walk straight over both. */
+    public static class DrillFieldIsWalkableTest extends PackGameTest {
 
         /** What a player climbs without jumping. */
         private static final double STEP = 0.6;
+
+        DrillFieldIsWalkableTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -375,99 +341,17 @@ public final class NauvisMiningGameTests {
             helper.succeed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a drill field is walkable");
-        }
     }
 
     // --- the drill is Factorio's --------------------------------------------------------------
 
     /**
-     * A drill's slots are a pickaxe and, on a burner, fuel: nothing else goes in, and an electric
-     * drill's fuel slot takes nothing at all. The module slots are Factorio's count - none on a
-     * burner, three on an electric.
-     *
-     * <p>Asked of the inventory's own rule, which is what the screen, the hopper and the inserter
-     * all go through, so one answer covers the three.
-     */
-    public static class DrillSlotsTest extends GameTestInstance {
-
-        public static final MapCodec<DrillSlotsTest> CODEC =
-                RecordCodecBuilder.<DrillSlotsTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(DrillSlotsTest::info))
-                                .apply(i, DrillSlotsTest::new));
-
-        public DrillSlotsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            MinerBlockEntity burner = place(helper, DRILL, MachineTier.BURNER);
-            MinerBlockEntity electric = place(helper, DRILL.offset(6, 0, 0), MachineTier.ELECTRIC);
-
-            ItemResource pickaxe = ItemResource.of(Items.IRON_PICKAXE);
-            ItemResource shovel = ItemResource.of(Items.IRON_SHOVEL);
-            ItemResource coal = ItemResource.of(Items.COAL);
-
-            helper.assertTrue(burner.inventory().isValid(MinerBlockEntity.PICKAXE_SLOT, pickaxe),
-                    "the pickaxe slot refused a pickaxe");
-            helper.assertFalse(burner.inventory().isValid(MinerBlockEntity.PICKAXE_SLOT, shovel),
-                    "the pickaxe slot took a shovel");
-            helper.assertFalse(burner.inventory().isValid(MinerBlockEntity.PICKAXE_SLOT, coal),
-                    "the pickaxe slot took coal");
-            helper.assertTrue(burner.inventory().isValid(MinerBlockEntity.FUEL_SLOT, coal),
-                    "a burner's fuel slot refused coal");
-            helper.assertFalse(burner.inventory().isValid(MinerBlockEntity.FUEL_SLOT, pickaxe),
-                    "a burner's fuel slot took a pickaxe");
-            helper.assertFalse(electric.inventory().isValid(MinerBlockEntity.FUEL_SLOT, coal),
-                    "an electric drill's fuel slot took coal");
-
-            helper.assertValueEqual(burner.modules().size(), 0, "module slots on a burner drill");
-            helper.assertValueEqual(electric.modules().size(), 3, "module slots on an electric drill");
-            helper.assertTrue(burner.gridView() == null, "a burner drill offered the grid a buffer");
-            helper.assertTrue(electric.gridView() != null, "an electric drill offered the grid nothing");
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a drill's slots are a pickaxe and fuel");
-        }
-    }
-
-    /**
      * A drill covers Factorio's area: the two by two a burner stands on, and the five by five
      * around an electric drill's three by three, and not one column more or less.
-     *
-     * <p>The first half is the claim a player can see. The second half is the one they cannot: the
-     * area hands out columns by index, ring by ring, and <b>an off-by-one in that arithmetic loses
-     * or repeats a column silently</b> - a drill would leave a strip of ore standing, or walk the
-     * same ground twice, and both look like a drill that is simply working. So every index of an
-     * area is walked and the set of columns it produces is compared with the rectangle it claims
-     * to be.
      */
-    public static class DigAreaIsFactoriosTest extends GameTestInstance {
+    public static class DigAreaIsFactoriosTest extends PackGameTest {
 
-        public static final MapCodec<DigAreaIsFactoriosTest> CODEC =
-                RecordCodecBuilder.<DigAreaIsFactoriosTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(DigAreaIsFactoriosTest::info))
-                                .apply(i, DigAreaIsFactoriosTest::new));
-
-        public DigAreaIsFactoriosTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        DigAreaIsFactoriosTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -508,43 +392,20 @@ public final class NauvisMiningGameTests {
             helper.assertValueEqual(seen.size(), area.columns(), tier + " drill columns actually handed out");
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a drill covers Factorio's area");
-        }
     }
 
     /**
-     * A burner drill with coal and a pickaxe takes iron ore out of the ground under it, puts raw
-     * iron in the chest in front of it, and leaves the ground standing.
-     *
-     * <p>The ore is under the back corner, two blocks from the output, so this is the drill
-     * reaching through the ground and not a block breaking in front of it. Afterwards the ore is
-     * either still ore - Crumbling Ore is in the pack and takes eight harvests to a block - or the
-     * stone it sat in when this mod runs alone; what it never is is air, and the stone beside it
-     * is untouched either way. Four seconds an ore at Factorio's quarter speed; the window allows
-     * the search and the delivery on top.
+     * A burner drill with coal and a pickaxe takes iron ore out of the ground under it, puts
+     * raw iron in the chest in front of it, and leaves the ground standing.
      */
-    public static class DrillTakesOreTest extends GameTestInstance {
-
-        public static final MapCodec<DrillTakesOreTest> CODEC =
-                RecordCodecBuilder.<DrillTakesOreTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(DrillTakesOreTest::info))
-                                .apply(i, DrillTakesOreTest::new));
-
-        public DrillTakesOreTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+    public static class DrillTakesOreTest extends PackGameTest {
 
         private static final BlockPos ORE = new BlockPos(1, 0, 1);
         private static final BlockPos STONE = new BlockPos(0, 0, 0);
         /** In front of the firebox, which is the burner's output head. */
         private static final BlockPos CHEST = new BlockPos(0, 1, -1);
+
+        DrillTakesOreTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -569,15 +430,6 @@ public final class NauvisMiningGameTests {
             });
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a drill takes ore from under it and leaves the ground");
-        }
     }
 
     /**
@@ -588,21 +440,14 @@ public final class NauvisMiningGameTests {
      * blocks: a drill that only covered its footprint would find nothing and this would time out.
      * The side chest is where the old drill would have pushed to, since it pushed anywhere.
      */
-    public static class DrillOutputsToTheFrontTest extends GameTestInstance {
-
-        public static final MapCodec<DrillOutputsToTheFrontTest> CODEC =
-                RecordCodecBuilder.<DrillOutputsToTheFrontTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(DrillOutputsToTheFrontTest::info))
-                                .apply(i, DrillOutputsToTheFrontTest::new));
-
-        public DrillOutputsToTheFrontTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+    public static class DrillOutputsToTheFrontTest extends PackGameTest {
 
         private static final BlockPos ORE = new BlockPos(-2, 0, -2);
         /** In front of the head, which is a block north of the middle. */
         private static final BlockPos FRONT = new BlockPos(0, 1, -2);
         private static final BlockPos SIDE = new BlockPos(2, 1, 0);
+
+        DrillOutputsToTheFrontTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -625,121 +470,6 @@ public final class NauvisMiningGameTests {
             });
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a drill outputs to the front, and reaches its ring");
-        }
     }
 
-    /**
-     * A drill over plain rock walks its columns once, reports that there is nothing to mine, and
-     * stops ticking - non-negotiable #5, for the machine a base has most of.
-     */
-    public static class DrillSleepsTest extends GameTestInstance {
-
-        public static final MapCodec<DrillSleepsTest> CODEC =
-                RecordCodecBuilder.<DrillSleepsTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(DrillSleepsTest::info))
-                                .apply(i, DrillSleepsTest::new));
-
-        public DrillSleepsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            MinerBlockEntity drill = place(helper, DRILL, MachineTier.BURNER);
-            bedrock(helper, drill.digArea(), 3);
-            handPickaxe(drill, Items.IRON_PICKAXE);
-            drill.inventory().set(MinerBlockEntity.FUEL_SLOT, ItemResource.of(Items.COAL), 4);
-
-            helper.runAfterDelay(30, () -> {
-                helper.assertValueEqual(drill.status(), MinerStatus.NO_ORE, "status over bare rock");
-                helper.assertFalse(helper.getBlockState(DRILL).getValue(MinerBlock.LIT),
-                        "a drill with nothing to mine is lit");
-                helper.assertFalse(helper.getLevel().getBlockTicks().hasScheduledTick(
-                                helper.absolutePos(DRILL), ModBlocks.DRILLS.get(MachineTier.BURNER).get()),
-                        "a drill with nothing to mine is still ticking");
-                helper.assertValueEqual(drill.inventory().getAmountAsInt(MinerBlockEntity.FUEL_SLOT), 4,
-                        "coal in a drill that never mined - fuel is spent only while working");
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a drill with nothing to mine sleeps");
-        }
-    }
-
-    /**
-     * An electric drill takes Factorio's modules and reads them the way every other machine does:
-     * a speed module shortens the cycle by its speed and raises the draw by its cost.
-     *
-     * <p>The module is {@code nauvis_machines}' and this mod does not name it, so the item is
-     * looked up by id and the test passes trivially when it is not there - which it is not in a
-     * standalone run of this mod. The slot accepting it at all is the library's rule.
-     */
-    public static class DrillTakesModulesTest extends GameTestInstance {
-
-        public static final MapCodec<DrillTakesModulesTest> CODEC =
-                RecordCodecBuilder.<DrillTakesModulesTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(DrillTakesModulesTest::info))
-                                .apply(i, DrillTakesModulesTest::new));
-
-        public DrillTakesModulesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            Item speed = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_machines", "speed_module"));
-            if (ModuleSlots.moduleOf(new ItemStack(speed)) == null) {
-                helper.succeed();
-                return;
-            }
-
-            MinerBlockEntity drill = place(helper, DRILL, MachineTier.ELECTRIC);
-            bedrock(helper, drill.digArea(), 2);
-            helper.setBlock(new BlockPos(0, 0, 0), Blocks.IRON_ORE);
-            handPickaxe(drill, Items.IRON_PICKAXE);
-            drill.modules().set(0, ItemResource.of(speed), 1);
-            charge(drill);
-
-            ModuleEffect effect = ModuleSlots.moduleOf(new ItemStack(speed)).effect();
-            helper.runAfterDelay(10, () -> {
-                helper.assertValueEqual(drill.status(), MinerStatus.MINING, "status with ore, power and a module");
-                helper.assertValueEqual(drill.cycleTicks(),
-                        MinerBlockEntity.cycleTicksFor(MachineTier.ELECTRIC, effect, 0),
-                        "ticks an ore takes with a speed module");
-                helper.assertTrue(drill.cycleTicks()
-                        < MinerBlockEntity.cycleTicksFor(MachineTier.ELECTRIC, ModuleEffect.NONE, 0),
-                        "a speed module did not shorten the cycle");
-                helper.assertValueEqual(drill.currentEnergyPerTick(),
-                        effect.scaleEnergy(MachineTier.ELECTRIC.energyPerTick()),
-                        "draw with a speed module");
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("an electric drill takes modules");
-        }
-    }
 }

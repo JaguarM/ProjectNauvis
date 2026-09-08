@@ -14,18 +14,6 @@ import net.minecraft.core.Direction;
 /**
  * What a chemical plant looks like and how much room it takes: three tiles by three, the size
  * Factorio made it, with the vat standing in the middle.
- *
- * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py}
- * holds this to the {@code size} recorded for {@code chemical-plant} in {@code data/mapping.json}.
- *
- * <h2>Two in at the back, two out at the front</h2>
- *
- * <p>Factorio's chemical plant takes its two fluids in on one side, at the corners, and gives its
- * two out on the opposite side, at the corners - the inputs on the side its arrow points to. Here
- * that is the north corners' north faces for the inputs and the south corners' south faces for
- * the outputs, first input and first output on the west. The refinery is the other way round,
- * inputs towards the player; both are Factorio's own orientations, and turning the machine is
- * how a player chooses.
  */
 public final class ChemicalPlantShape {
     private ChemicalPlantShape() {}

@@ -24,28 +24,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * The items on a belt: the thing the whole subsystem exists to show.
- *
- * <p>Each belt block draws what is standing on its own block, and no more. That keeps a belt line
- * culled the way everything else is - a block off the edge of the screen draws nothing - and it is
- * why this renderer, unlike the pole's, needs neither {@code shouldRenderOffScreen} nor a render
- * bounding box that reaches into other blocks.
- *
- * <h2>Where the positions come from</h2>
- *
- * <p>Nowhere on the wire. The client has its own copy of every belt run, built from block states
- * it already had and advanced by the same code the server runs - see {@code BeltRun}. So drawing
- * an item is a question the client answers locally, and a busy belt costs no network traffic at
- * all.
- *
- * <h2>Between two ticks</h2>
- *
- * <p>Items move six sixty-fourths of a block a tick, which at sixty frames a second is three
- * frames of stillness and one jump. So each item is drawn part of the way back along the step it
- * last took: {@link BeltLane#lastMove(int)} says how far that was, per item, because at a jam the
- * item at the front did not move and the one behind it did.
- */
+/** The items on a belt: the thing the whole subsystem exists to show. */
 public class BeltRenderer implements BlockEntityRenderer<BeltBlockEntity, BeltRenderState> {
 
     /** How big an item rides. Small enough that four to a tile read as four things, not a smear. */
@@ -129,15 +108,6 @@ public class BeltRenderer implements BlockEntityRenderer<BeltBlockEntity, BeltRe
     /**
      * A little wider than the block, because an item is drawn part-way through the step it is
      * taking and that can carry it a fraction over the edge.
-     *
-     * <p>Nothing like the pole's problem - a belt never draws into the next block but one - but
-     * the default box is exactly one block and an item straddling a boundary would pop.
-     *
-     * <p><b>A whole block taller on a slope.</b> A ramp lifts what is standing on it by a block
-     * between one edge of its own tile and the other, so the item at the top of a climb is drawn
-     * above the block drawing it. Geometry outside this box is frustum-culled with no error and
-     * nothing in the log - see {@code docs/PITFALLS.md} - so a belt line up a hill would lose the
-     * items on its ramps at certain camera angles and nowhere else.
      */
     @Override
     public AABB getRenderBoundingBox(BeltBlockEntity belt) {

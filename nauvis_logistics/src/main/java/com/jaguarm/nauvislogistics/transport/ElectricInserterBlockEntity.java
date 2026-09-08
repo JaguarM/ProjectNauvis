@@ -11,22 +11,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 
-/**
- * The inserter that runs on the grid: faster than the burner, and useless without a pole.
- *
- * <p>Every electric tier is this class - the basic arm and the long-handed one both - because
- * what differs between them is a swing time, a draw and a reach, and all three are facts about
- * the block. It reads them through {@link #tier()}, which is why there is one block entity type
- * for the two blocks and why a third tier will need none of its own.
- *
- * <p>This is the item that closes milestone 1, and it was deliberately left unregistered until
- * there was a grid to plug it into. An electric inserter that worked without electricity would be
- * strictly better than the burner for nothing, and progression that can be skipped is progression
- * that will be.
- *
- * <p>There is no fuel slot and nothing to spill, which is most of why it is a smaller class than
- * {@link BurnerInserterBlockEntity} rather than a bigger one.
- */
+/** The inserter that runs on the grid: faster than the burner, and useless without a pole. */
 public class ElectricInserterBlockEntity extends InserterBlockEntity {
 
     /**

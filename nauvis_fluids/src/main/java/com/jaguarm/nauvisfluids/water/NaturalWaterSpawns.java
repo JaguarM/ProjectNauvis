@@ -18,17 +18,6 @@ import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 
 /**
  * Fish in the sea, after the sea stopped being {@code minecraft:water}.
- *
- * <p>Almost everything vanilla does with water asks the {@code #minecraft:water} tag, and natural
- * water is in it. Spawning is the exception that matters: cod, salmon, pufferfish, tropical fish,
- * squid, dolphins, glow squid and the nautilus each check for the water <em>block</em> by name
- * above the spot they would appear, and an ocean of ours would be empty. So each of those gets a
- * second spawn rule alongside vanilla's - the same rule, reading our block where vanilla reads
- * its own - through NeoForge's event, which ORs it with the original. Nothing is replaced: a
- * lake of poured water spawns exactly what it always did.
- *
- * <p>The rules are copied rather than called because the block name is inside each of them.
- * Guardians, drowned and axolotls ask the tag and need nothing.
  */
 @EventBusSubscriber(modid = NauvisFluids.MODID)
 public final class NaturalWaterSpawns {

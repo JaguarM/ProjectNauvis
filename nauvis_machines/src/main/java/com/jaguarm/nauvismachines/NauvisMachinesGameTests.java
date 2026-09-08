@@ -21,20 +21,16 @@ import com.jaguarm.nauvislib.multiblock.MachineShape;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvismachines.registry.ModBlocks;
 import com.jaguarm.nauvismachines.registry.ModItems;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.jaguarm.nauvislib.test.GameTests;
+import com.jaguarm.nauvislib.test.PackGameTest;
+import com.jaguarm.nauvislib.test.PackGameTest.Info;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInstance;
-import net.minecraft.gametest.framework.TestData;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.player.Player;
@@ -45,14 +41,9 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.Rotation;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
-import net.neoforged.neoforge.registries.DeferredRegister;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.transfer.ResourceHandler;
@@ -60,32 +51,683 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
-/**
- * Tests that run inside a real server, headless, reporting pass or fail on exit.
- *
- * <p>This is the half of testing that needs nobody watching. Behaviour - a machine consuming its
- * ingredients, a hopper being refused the ingredients it should not have, a machine going back
- * to sleep - belongs here. How any of it looks does not, and never will.
- *
- * <p>Run with {@code ./gradlew :nauvis:runGameTestServer}, which puts every mod in the pack on one
- * classpath, or {@code :nauvis_machines:runGameTestServer} for this mod alone.
- *
- * <p>The 26.2 shape is registry-driven and unlike every tutorial. See {@code docs/API-26.2.md} -
- * in particular, {@code FunctionGameTestInstance} is unavailable to mods, because the registry
- * its bodies live in is bootstrapped during {@code BuiltInRegistries} static initialisation,
- * before any mod exists. Subclassing {@link GameTestInstance} is the way in.
- */
-@EventBusSubscriber(modid = NauvisMachines.MODID)
+/** Tests that run inside a real server, headless, reporting pass or fail on exit. */
 public final class NauvisMachinesGameTests {
 
     private NauvisMachinesGameTests() {}
 
-    /**
-     * A test whose structure is missing silently does not run - {@code placeStructure} returns
-     * false and reports nothing. Minecraft ships {@code minecraft:empty}, which is all a test
-     * needing no terrain requires.
-     */
-    private static final Identifier EMPTY_STRUCTURE = Identifier.withDefaultNamespace("empty");
+    static void register(IEventBus modEventBus) {
+        GameTests tests = new GameTests(NauvisMachines.MODID, modEventBus);
+
+        // The assembling machine exists in the world, not merely in a registry.
+        tests.add("assembler_places", 20, PADDING, helper -> {
+            placeMachine(helper, MACHINE);
+            helper.assertBlockPresent(ModBlocks.ASSEMBLING_MACHINE_1.get(), MACHINE);
+            helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            helper.succeed();
+        });
+
+        // The inventory holds what is put in it, and the published view lets things in one end only.
+        //
+        // The asymmetry is the point. A hopper under an assembler must take the product and not
+        // drain the ingredients it was just fed, and that rule lives in
+        // com.jaguarm.nauvislib.transfer.MachineAccess rather than in the inventory.
+        tests.add("assembler_holds_items", 20, PADDING, helper -> {
+            placeMachine(helper, MACHINE);
+            AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            ResourceHandler<ItemResource> view = assembler.automationView();
+
+            // A machine with no recipe takes nothing, which is Factorio's rule: nothing an
+            // inserter drops in can be for anything.
+            helper.assertValueEqual(insert(view, Items.IRON_INGOT, 10), 0, "ingots accepted with no recipe");
+
+            // With one, each slot is one ingredient's - the assembler's recipe is circuits, gears
+            // and plates in that order - so plates land in the third slot and nowhere else, and a
+            // stick, which the recipe has no use for, lands nowhere.
+            assembler.setRecipe(AssemblerBlockEntity.recipeProducing(helper.getLevel(), ModItems.ASSEMBLING_MACHINE_1.get()));
+            helper.assertValueEqual(insert(view, Items.IRON_INGOT, 10), 10, "ingots accepted");
+            helper.assertValueEqual(assembler.inventory().getAmountAsInt(2), 10, "ingots in the plates' slot");
+            helper.assertValueEqual(assembler.inventory().getAmountAsInt(0), 0, "ingots in the circuits' slot");
+            helper.assertValueEqual(insert(view, Items.STICK, 1), 0, "sticks accepted by a machine that wants none");
+
+            // Extraction from an input slot is refused: those are the machine's to spend.
+            try (Transaction transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(
+                        view.extract(ItemResource.of(Items.IRON_INGOT), 10, transaction), 0,
+                        "ingredients taken back out through the capability");
+            }
+
+            // A result in the output slot is extractable, and nothing may be inserted there.
+            assembler.inventory().set(AssemblerBlockEntity.OUTPUT_SLOT, ItemResource.of(Items.IRON_BLOCK), 1);
+            try (Transaction transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(
+                        view.insert(AssemblerBlockEntity.OUTPUT_SLOT, ItemResource.of(Items.IRON_BLOCK), 1, transaction),
+                        0, "items inserted into the output slot");
+                helper.assertValueEqual(
+                        view.extract(ItemResource.of(Items.IRON_BLOCK), 1, transaction), 1,
+                        "results taken out of the output slot");
+            }
+
+            helper.succeed();
+        });
+
+        // Milestone 1, in one assertion: three circuits, five gears and nine iron plates go in, and
+        // half a second later an assembling machine comes out.
+        //
+        // Those numbers are Factorio's, they come from the generated recipe rather than from this
+        // file, and checkRecipes fails the build if the recipe on disk ever disagrees.
+        tests.add("assembler_crafts", 100, PADDING, helper -> {
+            Item product = ModItems.ASSEMBLING_MACHINE_1.get();
+            AssemblerBlockEntity assembler = machineMaking(helper, product);
+            feedOneCraft(helper, assembler.automationView());
+
+            // Ten ticks exactly: Factorio's half a second, from the generated recipe. Checked on
+            // the tick it should land on rather than "eventually" - at nine this test fails, and
+            // a craft time that silently drifted would fail it too.
+            helper.runAfterDelay(CRAFT_TICKS, () -> {
+                AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+                helper.assertValueEqual(
+                        machine.inventory().getResource(AssemblerBlockEntity.OUTPUT_SLOT).getItem(),
+                        product, "the item in the output slot");
+                helper.assertValueEqual(
+                        machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 1,
+                        "assembling machines made");
+
+                for (int slot = 0; slot < AssemblerBlockEntity.INPUT_SLOTS; slot++) {
+                    helper.assertValueEqual(
+                            machine.inventory().getAmountAsInt(slot), 0, "leftovers in input slot " + slot);
+                }
+                helper.succeed();
+            });
+        });
+        tests.add("assembling_machine_2_is_faster", AssemblingMachine2IsFasterTest::new, 100, PADDING);
+        tests.add("speed_modules_speed_an_assembler", SpeedModulesSpeedAnAssemblerTest::new, 100, PADDING);
+
+        // Two productivity modules bank a free gear every twelve and a half crafts.
+        //
+        // Factorio's productivity bar: each craft adds the modules' bonus - two at a twenty-fifth is
+        // two twenty-fifths - and when the bar fills the machine hands over one more product it never
+        // paid for. Thirteen crafts' worth of plates go in; thirteen crafts fill the bar past one; and
+        // fourteen gears come out, the last of them free. Twelve crafts in, there are exactly twelve.
+        tests.add("productivity_modules_bank_a_free_craft", 300, PADDING, helper -> {
+            Item gear = item(helper, "nauvis_materials:iron_gear_wheel");
+            ResourceKey<Recipe<?>> recipe = AssemblerBlockEntity.recipeProducing(helper.getLevel(), gear);
+            helper.assertTrue(recipe != null, "no timed recipe makes an iron gear wheel");
+
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+            AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            machine.setRecipe(recipe);
+            module(helper, machine.modules(), 0, ModItems.PRODUCTIVITY_MODULE.get());
+            module(helper, machine.modules(), 1, ModItems.PRODUCTIVITY_MODULE.get());
+            // A gear is ten ticks; at 0.75 times 0.9 that is 14.8, so fifteen a craft.
+            helper.onEachTick(() -> charge(machine));
+            helper.assertValueEqual(insert(machine.automationView(), Items.IRON_INGOT, 26), 26,
+                    "plates for thirteen gears accepted");
+
+            helper.startSequence()
+                    .thenExecuteAfter(12 * 15 + 6, () -> {
+                        helper.assertValueEqual(
+                                machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 12,
+                                "gears after twelve crafts - the bar is at 0.96 and nothing is owed yet");
+                        helper.assertTrue(Math.abs(machine.productivity().banked() - 0.96) < 1e-6,
+                                "the productivity bar after twelve crafts: " + machine.productivity().banked());
+                    })
+                    .thenExecuteAfter(15, () -> {
+                        helper.assertValueEqual(
+                                machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 14,
+                                "gears after thirteen crafts - the thirteenth fills the bar and one is free");
+                        helper.assertValueEqual(machine.inventory().getAmountAsInt(0), 0,
+                                "plates left - thirteen crafts paid for, not fourteen");
+                        helper.assertTrue(Math.abs(machine.productivity().banked() - 0.04) < 1e-6,
+                                "the bar after paying out: " + machine.productivity().banked());
+                    })
+                    .thenSucceed();
+        });
+
+        // A productivity module goes only into a machine making an intermediate product.
+        //
+        // Factorio's one restriction on modules, read off the recipe's crafting-menu tab: a gear is
+        // an intermediate, a stone furnace is not. Refused at the slot, so the screen refuses it; and a
+        // recipe that may not have them is refused while one sits in the machine, rather than the
+        // module being thrown out or quietly ignored. A machine with no recipe takes one, as Factorio's
+        // does.
+        tests.add("productivity_module_needs_an_intermediate", 20, PADDING, helper -> {
+            ResourceKey<Recipe<?>> gear = AssemblerBlockEntity.recipeProducing(
+                    helper.getLevel(), item(helper, "nauvis_materials:iron_gear_wheel"));
+            ResourceKey<Recipe<?>> furnace = AssemblerBlockEntity.recipeProducing(
+                    helper.getLevel(), ModItems.STONE_FURNACE.get());
+            helper.assertTrue(gear != null && furnace != null, "the gear and the stone furnace recipes");
+
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+            AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            ItemResource productivity = ItemResource.of(ModItems.PRODUCTIVITY_MODULE.get());
+            ItemResource speed = ItemResource.of(ModItems.SPEED_MODULE.get());
+
+            helper.assertTrue(machine.modules().isValid(0, productivity),
+                    "a productivity module refused by a machine with no recipe");
+
+            machine.setRecipe(furnace);
+            helper.assertFalse(machine.modules().isValid(0, productivity),
+                    "a productivity module accepted by a machine making a stone furnace");
+            helper.assertTrue(machine.modules().isValid(0, speed),
+                    "a speed module refused by a machine making a stone furnace");
+
+            machine.setRecipe(gear);
+            helper.assertTrue(machine.modules().isValid(0, productivity),
+                    "a productivity module refused by a machine making gears");
+            module(helper, machine.modules(), 0, ModItems.PRODUCTIVITY_MODULE.get());
+
+            machine.setRecipe(furnace);
+            helper.assertValueEqual(machine.recipeKey(), gear,
+                    "the recipe after choosing a stone furnace with a productivity module in - "
+                            + "Factorio refuses the recipe, and so should this");
+            helper.assertValueEqual(machine.modules().getAmountAsInt(0), 1,
+                    "the productivity module, which must not have been thrown out");
+            helper.succeed();
+        });
+
+        // The first machine has no fluid box and the second has two, at two faces and no others.
+        //
+        // Factorio's rule and the reason there are tiers. A pipe against the second machine's north
+        // edge fills its input, one against the south edge drains its output, and a pipe on a flank or
+        // a corner finds nothing - exactly as a refinery's flank offers nothing. The first machine
+        // offers nothing anywhere and refuses a recipe with a fluid in it.
+        tests.add("only_the_second_machine_has_fluid_boxes", 20, PADDING, helper -> {
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
+            AssemblerBlockEntity first = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            helper.assertFalse(first.hasFluidBoxes(), "an assembling machine 1 has a fluid box");
+            for (int part = 0; part < AssemblerShape.SHAPE.cellCount(); part++) {
+                for (Direction side : Direction.values()) {
+                    helper.assertTrue(fluidAt(helper, cell(AssemblerShape.SHAPE, part), side) == null,
+                            "an assembling machine 1 offers a fluid handler at cell " + part + " " + side);
+                }
+            }
+
+            helper.getLevel().destroyBlock(helper.absolutePos(MACHINE), false);
+            helper.startSequence().thenExecuteAfter(3, () -> {
+                placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+                AssemblerBlockEntity second = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+                helper.assertTrue(second.hasFluidBoxes(), "an assembling machine 2 has no fluid box");
+                MachineShape shape = AssemblingMachine2Shape.SHAPE;
+                helper.assertTrue(fluidAt(helper, cell(shape, AssemblingMachine2Shape.NORTH_EDGE), Direction.NORTH) != null,
+                        "no fluid handler at the second machine's input port");
+                helper.assertTrue(fluidAt(helper, cell(shape, AssemblingMachine2Shape.SOUTH_EDGE), Direction.SOUTH) != null,
+                        "no fluid handler at the second machine's output port");
+                helper.assertTrue(fluidAt(helper, cell(shape, AssemblingMachine2Shape.NORTH_EDGE), Direction.UP) == null,
+                        "a fluid handler on top of the input cell, where no pipe is drawn");
+                helper.assertTrue(fluidAt(helper, cell(shape, 5), Direction.EAST) == null,
+                        "a fluid handler on the second machine's flank");
+                helper.assertTrue(fluidAt(helper, cell(shape, 0), Direction.NORTH) == null,
+                        "a fluid handler on the second machine's corner");
+
+                // Drawing from the input, or filling the output, is refused: a pipe run must not
+                // drain the lubricant back out, and must not pour into a box the machine fills.
+                ResourceHandler<FluidResource> out = fluidAt(helper, cell(shape, AssemblingMachine2Shape.SOUTH_EDGE), Direction.SOUTH);
+                helper.assertValueEqual(fill(out, Fluids.WATER, 10), 0, "water a pipe could pour into the output box");
+            }).thenSucceed();
+        });
+
+        // An assembling machine 2 makes an electric engine unit: two circuits and an engine unit from
+        // its slots, fifteen lubricant from its fluid box, ten seconds at 0.75.
+        //
+        // The first item in the pack made from a fluid in an assembler. The lubricant is another
+        // mod's fluid and the recipe needs it, so this passes on the tier's refusal alone when the
+        // recipe is not here - the standalone run - and runs the craft in the pack. The input box takes
+        // only the recipe's fluid: water against it is refused, which is what keeps a wrong pipe from
+        // filling a machine that could never use it.
+        tests.add("assembling_machine_2_crafts_with_a_fluid", 400, PADDING, helper -> {
+            Item product = BuiltInRegistries.ITEM.getValue(
+                    Identifier.fromNamespaceAndPath("nauvis_materials", "electric_engine_unit"));
+            Fluid lubricant = BuiltInRegistries.FLUID.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "lubricant"));
+            ResourceKey<Recipe<?>> recipe = product == Items.AIR ? null
+                    : AssemblerBlockEntity.recipeProducing(helper.getLevel(), product);
+            if (recipe == null || lubricant == Fluids.EMPTY) {
+                helper.succeed();
+                return;
+            }
+
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
+            AssemblerBlockEntity first = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            first.setRecipe(recipe);
+            helper.assertTrue(first.recipeKey() == null,
+                    "an assembling machine 1 accepted a recipe with a fluid in it");
+            helper.getLevel().destroyBlock(helper.absolutePos(MACHINE), false);
+
+            // Registered up front, because the test framework's tick map cannot be added to from
+            // inside one of its own callbacks. The machine arrives a few ticks in.
+            AssemblerBlockEntity[] machine = new AssemblerBlockEntity[1];
+            helper.onEachTick(() -> {
+                if (machine[0] != null) {
+                    charge(machine[0]);
+                }
+            });
+
+            // Two hundred ticks over 0.75 is 266.7, so 267.
+            int ticks = Math.round(200 / AssemblingMachine2Block.CRAFTING_SPEED);
+            helper.startSequence()
+                    .thenExecuteAfter(3, () -> {
+                        placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+                        machine[0] = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+                        machine[0].setRecipe(recipe);
+                        helper.assertValueEqual(machine[0].recipeKey(), recipe, "the recipe on an assembling machine 2");
+
+                        ResourceHandler<FluidResource> in = fluidAt(helper,
+                                cell(AssemblingMachine2Shape.SHAPE, AssemblingMachine2Shape.NORTH_EDGE), Direction.NORTH);
+                        helper.assertTrue(in != null, "no handler at the input port");
+                        helper.assertValueEqual(fill(in, Fluids.WATER, 100), 0, "water taken by a box pointed at lubricant");
+                        helper.assertValueEqual(fill(in, lubricant, 100), 100, "lubricant taken by the input box");
+                        helper.assertValueEqual(insert(machine[0].automationView(),
+                                item(helper, "nauvis_materials:electronic_circuit"), 2), 2, "circuits accepted");
+                        helper.assertValueEqual(insert(machine[0].automationView(),
+                                item(helper, "nauvis_materials:engine_unit"), 1), 1, "an engine unit accepted");
+                    })
+                    .thenExecuteAfter(ticks + 3, () -> {
+                        helper.assertValueEqual(machine[0].inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 1,
+                                "electric engine units made after " + (ticks + 3) + " ticks");
+                        helper.assertValueEqual(machine[0].fluidIn().getAmountAsInt(0), 85,
+                                "lubricant left in the box after one craft of fifteen");
+                    })
+                    .thenSucceed();
+        });
+
+        // An assembling machine 2 fills a barrel from its input box and empties one into its output box.
+        //
+        // Factorio's barrels: an empty barrel and fifty water make a water barrel in a fifth of a
+        // second, and the reverse gives the water back - through the output port, which a pipe drains
+        // and nothing fills. The barrels are the fluids mod's items, so this passes on nothing when
+        // they are not here and runs both ways in the pack.
+        tests.add("assembling_machine_2_fills_and_empties_a_barrel", 100, PADDING, helper -> {
+            Item empty = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "empty_barrel"));
+            Item full = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "water_barrel"));
+            if (empty == Items.AIR || full == Items.AIR) {
+                helper.succeed();
+                return;
+            }
+            ResourceKey<Recipe<?>> fill = AssemblerBlockEntity.recipeProducing(helper.getLevel(), full);
+            ResourceKey<Recipe<?>> drain = ResourceKey.create(Registries.RECIPE,
+                    Identifier.fromNamespaceAndPath("nauvis_fluids", "empty_water_barrel"));
+            helper.assertTrue(fill != null, "no recipe fills a water barrel");
+
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+            AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+            helper.onEachTick(() -> charge(machine));
+            machine.setRecipe(fill);
+            ResourceHandler<FluidResource> in = fluidAt(helper,
+                    cell(AssemblingMachine2Shape.SHAPE, AssemblingMachine2Shape.NORTH_EDGE), Direction.NORTH);
+            helper.assertValueEqual(fill(in, Fluids.WATER, 50), 50, "water taken by the input box");
+            helper.assertValueEqual(insert(machine.automationView(), empty, 1), 1, "an empty barrel accepted");
+
+            // A fifth of a second over 0.75 is 5.3, so five ticks.
+            helper.startSequence()
+                    .thenExecuteAfter(8, () -> {
+                        helper.assertValueEqual(machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 1,
+                                "water barrels made");
+                        helper.assertTrue(machine.inventory().getResource(AssemblerBlockEntity.OUTPUT_SLOT).is(full),
+                                "what the machine made is not a water barrel");
+                        helper.assertValueEqual(machine.fluidIn().getAmountAsInt(0), 0, "water left after filling");
+
+                        // Now the other way: the barrel back in, the water out through the output port.
+                        machine.inventory().set(AssemblerBlockEntity.OUTPUT_SLOT, ItemResource.EMPTY, 0);
+                        machine.setRecipe(drain);
+                        helper.assertValueEqual(machine.recipeKey(), drain, "the emptying recipe on the machine");
+                        helper.assertValueEqual(insert(machine.automationView(), full, 1), 1, "a water barrel accepted");
+                    })
+                    .thenExecuteAfter(8, () -> {
+                        helper.assertTrue(machine.inventory().getResource(AssemblerBlockEntity.OUTPUT_SLOT).is(empty),
+                                "what emptying a barrel left in the output slot");
+                        helper.assertValueEqual(machine.fluidOut().getAmountAsInt(0), 50, "water in the output box");
+                        ResourceHandler<FluidResource> out = fluidAt(helper,
+                                cell(AssemblingMachine2Shape.SHAPE, AssemblingMachine2Shape.SOUTH_EDGE), Direction.SOUTH);
+                        try (Transaction transaction = Transaction.openRoot()) {
+                            helper.assertValueEqual(out.extract(FluidResource.of(Fluids.WATER), 50, transaction), 50,
+                                    "water a pipe drew from the output port");
+                            transaction.commit();
+                        }
+                    })
+                    .thenSucceed();
+        });
+
+        // Non-negotiable #5, asserted rather than remembered: a machine with a recipe and nothing to
+        // make it from must not be scheduled to tick at all.
+        //
+        // Setting the recipe wakes it, so this proves both halves - that it woke, looked, and put
+        // itself back to sleep, rather than that it never started.
+        tests.add("assembler_sleeps", 60, PADDING, helper -> {
+            machineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
+
+            helper.runAfterDelay(CRAFT_TICKS, () -> {
+                helper.assertFalse(isScheduled(helper),
+                        "an assembler with a recipe but no ingredients is still scheduled to tick");
+                helper.succeed();
+            });
+        });
+
+        // A machine whose output slot is full holds onto its ingredients rather than voiding them.
+        //
+        // The whole craft - paying the ingredients and banking the result - happens inside one
+        // transaction for exactly this reason: a result that will not fit rolls the ingredients back
+        // as though the craft never started. Getting this wrong destroys items in a way a player
+        // notices only as a base that quietly runs short.
+        tests.add("assembler_stalls_when_full", 100, PADDING, helper -> {
+            Item product = ModItems.ASSEMBLING_MACHINE_1.get();
+            AssemblerBlockEntity assembler = machineMaking(helper, product);
+
+            // A full output slot. Set directly rather than inserted, because the published view
+            // refuses insertion here - which is what the previous test is about.
+            int full = product.getDefaultMaxStackSize();
+            assembler.inventory().set(AssemblerBlockEntity.OUTPUT_SLOT, ItemResource.of(product), full);
+            feedOneCraft(helper, assembler.automationView());
+
+            helper.runAfterDelay(CRAFT_TICKS * 3, () -> {
+                AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+                helper.assertValueEqual(
+                        machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), full,
+                        "items in the output slot");
+
+                int ingredients = 0;
+                for (int slot = 0; slot < AssemblerBlockEntity.INPUT_SLOTS; slot++) {
+                    ingredients += machine.inventory().getAmountAsInt(slot);
+                }
+                helper.assertValueEqual(ingredients, 3 + 5 + 9, "ingredients still waiting to be spent");
+
+                helper.assertFalse(isScheduled(helper),
+                        "an assembler that cannot put its result anywhere is still scheduled to tick");
+                helper.succeed();
+            });
+        });
+
+        // Breaking a machine gives its contents back rather than eating them.
+        //
+        // Cheap to test and expensive to get wrong: a machine that swallows a stack on every
+        // break is the kind of bug a player reads as bad luck for a long time before reporting it.
+        tests.add("assembler_spills_when_broken", 60, PADDING, helper -> {
+            AssemblerBlockEntity assembler = unpoweredMachineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
+            helper.assertValueEqual(
+                    insert(assembler.automationView(), Items.IRON_INGOT, 7), 7, "ingots accepted");
+
+            // Not helper.destroyBlock, which passes dropBlock = false and so would never
+            // exercise the loot table. A block that drops nothing is the plural-directory
+            // failure in docs/API-26.2.md, and it is worth catching here.
+            helper.getLevel().destroyBlock(helper.absolutePos(MACHINE), true);
+
+            // A tick later: the item entities are not queryable in the tick that spawned them.
+            helper.runAfterDelay(2, () -> {
+                helper.assertItemEntityPresent(ModItems.ASSEMBLING_MACHINE_1.get(), MACHINE, 2.0);
+                helper.assertItemEntityCountIs(Items.IRON_INGOT, MACHINE, 2.0, 7);
+                helper.succeed();
+            });
+        });
+
+        // Opening the machine gives a menu that can point it at a recipe.
+        //
+        // Everything a screen does that a test can reach: the menu is built, it is the one the
+        // player has open, and RecipeSelector.selectRecipe - the method Facrafting's panel
+        // calls through a payload - reaches the block entity. What it looks like is not testable and
+        // is Yannic's to judge; that the wiring behind it works is, and this is where it breaks
+        // silently otherwise.
+        tests.add("assembler_menu_selects_recipe", 60, PADDING, helper -> {
+            ServerLevel level = helper.getLevel();
+            placeMachine(helper, MACHINE);
+            AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+
+            // The menu is built the way MenuProvider builds it, rather than through
+            // player.openMenu: opening a screen sends NeoForge's advanced_open_screen payload, and
+            // a mock player's connection has never negotiated a payload registry to receive it.
+            // What that would add over this is vanilla's own plumbing; what is below is ours.
+            Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+            AbstractContainerMenu opened = assembler.createMenu(1, player.getInventory(), player);
+
+            helper.assertTrue(opened instanceof AssemblerMenu,
+                    "opening an assembler did not give an assembler menu");
+            AssemblerMenu menu = (AssemblerMenu) opened;
+
+            helper.assertValueEqual(menu.slots.size(), AssemblerBlockEntity.SLOT_COUNT + 36,
+                    "slots on the assembler menu");
+            helper.assertTrue(menu.selectedRecipe() == null, "a fresh machine is already making something");
+
+            ResourceKey<Recipe<?>> recipe =
+                    AssemblerBlockEntity.recipeProducing(level, ModItems.ASSEMBLING_MACHINE_1.get());
+            helper.assertTrue(recipe != null, "no timed recipe makes an assembling machine");
+
+            // The verb Facrafting's panel invokes, straight through the interface.
+            menu.selectRecipe(recipe);
+            helper.assertValueEqual(assembler.recipeKey(), recipe, "the recipe the machine was pointed at");
+            helper.assertValueEqual(menu.selectedRecipe(), recipe, "the recipe the menu reports back");
+
+            // And clicking it a second time turns the machine off again.
+            menu.selectRecipe(null);
+            helper.assertTrue(assembler.recipeKey() == null, "selecting nothing did not clear the recipe");
+
+            helper.succeed();
+        });
+
+        // The second tier's screen stays open.
+        //
+        // It did not. The menu checked itself against the first machine's block, the way vanilla's
+        // one-block helper does, and an assembling machine 2 failed that check on the tick after its
+        // screen opened - the server closed it again before anyone could see. Every other test passed,
+        // because none of them opens a menu on a tier 2, and a client boot is the only other thing
+        // that would have found it.
+        tests.add("assembler_menu_stays_open_on_tier_2", 20, PADDING, helper -> {
+            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
+            AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+
+            // A mock player is made at the world's origin; the check is a reach check too.
+            Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+            BlockPos beside = helper.absolutePos(MACHINE.offset(2, 1, 0));
+            player.setPos(beside.getX() + 0.5, beside.getY(), beside.getZ() + 0.5);
+
+            AbstractContainerMenu menu = assembler.createMenu(1, player.getInventory(), player);
+            helper.assertTrue(menu.stillValid(player),
+                    "an assembling machine 2's menu reports itself invalid the moment it is built, "
+                            + "so its screen closes on the next tick");
+            helper.succeed();
+        });
+
+        // An assembler with everything except electricity makes nothing.
+        //
+        // Factorio's assembling machine 1 is electric, and this is what makes the boiler, the
+        // engine and the pole part of the factory rather than a demonstration standing beside it.
+        //
+        // It also asserts the machine is asleep rather than merely stalled. A machine
+        // that spins on a craft it cannot pay for costs exactly as much as one that works, and looks
+        // identical from anywhere except a profiler.
+        tests.add("assembler_needs_power", 100, PADDING, helper -> {
+            AssemblerBlockEntity assembler =
+                    unpoweredMachineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
+            feedOneCraft(helper, assembler.automationView());
+
+            helper.runAfterDelay(CRAFT_TICKS * 4, () -> {
+                AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
+                helper.assertValueEqual(
+                        machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 0,
+                        "items made by an assembler with no electricity");
+
+                int ingredients = 0;
+                for (int slot = 0; slot < AssemblerBlockEntity.INPUT_SLOTS; slot++) {
+                    ingredients += machine.inventory().getAmountAsInt(slot);
+                }
+                helper.assertValueEqual(ingredients, 3 + 5 + 9,
+                        "ingredients still waiting in an unpowered assembler");
+
+                helper.assertFalse(isScheduled(helper),
+                        "an assembler with no electricity is still scheduled to tick, so it is "
+                                + "spinning on a craft it cannot pay for");
+                helper.succeed();
+            });
+        });
+
+        // The other half of sleeping, and the half that is easy to get wrong.
+        //
+        // A machine that stopped for want of power is not scheduled for anything, so nothing it
+        // does can start it again - the wake has to arrive from outside, through the energy handler.
+        // Deleting MachinePower's callback leaves every other test in this file passing and
+        // fails this one, which is the whole reason it is written separately: a factory that stops
+        // for good the first time the coal runs out is a bug nobody sees until it happens.
+        tests.add("assembler_wakes_when_power_arrives", 100, PADDING, helper -> {
+            AssemblerBlockEntity assembler =
+                    unpoweredMachineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
+            feedOneCraft(helper, assembler.automationView());
+
+            helper.startSequence()
+                    .thenExecuteAfter(CRAFT_TICKS * 2, () -> helper.assertFalse(isScheduled(helper),
+                            "the machine did not stop, so this test cannot prove it restarts"))
+                    .thenExecute(() -> {
+                        charge(helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class));
+                        helper.assertTrue(isScheduled(helper),
+                                "electricity arrived and the machine was not woken - it will sleep "
+                                        + "through the grid coming back");
+                    })
+                    .thenExecuteAfter(CRAFT_TICKS + 2, () -> helper.assertValueEqual(
+                            helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class)
+                                    .inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT),
+                            1,
+                            "items made after the power came back"))
+                    .thenSucceed();
+        });
+
+        // A machine is not a battery: what fills it must not be able to empty it again.
+        tests.add("assembler_gives_no_power_back", 40, PADDING, helper -> {
+            AssemblerBlockEntity assembler = machineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
+            helper.assertValueEqual(assembler.energyStored(), AssemblerBlockEntity.ENERGY_CAPACITY,
+                    "charge in a machine the grid just filled");
+
+            try (Transaction transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(assembler.gridView().extract(1000, transaction), 0,
+                        "energy taken back out of a machine");
+                transaction.commit();
+            }
+            helper.assertValueEqual(assembler.energyStored(), AssemblerBlockEntity.ENERGY_CAPACITY,
+                    "charge after something tried to drain it");
+            helper.succeed();
+        });
+
+        // A machine is ten blocks, they are the right ten, and only one of them holds anything.
+        //
+        // The footprint is Factorio identity - three tiles by three - so this asserts the count and
+        // the arrangement rather than trusting the shape class to have been read correctly. It also
+        // asserts the thing that would otherwise be found by a crash: nine of the ten have no block
+        // entity, and every one of them can still name the tenth.
+        tests.add("assembler_is_ten_blocks", 20, PADDING, helper -> {
+            AssemblerBlock block = ModBlocks.ASSEMBLING_MACHINE_1.get();
+            MachineShape shape = AssemblerShape.SHAPE;
+            placeMachine(helper, MACHINE);
+
+            helper.assertValueEqual(shape.cellCount(), 10, "blocks in an assembler");
+
+            for (int part = 0; part < shape.cellCount(); part++) {
+                BlockPos pos = MACHINE.offset(shape.offset(part, Direction.NORTH));
+
+                helper.assertBlockPresent(block, pos);
+                helper.assertValueEqual(helper.getBlockState(pos).getValue(shape.part()), part,
+                        "which cell the block at " + pos + " says it is");
+
+                // Every cell knows where the machine keeps its things, from its blockstate alone.
+                helper.assertValueEqual(
+                        Multiblock.anchorPos(block, helper.getBlockState(pos), helper.absolutePos(pos)),
+                        helper.absolutePos(MACHINE), "anchor as seen from " + pos);
+
+                boolean isAnchor = part == shape.anchor();
+                boolean hasBlockEntity =
+                        helper.getLevel().getBlockEntity(helper.absolutePos(pos)) != null;
+                helper.assertValueEqual(hasBlockEntity, isAnchor,
+                        "block entity at " + pos + ", where only the middle should have one");
+            }
+            helper.succeed();
+        });
+
+        // Break any one of the ten and the whole machine comes down, giving back exactly one machine.
+        //
+        // A corner is broken rather than the middle, because the corner is the harder case: it is
+        // two blocks from the anchor, it has no block entity, and its own loot table entry is
+        // conditioned away. Everything after it is the teardown rule cascading, and the two ways that
+        // goes wrong are both silent - blocks left standing with nothing to break them, or ten
+        // machines dropped where one was placed.
+        tests.add("assembler_breaks_as_one", 40, PADDING, helper -> {
+            placeMachine(helper, MACHINE);
+
+            // dropBlock = true, so the loot table actually runs. See the spill test.
+            helper.getLevel().destroyBlock(helper.absolutePos(MACHINE.offset(-1, 0, -1)), true);
+
+            helper.runAfterDelay(2, () -> {
+                for (int x = -1; x <= 1; x++) {
+                    for (int z = -1; z <= 1; z++) {
+                        helper.assertBlockPresent(Blocks.AIR, MACHINE.offset(x, 0, z));
+                    }
+                }
+                helper.assertBlockPresent(Blocks.AIR, MACHINE.above());
+
+                helper.assertItemEntityCountIs(ModItems.ASSEMBLING_MACHINE_1.get(), MACHINE, 4.0, 1);
+                helper.succeed();
+            });
+        });
+        tests.add("assembler_fed_from_any_cell", AssemblerFedFromAnyCellTest::new, 20, PADDING);
+        tests.add("assemblers_tile_walkably", AssemblersTileWalkablyTest::new, 20, PADDING);
+
+        // A radar with power holds tickets on the chunks around it, and lets them go when it is
+        // broken. The assertion is NeoForge's own count of forced chunks, which no other test here
+        // touches: it is false before the radar ticks, true once it has, and false again after the
+        // radar is gone - which is what stops a test world keeping forty-nine chunks alive for ever.
+        tests.add("a_radar_keeps_its_chunks_loaded", 60, PADDING, helper -> {
+            helper.assertFalse(ForcedChunkManager.hasForcedChunks(helper.getLevel()),
+                    "something is forcing chunks before the radar exists");
+            Multiblock.place(ModBlocks.RADAR.get(), helper.getLevel(), helper.absolutePos(MACHINE),
+                    ModBlocks.RADAR.get().defaultBlockState());
+            RadarBlockEntity radar = helper.getBlockEntity(MACHINE, RadarBlockEntity.class);
+            try (Transaction transaction = Transaction.openRoot()) {
+                radar.gridView().insert(RadarBlockEntity.ENERGY_CAPACITY, transaction);
+                transaction.commit();
+            }
+            helper.runAfterDelay(5, () -> {
+                helper.assertTrue(radar.isCharting(), "a powered radar is not charting");
+                helper.assertTrue(ForcedChunkManager.hasForcedChunks(helper.getLevel()),
+                        "a charting radar holds no chunk tickets");
+                helper.assertTrue(radar.energyStored() < RadarBlockEntity.ENERGY_CAPACITY,
+                        "the radar charted without spending anything");
+                helper.destroyBlock(MACHINE);
+            });
+            helper.runAfterDelay(10, () -> {
+                helper.assertFalse(ForcedChunkManager.hasForcedChunks(helper.getLevel()),
+                        "a broken radar left its chunk tickets behind");
+                helper.succeed();
+            });
+        });
+
+        // A radar with nothing in its buffer holds no tickets and schedules nothing: non-negotiable #5.
+        tests.add("a_radar_without_power_sleeps", 40, PADDING, helper -> {
+            Multiblock.place(ModBlocks.RADAR.get(), helper.getLevel(), helper.absolutePos(MACHINE),
+                    ModBlocks.RADAR.get().defaultBlockState());
+            RadarBlockEntity radar = helper.getBlockEntity(MACHINE, RadarBlockEntity.class);
+            helper.runAfterDelay(10, () -> {
+                helper.assertFalse(radar.isCharting(), "an unpowered radar is charting");
+                helper.assertFalse(helper.getLevel().getBlockTicks().hasScheduledTick(
+                        helper.absolutePos(MACHINE), ModBlocks.RADAR.get()), "an unpowered radar is still ticking");
+                helper.succeed();
+            });
+        });
+
+        // An assembler with no health of its own is worth three hundred, from its hardness of three,
+        // and a repair pack spends itself mending up to its charge - and is kept when there is nothing
+        // to mend.
+        tests.add("a_repair_pack_mends_a_machine", 20, PADDING, helper -> {
+            placeMachine(helper, MACHINE);
+            BlockPos edge = helper.absolutePos(MACHINE.offset(1, 0, 0));
+            helper.assertValueEqual(Health.maxHealth(helper.getLevel(), edge), 300.0F, "an assembler's health, from its hardness");
+
+            ItemStack packs = new ItemStack(ModItems.REPAIR_PACK.get(), 3);
+            helper.assertValueEqual(RepairPackItem.repair(helper.getLevel(), edge, packs, null), 0.0F,
+                    "mended on a whole machine");
+            helper.assertValueEqual(packs.getCount(), 3, "packs left after clicking a whole machine");
+
+            Health.hurt(helper.getLevel(), edge, 120);
+            helper.assertValueEqual(Health.health(helper.getLevel(), edge), 180.0F, "left after a hit");
+            helper.assertValueEqual(RepairPackItem.repair(helper.getLevel(), edge, packs, null), 120.0F, "mended");
+            helper.assertValueEqual(packs.getCount(), 2, "packs left after mending");
+            helper.assertValueEqual(Health.health(helper.getLevel(), edge), 300.0F, "whole again");
+            helper.assertBlockPresent(ModBlocks.ASSEMBLING_MACHINE_1.get(), MACHINE);
+            helper.succeed();
+        });
+    }
 
     /** Where every test puts its machine: one block up, so it is not inside the floor. */
     private static final BlockPos MACHINE = new BlockPos(0, 1, 0);
@@ -101,121 +743,8 @@ public final class NauvisMachinesGameTests {
      */
     private static final int CRAFT_TICKS = 20;
 
-    /**
-     * Test types are a registry like any other, and the codec is what a datapack would use to
-     * deserialise one. Ours are registered in code and never serialised, but the registry entry
-     * still has to exist for the type to be legal.
-     */
-    private static final DeferredRegister<MapCodec<? extends GameTestInstance>> TEST_TYPES =
-            DeferredRegister.create(Registries.TEST_INSTANCE_TYPE, NauvisMachines.MODID);
-
-    static {
-        TEST_TYPES.register("assembler_places", () -> AssemblerPlacesTest.CODEC);
-        TEST_TYPES.register("a_radar_keeps_its_chunks_loaded", () -> RadarChartsTest.CODEC);
-        TEST_TYPES.register("a_radar_without_power_sleeps", () -> RadarSleepsTest.CODEC);
-        TEST_TYPES.register("a_repair_pack_mends_a_machine", () -> RepairPackTest.CODEC);
-        TEST_TYPES.register("assembler_holds_items", () -> AssemblerHoldsItemsTest.CODEC);
-        TEST_TYPES.register("assembler_crafts", () -> AssemblerCraftsTest.CODEC);
-        TEST_TYPES.register("assembling_machine_2_is_faster", () -> AssemblingMachine2IsFasterTest.CODEC);
-        TEST_TYPES.register("assembler_sleeps", () -> AssemblerSleepsTest.CODEC);
-        TEST_TYPES.register("assembler_stalls_when_full", () -> AssemblerStallsWhenFullTest.CODEC);
-        TEST_TYPES.register("assembler_spills_when_broken", () -> AssemblerSpillsWhenBrokenTest.CODEC);
-        TEST_TYPES.register("assembler_menu_selects_recipe", () -> AssemblerMenuSelectsRecipeTest.CODEC);
-        TEST_TYPES.register("assembler_menu_stays_open_on_tier_2", () -> AssemblerMenuStaysOpenOnTier2Test.CODEC);
-        TEST_TYPES.register("assembler_needs_power", () -> AssemblerNeedsPowerTest.CODEC);
-        TEST_TYPES.register("assembler_wakes_when_power_arrives",
-                () -> AssemblerWakesWhenPowerArrivesTest.CODEC);
-        TEST_TYPES.register("assembler_gives_no_power_back", () -> AssemblerGivesNoPowerBackTest.CODEC);
-        TEST_TYPES.register("assembler_is_ten_blocks", () -> AssemblerIsTenBlocksTest.CODEC);
-        TEST_TYPES.register("assembler_breaks_as_one", () -> AssemblerBreaksAsOneTest.CODEC);
-        TEST_TYPES.register("assembler_fed_from_any_cell", () -> AssemblerFedFromAnyCellTest.CODEC);
-        TEST_TYPES.register("assemblers_tile_walkably", () -> AssemblersTileWalkablyTest.CODEC);
-        TEST_TYPES.register("speed_modules_speed_an_assembler", () -> SpeedModulesSpeedAnAssemblerTest.CODEC);
-        TEST_TYPES.register("productivity_modules_bank_a_free_craft",
-                () -> ProductivityModulesBankAFreeCraftTest.CODEC);
-        TEST_TYPES.register("productivity_module_needs_an_intermediate",
-                () -> ProductivityModuleNeedsAnIntermediateTest.CODEC);
-        TEST_TYPES.register("only_the_second_machine_has_fluid_boxes", () -> OnlyTheSecondMachineHasFluidBoxesTest.CODEC);
-        TEST_TYPES.register("assembling_machine_2_crafts_with_a_fluid", () -> AssemblingMachine2CraftsWithAFluidTest.CODEC);
-        TEST_TYPES.register("assembling_machine_2_fills_and_empties_a_barrel",
-                () -> AssemblingMachine2FillsAndEmptiesABarrelTest.CODEC);
-    }
-
-    /** Called from the mod constructor so the test types register with everything else. */
-    static void register(IEventBus modEventBus) {
-        TEST_TYPES.register(modEventBus);
-    }
-
-    @SubscribeEvent
-    static void registerTests(RegisterGameTestsEvent event) {
-        // Our own environment rather than a lookup of minecraft:default, because the event
-        // exposes no getter for one that already exists. An empty AllOf imposes no conditions,
-        // which is exactly what minecraft:default is.
-        Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(
-                Identifier.fromNamespaceAndPath(NauvisMachines.MODID, "default"),
-                new TestEnvironmentDefinition.AllOf(List.of()));
-
-        register(event, environment, "assembler_places", AssemblerPlacesTest::new, 20);
-        register(event, environment, "assembler_holds_items", AssemblerHoldsItemsTest::new, 20);
-        register(event, environment, "assembler_crafts", AssemblerCraftsTest::new, 100);
-        register(event, environment, "assembling_machine_2_is_faster", AssemblingMachine2IsFasterTest::new, 100);
-        register(event, environment, "speed_modules_speed_an_assembler", SpeedModulesSpeedAnAssemblerTest::new, 100);
-        register(event, environment, "productivity_modules_bank_a_free_craft",
-                ProductivityModulesBankAFreeCraftTest::new, 300);
-        register(event, environment, "productivity_module_needs_an_intermediate",
-                ProductivityModuleNeedsAnIntermediateTest::new, 20);
-        register(event, environment, "only_the_second_machine_has_fluid_boxes",
-                OnlyTheSecondMachineHasFluidBoxesTest::new, 20);
-        register(event, environment, "assembling_machine_2_crafts_with_a_fluid",
-                AssemblingMachine2CraftsWithAFluidTest::new, 400);
-        register(event, environment, "assembling_machine_2_fills_and_empties_a_barrel",
-                AssemblingMachine2FillsAndEmptiesABarrelTest::new, 100);
-        register(event, environment, "assembler_sleeps", AssemblerSleepsTest::new, 60);
-        register(event, environment, "assembler_stalls_when_full", AssemblerStallsWhenFullTest::new, 100);
-        register(event, environment, "assembler_spills_when_broken", AssemblerSpillsWhenBrokenTest::new, 60);
-        register(event, environment, "assembler_menu_selects_recipe", AssemblerMenuSelectsRecipeTest::new, 60);
-        register(event, environment, "assembler_menu_stays_open_on_tier_2",
-                AssemblerMenuStaysOpenOnTier2Test::new, 20);
-        register(event, environment, "assembler_needs_power", AssemblerNeedsPowerTest::new, 100);
-        register(event, environment, "assembler_wakes_when_power_arrives",
-                AssemblerWakesWhenPowerArrivesTest::new, 100);
-        register(event, environment, "assembler_gives_no_power_back",
-                AssemblerGivesNoPowerBackTest::new, 40);
-        register(event, environment, "assembler_is_ten_blocks", AssemblerIsTenBlocksTest::new, 20);
-        register(event, environment, "assembler_breaks_as_one", AssemblerBreaksAsOneTest::new, 40);
-        register(event, environment, "assembler_fed_from_any_cell",
-                AssemblerFedFromAnyCellTest::new, 20);
-        register(event, environment, "assemblers_tile_walkably",
-                AssemblersTileWalkablyTest::new, 20);
-        register(event, environment, "a_radar_keeps_its_chunks_loaded", RadarChartsTest::new, 60);
-        register(event, environment, "a_radar_without_power_sleeps", RadarSleepsTest::new, 40);
-        register(event, environment, "a_repair_pack_mends_a_machine", RepairPackTest::new, 20);
-    }
-
-    private interface TestFactory {
-        GameTestInstance create(TestData<Holder<TestEnvironmentDefinition<?>>> info);
-    }
-
-    /**
-     * How much empty world to leave around each test.
-     *
-     * <p>A grid test builds outside the structure it was given - the empty structure is a point -
-     * and the things built here are no longer one block each. A steam engine is five tiles long,
-     * a chain of two reaches ten blocks from the anchor, and a wire reaches 7.5 in every
-     * direction. Without room between them the machines of one test land in the next test along,
-     * where they are broken by its blocks or joined to its network, and the failure appears in
-     * whichever test happened to run second. That is the worst kind of flake: real, silent, and
-     * blamed on the wrong code.
-     */
+    /** How much empty world to leave around each test. */
     private static final int PADDING = 24;
-
-    private static void register(RegisterGameTestsEvent event,
-            Holder<TestEnvironmentDefinition<?>> environment, String name, TestFactory factory, int maxTicks) {
-        event.registerTest(
-                Identifier.fromNamespaceAndPath(NauvisMachines.MODID, name),
-                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true,
-                        Rotation.NONE, false, 1, 1, false, PADDING)));
-    }
 
     /**
      * Puts a whole assembler in, all ten blocks of it, anchored here.
@@ -328,683 +857,6 @@ public final class NauvisMachinesGameTests {
         }
     }
 
-    /** The assembling machine exists in the world, not merely in a registry. */
-    public static class AssemblerPlacesTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerPlacesTest> CODEC = RecordCodecBuilder.<AssemblerPlacesTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(AssemblerPlacesTest::info))
-                        .apply(i, AssemblerPlacesTest::new));
-
-        public AssemblerPlacesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            placeMachine(helper, MACHINE);
-            helper.assertBlockPresent(ModBlocks.ASSEMBLING_MACHINE_1.get(), MACHINE);
-            helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembler places");
-        }
-    }
-
-    /**
-     * The inventory holds what is put in it, and the published view lets things in one end only.
-     *
-     * <p>The asymmetry is the point. A hopper under an assembler must take the product and not
-     * drain the ingredients it was just fed, and that rule lives in
-     * {@link com.jaguarm.nauvislib.transfer.MachineAccess} rather than in the inventory.
-     */
-    public static class AssemblerHoldsItemsTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerHoldsItemsTest> CODEC =
-                RecordCodecBuilder.<AssemblerHoldsItemsTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerHoldsItemsTest::info))
-                                .apply(i, AssemblerHoldsItemsTest::new));
-
-        public AssemblerHoldsItemsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            placeMachine(helper, MACHINE);
-            AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-            ResourceHandler<ItemResource> view = assembler.automationView();
-
-            // A machine with no recipe takes nothing, which is Factorio's rule: nothing an
-            // inserter drops in can be for anything.
-            helper.assertValueEqual(insert(view, Items.IRON_INGOT, 10), 0, "ingots accepted with no recipe");
-
-            // With one, each slot is one ingredient's - the assembler's recipe is circuits, gears
-            // and plates in that order - so plates land in the third slot and nowhere else, and a
-            // stick, which the recipe has no use for, lands nowhere.
-            assembler.setRecipe(AssemblerBlockEntity.recipeProducing(helper.getLevel(), ModItems.ASSEMBLING_MACHINE_1.get()));
-            helper.assertValueEqual(insert(view, Items.IRON_INGOT, 10), 10, "ingots accepted");
-            helper.assertValueEqual(assembler.inventory().getAmountAsInt(2), 10, "ingots in the plates' slot");
-            helper.assertValueEqual(assembler.inventory().getAmountAsInt(0), 0, "ingots in the circuits' slot");
-            helper.assertValueEqual(insert(view, Items.STICK, 1), 0, "sticks accepted by a machine that wants none");
-
-            // Extraction from an input slot is refused: those are the machine's to spend.
-            try (Transaction transaction = Transaction.openRoot()) {
-                helper.assertValueEqual(
-                        view.extract(ItemResource.of(Items.IRON_INGOT), 10, transaction), 0,
-                        "ingredients taken back out through the capability");
-            }
-
-            // A result in the output slot is extractable, and nothing may be inserted there.
-            assembler.inventory().set(AssemblerBlockEntity.OUTPUT_SLOT, ItemResource.of(Items.IRON_BLOCK), 1);
-            try (Transaction transaction = Transaction.openRoot()) {
-                helper.assertValueEqual(
-                        view.insert(AssemblerBlockEntity.OUTPUT_SLOT, ItemResource.of(Items.IRON_BLOCK), 1, transaction),
-                        0, "items inserted into the output slot");
-                helper.assertValueEqual(
-                        view.extract(ItemResource.of(Items.IRON_BLOCK), 1, transaction), 1,
-                        "results taken out of the output slot");
-            }
-
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembler holds items");
-        }
-    }
-
-    /**
-     * Milestone 1, in one assertion: three circuits, five gears and nine iron plates go in, and
-     * half a second later an assembling machine comes out.
-     *
-     * <p>Those numbers are Factorio's, they come from the generated recipe rather than from this
-     * file, and {@code checkRecipes} fails the build if the recipe on disk ever disagrees.
-     */
-    public static class AssemblerCraftsTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerCraftsTest> CODEC =
-                RecordCodecBuilder.<AssemblerCraftsTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerCraftsTest::info))
-                                .apply(i, AssemblerCraftsTest::new));
-
-        public AssemblerCraftsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            Item product = ModItems.ASSEMBLING_MACHINE_1.get();
-            AssemblerBlockEntity assembler = machineMaking(helper, product);
-            feedOneCraft(helper, assembler.automationView());
-
-            // Ten ticks exactly: Factorio's half a second, from the generated recipe. Checked on
-            // the tick it should land on rather than "eventually" - at nine this test fails, and
-            // a craft time that silently drifted would fail it too.
-            helper.runAfterDelay(CRAFT_TICKS, () -> {
-                AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-                helper.assertValueEqual(
-                        machine.inventory().getResource(AssemblerBlockEntity.OUTPUT_SLOT).getItem(),
-                        product, "the item in the output slot");
-                helper.assertValueEqual(
-                        machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 1,
-                        "assembling machines made");
-
-                for (int slot = 0; slot < AssemblerBlockEntity.INPUT_SLOTS; slot++) {
-                    helper.assertValueEqual(
-                            machine.inventory().getAmountAsInt(slot), 0, "leftovers in input slot " + slot);
-                }
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembler crafts");
-        }
-    }
-
-    /**
-     * Non-negotiable #5, asserted rather than remembered: a machine with a recipe and nothing to
-     * make it from must not be scheduled to tick at all.
-     *
-     * <p>Setting the recipe wakes it, so this proves both halves - that it woke, looked, and put
-     * itself back to sleep, rather than that it never started.
-     */
-    public static class AssemblerSleepsTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerSleepsTest> CODEC =
-                RecordCodecBuilder.<AssemblerSleepsTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerSleepsTest::info))
-                                .apply(i, AssemblerSleepsTest::new));
-
-        public AssemblerSleepsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            machineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
-
-            helper.runAfterDelay(CRAFT_TICKS, () -> {
-                helper.assertFalse(isScheduled(helper),
-                        "an assembler with a recipe but no ingredients is still scheduled to tick");
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembler sleeps");
-        }
-    }
-
-    /**
-     * A machine whose output slot is full holds onto its ingredients rather than voiding them.
-     *
-     * <p>The whole craft - paying the ingredients and banking the result - happens inside one
-     * transaction for exactly this reason: a result that will not fit rolls the ingredients back
-     * as though the craft never started. Getting this wrong destroys items in a way a player
-     * notices only as a base that quietly runs short.
-     */
-    public static class AssemblerStallsWhenFullTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerStallsWhenFullTest> CODEC =
-                RecordCodecBuilder.<AssemblerStallsWhenFullTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerStallsWhenFullTest::info))
-                                .apply(i, AssemblerStallsWhenFullTest::new));
-
-        public AssemblerStallsWhenFullTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            Item product = ModItems.ASSEMBLING_MACHINE_1.get();
-            AssemblerBlockEntity assembler = machineMaking(helper, product);
-
-            // A full output slot. Set directly rather than inserted, because the published view
-            // refuses insertion here - which is what the previous test is about.
-            int full = product.getDefaultMaxStackSize();
-            assembler.inventory().set(AssemblerBlockEntity.OUTPUT_SLOT, ItemResource.of(product), full);
-            feedOneCraft(helper, assembler.automationView());
-
-            helper.runAfterDelay(CRAFT_TICKS * 3, () -> {
-                AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-                helper.assertValueEqual(
-                        machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), full,
-                        "items in the output slot");
-
-                int ingredients = 0;
-                for (int slot = 0; slot < AssemblerBlockEntity.INPUT_SLOTS; slot++) {
-                    ingredients += machine.inventory().getAmountAsInt(slot);
-                }
-                helper.assertValueEqual(ingredients, 3 + 5 + 9, "ingredients still waiting to be spent");
-
-                helper.assertFalse(isScheduled(helper),
-                        "an assembler that cannot put its result anywhere is still scheduled to tick");
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembler stalls when full");
-        }
-    }
-
-    /**
-     * Breaking a machine gives its contents back rather than eating them.
-     *
-     * <p>Cheap to test and expensive to get wrong: a machine that swallows a stack on every
-     * break is the kind of bug a player reads as bad luck for a long time before reporting it.
-     */
-    public static class AssemblerSpillsWhenBrokenTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerSpillsWhenBrokenTest> CODEC =
-                RecordCodecBuilder.<AssemblerSpillsWhenBrokenTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerSpillsWhenBrokenTest::info))
-                                .apply(i, AssemblerSpillsWhenBrokenTest::new));
-
-        public AssemblerSpillsWhenBrokenTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            AssemblerBlockEntity assembler = unpoweredMachineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
-            helper.assertValueEqual(
-                    insert(assembler.automationView(), Items.IRON_INGOT, 7), 7, "ingots accepted");
-
-            // Not helper.destroyBlock, which passes dropBlock = false and so would never
-            // exercise the loot table. A block that drops nothing is the plural-directory
-            // failure in docs/API-26.2.md, and it is worth catching here.
-            helper.getLevel().destroyBlock(helper.absolutePos(MACHINE), true);
-
-            // A tick later: the item entities are not queryable in the tick that spawned them.
-            helper.runAfterDelay(2, () -> {
-                helper.assertItemEntityPresent(ModItems.ASSEMBLING_MACHINE_1.get(), MACHINE, 2.0);
-                helper.assertItemEntityCountIs(Items.IRON_INGOT, MACHINE, 2.0, 7);
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembler spills when broken");
-        }
-    }
-
-    /**
-     * Opening the machine gives a menu that can point it at a recipe.
-     *
-     * <p>Everything a screen does that a test can reach: the menu is built, it is the one the
-     * player has open, and {@code RecipeSelector.selectRecipe} - the method Facrafting's panel
-     * calls through a payload - reaches the block entity. What it looks like is not testable and
-     * is Yannic's to judge; that the wiring behind it works is, and this is where it breaks
-     * silently otherwise.
-     */
-    public static class AssemblerMenuSelectsRecipeTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerMenuSelectsRecipeTest> CODEC =
-                RecordCodecBuilder.<AssemblerMenuSelectsRecipeTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerMenuSelectsRecipeTest::info))
-                                .apply(i, AssemblerMenuSelectsRecipeTest::new));
-
-        public AssemblerMenuSelectsRecipeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            ServerLevel level = helper.getLevel();
-            placeMachine(helper, MACHINE);
-            AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-
-            // The menu is built the way MenuProvider builds it, rather than through
-            // player.openMenu: opening a screen sends NeoForge's advanced_open_screen payload, and
-            // a mock player's connection has never negotiated a payload registry to receive it.
-            // What that would add over this is vanilla's own plumbing; what is below is ours.
-            Player player = helper.makeMockPlayer(GameType.SURVIVAL);
-            AbstractContainerMenu opened = assembler.createMenu(1, player.getInventory(), player);
-
-            helper.assertTrue(opened instanceof AssemblerMenu,
-                    "opening an assembler did not give an assembler menu");
-            AssemblerMenu menu = (AssemblerMenu) opened;
-
-            helper.assertValueEqual(menu.slots.size(), AssemblerBlockEntity.SLOT_COUNT + 36,
-                    "slots on the assembler menu");
-            helper.assertTrue(menu.selectedRecipe() == null, "a fresh machine is already making something");
-
-            ResourceKey<Recipe<?>> recipe =
-                    AssemblerBlockEntity.recipeProducing(level, ModItems.ASSEMBLING_MACHINE_1.get());
-            helper.assertTrue(recipe != null, "no timed recipe makes an assembling machine");
-
-            // The verb Facrafting's panel invokes, straight through the interface.
-            menu.selectRecipe(recipe);
-            helper.assertValueEqual(assembler.recipeKey(), recipe, "the recipe the machine was pointed at");
-            helper.assertValueEqual(menu.selectedRecipe(), recipe, "the recipe the menu reports back");
-
-            // And clicking it a second time turns the machine off again.
-            menu.selectRecipe(null);
-            helper.assertTrue(assembler.recipeKey() == null, "selecting nothing did not clear the recipe");
-
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembler menu selects recipe");
-        }
-    }
-
-    /**
-     * The second tier's screen stays open.
-     *
-     * <p>It did not. The menu checked itself against the first machine's block, the way vanilla's
-     * one-block helper does, and an assembling machine 2 failed that check on the tick after its
-     * screen opened - the server closed it again before anyone could see. Every other test passed,
-     * because none of them opens a menu on a tier 2, and a client boot is the only other thing
-     * that would have found it.
-     */
-    public static class AssemblerMenuStaysOpenOnTier2Test extends GameTestInstance {
-
-        public static final MapCodec<AssemblerMenuStaysOpenOnTier2Test> CODEC =
-                RecordCodecBuilder.<AssemblerMenuStaysOpenOnTier2Test>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerMenuStaysOpenOnTier2Test::info))
-                                .apply(i, AssemblerMenuStaysOpenOnTier2Test::new));
-
-        public AssemblerMenuStaysOpenOnTier2Test(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
-            AssemblerBlockEntity assembler = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-
-            // A mock player is made at the world's origin; the check is a reach check too.
-            Player player = helper.makeMockPlayer(GameType.SURVIVAL);
-            BlockPos beside = helper.absolutePos(MACHINE.offset(2, 1, 0));
-            player.setPos(beside.getX() + 0.5, beside.getY(), beside.getZ() + 0.5);
-
-            AbstractContainerMenu menu = assembler.createMenu(1, player.getInventory(), player);
-            helper.assertTrue(menu.stillValid(player),
-                    "an assembling machine 2's menu reports itself invalid the moment it is built, "
-                            + "so its screen closes on the next tick");
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("an assembling machine 2's menu stays open");
-        }
-    }
-
-    /**
-     * An assembler with everything except electricity makes nothing.
-     *
-     * <p>Factorio's assembling machine 1 is electric, and this is what makes the boiler, the
-     * engine and the pole part of the factory rather than a demonstration standing beside it.
-     *
-     * <p>It also asserts the machine is <em>asleep</em> rather than merely stalled. A machine
-     * that spins on a craft it cannot pay for costs exactly as much as one that works, and looks
-     * identical from anywhere except a profiler.
-     */
-    public static class AssemblerNeedsPowerTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerNeedsPowerTest> CODEC =
-                RecordCodecBuilder.<AssemblerNeedsPowerTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerNeedsPowerTest::info))
-                                .apply(i, AssemblerNeedsPowerTest::new));
-
-        public AssemblerNeedsPowerTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            AssemblerBlockEntity assembler =
-                    unpoweredMachineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
-            feedOneCraft(helper, assembler.automationView());
-
-            helper.runAfterDelay(CRAFT_TICKS * 4, () -> {
-                AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-                helper.assertValueEqual(
-                        machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 0,
-                        "items made by an assembler with no electricity");
-
-                int ingredients = 0;
-                for (int slot = 0; slot < AssemblerBlockEntity.INPUT_SLOTS; slot++) {
-                    ingredients += machine.inventory().getAmountAsInt(slot);
-                }
-                helper.assertValueEqual(ingredients, 3 + 5 + 9,
-                        "ingredients still waiting in an unpowered assembler");
-
-                helper.assertFalse(isScheduled(helper),
-                        "an assembler with no electricity is still scheduled to tick, so it is "
-                                + "spinning on a craft it cannot pay for");
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembler needs power");
-        }
-    }
-
-    /**
-     * <b>The other half of sleeping, and the half that is easy to get wrong.</b>
-     *
-     * <p>A machine that stopped for want of power is not scheduled for anything, so nothing it
-     * does can start it again - the wake has to arrive from outside, through the energy handler.
-     * Deleting {@code MachinePower}'s callback leaves every other test in this file passing and
-     * fails this one, which is the whole reason it is written separately: a factory that stops
-     * for good the first time the coal runs out is a bug nobody sees until it happens.
-     */
-    public static class AssemblerWakesWhenPowerArrivesTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerWakesWhenPowerArrivesTest> CODEC =
-                RecordCodecBuilder.<AssemblerWakesWhenPowerArrivesTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerWakesWhenPowerArrivesTest::info))
-                                .apply(i, AssemblerWakesWhenPowerArrivesTest::new));
-
-        public AssemblerWakesWhenPowerArrivesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            AssemblerBlockEntity assembler =
-                    unpoweredMachineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
-            feedOneCraft(helper, assembler.automationView());
-
-            helper.startSequence()
-                    .thenExecuteAfter(CRAFT_TICKS * 2, () -> helper.assertFalse(isScheduled(helper),
-                            "the machine did not stop, so this test cannot prove it restarts"))
-                    .thenExecute(() -> {
-                        charge(helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class));
-                        helper.assertTrue(isScheduled(helper),
-                                "electricity arrived and the machine was not woken - it will sleep "
-                                        + "through the grid coming back");
-                    })
-                    .thenExecuteAfter(CRAFT_TICKS + 2, () -> helper.assertValueEqual(
-                            helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class)
-                                    .inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT),
-                            1,
-                            "items made after the power came back"))
-                    .thenSucceed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembler wakes when power arrives");
-        }
-    }
-
-    /** A machine is not a battery: what fills it must not be able to empty it again. */
-    public static class AssemblerGivesNoPowerBackTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerGivesNoPowerBackTest> CODEC =
-                RecordCodecBuilder.<AssemblerGivesNoPowerBackTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerGivesNoPowerBackTest::info))
-                                .apply(i, AssemblerGivesNoPowerBackTest::new));
-
-        public AssemblerGivesNoPowerBackTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            AssemblerBlockEntity assembler = machineMaking(helper, ModItems.ASSEMBLING_MACHINE_1.get());
-            helper.assertValueEqual(assembler.energyStored(), AssemblerBlockEntity.ENERGY_CAPACITY,
-                    "charge in a machine the grid just filled");
-
-            try (Transaction transaction = Transaction.openRoot()) {
-                helper.assertValueEqual(assembler.gridView().extract(1000, transaction), 0,
-                        "energy taken back out of a machine");
-                transaction.commit();
-            }
-            helper.assertValueEqual(assembler.energyStored(), AssemblerBlockEntity.ENERGY_CAPACITY,
-                    "charge after something tried to drain it");
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembler gives no power back");
-        }
-    }
-
-    /**
-     * A machine is ten blocks, they are the right ten, and only one of them holds anything.
-     *
-     * <p>The footprint is Factorio identity - three tiles by three - so this asserts the count and
-     * the arrangement rather than trusting the shape class to have been read correctly. It also
-     * asserts the thing that would otherwise be found by a crash: nine of the ten have no block
-     * entity, and every one of them can still name the tenth.
-     */
-    public static class AssemblerIsTenBlocksTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerIsTenBlocksTest> CODEC =
-                RecordCodecBuilder.<AssemblerIsTenBlocksTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerIsTenBlocksTest::info))
-                                .apply(i, AssemblerIsTenBlocksTest::new));
-
-        public AssemblerIsTenBlocksTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            AssemblerBlock block = ModBlocks.ASSEMBLING_MACHINE_1.get();
-            MachineShape shape = AssemblerShape.SHAPE;
-            placeMachine(helper, MACHINE);
-
-            helper.assertValueEqual(shape.cellCount(), 10, "blocks in an assembler");
-
-            for (int part = 0; part < shape.cellCount(); part++) {
-                BlockPos pos = MACHINE.offset(shape.offset(part, Direction.NORTH));
-
-                helper.assertBlockPresent(block, pos);
-                helper.assertValueEqual(helper.getBlockState(pos).getValue(shape.part()), part,
-                        "which cell the block at " + pos + " says it is");
-
-                // Every cell knows where the machine keeps its things, from its blockstate alone.
-                helper.assertValueEqual(
-                        Multiblock.anchorPos(block, helper.getBlockState(pos), helper.absolutePos(pos)),
-                        helper.absolutePos(MACHINE), "anchor as seen from " + pos);
-
-                boolean isAnchor = part == shape.anchor();
-                boolean hasBlockEntity =
-                        helper.getLevel().getBlockEntity(helper.absolutePos(pos)) != null;
-                helper.assertValueEqual(hasBlockEntity, isAnchor,
-                        "block entity at " + pos + ", where only the middle should have one");
-            }
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("an assembler is ten blocks");
-        }
-    }
-
-    /**
-     * Break any one of the ten and the whole machine comes down, giving back exactly one machine.
-     *
-     * <p>A corner is broken rather than the middle, because the corner is the harder case: it is
-     * two blocks from the anchor, it has no block entity, and its own loot table entry is
-     * conditioned away. Everything after it is the teardown rule cascading, and the two ways that
-     * goes wrong are both silent - blocks left standing with nothing to break them, or ten
-     * machines dropped where one was placed.
-     */
-    public static class AssemblerBreaksAsOneTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblerBreaksAsOneTest> CODEC =
-                RecordCodecBuilder.<AssemblerBreaksAsOneTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerBreaksAsOneTest::info))
-                                .apply(i, AssemblerBreaksAsOneTest::new));
-
-        public AssemblerBreaksAsOneTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            placeMachine(helper, MACHINE);
-
-            // dropBlock = true, so the loot table actually runs. See the spill test.
-            helper.getLevel().destroyBlock(helper.absolutePos(MACHINE.offset(-1, 0, -1)), true);
-
-            helper.runAfterDelay(2, () -> {
-                for (int x = -1; x <= 1; x++) {
-                    for (int z = -1; z <= 1; z++) {
-                        helper.assertBlockPresent(Blocks.AIR, MACHINE.offset(x, 0, z));
-                    }
-                }
-                helper.assertBlockPresent(Blocks.AIR, MACHINE.above());
-
-                helper.assertItemEntityCountIs(ModItems.ASSEMBLING_MACHINE_1.get(), MACHINE, 4.0, 1);
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("an assembler breaks as one");
-        }
-    }
-
     /**
      * An inserter can feed the machine from anywhere along it, which is the point of a footprint.
      *
@@ -1014,16 +866,9 @@ public final class NauvisMachinesGameTests {
      * inventory, which is what registering the capability against the block rather than the block
      * entity buys. See {@code ModCapabilities}.
      */
-    public static class AssemblerFedFromAnyCellTest extends GameTestInstance {
+    public static class AssemblerFedFromAnyCellTest extends PackGameTest {
 
-        public static final MapCodec<AssemblerFedFromAnyCellTest> CODEC =
-                RecordCodecBuilder.<AssemblerFedFromAnyCellTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblerFedFromAnyCellTest::info))
-                                .apply(i, AssemblerFedFromAnyCellTest::new));
-
-        public AssemblerFedFromAnyCellTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        AssemblerFedFromAnyCellTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1051,44 +896,16 @@ public final class NauvisMachinesGameTests {
             return handler;
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("an assembler is fed from any of its blocks");
-        }
     }
 
-    /**
-     * Two assemblers packed against each other, and you can still walk over them.
-     *
-     * <p>This is the requirement that shaped the machine, and it is one a person would find only
-     * by building a factory and then getting stuck in it. A Factorio player tiles assemblers with
-     * no gaps between them, and a field of 3x3 machines two solid blocks tall would be a wall -
-     * you cannot jump two blocks, so there would be no way across your own base.
-     *
-     * <p>What is asserted is the walk itself, along the row where the two machines meet: no column
-     * higher than one block, and no step between neighbouring columns larger than the 0.6 a player
-     * climbs for free. The gearboxes are then asserted to be the two blocks tall they look, so
-     * this cannot come out green by the machine quietly going flat.
-     */
-    public static class AssemblersTileWalkablyTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblersTileWalkablyTest> CODEC =
-                RecordCodecBuilder.<AssemblersTileWalkablyTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblersTileWalkablyTest::info))
-                                .apply(i, AssemblersTileWalkablyTest::new));
-
-        public AssemblersTileWalkablyTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+    /** Two assemblers packed against each other, and you can still walk over them. */
+    public static class AssemblersTileWalkablyTest extends PackGameTest {
 
         /** Vanilla's two numbers: what a player climbs without jumping, and how high they jump. */
         private static final double STEP = 0.6;
         private static final double JUMP = 1.25;
+
+        AssemblersTileWalkablyTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1130,15 +947,6 @@ public final class NauvisMachinesGameTests {
             helper.succeed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assemblers tile walkably");
-        }
     }
 
     /**
@@ -1149,18 +957,11 @@ public final class NauvisMachinesGameTests {
      * on, and checked <em>not</em> to have landed a tick early in the first, so a speed that
      * silently became 1.0 - which is what the assembler was before it had a tier - fails here.
      */
-    public static class AssemblingMachine2IsFasterTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblingMachine2IsFasterTest> CODEC =
-                RecordCodecBuilder.<AssemblingMachine2IsFasterTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblingMachine2IsFasterTest::info))
-                                .apply(i, AssemblingMachine2IsFasterTest::new));
+    public static class AssemblingMachine2IsFasterTest extends PackGameTest {
 
         private static final BlockPos SECOND = MACHINE.offset(4, 0, 0);
 
-        public AssemblingMachine2IsFasterTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        AssemblingMachine2IsFasterTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1196,15 +997,6 @@ public final class NauvisMachinesGameTests {
                     .thenSucceed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembling machine 2 is faster");
-        }
     }
 
     /** Puts a module into a machine's slots the way a player does, through the handler. */
@@ -1224,18 +1016,11 @@ public final class NauvisMachinesGameTests {
      * and ten with the modules in, and the two machines are run side by side so the difference is
      * what is asserted rather than a number that happens to come out.
      */
-    public static class SpeedModulesSpeedAnAssemblerTest extends GameTestInstance {
-
-        public static final MapCodec<SpeedModulesSpeedAnAssemblerTest> CODEC =
-                RecordCodecBuilder.<SpeedModulesSpeedAnAssemblerTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(SpeedModulesSpeedAnAssemblerTest::info))
-                                .apply(i, SpeedModulesSpeedAnAssemblerTest::new));
+    public static class SpeedModulesSpeedAnAssemblerTest extends PackGameTest {
 
         private static final BlockPos SECOND = MACHINE.offset(4, 0, 0);
 
-        public SpeedModulesSpeedAnAssemblerTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        SpeedModulesSpeedAnAssemblerTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1282,148 +1067,6 @@ public final class NauvisMachinesGameTests {
             });
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("speed modules speed an assembler");
-        }
-    }
-
-    /**
-     * Two productivity modules bank a free gear every twelve and a half crafts.
-     *
-     * <p>Factorio's productivity bar: each craft adds the modules' bonus - two at a twenty-fifth is
-     * two twenty-fifths - and when the bar fills the machine hands over one more product it never
-     * paid for. Thirteen crafts' worth of plates go in; thirteen crafts fill the bar past one; and
-     * fourteen gears come out, the last of them free. Twelve crafts in, there are exactly twelve.
-     */
-    public static class ProductivityModulesBankAFreeCraftTest extends GameTestInstance {
-
-        public static final MapCodec<ProductivityModulesBankAFreeCraftTest> CODEC =
-                RecordCodecBuilder.<ProductivityModulesBankAFreeCraftTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(ProductivityModulesBankAFreeCraftTest::info))
-                                .apply(i, ProductivityModulesBankAFreeCraftTest::new));
-
-        public ProductivityModulesBankAFreeCraftTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            Item gear = item(helper, "nauvis_materials:iron_gear_wheel");
-            ResourceKey<Recipe<?>> recipe = AssemblerBlockEntity.recipeProducing(helper.getLevel(), gear);
-            helper.assertTrue(recipe != null, "no timed recipe makes an iron gear wheel");
-
-            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
-            AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-            machine.setRecipe(recipe);
-            module(helper, machine.modules(), 0, ModItems.PRODUCTIVITY_MODULE.get());
-            module(helper, machine.modules(), 1, ModItems.PRODUCTIVITY_MODULE.get());
-            // A gear is ten ticks; at 0.75 times 0.9 that is 14.8, so fifteen a craft.
-            helper.onEachTick(() -> charge(machine));
-            helper.assertValueEqual(insert(machine.automationView(), Items.IRON_INGOT, 26), 26,
-                    "plates for thirteen gears accepted");
-
-            helper.startSequence()
-                    .thenExecuteAfter(12 * 15 + 6, () -> {
-                        helper.assertValueEqual(
-                                machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 12,
-                                "gears after twelve crafts - the bar is at 0.96 and nothing is owed yet");
-                        helper.assertTrue(Math.abs(machine.productivity().banked() - 0.96) < 1e-6,
-                                "the productivity bar after twelve crafts: " + machine.productivity().banked());
-                    })
-                    .thenExecuteAfter(15, () -> {
-                        helper.assertValueEqual(
-                                machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 14,
-                                "gears after thirteen crafts - the thirteenth fills the bar and one is free");
-                        helper.assertValueEqual(machine.inventory().getAmountAsInt(0), 0,
-                                "plates left - thirteen crafts paid for, not fourteen");
-                        helper.assertTrue(Math.abs(machine.productivity().banked() - 0.04) < 1e-6,
-                                "the bar after paying out: " + machine.productivity().banked());
-                    })
-                    .thenSucceed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("productivity modules bank a free craft");
-        }
-    }
-
-    /**
-     * A productivity module goes only into a machine making an intermediate product.
-     *
-     * <p>Factorio's one restriction on modules, read off the recipe's crafting-menu tab: a gear is
-     * an intermediate, a stone furnace is not. Refused at the slot, so the screen refuses it; and a
-     * recipe that may not have them is refused while one sits in the machine, rather than the
-     * module being thrown out or quietly ignored. A machine with no recipe takes one, as Factorio's
-     * does.
-     */
-    public static class ProductivityModuleNeedsAnIntermediateTest extends GameTestInstance {
-
-        public static final MapCodec<ProductivityModuleNeedsAnIntermediateTest> CODEC =
-                RecordCodecBuilder.<ProductivityModuleNeedsAnIntermediateTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(ProductivityModuleNeedsAnIntermediateTest::info))
-                                .apply(i, ProductivityModuleNeedsAnIntermediateTest::new));
-
-        public ProductivityModuleNeedsAnIntermediateTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            ResourceKey<Recipe<?>> gear = AssemblerBlockEntity.recipeProducing(
-                    helper.getLevel(), item(helper, "nauvis_materials:iron_gear_wheel"));
-            ResourceKey<Recipe<?>> furnace = AssemblerBlockEntity.recipeProducing(
-                    helper.getLevel(), ModItems.STONE_FURNACE.get());
-            helper.assertTrue(gear != null && furnace != null, "the gear and the stone furnace recipes");
-
-            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
-            AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-            ItemResource productivity = ItemResource.of(ModItems.PRODUCTIVITY_MODULE.get());
-            ItemResource speed = ItemResource.of(ModItems.SPEED_MODULE.get());
-
-            helper.assertTrue(machine.modules().isValid(0, productivity),
-                    "a productivity module refused by a machine with no recipe");
-
-            machine.setRecipe(furnace);
-            helper.assertFalse(machine.modules().isValid(0, productivity),
-                    "a productivity module accepted by a machine making a stone furnace");
-            helper.assertTrue(machine.modules().isValid(0, speed),
-                    "a speed module refused by a machine making a stone furnace");
-
-            machine.setRecipe(gear);
-            helper.assertTrue(machine.modules().isValid(0, productivity),
-                    "a productivity module refused by a machine making gears");
-            module(helper, machine.modules(), 0, ModItems.PRODUCTIVITY_MODULE.get());
-
-            machine.setRecipe(furnace);
-            helper.assertValueEqual(machine.recipeKey(), gear,
-                    "the recipe after choosing a stone furnace with a productivity module in - "
-                            + "Factorio refuses the recipe, and so should this");
-            helper.assertValueEqual(machine.modules().getAmountAsInt(0), 1,
-                    "the productivity module, which must not have been thrown out");
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a productivity module needs an intermediate product");
-        }
     }
 
     /** The fluid handler a pipe would find at a test-relative position, from that face, or null. */
@@ -1445,370 +1088,4 @@ public final class NauvisMachinesGameTests {
         }
     }
 
-    /**
-     * The first machine has no fluid box and the second has two, at two faces and no others.
-     *
-     * <p>Factorio's rule and the reason there are tiers. A pipe against the second machine's north
-     * edge fills its input, one against the south edge drains its output, and a pipe on a flank or
-     * a corner finds nothing - exactly as a refinery's flank offers nothing. The first machine
-     * offers nothing anywhere and refuses a recipe with a fluid in it.
-     */
-    public static class OnlyTheSecondMachineHasFluidBoxesTest extends GameTestInstance {
-
-        public static final MapCodec<OnlyTheSecondMachineHasFluidBoxesTest> CODEC =
-                RecordCodecBuilder.<OnlyTheSecondMachineHasFluidBoxesTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OnlyTheSecondMachineHasFluidBoxesTest::info))
-                                .apply(i, OnlyTheSecondMachineHasFluidBoxesTest::new));
-
-        public OnlyTheSecondMachineHasFluidBoxesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
-            AssemblerBlockEntity first = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-            helper.assertFalse(first.hasFluidBoxes(), "an assembling machine 1 has a fluid box");
-            for (int part = 0; part < AssemblerShape.SHAPE.cellCount(); part++) {
-                for (Direction side : Direction.values()) {
-                    helper.assertTrue(fluidAt(helper, cell(AssemblerShape.SHAPE, part), side) == null,
-                            "an assembling machine 1 offers a fluid handler at cell " + part + " " + side);
-                }
-            }
-
-            helper.getLevel().destroyBlock(helper.absolutePos(MACHINE), false);
-            helper.startSequence().thenExecuteAfter(3, () -> {
-                placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
-                AssemblerBlockEntity second = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-                helper.assertTrue(second.hasFluidBoxes(), "an assembling machine 2 has no fluid box");
-                MachineShape shape = AssemblingMachine2Shape.SHAPE;
-                helper.assertTrue(fluidAt(helper, cell(shape, AssemblingMachine2Shape.NORTH_EDGE), Direction.NORTH) != null,
-                        "no fluid handler at the second machine's input port");
-                helper.assertTrue(fluidAt(helper, cell(shape, AssemblingMachine2Shape.SOUTH_EDGE), Direction.SOUTH) != null,
-                        "no fluid handler at the second machine's output port");
-                helper.assertTrue(fluidAt(helper, cell(shape, AssemblingMachine2Shape.NORTH_EDGE), Direction.UP) == null,
-                        "a fluid handler on top of the input cell, where no pipe is drawn");
-                helper.assertTrue(fluidAt(helper, cell(shape, 5), Direction.EAST) == null,
-                        "a fluid handler on the second machine's flank");
-                helper.assertTrue(fluidAt(helper, cell(shape, 0), Direction.NORTH) == null,
-                        "a fluid handler on the second machine's corner");
-
-                // Drawing from the input, or filling the output, is refused: a pipe run must not
-                // drain the lubricant back out, and must not pour into a box the machine fills.
-                ResourceHandler<FluidResource> out = fluidAt(helper, cell(shape, AssemblingMachine2Shape.SOUTH_EDGE), Direction.SOUTH);
-                helper.assertValueEqual(fill(out, Fluids.WATER, 10), 0, "water a pipe could pour into the output box");
-            }).thenSucceed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("only the second machine has fluid boxes");
-        }
-    }
-
-    /**
-     * An assembling machine 2 makes an electric engine unit: two circuits and an engine unit from
-     * its slots, fifteen lubricant from its fluid box, ten seconds at 0.75.
-     *
-     * <p>The first item in the pack made from a fluid in an assembler. The lubricant is another
-     * mod's fluid and the recipe needs it, so this passes on the tier's refusal alone when the
-     * recipe is not here - the standalone run - and runs the craft in the pack. The input box takes
-     * only the recipe's fluid: water against it is refused, which is what keeps a wrong pipe from
-     * filling a machine that could never use it.
-     */
-    public static class AssemblingMachine2CraftsWithAFluidTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblingMachine2CraftsWithAFluidTest> CODEC =
-                RecordCodecBuilder.<AssemblingMachine2CraftsWithAFluidTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblingMachine2CraftsWithAFluidTest::info))
-                                .apply(i, AssemblingMachine2CraftsWithAFluidTest::new));
-
-        public AssemblingMachine2CraftsWithAFluidTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            Item product = BuiltInRegistries.ITEM.getValue(
-                    Identifier.fromNamespaceAndPath("nauvis_materials", "electric_engine_unit"));
-            Fluid lubricant = BuiltInRegistries.FLUID.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "lubricant"));
-            ResourceKey<Recipe<?>> recipe = product == Items.AIR ? null
-                    : AssemblerBlockEntity.recipeProducing(helper.getLevel(), product);
-            if (recipe == null || lubricant == Fluids.EMPTY) {
-                helper.succeed();
-                return;
-            }
-
-            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_1.get());
-            AssemblerBlockEntity first = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-            first.setRecipe(recipe);
-            helper.assertTrue(first.recipeKey() == null,
-                    "an assembling machine 1 accepted a recipe with a fluid in it");
-            helper.getLevel().destroyBlock(helper.absolutePos(MACHINE), false);
-
-            // Registered up front, because the test framework's tick map cannot be added to from
-            // inside one of its own callbacks. The machine arrives a few ticks in.
-            AssemblerBlockEntity[] machine = new AssemblerBlockEntity[1];
-            helper.onEachTick(() -> {
-                if (machine[0] != null) {
-                    charge(machine[0]);
-                }
-            });
-
-            // Two hundred ticks over 0.75 is 266.7, so 267.
-            int ticks = Math.round(200 / AssemblingMachine2Block.CRAFTING_SPEED);
-            helper.startSequence()
-                    .thenExecuteAfter(3, () -> {
-                        placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
-                        machine[0] = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-                        machine[0].setRecipe(recipe);
-                        helper.assertValueEqual(machine[0].recipeKey(), recipe, "the recipe on an assembling machine 2");
-
-                        ResourceHandler<FluidResource> in = fluidAt(helper,
-                                cell(AssemblingMachine2Shape.SHAPE, AssemblingMachine2Shape.NORTH_EDGE), Direction.NORTH);
-                        helper.assertTrue(in != null, "no handler at the input port");
-                        helper.assertValueEqual(fill(in, Fluids.WATER, 100), 0, "water taken by a box pointed at lubricant");
-                        helper.assertValueEqual(fill(in, lubricant, 100), 100, "lubricant taken by the input box");
-                        helper.assertValueEqual(insert(machine[0].automationView(),
-                                item(helper, "nauvis_materials:electronic_circuit"), 2), 2, "circuits accepted");
-                        helper.assertValueEqual(insert(machine[0].automationView(),
-                                item(helper, "nauvis_materials:engine_unit"), 1), 1, "an engine unit accepted");
-                    })
-                    .thenExecuteAfter(ticks + 3, () -> {
-                        helper.assertValueEqual(machine[0].inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 1,
-                                "electric engine units made after " + (ticks + 3) + " ticks");
-                        helper.assertValueEqual(machine[0].fluidIn().getAmountAsInt(0), 85,
-                                "lubricant left in the box after one craft of fifteen");
-                    })
-                    .thenSucceed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembling machine 2 crafts with a fluid");
-        }
-    }
-
-    /**
-     * An assembling machine 2 fills a barrel from its input box and empties one into its output box.
-     *
-     * <p>Factorio's barrels: an empty barrel and fifty water make a water barrel in a fifth of a
-     * second, and the reverse gives the water back - through the output port, which a pipe drains
-     * and nothing fills. The barrels are the fluids mod's items, so this passes on nothing when
-     * they are not here and runs both ways in the pack.
-     */
-    public static class AssemblingMachine2FillsAndEmptiesABarrelTest extends GameTestInstance {
-
-        public static final MapCodec<AssemblingMachine2FillsAndEmptiesABarrelTest> CODEC =
-                RecordCodecBuilder.<AssemblingMachine2FillsAndEmptiesABarrelTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(AssemblingMachine2FillsAndEmptiesABarrelTest::info))
-                                .apply(i, AssemblingMachine2FillsAndEmptiesABarrelTest::new));
-
-        public AssemblingMachine2FillsAndEmptiesABarrelTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            Item empty = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "empty_barrel"));
-            Item full = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_fluids", "water_barrel"));
-            if (empty == Items.AIR || full == Items.AIR) {
-                helper.succeed();
-                return;
-            }
-            ResourceKey<Recipe<?>> fill = AssemblerBlockEntity.recipeProducing(helper.getLevel(), full);
-            ResourceKey<Recipe<?>> drain = ResourceKey.create(Registries.RECIPE,
-                    Identifier.fromNamespaceAndPath("nauvis_fluids", "empty_water_barrel"));
-            helper.assertTrue(fill != null, "no recipe fills a water barrel");
-
-            placeMachine(helper, MACHINE, ModBlocks.ASSEMBLING_MACHINE_2.get());
-            AssemblerBlockEntity machine = helper.getBlockEntity(MACHINE, AssemblerBlockEntity.class);
-            helper.onEachTick(() -> charge(machine));
-            machine.setRecipe(fill);
-            ResourceHandler<FluidResource> in = fluidAt(helper,
-                    cell(AssemblingMachine2Shape.SHAPE, AssemblingMachine2Shape.NORTH_EDGE), Direction.NORTH);
-            helper.assertValueEqual(fill(in, Fluids.WATER, 50), 50, "water taken by the input box");
-            helper.assertValueEqual(insert(machine.automationView(), empty, 1), 1, "an empty barrel accepted");
-
-            // A fifth of a second over 0.75 is 5.3, so five ticks.
-            helper.startSequence()
-                    .thenExecuteAfter(8, () -> {
-                        helper.assertValueEqual(machine.inventory().getAmountAsInt(AssemblerBlockEntity.OUTPUT_SLOT), 1,
-                                "water barrels made");
-                        helper.assertTrue(machine.inventory().getResource(AssemblerBlockEntity.OUTPUT_SLOT).is(full),
-                                "what the machine made is not a water barrel");
-                        helper.assertValueEqual(machine.fluidIn().getAmountAsInt(0), 0, "water left after filling");
-
-                        // Now the other way: the barrel back in, the water out through the output port.
-                        machine.inventory().set(AssemblerBlockEntity.OUTPUT_SLOT, ItemResource.EMPTY, 0);
-                        machine.setRecipe(drain);
-                        helper.assertValueEqual(machine.recipeKey(), drain, "the emptying recipe on the machine");
-                        helper.assertValueEqual(insert(machine.automationView(), full, 1), 1, "a water barrel accepted");
-                    })
-                    .thenExecuteAfter(8, () -> {
-                        helper.assertTrue(machine.inventory().getResource(AssemblerBlockEntity.OUTPUT_SLOT).is(empty),
-                                "what emptying a barrel left in the output slot");
-                        helper.assertValueEqual(machine.fluidOut().getAmountAsInt(0), 50, "water in the output box");
-                        ResourceHandler<FluidResource> out = fluidAt(helper,
-                                cell(AssemblingMachine2Shape.SHAPE, AssemblingMachine2Shape.SOUTH_EDGE), Direction.SOUTH);
-                        try (Transaction transaction = Transaction.openRoot()) {
-                            helper.assertValueEqual(out.extract(FluidResource.of(Fluids.WATER), 50, transaction), 50,
-                                    "water a pipe drew from the output port");
-                            transaction.commit();
-                        }
-                    })
-                    .thenSucceed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("assembling machine 2 fills and empties a barrel");
-        }
-    }
-
-    /**
-     * A radar with power holds tickets on the chunks around it, and lets them go when it is
-     * broken. The assertion is NeoForge's own count of forced chunks, which no other test here
-     * touches: it is false before the radar ticks, true once it has, and false again after the
-     * radar is gone - which is what stops a test world keeping forty-nine chunks alive for ever.
-     */
-    public static class RadarChartsTest extends GameTestInstance {
-
-        public static final MapCodec<RadarChartsTest> CODEC = RecordCodecBuilder.<RadarChartsTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(RadarChartsTest::info)).apply(i, RadarChartsTest::new));
-
-        public RadarChartsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            helper.assertFalse(ForcedChunkManager.hasForcedChunks(helper.getLevel()),
-                    "something is forcing chunks before the radar exists");
-            Multiblock.place(ModBlocks.RADAR.get(), helper.getLevel(), helper.absolutePos(MACHINE),
-                    ModBlocks.RADAR.get().defaultBlockState());
-            RadarBlockEntity radar = helper.getBlockEntity(MACHINE, RadarBlockEntity.class);
-            try (Transaction transaction = Transaction.openRoot()) {
-                radar.gridView().insert(RadarBlockEntity.ENERGY_CAPACITY, transaction);
-                transaction.commit();
-            }
-            helper.runAfterDelay(5, () -> {
-                helper.assertTrue(radar.isCharting(), "a powered radar is not charting");
-                helper.assertTrue(ForcedChunkManager.hasForcedChunks(helper.getLevel()),
-                        "a charting radar holds no chunk tickets");
-                helper.assertTrue(radar.energyStored() < RadarBlockEntity.ENERGY_CAPACITY,
-                        "the radar charted without spending anything");
-                helper.destroyBlock(MACHINE);
-            });
-            helper.runAfterDelay(10, () -> {
-                helper.assertFalse(ForcedChunkManager.hasForcedChunks(helper.getLevel()),
-                        "a broken radar left its chunk tickets behind");
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a radar keeps its chunks loaded");
-        }
-    }
-
-    /** A radar with nothing in its buffer holds no tickets and schedules nothing: non-negotiable #5. */
-    public static class RadarSleepsTest extends GameTestInstance {
-
-        public static final MapCodec<RadarSleepsTest> CODEC = RecordCodecBuilder.<RadarSleepsTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(RadarSleepsTest::info)).apply(i, RadarSleepsTest::new));
-
-        public RadarSleepsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            Multiblock.place(ModBlocks.RADAR.get(), helper.getLevel(), helper.absolutePos(MACHINE),
-                    ModBlocks.RADAR.get().defaultBlockState());
-            RadarBlockEntity radar = helper.getBlockEntity(MACHINE, RadarBlockEntity.class);
-            helper.runAfterDelay(10, () -> {
-                helper.assertFalse(radar.isCharting(), "an unpowered radar is charting");
-                helper.assertFalse(helper.getLevel().getBlockTicks().hasScheduledTick(
-                        helper.absolutePos(MACHINE), ModBlocks.RADAR.get()), "an unpowered radar is still ticking");
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a radar without power sleeps");
-        }
-    }
-
-    /**
-     * An assembler with no health of its own is worth three hundred, from its hardness of three,
-     * and a repair pack spends itself mending up to its charge - and is kept when there is nothing
-     * to mend.
-     */
-    public static class RepairPackTest extends GameTestInstance {
-
-        public static final MapCodec<RepairPackTest> CODEC = RecordCodecBuilder.<RepairPackTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(RepairPackTest::info)).apply(i, RepairPackTest::new));
-
-        public RepairPackTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            placeMachine(helper, MACHINE);
-            BlockPos edge = helper.absolutePos(MACHINE.offset(1, 0, 0));
-            helper.assertValueEqual(Health.maxHealth(helper.getLevel(), edge), 300.0F, "an assembler's health, from its hardness");
-
-            ItemStack packs = new ItemStack(ModItems.REPAIR_PACK.get(), 3);
-            helper.assertValueEqual(RepairPackItem.repair(helper.getLevel(), edge, packs, null), 0.0F,
-                    "mended on a whole machine");
-            helper.assertValueEqual(packs.getCount(), 3, "packs left after clicking a whole machine");
-
-            Health.hurt(helper.getLevel(), edge, 120);
-            helper.assertValueEqual(Health.health(helper.getLevel(), edge), 180.0F, "left after a hit");
-            helper.assertValueEqual(RepairPackItem.repair(helper.getLevel(), edge, packs, null), 120.0F, "mended");
-            helper.assertValueEqual(packs.getCount(), 2, "packs left after mending");
-            helper.assertValueEqual(Health.health(helper.getLevel(), edge), 300.0F, "whole again");
-            helper.assertBlockPresent(ModBlocks.ASSEMBLING_MACHINE_1.get(), MACHINE);
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a repair pack mends a machine");
-        }
-    }
 }

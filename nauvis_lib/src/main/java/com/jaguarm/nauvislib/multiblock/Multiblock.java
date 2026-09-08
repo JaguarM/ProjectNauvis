@@ -23,32 +23,6 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 /**
  * The block half of a multi-block machine: how it goes in, how it comes out, and how any cell
  * finds the one that holds the machine.
- *
- * <p>Static helpers rather than a base class, because the blocks that need this already extend
- * {@code BaseEntityBlock} and a second hierarchy would be one more thing to keep in step. A block
- * implements {@link MachineBlock}, which is two methods, and forwards its overrides here.
- *
- * <p>All of it is {@code ElectricPoleBlock} with two more axes. Read that first if this is
- * unfamiliar: it is the same four rules, and it is four blocks rather than ten so the shape of
- * the idea is easier to see there.
- *
- * <h2>The whole teardown, in one rule</h2>
- *
- * <p>{@link #updateShape} turns a cell to air the moment a cell it touches is not the cell it
- * should be. Break any block of a machine and its neighbours notice, turn to air, and the cascade
- * crosses the footprint - which is why {@link MachineShape} refuses a set of cells that is not
- * connected. One rule covers every way a block can vanish, including the ones nobody thought to
- * handle: broken, exploded, {@code /setblock}, another mod.
- *
- * <p>Turning to air rather than calling {@code removeBlock} is the load-bearing detail. The
- * neighbour-update machinery routes an air result through {@code Block.updateOrDestroy}, which
- * <em>destroys</em> the block with drops enabled - so the anchor's loot table is what hands the
- * player their machine back, whichever cell they actually hit.
- *
- * <p>Placement does not trip over its own rule, and it is worth knowing why: {@code updateShape}
- * runs on a block's <em>neighbours</em> when it changes, never on the block being placed. So each
- * cell laid down asks the cells already there whether it is what they expected, and the cells not
- * placed yet are air that says nothing.
  */
 public final class Multiblock {
 
@@ -263,18 +237,8 @@ public final class Multiblock {
     }
 
     /**
-     * Tells every block touching the machine that its contents changed, from the cell it touches.
-     *
-     * <p>{@code BlockEntity.setChanged()} tells the anchor's six neighbours, through
-     * {@code onNeighborChange}, and an inserter wakes on exactly that - but an inserter against a
-     * nine-by-nine silo, or against any edge of a three-by-three assembler that is not beside the
-     * anchor, is touching a cell the anchor never speaks for. So it slept through the machine
-     * eating a part's worth and never fed it again. This is the anchor's {@code setChanged}
-     * widened to the whole footprint: each block outside the machine that touches a cell hears
-     * {@code onNeighborChange} with that cell as the neighbour, which is the position an inserter
-     * compares against. Call it from the hook an inventory change runs, not from every
-     * {@code setChanged} - a craft ticks {@code setChanged} every tick, and this is a few hundred
-     * lookups on a silo.
+     * Tells every block touching the machine that its contents changed, from the cell it
+     * touches.
      */
     public static void announce(@Nullable Level level, BlockPos anchor, BlockState state) {
         if (level == null || level.isClientSide() || !(state.getBlock() instanceof MachineBlock machine)) {

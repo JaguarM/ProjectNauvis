@@ -24,24 +24,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * The items crossing a splitter.
- *
- * <p>{@link BeltRenderer} for the two tiles between one belt line and the next, and it exists for
- * the same reason: what is on a splitter is a position along a line, which is in no block model.
- * Without it the deck is a hole a belt's items disappear into for the eleven ticks they take to
- * cross - the belt behind looks like it is feeding nothing and the belt in front looks like it is
- * producing from nowhere.
- *
- * <p>The positions come from the client's own copy of the splitter, advanced by the same code the
- * server runs - see {@code SplitterBlockEntity}. Nothing about this is sent.
- *
- * <h2>One renderer for two blocks</h2>
- *
- * <p>A splitter has one block entity, on the left cell, and it draws both tracks. That is unlike
- * the belt, where each block draws its own items and the culling comes free - so the render box
- * below has to be stated, or half a splitter's cargo vanishes when the anchor goes off screen.
- */
+/** The items crossing a splitter. */
 public class SplitterRenderer implements BlockEntityRenderer<SplitterBlockEntity, BeltRenderState> {
 
     /** The same size an item rides at on a belt - it is the same item, still travelling. */

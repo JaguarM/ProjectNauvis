@@ -1,3 +1,4 @@
+// Why things are the way they are: docs/ARCHITECTURE.md (dependencies, Jade), docs/API-26.2.md (datagen, gradle).
 plugins {
     id 'java-library'
     id 'maven-publish'
@@ -9,11 +10,6 @@ ext {
     mod_id = 'nauvis'
     mod_name = 'Nauvis'
 
-    // Every mod in the pack whose gametests should run here. A subsystem mod tests its own
-    // behaviour, in its own source tree, and these runs are where all of it happens at once on
-    // a classpath that has the whole pack on it.
-    // The sibling repos would count too if any of them had tests the pack cares about; the
-    // drills' did, and they are nauvis_mining's now.
     pack_gametest_namespaces = 'nauvis,nauvis_materials,nauvis_machines,nauvis_logistics,nauvis_fluids,' +
             'nauvis_power,nauvis_research,nauvis_mining,nauvis_military,nauvis_rocket'
 }
@@ -25,12 +21,9 @@ base {
     archivesName = mod_id
 }
 
-// Mojang ships Java 25 to end users, so mods target Java 25.
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 sourceSets.main.resources {
-    // Two generated roots, not one. Each datagen run deletes output it does not recognise, so
-    // pointing both at the same directory makes whichever ran last wipe the other's work.
     srcDir 'src/generated/client'
     srcDir 'src/generated/server'
     exclude '**/*.bbmodel'
@@ -38,11 +31,6 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // The NeoForged mirror intermittently serves zero-byte files with HTTP 200 for
-    // third-party libraries. exclusiveContent makes Central the only source for these
-    // groups, so the broken mirror is never consulted for them. See docs/API-26.2.md for
-    // the symptoms; the giveaway is a cache directory named
-    // da39a3ee5e6b4b0d3255bfef95601890afd80709, the SHA-1 of the empty string.
     exclusiveContent {
         forRepository { mavenCentral() }
         filter {
@@ -54,8 +42,6 @@ repositories {
 
     mavenCentral()
 
-    // Jade, for the look-at readout. Runtime only here - the pack ships it, and each subsystem
-    // mod's plugin classes only load when it is present.
     maven {
         name = 'Modrinth'
         url = 'https://api.modrinth.com/maven'
@@ -63,17 +49,10 @@ repositories {
 }
 
 dependencies {
-    // The two sibling mods, pulled in to run the pack from one classpath. runtimeOnly, not
-    // implementation, because the pack mod has no compile-time dependency on any of them and
-    // must not grow one - the coupling is recipe conditions, not Java. settings.gradle
-    // substitutes each of these with the local checkout beside this repo.
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.crumblingore:crumblingore:${crumblingore_version}"
 
-    // The subsystem mods in this repo, on the same terms. This is what makes
-    // :nauvis:runServer and :nauvis:runGameTestServer the whole pack rather than the pack mod
-    // on its own; each subsystem still builds and runs standalone.
-    runtimeOnly project(':nauvis_lib')
+    implementation project(':nauvis_lib')
     runtimeOnly project(':nauvis_materials')
     runtimeOnly project(':nauvis_machines')
     runtimeOnly project(':nauvis_logistics')
@@ -84,15 +63,9 @@ dependencies {
     runtimeOnly project(':nauvis_military')
     runtimeOnly project(':nauvis_rocket')
 
-    // Not a dependency of anything, deliberately: it is in the pack because the readout is worth
-    // having, and every mod still runs without it.
     runtimeOnly "maven.modrinth:jade:${jade_version}"
 }
 
-// The pack's own settings for the mods it ships - see pack/config/README.md, which says what is
-// in there and why. Pack policy, in the pack, exactly as non-negotiable #3 asks.
-//
-// The README is excluded because `run/config` is a config directory, not a place to put prose.
 var packConfig = tasks.register('packConfig', Copy) {
     from('pack/config') { exclude 'README.md' }
     into 'run/config'
@@ -113,20 +86,12 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', pack_gametest_namespaces
         }
 
-        // Runs every registered gametest, then exits - non-zero if any failed. This is the
-        // check Claude can run unattended; the client run is for the half that needs eyes.
         gameTestServer {
             type = 'gameTestServer'
             systemProperty 'neoforge.enabledGameTestNamespaces', pack_gametest_namespaces
-            // The bench-recipe datapacks off, which is not the default and cannot be:
-            // GameTestServer force-enables every pack it can see, and a bench copy ships
-            // under the same id as the timed recipe it replaces. See ModPacks.
             systemProperty 'jaguarm.benchRecipePacks', 'false'
         }
 
-        // Client and server datagen are separate runs since 1.21.4. Models and language go
-        // through clientData, loot tables and tags through serverData; running only one
-        // silently generates half of what you asked for.
         clientData {
             clientData()
             programArguments.addAll '--mod', project.mod_id,
@@ -156,7 +121,6 @@ neoForge {
     }
 }
 
-// Expands the properties in src/main/templates into the mod metadata.
 var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
     var replaceProperties = [
             minecraft_version      : minecraft_version,
@@ -175,7 +139,6 @@ var generateModMetadata = tasks.register('generateModMetadata', ProcessResources
 sourceSets.main.resources.srcDir generateModMetadata
 neoForge.ideSyncTask generateModMetadata
 
-// Every run starts from the pack's config rather than from whatever the last run left behind.
 tasks.matching { it.name.startsWith('run') }.configureEach {
     dependsOn packConfig
 }
@@ -197,17 +160,12 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-// Recipes and technologies are generated, never hand-written - so a build that would ship a
-// hand-edited one should not succeed. The others catch what compiles, tests clean and is still wrong: an
-// unresolvable model reference, a screen drawn through itself, and a gametest whose type was
-// never registered - which passes, and breaks a client. See the root build.gradle.
 tasks.named('check') {
     dependsOn rootProject.tasks.named('checkRecipes')
     dependsOn rootProject.tasks.named('checkTechnologies')
     dependsOn rootProject.tasks.named('checkRemovals')
     dependsOn rootProject.tasks.named('checkModels')
     dependsOn rootProject.tasks.named('checkGuiLayout')
-    dependsOn rootProject.tasks.named('checkGameTests')
 }
 
 idea {

@@ -10,56 +10,7 @@ import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
-/**
- * How everything else in the game meets a belt.
- *
- * <p>A belt publishes {@code Capabilities.Item.BLOCK}, so an inserter, a hopper or another mod's
- * machine can put things on it and take things off without knowing what a belt is. That is the
- * same joint every other pair of blocks in this pack meets at, and it is the reason the belt needs
- * no compile-time dependency on anything.
- *
- * <p><b>The belt never pushes.</b> Its side of this is entirely passive: it answers, and waits to
- * be asked. A belt running into a chest backs up rather than filling it, which is what Factorio
- * does and the reason inserters exist. See {@link BeltRun}.
- *
- * <h2>Indices are items, not slots</h2>
- *
- * <p>There is no fixed grid of slots to expose - an item on a belt is at a distance along it, not
- * in a hole. So the size is however many items are standing on this one block, and index 0 is the
- * one nearest the far end. {@code ResourceHandler} asks implementations to be lenient about a size
- * that changes, and this is exactly that case.
- *
- * <h2>Which lane, and why giving and taking are not the same rule</h2>
- *
- * <p>Whoever is asking is standing on one side of the belt, and that side is the one the
- * capability was looked up with. From there Factorio's two rules pull in opposite directions, and
- * conflating them is what made a single inserter fill a whole belt here:
- *
- * <ul>
- *   <li><b>Giving is the far lane, and only the far lane.</b> "Inserters only place items onto one
- *       side of the belt, either the far side from the inserter's perspective or, if the belt is
- *       going the same or the opposite direction as the inserter, the right side from the belt's
- *       perspective." A full far lane is a <em>wait</em>, never a fall back to the near one - that
- *       is what lets one belt feed two rows of machines, and why a player puts inserters down both
- *       sides of a bus.</li>
- *   <li><b>Taking prefers the <em>near</em> lane.</b> The opposite way round, and for a reason
- *       that is nothing to do with throughput: the arm has less distance to travel, so "this
- *       favors inserters taking from the inner lane". The far lane is still taken from when the
- *       near one is empty.</li>
- * </ul>
- *
- * <p>Both quotes are the Factorio wiki's, and both cases have a <em>third</em> reading for an
- * asker whose side tells us nothing about a near and a far:
- *
- * <ul>
- *   <li><b>In line with the belt</b> - facing along its axis rather than across it, where there is
- *       no near side. Factorio names an absolute lane instead: the belt's right to give to, the
- *       belt's left to take from.</li>
- *   <li><b>No side at all</b> - a hopper above or below, or a capability looked up with
- *       {@code null}. It gets both lanes both ways. Factorio has no hoppers so nothing is being
- *       contradicted, and a hopper that could only ever half fill a belt would just be broken.</li>
- * </ul>
- */
+/** How everything else in the game meets a belt. */
 public final class BeltAccess implements ResourceHandler<ItemResource> {
 
     /** Left and right, in that order. Shared because nothing here ever writes through it. */

@@ -24,41 +24,6 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 /**
  * One connected electric network: every pole that can reach every other, and the machines those
  * poles supply.
- *
- * <p><b>This object ticks, not the poles.</b> PLAN.md's belt note with the nouns changed - an
- * electric network is one object and poles are members of it - and the whole reason a pole is an
- * architectural decision rather than a block. A pole that ticks costs N ticks a second for N
- * poles and takes N ticks to move a packet of energy across them. A network that ticks costs one
- * iteration however many poles it has, and energy crosses it instantly, which is what it does in
- * Factorio.
- *
- * <p>Poles are positions; they hold nothing and do nothing. Machines are
- * {@link BlockCapabilityCache} handles, so a transfer is never a capability lookup, and the cache
- * reports a machine being replaced or its chunk cycling without anybody polling.
- *
- * <h2>Producers and consumers are not told apart; batteries are</h2>
- *
- * <p>There is one endpoint table, not two. A steam engine refuses insertion - see
- * {@link GeneratorAccess} - and a machine refuses extraction, so asking every endpoint for both
- * costs one virtual call that returns zero, and there is no classification to go stale when a
- * machine is replaced by a different one.
- *
- * <p>An accumulator refuses neither, and that is why it is the one endpoint that has to say what
- * it is: a handler carrying {@link EnergyBuffer} is a <b>battery</b>, and Factorio's rule for a
- * battery is the third case of the tick. It takes only what the generators leave over once every
- * machine is fed, and it gives only what the generators cannot cover. Two batteries never trade,
- * because a battery is never counted as demand and never drawn on for surplus - so a full one and
- * an empty one on the same network sit still, which is what lets the network sleep.
- *
- * <h2>The tick, in three passes</h2>
- *
- * <p>Demand is measured first, in a transaction that is deliberately never committed, and only
- * then is exactly that much pulled from the producers - and from the batteries, for whatever the
- * producers fell short by. Doing it the other way round - fill a budget, then find out nobody
- * wants it - would leave energy in hand with nowhere to put it and no way to give it back, because
- * a transaction rolls back whole or not at all. Then, if the producers covered the demand alone,
- * whatever they still have goes into the batteries, each in a nested transaction so one that goes
- * back on its word costs only its own charge.
  */
 public final class PowerNetwork {
 
@@ -90,24 +55,7 @@ public final class PowerNetwork {
     private final LongOpenHashSet bufferSet = new LongOpenHashSet();
     private final LongArrayList gone = new LongArrayList();
 
-    /**
-     * One machine, one share, however many blocks it is made of.
-     *
-     * <p>A machine with a footprint offers its energy handler at every block it occupies, so that
-     * a pole supplies it if its area covers any part of it - which is Factorio's rule and the
-     * reason the footprints were worth having. The cost is that one steam engine can appear in a
-     * pole's supply area five times over.
-     *
-     * <p>The same handler five times is not five machines. Left alone it would be five shares of
-     * a shortfall to one engine, five entries in the count a player reads off a pole, and - once
-     * something is both a producer and a consumer - a machine sold energy it had just asked for,
-     * through two of its own blocks. So each tick the endpoints are reduced to distinct handlers,
-     * by object identity, and the positions that were duplicates sit the tick out.
-     *
-     * <p>Identity rather than position, because the network has no idea what a multi-block is and
-     * should not learn: any mod whose machine hands out one handler from several blocks gets this
-     * for free, and one that hands out a fresh wrapper each time is no worse off than before.
-     */
+    /** One machine, one share, however many blocks it is made of. */
     private final Set<EnergyHandler> distinct =
             Collections.newSetFromMap(new IdentityHashMap<>());
     private final LongOpenHashSet duplicates = new LongOpenHashSet();
@@ -283,16 +231,7 @@ public final class PowerNetwork {
         return false;
     }
 
-    /**
-     * Asks every endpoint how much it would take, and takes nothing.
-     *
-     * <p>The transaction is never committed, so every insertion below rolls back on the way out
-     * of the block. This is the "can I?" half of the pattern the whole pack uses, and it is the
-     * same call as the "do it" half, so the two cannot drift.
-     *
-     * <p>A battery is asked the same question and the answer is kept apart: what it would take is
-     * its room for surplus, not demand a generator has to meet.
-     */
+    /** Asks every endpoint how much it would take, and takes nothing. */
     private long measureDemand() {
         long demand = 0;
         distinct.clear();

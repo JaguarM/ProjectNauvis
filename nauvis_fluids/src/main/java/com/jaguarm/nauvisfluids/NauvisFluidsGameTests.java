@@ -15,7 +15,6 @@ import com.jaguarm.nauvisfluids.chemicalplant.ChemicalPlantBlock;
 import com.jaguarm.nauvisfluids.chemicalplant.ChemicalPlantBlockEntity;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlock;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpBlockEntity;
-import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpItem;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpShape;
 import com.jaguarm.nauvisfluids.offshorepump.OffshorePumpStatus;
 import com.jaguarm.nauvisfluids.oil.CrudeOilBlockEntity;
@@ -40,20 +39,15 @@ import com.jaguarm.nauvisfluids.registry.ModItems;
 import com.jaguarm.nauvisfluids.tank.StorageTankBlock;
 import com.jaguarm.nauvisfluids.tank.StorageTankBlockEntity;
 import com.jaguarm.nauvisfluids.water.NaturalWaterFeature;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.jaguarm.nauvislib.test.GameTests;
+import com.jaguarm.nauvislib.test.PackGameTest;
+import com.jaguarm.nauvislib.test.PackGameTest.Info;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.GameTestInstance;
-import net.minecraft.gametest.framework.TestData;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -68,7 +62,6 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -80,36 +73,636 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
-/**
- * Tests that run inside a real server, headless.
- *
- * <p>Two groups. The pipe tests assert the <em>graph</em>: that a line of pipes is one object,
- * that it splits and merges when the line does, and that what was in it is divided rather than
- * duplicated or lost. Whether steam actually reaches an engine through a pipe is asserted in the
- * pack mod, because it takes a boiler and an engine and this mod may not compile against the one
- * that owns them.
- *
- * <p>The oil tests assert Factorio's numbers: a well is unmovable, a pumpjack stands only over
- * one and snaps to it, it pumps ten a second from a 100% well and takes ten off the well a cycle,
- * the well stops at its floor, and the machine sleeps for each of the three reasons it can.
- */
-@EventBusSubscriber(modid = NauvisFluids.MODID)
+/** Tests that run inside a real server, headless. */
 public final class NauvisFluidsGameTests {
 
     private NauvisFluidsGameTests() {}
 
-    private static final Identifier EMPTY_STRUCTURE = Identifier.withDefaultNamespace("empty");
+    static void register(IEventBus modEventBus) {
+        GameTests tests = new GameTests(NauvisFluids.MODID, modEventBus);
+        tests.add("pipe_run_is_one_object", PipeRunIsOneObjectTest::new, 100);
+        tests.add("pipe_run_splits_and_merges", PipeRunSplitsAndMergesTest::new, 200);
+        tests.add("pipe_connects_to_what_offers_fluid", PipeConnectsTest::new, 100);
+
+        // Steam and crude oil exist under the ids the mapping has always given them.
+        //
+        // nauvis_fluids:steam is identity: data/mapping.json names it, and
+        // nauvis_power finds it by that id rather than by importing it, so a rename here would
+        // quietly stop every boiler in the pack from making anything. nauvis_fluids:crude_oil
+        // is the same kind of fact for everything downstream of a pumpjack.
+        tests.add("fluids_are_registered", 20, helper -> {
+            for (String name : new String[] {"steam", "crude_oil", "water", "flowing_water",
+                    "heavy_oil", "light_oil", "petroleum_gas", "lubricant", "sulfuric_acid"}) {
+                Identifier id = Identifier.fromNamespaceAndPath(NauvisFluids.MODID, name);
+                helper.assertTrue(BuiltInRegistries.FLUID.getValue(id) != Fluids.EMPTY,
+                        "nauvis_fluids:" + name + " is not registered");
+            }
+            for (String name : new String[] {"pipe", "crude_oil", "pumpjack", "water", "offshore_pump"}) {
+                Block block = BuiltInRegistries.BLOCK.getValue(
+                        Identifier.fromNamespaceAndPath(NauvisFluids.MODID, name));
+                helper.assertTrue(block != Blocks.AIR, "nauvis_fluids:" + name + " is not registered");
+            }
+            helper.succeed();
+        });
+        tests.add("pipe_reports_its_run", PipeReportsItsRunTest::new, 100);
+
+        // An oil well cannot be mined, pushed or dropped, and it is worth something the moment it
+        // exists.
+        //
+        // Factorio's crude-oil is a resource entity: nothing a player does moves it. Here
+        // that is three block properties, each of which could be lost in a refactor of
+        // ModBlocks without anything else noticing. The amount is the other half - a well
+        // placed in the world works out how rich it is from where it is, so a well placed with nothing
+        // written into it must still answer with Factorio's floor or better.
+        tests.add("crude_oil_is_unmovable", 40, PADDING, helper -> {
+            helper.setBlock(WELL, ModBlocks.CRUDE_OIL.get());
+            BlockPos at = helper.absolutePos(WELL);
+            BlockState state = helper.getBlockState(WELL);
+
+            helper.assertTrue(state.getDestroySpeed(helper.getLevel(), at) < 0,
+                    "an oil well can be mined, so a player can pick up Factorio's one unmovable resource");
+            helper.assertTrue(state.getPistonPushReaction() == PushReaction.BLOCK,
+                    "an oil well can be pushed by a piston");
+            helper.assertTrue(ModBlocks.CRUDE_OIL.get().getLootTable().isEmpty(),
+                    "an oil well has a loot table, so something that breaks it gets a well back");
+
+            CrudeOilBlockEntity well = helper.getBlockEntity(WELL, CrudeOilBlockEntity.class);
+            helper.assertTrue(well.amount() >= CrudeOilField.ADDITIONAL_RICHNESS + CrudeOilField.SPREAD_MIN,
+                    "a fresh well is poorer than Factorio's additional richness allows: " + well.amount());
+            helper.assertTrue(well.amount() % CrudeOilBlockEntity.DEPLETION == 0,
+                    "a well's amount is not a multiple of a cycle's depletion: " + well.amount());
+            helper.assertValueEqual(well.initial(), well.amount(), "a fresh well's initial amount");
+            helper.assertTrue(well.yieldPercent() >= 90,
+                    "a well near the start reads under 90%: " + well.yieldPercent());
+            helper.succeed();
+        });
+
+        // A pumpjack goes down centred on a well, from a click anywhere over it, and nowhere else.
+        //
+        // Factorio's rule and Factorio's snapping. Three clicks: the block over the well, which
+        // must place with the centre pinned to it; the block over the well's diagonal neighbour, which
+        // must place with a corner pinned to it so that the centre still lands over the well;
+        // and a block two away, which is not over the machine's footprint and must refuse.
+        tests.add("pumpjack_stands_only_on_a_well", 40, PADDING, helper -> {
+            for (int x = 0; x < 6; x++) {
+                for (int z = 0; z < 6; z++) {
+                    helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+                }
+            }
+            well(helper, WELL, CrudeOilBlockEntity.NORMAL);
+            MachineShape shape = PumpjackShape.SHAPE;
+
+            BlockState centred = placement(helper, WELL);
+            helper.assertTrue(centred != null, "a pumpjack refuses the block directly over a well");
+            helper.assertValueEqual(centred.getValue(shape.part()), shape.placement(),
+                    "the cell pinned to a click over the well");
+
+            BlockPos diagonal = WELL.offset(1, 0, 1);
+            BlockState snapped = placement(helper, diagonal);
+            helper.assertTrue(snapped != null,
+                    "a pumpjack refuses a click one block off the well, so placement does not snap");
+            BlockPos anchor = shape.anchorPos(helper.absolutePos(diagonal.above()),
+                    snapped.getValue(shape.part()), snapped.getValue(PumpjackBlock.FACING));
+            helper.assertValueEqual(anchor, helper.absolutePos(PUMPJACK),
+                    "where a pumpjack clicked one block off the well ends up centred");
+
+            helper.assertTrue(placement(helper, WELL.offset(2, 0, 0)) == null,
+                    "a pumpjack accepts a block two away from the well, which is not over one");
+            helper.assertTrue(placement(helper, new BlockPos(5, 1, 5)) == null,
+                    "a pumpjack accepts plain ground");
+
+            // The ghost asks the same questions, so it snaps where the click will and says no
+            // where the click would.
+            Multiblock.Ghost ghost = Multiblock.ghost(ModBlocks.PUMPJACK.get(), pumpjackClick(helper, diagonal));
+            helper.assertTrue(ghost.allowed(), "the ghost of a pumpjack clicked one block off the well says it will not go");
+            helper.assertValueEqual(ghost.anchor(), helper.absolutePos(PUMPJACK),
+                    "where the ghost of a pumpjack clicked one block off the well stands");
+            helper.assertFalse(Multiblock.ghost(ModBlocks.PUMPJACK.get(), pumpjackClick(helper, new BlockPos(5, 1, 5))).allowed(),
+                    "the ghost of a pumpjack on plain ground says it will go");
+            helper.succeed();
+        });
+
+        // Ten crude oil a second from a 100% well, and ten off the well each second.
+        //
+        // The two numbers that are identity. One cycle is twenty ticks, so after thirty the first
+        // cycle has banked and the second has not, and after fifty two have. The second cycle is
+        // pumped from a well that is no longer quite 100%, and the machine carries the fraction rather
+        // than rounding it, so two cycles bank nineteen - #bankedAfter is that arithmetic.
+        tests.add("pumpjack_pumps_at_factorio_rate", 100, PADDING, helper -> {
+            CrudeOilBlockEntity well = well(helper, WELL, CrudeOilBlockEntity.NORMAL);
+            PumpjackBlockEntity pumpjack = pumpjack(helper, PUMPJACK);
+            charge(pumpjack);
+
+            helper.startSequence()
+                    .thenExecuteAfter(30, () -> {
+                        helper.assertValueEqual(pumpjack.stored(), PumpjackBlockEntity.UNITS_PER_CYCLE_AT_NORMAL,
+                                "crude oil banked after one cycle from a 100% well");
+                        helper.assertValueEqual(well.amount(),
+                                CrudeOilBlockEntity.NORMAL - CrudeOilBlockEntity.DEPLETION,
+                                "what one cycle takes off a well");
+                        helper.assertValueEqual(pumpjack.status(), PumpjackStatus.PUMPING, "status while pumping");
+                    })
+                    .thenExecuteAfter(20, () -> {
+                        // Nineteen, not twenty: the second cycle ran at 99.997% and the fraction is
+                        // carried, not rounded up. See bankedAfter.
+                        helper.assertValueEqual(pumpjack.stored(), bankedAfter(CrudeOilBlockEntity.NORMAL, 2),
+                                "crude oil banked after two cycles");
+                        helper.assertValueEqual(well.amount(),
+                                CrudeOilBlockEntity.NORMAL - 2 * CrudeOilBlockEntity.DEPLETION,
+                                "what two cycles take off a well");
+                        // 90 kW is twelve a tick for every tick spent pumping, the third cycle's
+                        // ticks included - not a price per cycle. Two full cycles at least, and
+                        // never more than the fifty ticks that have passed.
+                        int spent = PumpjackBlockEntity.ENERGY_CAPACITY - pumpjack.energyStored();
+                        helper.assertTrue(spent >= 2 * PumpjackBlockEntity.CYCLE_TICKS * PumpjackBlockEntity.ENERGY_PER_TICK
+                                        && spent <= 50 * PumpjackBlockEntity.ENERGY_PER_TICK
+                                        && spent % PumpjackBlockEntity.ENERGY_PER_TICK == 0,
+                                "electricity spent over two cycles and a bit: " + spent);
+                    })
+                    .thenSucceed();
+        });
+        tests.add("well_stops_at_its_floor", WellStopsAtItsFloorTest::new, 100, PADDING);
+        tests.add("pumpjack_sleeps", PumpjackSleepsTest::new, 200, PADDING);
+
+        // A pumpjack takes Factorio's modules and reads them the way every other machine does: a
+        // speed module shortens the cycle by its speed and raises the draw by its cost. The module is
+        // nauvis_machines' and this mod does not name it, so it is looked up by id and the test
+        // passes trivially without it.
+        tests.add("pumpjack_takes_modules", 40, PADDING, helper -> {
+            var speed = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_machines", "speed_module"));
+            if (ModuleSlots.moduleOf(new ItemStack(speed)) == null) {
+                helper.succeed();
+                return;
+            }
+            well(helper, WELL, CrudeOilBlockEntity.NORMAL);
+            PumpjackBlockEntity pumpjack = pumpjack(helper, PUMPJACK);
+            pumpjack.modules().set(0, ItemResource.of(speed), 1);
+            charge(pumpjack);
+            ModuleEffect effect = ModuleSlots.moduleOf(new ItemStack(speed)).effect();
+
+            helper.runAfterDelay(10, () -> {
+                helper.assertValueEqual(pumpjack.status(), PumpjackStatus.PUMPING, "status with a well, power and a module");
+                helper.assertValueEqual(pumpjack.cycleTicks(),
+                        (int) Math.round(PumpjackBlockEntity.CYCLE_TICKS / effect.speedFactor()),
+                        "ticks a cycle takes with a speed module");
+                helper.assertTrue(pumpjack.cycleTicks() < PumpjackBlockEntity.CYCLE_TICKS,
+                        "a speed module did not shorten the cycle");
+                helper.assertValueEqual(pumpjack.currentEnergyPerTick(),
+                        effect.scaleEnergy(PumpjackBlockEntity.ENERGY_PER_TICK), "draw with a speed module");
+                helper.succeed();
+            });
+        });
+
+        // Oil leaves by the outlet and by nothing else, and a pipe there carries it away.
+        //
+        // The outlet is the north-east corner's north face on a north-facing machine, which is
+        // Factorio's corner. A pipe against the east flank must not connect - that a pipe in the wrong
+        // place gets nothing is what makes the outlet a thing the player can be right about.
+        tests.add("pumpjack_feeds_a_pipe", 100, PADDING, helper -> {
+            MachineShape shape = PumpjackShape.SHAPE;
+            BlockPos outletCell = shape.cellPos(PUMPJACK, PumpjackShape.OUTLET_CELL, Direction.NORTH);
+            BlockPos outletPipe = outletCell.north();
+            BlockPos flankPipe = PUMPJACK.east(2);
+
+            // Pipes first. A block put down by anything but a player never runs
+            // getStateForPlacement - see PITFALLS.md - so a pipe placed beside a machine that is
+            // already there would show no connection; placed first, the machine arriving is the
+            // neighbour change that makes each pipe re-read the face towards it.
+            pipe(helper, outletPipe);
+            pipe(helper, flankPipe);
+            well(helper, WELL, CrudeOilBlockEntity.NORMAL);
+            PumpjackBlockEntity pumpjack = pumpjack(helper, PUMPJACK);
+            charge(pumpjack);
+
+            helper.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertTrue(helper.getBlockState(outletPipe).getValue(PipeBlock.SOUTH),
+                                "a pipe at the outlet does not reach into the pumpjack");
+                        helper.assertFalse(helper.getBlockState(flankPipe).getValue(PipeBlock.WEST),
+                                "a pipe on the flank connects to a pumpjack, so the outlet means nothing");
+                    })
+                    .thenExecuteAfter(45, () -> {
+                        FluidNetwork run = networkAt(helper, outletPipe, "the outlet pipe has no run");
+                        helper.assertValueEqual(run.fluid().getFluid(), ModFluids.CRUDE_OIL.get(),
+                                "what the outlet pipe is carrying");
+                        helper.assertTrue(run.amount() + pumpjack.stored() == bankedAfter(CrudeOilBlockEntity.NORMAL, 2),
+                                "oil went missing between the pumpjack and the pipe: " + run.amount()
+                                        + " in the run, " + pumpjack.stored() + " in the tank");
+                        helper.assertTrue(run.amount() > 0, "the pipe run drew nothing from the pumpjack");
+                        helper.assertValueEqual(networkAt(helper, flankPipe, "the flank pipe has no run").amount(), 0,
+                                "what a pipe on the flank carries");
+                    })
+                    .thenSucceed();
+        });
+        tests.add("oil_field_is_pumpable", OilFieldIsPumpableTest::new, 60, WIDE_PADDING);
+
+        // A pumpjack says what it mined, once per cycle, naming the well.
+        //
+        // This is the report that finishes Factorio's oil processing - {@code mine-entity:
+        // crude-oil, 1} - through Facrafting's MiningListeners and into research, neither of
+        // which this mod names. What can be asserted here is this mod's half: one report per cycle,
+        // for this well, of one, whatever the yield. Other pumpjacks in the run report too, so the
+        // listener keeps only what came from this test's well.
+        tests.add("pumpjack_reports_what_it_mines", 100, PADDING, helper -> {
+            // The seam to research goes through Facrafting, and with Facrafting present the
+            // adapter that forwards reports must be installed - see FacraftingProgress.
+            if (ModList.get().isLoaded("facrafting")) {
+                helper.assertTrue(OilProgress.installed() > 0,
+                        "Facrafting is loaded and nothing forwards what a pumpjack mines to it");
+            }
+
+            BlockPos wellPos = helper.absolutePos(WELL);
+            List<String> reports = new ArrayList<>();
+            OilProgress.add((level, well, resource, cycles) -> {
+                if (well.equals(wellPos)) {
+                    reports.add(resource + " x" + cycles);
+                }
+            });
+
+            well(helper, WELL, 4 * CrudeOilBlockEntity.NORMAL);
+            PumpjackBlockEntity pumpjack = pumpjack(helper, PUMPJACK);
+            charge(pumpjack);
+
+            helper.runAfterDelay(50, () -> {
+                // Two cycles at 400%: forty units each, and still one report of one per cycle.
+                helper.assertValueEqual(reports, List.of("nauvis_fluids:crude_oil x1", "nauvis_fluids:crude_oil x1"),
+                        "what the pumpjack reported over two cycles");
+                helper.succeed();
+            });
+        });
+        tests.add("pumpjack_caps_a_cycle_at_its_tank", PumpjackCapsACycleTest::new, 60, PADDING);
+        tests.add("oil_command_places_a_field", OilCommandPlacesAFieldTest::new, 40, WIDE_PADDING);
+
+        // A bucket lifts natural water as water, and pours it back as vanilla's.
+        //
+        // The rule that makes a lake a place rather than a supply: what you carry away is
+        // ordinary water, what you pour out is ordinary water, and neither is what an offshore pump
+        // draws from. Water on the move is not lifted at all, exactly as vanilla's is not.
+        tests.add("natural_water_is_bucketed_as_water", 20, PADDING, helper -> {
+            platform(helper, 5);
+            BlockPos at = new BlockPos(2, 2, 2);
+            BlockPos absolute = helper.absolutePos(at);
+            LiquidBlock water = ModBlocks.WATER.get();
+
+            helper.setBlock(at, naturalWater());
+            ItemStack lifted = water.pickupBlock(null, helper.getLevel(), absolute, helper.getBlockState(at));
+            helper.assertTrue(lifted.is(Items.WATER_BUCKET),
+                    "a bucket of natural water is " + lifted + ", not a water bucket");
+            helper.assertTrue(helper.getBlockState(at).isAir(), "the water was lifted and is still there");
+
+            ((BucketItem) Items.WATER_BUCKET).emptyContents(null, helper.getLevel(), absolute, null);
+            helper.assertTrue(helper.getBlockState(at).is(Blocks.WATER),
+                    "a poured bucket put down " + helper.getBlockState(at) + ", not vanilla's water");
+
+            helper.setBlock(at, naturalWater().setValue(LiquidBlock.LEVEL, 2));
+            helper.assertTrue(water.pickupBlock(null, helper.getLevel(), absolute, helper.getBlockState(at)).isEmpty(),
+                    "flowing natural water was lifted by a bucket");
+            helper.succeed();
+        });
+        tests.add("natural_water_makes_no_new_source", NaturalWaterMakesNoNewSourceTest::new, 100, PADDING);
+        tests.add("worldgen_water_becomes_natural", WorldgenWaterBecomesNaturalTest::new, 20, PADDING);
+
+        // An offshore pump stands where its intake finds still natural water, and nowhere else.
+        //
+        // Not on dry land, not at a bucket's water, and not at the flowing edge of a lake - the
+        // three ways a player would otherwise get infinite water back. Under the intake counts, and
+        // so does beside it: a pump on a beach reaches down, a pump in the shallows reaches sideways.
+        tests.add("offshore_pump_stands_only_at_water", 40, PADDING, helper -> {
+            platform(helper, 6);
+            BlockPos shore = PUMP.below();
+            BlockPos beside = INTAKE_WATER.above().west();
+
+            helper.assertTrue(pumpPlacement(helper, shore) == null, "an offshore pump stands on dry land");
+
+            helper.setBlock(INTAKE_WATER, naturalWater());
+            BlockState placed = pumpPlacement(helper, shore);
+            helper.assertTrue(placed != null, "an offshore pump refuses a shore with natural water ahead of it");
+            helper.assertValueEqual(placed.getValue(OffshorePumpBlock.FACING), Direction.NORTH,
+                    "the way a pump placed with no player faces");
+
+            helper.setBlock(INTAKE_WATER, Blocks.WATER.defaultBlockState());
+            helper.assertTrue(pumpPlacement(helper, shore) == null,
+                    "an offshore pump accepts a bucket's water, so water is infinite again");
+            helper.assertValueEqual(OffshorePumpBlock.bestIntake(helper.getLevel(), helper.absolutePos(PUMP)),
+                    OffshorePumpBlock.Intake.OTHER, "what the refusal says of a bucket's water");
+
+            helper.setBlock(INTAKE_WATER, naturalWater().setValue(LiquidBlock.LEVEL, 3));
+            helper.assertTrue(pumpPlacement(helper, shore) == null, "an offshore pump accepts water on the move");
+
+            helper.setBlock(INTAKE_WATER, Blocks.STONE);
+            helper.assertValueEqual(OffshorePumpBlock.bestIntake(helper.getLevel(), helper.absolutePos(PUMP)),
+                    OffshorePumpBlock.Intake.NONE, "what the refusal says of dry land");
+
+            helper.setBlock(beside, naturalWater());
+            helper.assertTrue(pumpPlacement(helper, shore) != null,
+                    "an offshore pump refuses natural water beside its intake");
+            helper.setBlock(beside, Blocks.AIR);
+
+            // A bank a block above the water: the intake reaches two down.
+            helper.setBlock(INTAKE_WATER.below(), naturalWater());
+            helper.assertTrue(pumpPlacement(helper, shore) != null,
+                    "an offshore pump on a bank one block above the water refuses to stand there");
+            helper.succeed();
+        });
+
+        // A pump turns to the water. The click faces north and the lake is to the east, and the pump
+        // placed faces east, intake over the lake.
+        //
+        // Factorio's ghost snaps to the shoreline; this is the nearest a block can come. The
+        // player's own facing is tried first, so a pump that could face the way they look does, and
+        // only one that could not turns.
+        tests.add("offshore_pump_turns_to_the_water", 40, PADDING, helper -> {
+            platform(helper, 6);
+            BlockPos shore = PUMP.below();
+
+            // Dry: the ghost stands where the click would have put it, the player's way, refused.
+            Multiblock.Ghost dry = Multiblock.ghost(ModBlocks.OFFSHORE_PUMP.get(), pumpClick(helper, shore));
+            helper.assertFalse(dry.allowed(), "the ghost of a pump on dry land says it will go");
+            helper.assertValueEqual(dry.facing(), Direction.NORTH, "the way a refused pump's ghost faces");
+            helper.assertValueEqual(dry.anchor(), helper.absolutePos(PUMP), "where a refused pump's ghost stands");
+
+            // Under where an east-facing intake would hang, and nowhere a north-facing one reaches.
+            helper.setBlock(PUMP.east().below(), naturalWater());
+
+            Multiblock.Ghost turned = Multiblock.ghost(ModBlocks.OFFSHORE_PUMP.get(), pumpClick(helper, shore));
+            helper.assertTrue(turned.allowed(), "the ghost of a pump beside a lake says it will not go");
+            helper.assertValueEqual(turned.facing(), Direction.EAST, "the way a pump's ghost turns to find water");
+            helper.assertValueEqual(
+                    ModBlocks.OFFSHORE_PUMP.get().placementMarks(helper.getLevel(), turned.anchor(), turned.facing()),
+                    List.of(helper.absolutePos(PUMP.east().below())), "what a pump's ghost marks");
+
+            BlockState placed = pumpPlacement(helper, shore);
+            helper.assertTrue(placed != null, "an offshore pump facing away from a lake beside it will not turn to it");
+            helper.assertValueEqual(placed.getValue(OffshorePumpBlock.FACING), Direction.EAST,
+                    "the way a pump clicked facing north turns when the water is to the east");
+
+            // Water the way the player faces wins over water beside, so a pump faces as placed
+            // whenever it can.
+            helper.setBlock(INTAKE_WATER, naturalWater());
+            BlockState straight = pumpPlacement(helper, shore);
+            helper.assertTrue(straight != null, "a pump with water ahead of it will not stand");
+            helper.assertValueEqual(straight.getValue(OffshorePumpBlock.FACING), Direction.NORTH,
+                    "the way a pump faces when the water is where the player looks");
+            helper.succeed();
+        });
+        tests.add("offshore_pump_floats_on_a_lake", OffshorePumpFloatsOnALakeTest::new, 40, PADDING);
+        tests.add("oil_recipes_load", OilRecipesLoadTest::new, 20);
+        tests.add("offshore_pump_pumps_at_factorio_rate", OffshorePumpPumpsAtFactorioRateTest::new, 60, PADDING);
+
+        // What comes out of the back is water - vanilla's, the water of the pipes - and only the back
+        // offers it.
+        //
+        // A pipe at the outlet reaches into the machine and its run fills with
+        // minecraft:water until run and tank are both full and the pump reports so. A pipe on
+        // the flank connects to nothing and carries nothing.
+        tests.add("offshore_pump_fills_a_pipe", 100, PADDING, helper -> {
+            platform(helper, 5);
+            BlockPos outletPipe = PUMP.south();
+            BlockPos flankPipe = PUMP.east();
+
+            // Pipes first, for the reason the pumpjack test gives: a block put down by anything
+            // but a player never runs getStateForPlacement, so a pipe placed beside a machine
+            // already there would show no connection.
+            pipe(helper, outletPipe);
+            pipe(helper, flankPipe);
+            helper.setBlock(INTAKE_WATER, naturalWater());
+            OffshorePumpBlockEntity pump = offshorePump(helper, PUMP);
+
+            helper.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertTrue(helper.getBlockState(outletPipe).getValue(PipeBlock.NORTH),
+                                "a pipe at the outlet does not reach into the offshore pump");
+                        helper.assertFalse(helper.getBlockState(flankPipe).getValue(PipeBlock.WEST),
+                                "a pipe on the flank connects to an offshore pump, so the outlet means nothing");
+                    })
+                    .thenExecuteAfter(40, () -> {
+                        FluidNetwork run = networkAt(helper, outletPipe, "the outlet pipe has no run");
+                        helper.assertValueEqual(run.fluid().getFluid(), Fluids.WATER,
+                                "what the outlet pipe is carrying");
+                        helper.assertValueEqual(run.amount(), run.capacity(), "a run fed by an offshore pump fills up");
+                        helper.assertValueEqual(pump.stored(), OffshorePumpBlockEntity.TANK_CAPACITY,
+                                "the tank behind a full run");
+                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.OUTPUT_FULL,
+                                "status with a full tank and a full run");
+                        helper.assertValueEqual(networkAt(helper, flankPipe, "the flank pipe has no run").amount(), 0,
+                                "what a pipe on the flank carries");
+                    })
+                    .thenSucceed();
+        });
+
+        // A full offshore pump asks for no ticks; a draw wakes it; the water going, or turning out to
+        // be a bucket's, stops it again; the lake coming back restarts it.
+        //
+        // Non-negotiable #5, asserted through hasScheduledTick for each of the three
+        // reasons the machine can stop and the two ways it can be woken. Delete the wake in
+        // FluidOutputAccess or the one in neighborChanged and one of these lines goes red.
+        tests.add("offshore_pump_sleeps", 100, PADDING, helper -> {
+            platform(helper, 5);
+            helper.setBlock(INTAKE_WATER, naturalWater());
+            OffshorePumpBlockEntity pump = offshorePump(helper, PUMP);
+            Block block = ModBlocks.OFFSHORE_PUMP.get();
+
+            helper.startSequence()
+                    .thenExecuteAfter(15, () -> {
+                        helper.assertValueEqual(pump.stored(), OffshorePumpBlockEntity.TANK_CAPACITY, "a tank left alone");
+                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.OUTPUT_FULL, "status when full");
+                        helper.assertFalse(isScheduled(helper, PUMP, block), "a full offshore pump is still asking for ticks");
+                        drawWater(pump, 50);
+                        helper.assertTrue(isScheduled(helper, PUMP, block), "drawing from a full offshore pump did not wake it");
+                    })
+                    .thenExecuteAfter(10, () -> {
+                        helper.assertValueEqual(pump.stored(), OffshorePumpBlockEntity.TANK_CAPACITY, "the tank after a draw");
+                        helper.assertFalse(isScheduled(helper, PUMP, block), "a refilled offshore pump is still asking for ticks");
+                        helper.setBlock(INTAKE_WATER, Blocks.STONE);
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.NO_WATER, "status with the lake gone");
+                        helper.assertFalse(isScheduled(helper, PUMP, block), "an offshore pump with no water is still asking for ticks");
+                        helper.setBlock(INTAKE_WATER, Blocks.WATER.defaultBlockState());
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.WRONG_WATER, "status at a bucket's water");
+                        helper.assertFalse(isScheduled(helper, PUMP, block), "an offshore pump at the wrong water is still asking for ticks");
+                        drawWater(pump, OffshorePumpBlockEntity.TANK_CAPACITY);
+                        helper.setBlock(INTAKE_WATER, naturalWater());
+                    })
+                    .thenExecuteAfter(3, () -> {
+                        helper.assertTrue(pump.stored() > 0, "the lake coming back did not restart the pump");
+                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.PUMPING, "status with the lake back");
+                    })
+                    .thenSucceed();
+        });
+        tests.add("storage_tank_levels_with_its_run", StorageTankLevelsWithItsRunTest::new, 100, PADDING);
+        tests.add("refinery_runs_basic_oil_processing", RefineryRunsBasicOilProcessingTest::new, 300, PADDING);
+
+        // Advanced oil processing with nowhere to put the heavy oil makes no light oil and no gas
+        // either, and spends nothing - the whole puzzle of Factorio's oil in one assertion. Draw some
+        // heavy oil off and the other two flow again.
+        tests.add("refinery_outputs_block_each_other", 300, PADDING, helper -> {
+            platform(helper, 7);
+            OilRefineryBlockEntity refinery = refinery(helper, MACHINE);
+            charge(refinery);
+            refinery.setRecipe(recipe(NauvisFluids.MODID, "advanced_oil_processing"));
+            Fluid heavy = ModFluids.HEAVY_OIL.get();
+            int full = ProcessingBlockEntity.TANK_CAPACITY;
+            helper.assertValueEqual(fill(refinery.inputAccess(OilRefineryBlockEntity.WATER_PORT), Fluids.WATER, full), full,
+                    "water into the water port");
+            helper.assertValueEqual(fill(refinery.inputAccess(OilRefineryBlockEntity.CRUDE_PORT), ModFluids.CRUDE_OIL.get(), full), full,
+                    "crude into the crude port");
+            // The heavy oil tank is jammed full before the first craft can start.
+            helper.assertValueEqual(fill(refinery.outputTank(OilRefineryBlockEntity.HEAVY_PORT), heavy, full), full,
+                    "jamming the heavy oil tank");
+
+            helper.startSequence()
+                    .thenExecuteAfter(120, () -> {
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.OUTPUT_FULL, "status with heavy oil jammed");
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.LIGHT_PORT).getAmountAsInt(0), 0,
+                                "light oil made while jammed");
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT).getAmountAsInt(0), 0,
+                                "petroleum gas made while jammed");
+                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.WATER_PORT).getAmountAsInt(0), full,
+                                "water spent while jammed");
+                        helper.assertFalse(isScheduled(helper, MACHINE, ModBlocks.OIL_REFINERY.get()),
+                                "a jammed refinery is still asking for ticks");
+                        helper.assertValueEqual(drain(refinery.outputAccess(OilRefineryBlockEntity.HEAVY_PORT), heavy, 100), 100,
+                                "drawing heavy oil off");
+                    })
+                    .thenExecuteAfter(110, () -> {
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.HEAVY_PORT).getAmountAsInt(0), 925,
+                                "heavy oil after one craft");
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.LIGHT_PORT).getAmountAsInt(0), 45,
+                                "light oil after one craft");
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT).getAmountAsInt(0), 55,
+                                "petroleum gas after one craft");
+                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.WATER_PORT).getAmountAsInt(0), 950,
+                                "water after one craft");
+                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.CRUDE_PORT).getAmountAsInt(0), 900,
+                                "crude after one craft");
+                    })
+                    .thenSucceed();
+        });
+        tests.add("chemical_plant_makes_plastic", ChemicalPlantMakesPlasticTest::new, 200, PADDING);
+
+        // The refinery and the chemical plant have three module slots each, and modules in them change
+        // the machine's speed and draw by Factorio's arithmetic.
+        //
+        // The modules are the machines mod's items and this mod does not name it, so the test finds
+        // them by id and passes on the slots alone when they are not there - the standalone run. With
+        // them, three speed modules are plus three fifths on the speed and half again three times on
+        // the draw: a 210 kW plant at 28 FE a tick draws 70.
+        tests.add("oil_machines_take_modules", 20, PADDING, helper -> {
+            ChemicalPlantBlockEntity plant = chemicalPlant(helper, MACHINE);
+            helper.assertValueEqual(plant.layout().moduleSlots(), ChemicalPlantBlockEntity.MODULE_SLOTS,
+                    "module slots in the chemical plant's layout");
+            helper.assertValueEqual(plant.modules().size(), 3, "module slots on a chemical plant");
+            helper.assertValueEqual(OilRefineryBlockEntity.LAYOUT.moduleSlots(), 3, "module slots on a refinery");
+
+            var speed = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_machines", "speed_module"));
+            if (speed == Items.AIR) {
+                helper.succeed();
+                return;
+            }
+            for (int slot = 0; slot < 3; slot++) {
+                try (Transaction transaction = Transaction.openRoot()) {
+                    helper.assertValueEqual(plant.modules().insert(slot, ItemResource.of(speed), 1, transaction), 1,
+                            "a speed module taken by slot " + slot);
+                    transaction.commit();
+                }
+            }
+            helper.assertTrue(Math.abs(plant.modules().effect().speedFactor() - 1.6) < 1e-9,
+                    "three speed modules' speed factor: " + plant.modules().effect().speedFactor());
+            helper.assertValueEqual(plant.currentEnergyPerTick(),
+                    (int) Math.round(ChemicalPlantBlockEntity.ENERGY_PER_TICK * 2.5),
+                    "the draw under three speed modules");
+            helper.succeed();
+        });
+
+        // A refinery asks for a tick only while it has work, and is woken by each of the things that
+        // can give it some: a recipe, an ingredient, electricity, and room for a product.
+        //
+        // The one to watch is the last: a machine that finished a craft into a full tank holds it
+        // unpaid, and drawing from the tank is what lets it bank the craft and carry on.
+        tests.add("oil_machines_sleep", 200, PADDING, helper -> {
+            platform(helper, 7);
+            OilRefineryBlockEntity refinery = refinery(helper, MACHINE);
+            Block block = ModBlocks.OIL_REFINERY.get();
+            Fluid crude = ModFluids.CRUDE_OIL.get();
+            Fluid petroleum = ModFluids.PETROLEUM_GAS.get();
+            int full = ProcessingBlockEntity.TANK_CAPACITY;
+
+            helper.startSequence()
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_RECIPE, "status with no recipe");
+                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a refinery with no recipe is asking for ticks");
+                        refinery.setRecipe(recipe(NauvisFluids.MODID, "basic_oil_processing"));
+                        helper.assertTrue(isScheduled(helper, MACHINE, block), "choosing a recipe did not wake it");
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_INGREDIENTS, "status with no crude");
+                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a refinery with no crude is asking for ticks");
+                        fill(refinery.inputAccess(OilRefineryBlockEntity.CRUDE_PORT), crude, 100);
+                        helper.assertTrue(isScheduled(helper, MACHINE, block), "crude arriving did not wake it");
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_POWER, "status with no power");
+                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a refinery with no power is asking for ticks");
+                        charge(refinery);
+                        helper.assertTrue(isScheduled(helper, MACHINE, block), "power arriving did not wake it");
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.WORKING, "status while crafting");
+                        helper.assertTrue(isScheduled(helper, MACHINE, block), "a working refinery is not asking for ticks");
+                        // Jam the output while the craft is under way, so it finishes into a full tank.
+                        helper.assertValueEqual(fill(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT), petroleum, full), full,
+                                "jamming the petroleum tank");
+                    })
+                    .thenExecuteAfter(110, () -> {
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.OUTPUT_FULL, "status with the output jammed");
+                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a jammed refinery is asking for ticks");
+                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.CRUDE_PORT).getAmountAsInt(0), 100,
+                                "crude spent on a craft that could not be banked");
+                        drain(refinery.outputAccess(OilRefineryBlockEntity.PETROLEUM_PORT), petroleum, 100);
+                        helper.assertTrue(isScheduled(helper, MACHINE, block), "drawing from the jammed tank did not wake it");
+                    })
+                    .thenExecuteAfter(5, () -> {
+                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT).getAmountAsInt(0), 945,
+                                "petroleum gas once the held craft was banked");
+                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.CRUDE_PORT).getAmountAsInt(0), 0,
+                                "crude once the held craft was banked");
+                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_INGREDIENTS, "status after the crude was spent");
+                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a refinery out of crude is asking for ticks");
+                    })
+                    .thenSucceed();
+        });
+
+        // A refinery runs oil processing and a chemical plant runs chemistry, and each refuses the
+        // other's recipes at the block entity, behind whatever the panel showed.
+        tests.add("oil_machines_run_only_their_category", 40, PADDING, helper -> {
+            platform(helper, 7);
+            ChemicalPlantBlockEntity plant = chemicalPlant(helper, MACHINE);
+            ResourceKey<Recipe<?>> basic = recipe(NauvisFluids.MODID, "basic_oil_processing");
+            ResourceKey<Recipe<?>> cracking = recipe(NauvisFluids.MODID, "heavy_oil_cracking");
+            plant.setRecipe(basic);
+            helper.assertTrue(plant.recipeKey() == null, "a chemical plant took an oil processing recipe");
+            plant.setRecipe(cracking);
+            helper.assertValueEqual(plant.recipeKey(), cracking, "a chemical plant refused cracking");
+            helper.assertValueEqual(plant.inputTank(ChemicalPlantBlockEntity.WATER_PORT).assigned(), Fluids.WATER,
+                    "the water port of a plant on heavy oil cracking");
+            helper.assertValueEqual(plant.inputTank(1).assigned(), ModFluids.HEAVY_OIL.get(),
+                    "the other port of a plant on heavy oil cracking");
+            helper.assertValueEqual(plant.outputTank(0).assigned(), ModFluids.LIGHT_OIL.get(),
+                    "the first output of a plant on heavy oil cracking");
+            helper.assertTrue(plant.outputTank(1).assigned() == null, "the second output of a plant on heavy oil cracking");
+            helper.succeed();
+        });
+    }
 
     /**
      * How much empty world to leave around a test that builds a machine. A pumpjack is three
@@ -124,126 +717,6 @@ public final class NauvisFluidsGameTests {
     /** Where a well sits in the machine tests, and where the pumpjack over it is anchored. */
     private static final BlockPos WELL = new BlockPos(2, 1, 2);
     private static final BlockPos PUMPJACK = WELL.above();
-
-    private static final DeferredRegister<MapCodec<? extends GameTestInstance>> TEST_TYPES =
-            DeferredRegister.create(Registries.TEST_INSTANCE_TYPE, NauvisFluids.MODID);
-
-    static {
-        TEST_TYPES.register("pipe_run_is_one_object", () -> PipeRunIsOneObjectTest.CODEC);
-        TEST_TYPES.register("pipe_run_splits_and_merges", () -> PipeRunSplitsAndMergesTest.CODEC);
-        TEST_TYPES.register("pipe_connects_to_what_offers_fluid", () -> PipeConnectsTest.CODEC);
-        TEST_TYPES.register("fluids_are_registered", () -> FluidsAreRegisteredTest.CODEC);
-        TEST_TYPES.register("pipe_reports_its_run", () -> PipeReportsItsRunTest.CODEC);
-        TEST_TYPES.register("crude_oil_is_unmovable", () -> CrudeOilIsUnmovableTest.CODEC);
-        TEST_TYPES.register("pumpjack_stands_only_on_a_well", () -> PumpjackStandsOnlyOnAWellTest.CODEC);
-        TEST_TYPES.register("pumpjack_pumps_at_factorio_rate", () -> PumpjackPumpsAtFactorioRateTest.CODEC);
-        TEST_TYPES.register("well_stops_at_its_floor", () -> WellStopsAtItsFloorTest.CODEC);
-        TEST_TYPES.register("pumpjack_sleeps", () -> PumpjackSleepsTest.CODEC);
-        TEST_TYPES.register("pumpjack_feeds_a_pipe", () -> PumpjackFeedsAPipeTest.CODEC);
-        TEST_TYPES.register("oil_field_is_pumpable", () -> OilFieldIsPumpableTest.CODEC);
-        TEST_TYPES.register("pumpjack_reports_what_it_mines", () -> PumpjackReportsWhatItMinesTest.CODEC);
-        TEST_TYPES.register("pumpjack_caps_a_cycle_at_its_tank", () -> PumpjackCapsACycleTest.CODEC);
-        TEST_TYPES.register("pumpjack_takes_modules", () -> PumpjackTakesModulesTest.CODEC);
-        TEST_TYPES.register("oil_command_places_a_field", () -> OilCommandPlacesAFieldTest.CODEC);
-        TEST_TYPES.register("natural_water_is_bucketed_as_water", () -> NaturalWaterIsBucketedAsWaterTest.CODEC);
-        TEST_TYPES.register("natural_water_makes_no_new_source", () -> NaturalWaterMakesNoNewSourceTest.CODEC);
-        TEST_TYPES.register("worldgen_water_becomes_natural", () -> WorldgenWaterBecomesNaturalTest.CODEC);
-        TEST_TYPES.register("offshore_pump_stands_only_at_water", () -> OffshorePumpStandsOnlyAtWaterTest.CODEC);
-        TEST_TYPES.register("offshore_pump_turns_to_the_water", () -> OffshorePumpTurnsToTheWaterTest.CODEC);
-        TEST_TYPES.register("offshore_pump_floats_on_a_lake", () -> OffshorePumpFloatsOnALakeTest.CODEC);
-        TEST_TYPES.register("oil_recipes_load", () -> OilRecipesLoadTest.CODEC);
-        TEST_TYPES.register("offshore_pump_pumps_at_factorio_rate", () -> OffshorePumpPumpsAtFactorioRateTest.CODEC);
-        TEST_TYPES.register("offshore_pump_fills_a_pipe", () -> OffshorePumpFillsAPipeTest.CODEC);
-        TEST_TYPES.register("offshore_pump_sleeps", () -> OffshorePumpSleepsTest.CODEC);
-        TEST_TYPES.register("storage_tank_levels_with_its_run", () -> StorageTankLevelsWithItsRunTest.CODEC);
-        TEST_TYPES.register("refinery_runs_basic_oil_processing", () -> RefineryRunsBasicOilProcessingTest.CODEC);
-        TEST_TYPES.register("refinery_outputs_block_each_other", () -> RefineryOutputsBlockEachOtherTest.CODEC);
-        TEST_TYPES.register("chemical_plant_makes_plastic", () -> ChemicalPlantMakesPlasticTest.CODEC);
-        TEST_TYPES.register("oil_machines_take_modules", () -> OilMachinesTakeModulesTest.CODEC);
-        TEST_TYPES.register("oil_machines_sleep", () -> OilMachinesSleepTest.CODEC);
-        TEST_TYPES.register("oil_machines_run_only_their_category", () -> OilMachinesRunOnlyTheirCategoryTest.CODEC);
-    }
-
-    static void register(IEventBus modEventBus) {
-        TEST_TYPES.register(modEventBus);
-    }
-
-    @SubscribeEvent
-    static void registerTests(RegisterGameTestsEvent event) {
-        Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(
-                Identifier.fromNamespaceAndPath(NauvisFluids.MODID, "default"),
-                new TestEnvironmentDefinition.AllOf(List.of()));
-
-        register(event, environment, "pipe_run_is_one_object", PipeRunIsOneObjectTest::new, 100);
-        register(event, environment, "pipe_run_splits_and_merges", PipeRunSplitsAndMergesTest::new, 200);
-        register(event, environment, "pipe_connects_to_what_offers_fluid", PipeConnectsTest::new, 100);
-        register(event, environment, "fluids_are_registered", FluidsAreRegisteredTest::new, 20);
-        register(event, environment, "pipe_reports_its_run", PipeReportsItsRunTest::new, 100);
-        registerSpaced(event, environment, "crude_oil_is_unmovable", CrudeOilIsUnmovableTest::new, 40, PADDING);
-        registerSpaced(event, environment, "pumpjack_stands_only_on_a_well",
-                PumpjackStandsOnlyOnAWellTest::new, 40, PADDING);
-        registerSpaced(event, environment, "pumpjack_pumps_at_factorio_rate",
-                PumpjackPumpsAtFactorioRateTest::new, 100, PADDING);
-        registerSpaced(event, environment, "well_stops_at_its_floor", WellStopsAtItsFloorTest::new, 100, PADDING);
-        registerSpaced(event, environment, "pumpjack_sleeps", PumpjackSleepsTest::new, 200, PADDING);
-        registerSpaced(event, environment, "pumpjack_takes_modules", PumpjackTakesModulesTest::new, 40, PADDING);
-        registerSpaced(event, environment, "pumpjack_feeds_a_pipe", PumpjackFeedsAPipeTest::new, 100, PADDING);
-        registerSpaced(event, environment, "oil_field_is_pumpable", OilFieldIsPumpableTest::new, 60, WIDE_PADDING);
-        registerSpaced(event, environment, "pumpjack_reports_what_it_mines",
-                PumpjackReportsWhatItMinesTest::new, 100, PADDING);
-        registerSpaced(event, environment, "pumpjack_caps_a_cycle_at_its_tank", PumpjackCapsACycleTest::new, 60, PADDING);
-        registerSpaced(event, environment, "oil_command_places_a_field", OilCommandPlacesAFieldTest::new, 40, WIDE_PADDING);
-        registerSpaced(event, environment, "natural_water_is_bucketed_as_water",
-                NaturalWaterIsBucketedAsWaterTest::new, 20, PADDING);
-        registerSpaced(event, environment, "natural_water_makes_no_new_source",
-                NaturalWaterMakesNoNewSourceTest::new, 100, PADDING);
-        registerSpaced(event, environment, "worldgen_water_becomes_natural",
-                WorldgenWaterBecomesNaturalTest::new, 20, PADDING);
-        registerSpaced(event, environment, "offshore_pump_stands_only_at_water",
-                OffshorePumpStandsOnlyAtWaterTest::new, 40, PADDING);
-        registerSpaced(event, environment, "offshore_pump_turns_to_the_water",
-                OffshorePumpTurnsToTheWaterTest::new, 40, PADDING);
-        registerSpaced(event, environment, "offshore_pump_floats_on_a_lake",
-                OffshorePumpFloatsOnALakeTest::new, 40, PADDING);
-        register(event, environment, "oil_recipes_load", OilRecipesLoadTest::new, 20);
-        registerSpaced(event, environment, "offshore_pump_pumps_at_factorio_rate",
-                OffshorePumpPumpsAtFactorioRateTest::new, 60, PADDING);
-        registerSpaced(event, environment, "offshore_pump_fills_a_pipe", OffshorePumpFillsAPipeTest::new, 100, PADDING);
-        registerSpaced(event, environment, "offshore_pump_sleeps", OffshorePumpSleepsTest::new, 100, PADDING);
-        registerSpaced(event, environment, "storage_tank_levels_with_its_run",
-                StorageTankLevelsWithItsRunTest::new, 100, PADDING);
-        registerSpaced(event, environment, "refinery_runs_basic_oil_processing",
-                RefineryRunsBasicOilProcessingTest::new, 300, PADDING);
-        registerSpaced(event, environment, "refinery_outputs_block_each_other",
-                RefineryOutputsBlockEachOtherTest::new, 300, PADDING);
-        registerSpaced(event, environment, "chemical_plant_makes_plastic",
-                ChemicalPlantMakesPlasticTest::new, 200, PADDING);
-        registerSpaced(event, environment, "oil_machines_take_modules",
-                OilMachinesTakeModulesTest::new, 20, PADDING);
-        registerSpaced(event, environment, "oil_machines_sleep", OilMachinesSleepTest::new, 200, PADDING);
-        registerSpaced(event, environment, "oil_machines_run_only_their_category",
-                OilMachinesRunOnlyTheirCategoryTest::new, 40, PADDING);
-    }
-
-    private interface TestFactory {
-        GameTestInstance create(TestData<Holder<TestEnvironmentDefinition<?>>> info);
-    }
-
-    private static void register(RegisterGameTestsEvent event,
-            Holder<TestEnvironmentDefinition<?>> environment, String name, TestFactory factory, int maxTicks) {
-        event.registerTest(
-                Identifier.fromNamespaceAndPath(NauvisFluids.MODID, name),
-                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true, Rotation.NONE)));
-    }
-
-    private static void registerSpaced(RegisterGameTestsEvent event,
-            Holder<TestEnvironmentDefinition<?>> environment, String name, TestFactory factory,
-            int maxTicks, int padding) {
-        event.registerTest(
-                Identifier.fromNamespaceAndPath(NauvisFluids.MODID, name),
-                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true,
-                        Rotation.NONE, false, 1, 1, false, padding)));
-    }
 
     // --- helpers ------------------------------------------------------------------------------
 
@@ -451,26 +924,12 @@ public final class NauvisFluidsGameTests {
 
     // --- pipes --------------------------------------------------------------------------------
 
-    /**
-     * A line of pipes is one object, whatever its length.
-     *
-     * <p>The claim the whole design rests on, and the third time this pack has made it after the
-     * belt note and the electric network. A pipe per block entity would work and would cost N ticks
-     * a second for N pipes; this asserts there is exactly one thing to tick, and that its capacity
-     * grew with the run rather than staying the size of one pipe.
-     */
-    public static class PipeRunIsOneObjectTest extends GameTestInstance {
-
-        public static final MapCodec<PipeRunIsOneObjectTest> CODEC =
-                RecordCodecBuilder.<PipeRunIsOneObjectTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(PipeRunIsOneObjectTest::info))
-                                .apply(i, PipeRunIsOneObjectTest::new));
+    /** A line of pipes is one object, whatever its length: one thing to tick, one capacity. */
+    public static class PipeRunIsOneObjectTest extends PackGameTest {
 
         private static final int LENGTH = 5;
 
-        public PipeRunIsOneObjectTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        PipeRunIsOneObjectTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -494,15 +953,6 @@ public final class NauvisFluidsGameTests {
             });
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("pipe run is one object");
-        }
     }
 
     /**
@@ -512,20 +962,13 @@ public final class NauvisFluidsGameTests {
      * two disconnected halves sharing one tank, which is a pipeline that carries fluid through a
      * gap.
      */
-    public static class PipeRunSplitsAndMergesTest extends GameTestInstance {
-
-        public static final MapCodec<PipeRunSplitsAndMergesTest> CODEC =
-                RecordCodecBuilder.<PipeRunSplitsAndMergesTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(PipeRunSplitsAndMergesTest::info))
-                                .apply(i, PipeRunSplitsAndMergesTest::new));
+    public static class PipeRunSplitsAndMergesTest extends PackGameTest {
 
         private static final BlockPos LEFT = new BlockPos(0, 1, 0);
         private static final BlockPos MIDDLE = new BlockPos(1, 1, 0);
         private static final BlockPos RIGHT = new BlockPos(2, 1, 0);
 
-        public PipeRunSplitsAndMergesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        PipeRunSplitsAndMergesTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -558,15 +1001,6 @@ public final class NauvisFluidsGameTests {
                     .thenSucceed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("pipe run splits and merges");
-        }
     }
 
     /**
@@ -575,20 +1009,13 @@ public final class NauvisFluidsGameTests {
      * <p>The connection is in the block state, so it is what the player sees. Reaching towards a
      * plain stone block would be a lie drawn in the world, and worse than no connection at all.
      */
-    public static class PipeConnectsTest extends GameTestInstance {
-
-        public static final MapCodec<PipeConnectsTest> CODEC =
-                RecordCodecBuilder.<PipeConnectsTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(PipeConnectsTest::info))
-                                .apply(i, PipeConnectsTest::new));
+    public static class PipeConnectsTest extends PackGameTest {
 
         private static final BlockPos PIPE = new BlockPos(1, 1, 0);
         private static final BlockPos NEIGHBOUR_PIPE = new BlockPos(2, 1, 0);
         private static final BlockPos STONE = new BlockPos(0, 1, 0);
 
-        public PipeConnectsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        PipeConnectsTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -608,61 +1035,6 @@ public final class NauvisFluidsGameTests {
             });
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("pipe connects to what offers fluid");
-        }
-    }
-
-    /**
-     * Steam and crude oil exist under the ids the mapping has always given them.
-     *
-     * <p>{@code nauvis_fluids:steam} is identity: {@code data/mapping.json} names it, and
-     * {@code nauvis_power} finds it by that id rather than by importing it, so a rename here would
-     * quietly stop every boiler in the pack from making anything. {@code nauvis_fluids:crude_oil}
-     * is the same kind of fact for everything downstream of a pumpjack.
-     */
-    public static class FluidsAreRegisteredTest extends GameTestInstance {
-
-        public static final MapCodec<FluidsAreRegisteredTest> CODEC =
-                RecordCodecBuilder.<FluidsAreRegisteredTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(FluidsAreRegisteredTest::info))
-                                .apply(i, FluidsAreRegisteredTest::new));
-
-        public FluidsAreRegisteredTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            for (String name : new String[] {"steam", "crude_oil", "water", "flowing_water",
-                    "heavy_oil", "light_oil", "petroleum_gas", "lubricant", "sulfuric_acid"}) {
-                Identifier id = Identifier.fromNamespaceAndPath(NauvisFluids.MODID, name);
-                helper.assertTrue(BuiltInRegistries.FLUID.getValue(id) != Fluids.EMPTY,
-                        "nauvis_fluids:" + name + " is not registered");
-            }
-            for (String name : new String[] {"pipe", "crude_oil", "pumpjack", "water", "offshore_pump"}) {
-                Block block = BuiltInRegistries.BLOCK.getValue(
-                        Identifier.fromNamespaceAndPath(NauvisFluids.MODID, name));
-                helper.assertTrue(block != Blocks.AIR, "nauvis_fluids:" + name + " is not registered");
-            }
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("fluids are registered");
-        }
     }
 
     /**
@@ -674,18 +1046,11 @@ public final class NauvisFluidsGameTests {
      * rather than the run would say a pipe holds nothing, for ever, and look perfectly reasonable
      * doing it.
      */
-    public static class PipeReportsItsRunTest extends GameTestInstance {
-
-        public static final MapCodec<PipeReportsItsRunTest> CODEC =
-                RecordCodecBuilder.<PipeReportsItsRunTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(PipeReportsItsRunTest::info))
-                                .apply(i, PipeReportsItsRunTest::new));
+    public static class PipeReportsItsRunTest extends PackGameTest {
 
         private static final int LENGTH = 6;
 
-        public PipeReportsItsRunTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        PipeReportsItsRunTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -710,209 +1075,9 @@ public final class NauvisFluidsGameTests {
             });
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("pipe reports its run");
-        }
     }
 
     // --- oil ----------------------------------------------------------------------------------
-
-    /**
-     * An oil well cannot be mined, pushed or dropped, and it is worth something the moment it
-     * exists.
-     *
-     * <p>Factorio's {@code crude-oil} is a resource entity: nothing a player does moves it. Here
-     * that is three block properties, each of which could be lost in a refactor of
-     * {@code ModBlocks} without anything else noticing. The amount is the other half - a well
-     * placed in the world works out how rich it is from where it is, so a well placed with nothing
-     * written into it must still answer with Factorio's floor or better.
-     */
-    public static class CrudeOilIsUnmovableTest extends GameTestInstance {
-
-        public static final MapCodec<CrudeOilIsUnmovableTest> CODEC =
-                RecordCodecBuilder.<CrudeOilIsUnmovableTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(CrudeOilIsUnmovableTest::info))
-                                .apply(i, CrudeOilIsUnmovableTest::new));
-
-        public CrudeOilIsUnmovableTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            helper.setBlock(WELL, ModBlocks.CRUDE_OIL.get());
-            BlockPos at = helper.absolutePos(WELL);
-            BlockState state = helper.getBlockState(WELL);
-
-            helper.assertTrue(state.getDestroySpeed(helper.getLevel(), at) < 0,
-                    "an oil well can be mined, so a player can pick up Factorio's one unmovable resource");
-            helper.assertTrue(state.getPistonPushReaction() == PushReaction.BLOCK,
-                    "an oil well can be pushed by a piston");
-            helper.assertTrue(ModBlocks.CRUDE_OIL.get().getLootTable().isEmpty(),
-                    "an oil well has a loot table, so something that breaks it gets a well back");
-
-            CrudeOilBlockEntity well = helper.getBlockEntity(WELL, CrudeOilBlockEntity.class);
-            helper.assertTrue(well.amount() >= CrudeOilField.ADDITIONAL_RICHNESS + CrudeOilField.SPREAD_MIN,
-                    "a fresh well is poorer than Factorio's additional richness allows: " + well.amount());
-            helper.assertTrue(well.amount() % CrudeOilBlockEntity.DEPLETION == 0,
-                    "a well's amount is not a multiple of a cycle's depletion: " + well.amount());
-            helper.assertValueEqual(well.initial(), well.amount(), "a fresh well's initial amount");
-            helper.assertTrue(well.yieldPercent() >= 90,
-                    "a well near the start reads under 90%: " + well.yieldPercent());
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("crude oil is unmovable");
-        }
-    }
-
-    /**
-     * A pumpjack goes down centred on a well, from a click anywhere over it, and nowhere else.
-     *
-     * <p>Factorio's rule and Factorio's snapping. Three clicks: the block over the well, which
-     * must place with the centre pinned to it; the block over the well's diagonal neighbour, which
-     * must place with a <em>corner</em> pinned to it so that the centre still lands over the well;
-     * and a block two away, which is not over the machine's footprint and must refuse.
-     */
-    public static class PumpjackStandsOnlyOnAWellTest extends GameTestInstance {
-
-        public static final MapCodec<PumpjackStandsOnlyOnAWellTest> CODEC =
-                RecordCodecBuilder.<PumpjackStandsOnlyOnAWellTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(PumpjackStandsOnlyOnAWellTest::info))
-                                .apply(i, PumpjackStandsOnlyOnAWellTest::new));
-
-        public PumpjackStandsOnlyOnAWellTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            for (int x = 0; x < 6; x++) {
-                for (int z = 0; z < 6; z++) {
-                    helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
-                }
-            }
-            well(helper, WELL, CrudeOilBlockEntity.NORMAL);
-            MachineShape shape = PumpjackShape.SHAPE;
-
-            BlockState centred = placement(helper, WELL);
-            helper.assertTrue(centred != null, "a pumpjack refuses the block directly over a well");
-            helper.assertValueEqual(centred.getValue(shape.part()), shape.placement(),
-                    "the cell pinned to a click over the well");
-
-            BlockPos diagonal = WELL.offset(1, 0, 1);
-            BlockState snapped = placement(helper, diagonal);
-            helper.assertTrue(snapped != null,
-                    "a pumpjack refuses a click one block off the well, so placement does not snap");
-            BlockPos anchor = shape.anchorPos(helper.absolutePos(diagonal.above()),
-                    snapped.getValue(shape.part()), snapped.getValue(PumpjackBlock.FACING));
-            helper.assertValueEqual(anchor, helper.absolutePos(PUMPJACK),
-                    "where a pumpjack clicked one block off the well ends up centred");
-
-            helper.assertTrue(placement(helper, WELL.offset(2, 0, 0)) == null,
-                    "a pumpjack accepts a block two away from the well, which is not over one");
-            helper.assertTrue(placement(helper, new BlockPos(5, 1, 5)) == null,
-                    "a pumpjack accepts plain ground");
-
-            // The ghost asks the same questions, so it snaps where the click will and says no
-            // where the click would.
-            Multiblock.Ghost ghost = Multiblock.ghost(ModBlocks.PUMPJACK.get(), pumpjackClick(helper, diagonal));
-            helper.assertTrue(ghost.allowed(), "the ghost of a pumpjack clicked one block off the well says it will not go");
-            helper.assertValueEqual(ghost.anchor(), helper.absolutePos(PUMPJACK),
-                    "where the ghost of a pumpjack clicked one block off the well stands");
-            helper.assertFalse(Multiblock.ghost(ModBlocks.PUMPJACK.get(), pumpjackClick(helper, new BlockPos(5, 1, 5))).allowed(),
-                    "the ghost of a pumpjack on plain ground says it will go");
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("pumpjack stands only on a well");
-        }
-    }
-
-    /**
-     * Ten crude oil a second from a 100% well, and ten off the well each second.
-     *
-     * <p>The two numbers that are identity. One cycle is twenty ticks, so after thirty the first
-     * cycle has banked and the second has not, and after fifty two have. The second cycle is
-     * pumped from a well that is no longer quite 100%, and the machine carries the fraction rather
-     * than rounding it, so two cycles bank nineteen - {@link #bankedAfter} is that arithmetic.
-     */
-    public static class PumpjackPumpsAtFactorioRateTest extends GameTestInstance {
-
-        public static final MapCodec<PumpjackPumpsAtFactorioRateTest> CODEC =
-                RecordCodecBuilder.<PumpjackPumpsAtFactorioRateTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(PumpjackPumpsAtFactorioRateTest::info))
-                                .apply(i, PumpjackPumpsAtFactorioRateTest::new));
-
-        public PumpjackPumpsAtFactorioRateTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            CrudeOilBlockEntity well = well(helper, WELL, CrudeOilBlockEntity.NORMAL);
-            PumpjackBlockEntity pumpjack = pumpjack(helper, PUMPJACK);
-            charge(pumpjack);
-
-            helper.startSequence()
-                    .thenExecuteAfter(30, () -> {
-                        helper.assertValueEqual(pumpjack.stored(), PumpjackBlockEntity.UNITS_PER_CYCLE_AT_NORMAL,
-                                "crude oil banked after one cycle from a 100% well");
-                        helper.assertValueEqual(well.amount(),
-                                CrudeOilBlockEntity.NORMAL - CrudeOilBlockEntity.DEPLETION,
-                                "what one cycle takes off a well");
-                        helper.assertValueEqual(pumpjack.status(), PumpjackStatus.PUMPING, "status while pumping");
-                    })
-                    .thenExecuteAfter(20, () -> {
-                        // Nineteen, not twenty: the second cycle ran at 99.997% and the fraction is
-                        // carried, not rounded up. See bankedAfter.
-                        helper.assertValueEqual(pumpjack.stored(), bankedAfter(CrudeOilBlockEntity.NORMAL, 2),
-                                "crude oil banked after two cycles");
-                        helper.assertValueEqual(well.amount(),
-                                CrudeOilBlockEntity.NORMAL - 2 * CrudeOilBlockEntity.DEPLETION,
-                                "what two cycles take off a well");
-                        // 90 kW is twelve a tick for every tick spent pumping, the third cycle's
-                        // ticks included - not a price per cycle. Two full cycles at least, and
-                        // never more than the fifty ticks that have passed.
-                        int spent = PumpjackBlockEntity.ENERGY_CAPACITY - pumpjack.energyStored();
-                        helper.assertTrue(spent >= 2 * PumpjackBlockEntity.CYCLE_TICKS * PumpjackBlockEntity.ENERGY_PER_TICK
-                                        && spent <= 50 * PumpjackBlockEntity.ENERGY_PER_TICK
-                                        && spent % PumpjackBlockEntity.ENERGY_PER_TICK == 0,
-                                "electricity spent over two cycles and a bit: " + spent);
-                    })
-                    .thenSucceed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("pumpjack pumps at Factorio's rate");
-        }
-    }
 
     /**
      * A well is pumped down to its floor and never past it, and at the floor it still pumps.
@@ -922,18 +1087,11 @@ public final class NauvisFluidsGameTests {
      * first cycle reaches the floor, the second finds it there and takes nothing more, and both
      * cycles bank the same two units. The second well checks the other arm of the rule.
      */
-    public static class WellStopsAtItsFloorTest extends GameTestInstance {
-
-        public static final MapCodec<WellStopsAtItsFloorTest> CODEC =
-                RecordCodecBuilder.<WellStopsAtItsFloorTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(WellStopsAtItsFloorTest::info))
-                                .apply(i, WellStopsAtItsFloorTest::new));
+    public static class WellStopsAtItsFloorTest extends PackGameTest {
 
         private static final BlockPos RICH_WELL = new BlockPos(8, 1, 2);
 
-        public WellStopsAtItsFloorTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        WellStopsAtItsFloorTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -965,42 +1123,18 @@ public final class NauvisFluidsGameTests {
                     .thenSucceed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("well stops at its floor");
-        }
     }
 
     /**
      * A pumpjack costs nothing when it cannot work, and wakes for each of the three things that
      * give it work back.
-     *
-     * <p>Non-negotiable #5, three times over. Without a well it is not scheduled; put a well under
-     * it and it wakes. Without power it is not scheduled; give it power and it wakes in the same
-     * tick. With a full tank it is not scheduled; draw from the outlet and it wakes and banks the
-     * cycle it was holding. Delete any of the three wake-ups and the matching step goes red.
-     *
-     * <p>The well is absurdly rich - five hundred a cycle - so the tank fills in two cycles rather
-     * than a hundred. That is behaviour under test, not a Factorio number.
      */
-    public static class PumpjackSleepsTest extends GameTestInstance {
-
-        public static final MapCodec<PumpjackSleepsTest> CODEC =
-                RecordCodecBuilder.<PumpjackSleepsTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(PumpjackSleepsTest::info))
-                                .apply(i, PumpjackSleepsTest::new));
+    public static class PumpjackSleepsTest extends PackGameTest {
 
         /** Five hundred units a cycle: 50 times normal. */
         private static final long GUSHER = 50 * CrudeOilBlockEntity.NORMAL;
 
-        public PumpjackSleepsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        PumpjackSleepsTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1059,82 +1193,6 @@ public final class NauvisFluidsGameTests {
                     .thenSucceed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("pumpjack sleeps");
-        }
-    }
-
-    /**
-     * Oil leaves by the outlet and by nothing else, and a pipe there carries it away.
-     *
-     * <p>The outlet is the north-east corner's north face on a north-facing machine, which is
-     * Factorio's corner. A pipe against the east flank must not connect - that a pipe in the wrong
-     * place gets nothing is what makes the outlet a thing the player can be right about.
-     */
-    public static class PumpjackFeedsAPipeTest extends GameTestInstance {
-
-        public static final MapCodec<PumpjackFeedsAPipeTest> CODEC =
-                RecordCodecBuilder.<PumpjackFeedsAPipeTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(PumpjackFeedsAPipeTest::info))
-                                .apply(i, PumpjackFeedsAPipeTest::new));
-
-        public PumpjackFeedsAPipeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            MachineShape shape = PumpjackShape.SHAPE;
-            BlockPos outletCell = shape.cellPos(PUMPJACK, PumpjackShape.OUTLET_CELL, Direction.NORTH);
-            BlockPos outletPipe = outletCell.north();
-            BlockPos flankPipe = PUMPJACK.east(2);
-
-            // Pipes first. A block put down by anything but a player never runs
-            // getStateForPlacement - see PITFALLS.md - so a pipe placed beside a machine that is
-            // already there would show no connection; placed first, the machine arriving is the
-            // neighbour change that makes each pipe re-read the face towards it.
-            pipe(helper, outletPipe);
-            pipe(helper, flankPipe);
-            well(helper, WELL, CrudeOilBlockEntity.NORMAL);
-            PumpjackBlockEntity pumpjack = pumpjack(helper, PUMPJACK);
-            charge(pumpjack);
-
-            helper.startSequence()
-                    .thenExecuteAfter(5, () -> {
-                        helper.assertTrue(helper.getBlockState(outletPipe).getValue(PipeBlock.SOUTH),
-                                "a pipe at the outlet does not reach into the pumpjack");
-                        helper.assertFalse(helper.getBlockState(flankPipe).getValue(PipeBlock.WEST),
-                                "a pipe on the flank connects to a pumpjack, so the outlet means nothing");
-                    })
-                    .thenExecuteAfter(45, () -> {
-                        FluidNetwork run = networkAt(helper, outletPipe, "the outlet pipe has no run");
-                        helper.assertValueEqual(run.fluid().getFluid(), ModFluids.CRUDE_OIL.get(),
-                                "what the outlet pipe is carrying");
-                        helper.assertTrue(run.amount() + pumpjack.stored() == bankedAfter(CrudeOilBlockEntity.NORMAL, 2),
-                                "oil went missing between the pumpjack and the pipe: " + run.amount()
-                                        + " in the run, " + pumpjack.stored() + " in the tank");
-                        helper.assertTrue(run.amount() > 0, "the pipe run drew nothing from the pumpjack");
-                        helper.assertValueEqual(networkAt(helper, flankPipe, "the flank pipe has no run").amount(), 0,
-                                "what a pipe on the flank carries");
-                    })
-                    .thenSucceed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("pumpjack feeds a pipe");
-        }
     }
 
     /**
@@ -1145,18 +1203,11 @@ public final class NauvisFluidsGameTests {
      * levelling does nothing; the point is the spacing and the fit, which are what make a field
      * something you lay pumpjacks out on. Every well must accept a pumpjack centred on it.
      */
-    public static class OilFieldIsPumpableTest extends GameTestInstance {
-
-        public static final MapCodec<OilFieldIsPumpableTest> CODEC =
-                RecordCodecBuilder.<OilFieldIsPumpableTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OilFieldIsPumpableTest::info))
-                                .apply(i, OilFieldIsPumpableTest::new));
+    public static class OilFieldIsPumpableTest extends PackGameTest {
 
         private static final int SIZE = 24;
 
-        public OilFieldIsPumpableTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        OilFieldIsPumpableTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1194,75 +1245,6 @@ public final class NauvisFluidsGameTests {
             helper.succeed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("oil field is pumpable");
-        }
-    }
-
-    /**
-     * A pumpjack says what it mined, once per cycle, naming the well.
-     *
-     * <p>This is the report that finishes Factorio's oil processing - {@code mine-entity:
-     * crude-oil, 1} - through Facrafting's {@code MiningListeners} and into research, neither of
-     * which this mod names. What can be asserted here is this mod's half: one report per cycle,
-     * for this well, of one, whatever the yield. Other pumpjacks in the run report too, so the
-     * listener keeps only what came from this test's well.
-     */
-    public static class PumpjackReportsWhatItMinesTest extends GameTestInstance {
-
-        public static final MapCodec<PumpjackReportsWhatItMinesTest> CODEC =
-                RecordCodecBuilder.<PumpjackReportsWhatItMinesTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(PumpjackReportsWhatItMinesTest::info))
-                                .apply(i, PumpjackReportsWhatItMinesTest::new));
-
-        public PumpjackReportsWhatItMinesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            // The seam to research goes through Facrafting, and with Facrafting present the
-            // adapter that forwards reports must be installed - see FacraftingProgress.
-            if (ModList.get().isLoaded("facrafting")) {
-                helper.assertTrue(OilProgress.installed() > 0,
-                        "Facrafting is loaded and nothing forwards what a pumpjack mines to it");
-            }
-
-            BlockPos wellPos = helper.absolutePos(WELL);
-            List<String> reports = new ArrayList<>();
-            OilProgress.add((level, well, resource, cycles) -> {
-                if (well.equals(wellPos)) {
-                    reports.add(resource + " x" + cycles);
-                }
-            });
-
-            well(helper, WELL, 4 * CrudeOilBlockEntity.NORMAL);
-            PumpjackBlockEntity pumpjack = pumpjack(helper, PUMPJACK);
-            charge(pumpjack);
-
-            helper.runAfterDelay(50, () -> {
-                // Two cycles at 400%: forty units each, and still one report of one per cycle.
-                helper.assertValueEqual(reports, List.of("nauvis_fluids:crude_oil x1", "nauvis_fluids:crude_oil x1"),
-                        "what the pumpjack reported over two cycles");
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("pumpjack reports what it mines");
-        }
     }
 
     /**
@@ -1274,19 +1256,12 @@ public final class NauvisFluidsGameTests {
      * finished its first cycle, found the oil would not fit, and said <em>Full</em> over an empty
      * tank for ever. The gametest world is millions of blocks out, which is how this was found.
      */
-    public static class PumpjackCapsACycleTest extends GameTestInstance {
-
-        public static final MapCodec<PumpjackCapsACycleTest> CODEC =
-                RecordCodecBuilder.<PumpjackCapsACycleTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(PumpjackCapsACycleTest::info))
-                                .apply(i, PumpjackCapsACycleTest::new));
+    public static class PumpjackCapsACycleTest extends PackGameTest {
 
         /** Two thousand a cycle, uncapped: two hundred times normal. */
         private static final long MONSTER = 200 * CrudeOilBlockEntity.NORMAL;
 
-        public PumpjackCapsACycleTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        PumpjackCapsACycleTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1303,15 +1278,6 @@ public final class NauvisFluidsGameTests {
             });
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("pumpjack caps a cycle at its tank");
-        }
     }
 
     /**
@@ -1322,18 +1288,11 @@ public final class NauvisFluidsGameTests {
      * asserted is the command as typed: that it exists, that it needs no arguments, and that a
      * field of wells is there afterwards on the ground the source stood on.
      */
-    public static class OilCommandPlacesAFieldTest extends GameTestInstance {
-
-        public static final MapCodec<OilCommandPlacesAFieldTest> CODEC =
-                RecordCodecBuilder.<OilCommandPlacesAFieldTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OilCommandPlacesAFieldTest::info))
-                                .apply(i, OilCommandPlacesAFieldTest::new));
+    public static class OilCommandPlacesAFieldTest extends PackGameTest {
 
         private static final int SIZE = 24;
 
-        public OilCommandPlacesAFieldTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        OilCommandPlacesAFieldTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1362,70 +1321,9 @@ public final class NauvisFluidsGameTests {
             helper.succeed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("oil command places a field");
-        }
     }
 
     // --- natural water --------------------------------------------------------------------
-
-    /**
-     * A bucket lifts natural water as water, and pours it back as vanilla's.
-     *
-     * <p>The rule that makes a lake a place rather than a supply: what you carry away is
-     * ordinary water, what you pour out is ordinary water, and neither is what an offshore pump
-     * draws from. Water on the move is not lifted at all, exactly as vanilla's is not.
-     */
-    public static class NaturalWaterIsBucketedAsWaterTest extends GameTestInstance {
-
-        public static final MapCodec<NaturalWaterIsBucketedAsWaterTest> CODEC =
-                RecordCodecBuilder.<NaturalWaterIsBucketedAsWaterTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(NaturalWaterIsBucketedAsWaterTest::info))
-                                .apply(i, NaturalWaterIsBucketedAsWaterTest::new));
-
-        public NaturalWaterIsBucketedAsWaterTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            platform(helper, 5);
-            BlockPos at = new BlockPos(2, 2, 2);
-            BlockPos absolute = helper.absolutePos(at);
-            LiquidBlock water = ModBlocks.WATER.get();
-
-            helper.setBlock(at, naturalWater());
-            ItemStack lifted = water.pickupBlock(null, helper.getLevel(), absolute, helper.getBlockState(at));
-            helper.assertTrue(lifted.is(Items.WATER_BUCKET),
-                    "a bucket of natural water is " + lifted + ", not a water bucket");
-            helper.assertTrue(helper.getBlockState(at).isAir(), "the water was lifted and is still there");
-
-            ((BucketItem) Items.WATER_BUCKET).emptyContents(null, helper.getLevel(), absolute, null);
-            helper.assertTrue(helper.getBlockState(at).is(Blocks.WATER),
-                    "a poured bucket put down " + helper.getBlockState(at) + ", not vanilla's water");
-
-            helper.setBlock(at, naturalWater().setValue(LiquidBlock.LEVEL, 2));
-            helper.assertTrue(water.pickupBlock(null, helper.getLevel(), absolute, helper.getBlockState(at)).isEmpty(),
-                    "flowing natural water was lifted by a bucket");
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("natural water is bucketed as water");
-        }
-    }
 
     /**
      * Two natural sources a block apart never make a third; two of vanilla's do.
@@ -1435,19 +1333,12 @@ public final class NauvisFluidsGameTests {
      * so the vanilla one is the control - if the game rule ever stopped vanilla water converting,
      * the natural trough would pass for the wrong reason and the control would say so.
      */
-    public static class NaturalWaterMakesNoNewSourceTest extends GameTestInstance {
-
-        public static final MapCodec<NaturalWaterMakesNoNewSourceTest> CODEC =
-                RecordCodecBuilder.<NaturalWaterMakesNoNewSourceTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(NaturalWaterMakesNoNewSourceTest::info))
-                                .apply(i, NaturalWaterMakesNoNewSourceTest::new));
+    public static class NaturalWaterMakesNoNewSourceTest extends PackGameTest {
 
         private static final int NATURAL_ROW = 1;
         private static final int VANILLA_ROW = 5;
 
-        public NaturalWaterMakesNoNewSourceTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        NaturalWaterMakesNoNewSourceTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1481,15 +1372,6 @@ public final class NauvisFluidsGameTests {
             helper.setBlock(new BlockPos(3, 2, row), water);
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("natural water makes no new source");
-        }
     }
 
     /**
@@ -1501,12 +1383,7 @@ public final class NauvisFluidsGameTests {
      * vanilla water inside it, because that water is the slab's and not the world's; the ice
      * stays ice.
      */
-    public static class WorldgenWaterBecomesNaturalTest extends GameTestInstance {
-
-        public static final MapCodec<WorldgenWaterBecomesNaturalTest> CODEC =
-                RecordCodecBuilder.<WorldgenWaterBecomesNaturalTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(WorldgenWaterBecomesNaturalTest::info))
-                                .apply(i, WorldgenWaterBecomesNaturalTest::new));
+    public static class WorldgenWaterBecomesNaturalTest extends PackGameTest {
 
         private static final BlockPos SOURCE = new BlockPos(1, 2, 1);
         private static final BlockPos FLOW = new BlockPos(2, 2, 1);
@@ -1514,9 +1391,7 @@ public final class NauvisFluidsGameTests {
         private static final BlockPos SLAB = new BlockPos(1, 2, 3);
         private static final BlockPos ICE = new BlockPos(2, 2, 3);
 
-        public WorldgenWaterBecomesNaturalTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        WorldgenWaterBecomesNaturalTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1561,86 +1436,9 @@ public final class NauvisFluidsGameTests {
             helper.succeed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("worldgen water becomes natural");
-        }
     }
 
     // --- the offshore pump ----------------------------------------------------------------
-
-    /**
-     * An offshore pump stands where its intake finds still natural water, and nowhere else.
-     *
-     * <p>Not on dry land, not at a bucket's water, and not at the flowing edge of a lake - the
-     * three ways a player would otherwise get infinite water back. Under the intake counts, and
-     * so does beside it: a pump on a beach reaches down, a pump in the shallows reaches sideways.
-     */
-    public static class OffshorePumpStandsOnlyAtWaterTest extends GameTestInstance {
-
-        public static final MapCodec<OffshorePumpStandsOnlyAtWaterTest> CODEC =
-                RecordCodecBuilder.<OffshorePumpStandsOnlyAtWaterTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OffshorePumpStandsOnlyAtWaterTest::info))
-                                .apply(i, OffshorePumpStandsOnlyAtWaterTest::new));
-
-        public OffshorePumpStandsOnlyAtWaterTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            platform(helper, 6);
-            BlockPos shore = PUMP.below();
-            BlockPos beside = INTAKE_WATER.above().west();
-
-            helper.assertTrue(pumpPlacement(helper, shore) == null, "an offshore pump stands on dry land");
-
-            helper.setBlock(INTAKE_WATER, naturalWater());
-            BlockState placed = pumpPlacement(helper, shore);
-            helper.assertTrue(placed != null, "an offshore pump refuses a shore with natural water ahead of it");
-            helper.assertValueEqual(placed.getValue(OffshorePumpBlock.FACING), Direction.NORTH,
-                    "the way a pump placed with no player faces");
-
-            helper.setBlock(INTAKE_WATER, Blocks.WATER.defaultBlockState());
-            helper.assertTrue(pumpPlacement(helper, shore) == null,
-                    "an offshore pump accepts a bucket's water, so water is infinite again");
-            helper.assertValueEqual(OffshorePumpBlock.bestIntake(helper.getLevel(), helper.absolutePos(PUMP)),
-                    OffshorePumpBlock.Intake.OTHER, "what the refusal says of a bucket's water");
-
-            helper.setBlock(INTAKE_WATER, naturalWater().setValue(LiquidBlock.LEVEL, 3));
-            helper.assertTrue(pumpPlacement(helper, shore) == null, "an offshore pump accepts water on the move");
-
-            helper.setBlock(INTAKE_WATER, Blocks.STONE);
-            helper.assertValueEqual(OffshorePumpBlock.bestIntake(helper.getLevel(), helper.absolutePos(PUMP)),
-                    OffshorePumpBlock.Intake.NONE, "what the refusal says of dry land");
-
-            helper.setBlock(beside, naturalWater());
-            helper.assertTrue(pumpPlacement(helper, shore) != null,
-                    "an offshore pump refuses natural water beside its intake");
-            helper.setBlock(beside, Blocks.AIR);
-
-            // A bank a block above the water: the intake reaches two down.
-            helper.setBlock(INTAKE_WATER.below(), naturalWater());
-            helper.assertTrue(pumpPlacement(helper, shore) != null,
-                    "an offshore pump on a bank one block above the water refuses to stand there");
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("offshore pump stands only at water");
-        }
-    }
 
     /**
      * Forty water a tick, for nothing.
@@ -1650,18 +1448,11 @@ public final class NauvisFluidsGameTests {
      * from a machine that has been given no electricity and no fuel because it has nowhere to
      * put either.
      */
-    public static class OffshorePumpPumpsAtFactorioRateTest extends GameTestInstance {
-
-        public static final MapCodec<OffshorePumpPumpsAtFactorioRateTest> CODEC =
-                RecordCodecBuilder.<OffshorePumpPumpsAtFactorioRateTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OffshorePumpPumpsAtFactorioRateTest::info))
-                                .apply(i, OffshorePumpPumpsAtFactorioRateTest::new));
+    public static class OffshorePumpPumpsAtFactorioRateTest extends PackGameTest {
 
         private int firstReading;
 
-        public OffshorePumpPumpsAtFactorioRateTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        OffshorePumpPumpsAtFactorioRateTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1679,215 +1470,6 @@ public final class NauvisFluidsGameTests {
                     .thenSucceed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("offshore pump pumps at Factorio's rate");
-        }
-    }
-
-    /**
-     * What comes out of the back is water - vanilla's, the water of the pipes - and only the back
-     * offers it.
-     *
-     * <p>A pipe at the outlet reaches into the machine and its run fills with
-     * {@code minecraft:water} until run and tank are both full and the pump reports so. A pipe on
-     * the flank connects to nothing and carries nothing.
-     */
-    public static class OffshorePumpFillsAPipeTest extends GameTestInstance {
-
-        public static final MapCodec<OffshorePumpFillsAPipeTest> CODEC =
-                RecordCodecBuilder.<OffshorePumpFillsAPipeTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OffshorePumpFillsAPipeTest::info))
-                                .apply(i, OffshorePumpFillsAPipeTest::new));
-
-        public OffshorePumpFillsAPipeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            platform(helper, 5);
-            BlockPos outletPipe = PUMP.south();
-            BlockPos flankPipe = PUMP.east();
-
-            // Pipes first, for the reason the pumpjack test gives: a block put down by anything
-            // but a player never runs getStateForPlacement, so a pipe placed beside a machine
-            // already there would show no connection.
-            pipe(helper, outletPipe);
-            pipe(helper, flankPipe);
-            helper.setBlock(INTAKE_WATER, naturalWater());
-            OffshorePumpBlockEntity pump = offshorePump(helper, PUMP);
-
-            helper.startSequence()
-                    .thenExecuteAfter(5, () -> {
-                        helper.assertTrue(helper.getBlockState(outletPipe).getValue(PipeBlock.NORTH),
-                                "a pipe at the outlet does not reach into the offshore pump");
-                        helper.assertFalse(helper.getBlockState(flankPipe).getValue(PipeBlock.WEST),
-                                "a pipe on the flank connects to an offshore pump, so the outlet means nothing");
-                    })
-                    .thenExecuteAfter(40, () -> {
-                        FluidNetwork run = networkAt(helper, outletPipe, "the outlet pipe has no run");
-                        helper.assertValueEqual(run.fluid().getFluid(), Fluids.WATER,
-                                "what the outlet pipe is carrying");
-                        helper.assertValueEqual(run.amount(), run.capacity(), "a run fed by an offshore pump fills up");
-                        helper.assertValueEqual(pump.stored(), OffshorePumpBlockEntity.TANK_CAPACITY,
-                                "the tank behind a full run");
-                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.OUTPUT_FULL,
-                                "status with a full tank and a full run");
-                        helper.assertValueEqual(networkAt(helper, flankPipe, "the flank pipe has no run").amount(), 0,
-                                "what a pipe on the flank carries");
-                    })
-                    .thenSucceed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("offshore pump fills a pipe");
-        }
-    }
-
-    /**
-     * A full offshore pump asks for no ticks; a draw wakes it; the water going, or turning out to
-     * be a bucket's, stops it again; the lake coming back restarts it.
-     *
-     * <p>Non-negotiable #5, asserted through {@code hasScheduledTick} for each of the three
-     * reasons the machine can stop and the two ways it can be woken. Delete the wake in
-     * {@code FluidOutputAccess} or the one in {@code neighborChanged} and one of these lines goes red.
-     */
-    public static class OffshorePumpSleepsTest extends GameTestInstance {
-
-        public static final MapCodec<OffshorePumpSleepsTest> CODEC =
-                RecordCodecBuilder.<OffshorePumpSleepsTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OffshorePumpSleepsTest::info))
-                                .apply(i, OffshorePumpSleepsTest::new));
-
-        public OffshorePumpSleepsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            platform(helper, 5);
-            helper.setBlock(INTAKE_WATER, naturalWater());
-            OffshorePumpBlockEntity pump = offshorePump(helper, PUMP);
-            Block block = ModBlocks.OFFSHORE_PUMP.get();
-
-            helper.startSequence()
-                    .thenExecuteAfter(15, () -> {
-                        helper.assertValueEqual(pump.stored(), OffshorePumpBlockEntity.TANK_CAPACITY, "a tank left alone");
-                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.OUTPUT_FULL, "status when full");
-                        helper.assertFalse(isScheduled(helper, PUMP, block), "a full offshore pump is still asking for ticks");
-                        drawWater(pump, 50);
-                        helper.assertTrue(isScheduled(helper, PUMP, block), "drawing from a full offshore pump did not wake it");
-                    })
-                    .thenExecuteAfter(10, () -> {
-                        helper.assertValueEqual(pump.stored(), OffshorePumpBlockEntity.TANK_CAPACITY, "the tank after a draw");
-                        helper.assertFalse(isScheduled(helper, PUMP, block), "a refilled offshore pump is still asking for ticks");
-                        helper.setBlock(INTAKE_WATER, Blocks.STONE);
-                    })
-                    .thenExecuteAfter(5, () -> {
-                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.NO_WATER, "status with the lake gone");
-                        helper.assertFalse(isScheduled(helper, PUMP, block), "an offshore pump with no water is still asking for ticks");
-                        helper.setBlock(INTAKE_WATER, Blocks.WATER.defaultBlockState());
-                    })
-                    .thenExecuteAfter(5, () -> {
-                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.WRONG_WATER, "status at a bucket's water");
-                        helper.assertFalse(isScheduled(helper, PUMP, block), "an offshore pump at the wrong water is still asking for ticks");
-                        drawWater(pump, OffshorePumpBlockEntity.TANK_CAPACITY);
-                        helper.setBlock(INTAKE_WATER, naturalWater());
-                    })
-                    .thenExecuteAfter(3, () -> {
-                        helper.assertTrue(pump.stored() > 0, "the lake coming back did not restart the pump");
-                        helper.assertValueEqual(pump.status(), OffshorePumpStatus.PUMPING, "status with the lake back");
-                    })
-                    .thenSucceed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("offshore pump sleeps");
-        }
-    }
-
-    /**
-     * A pump turns to the water. The click faces north and the lake is to the east, and the pump
-     * placed faces east, intake over the lake.
-     *
-     * <p>Factorio's ghost snaps to the shoreline; this is the nearest a block can come. The
-     * player's own facing is tried first, so a pump that could face the way they look does, and
-     * only one that could not turns.
-     */
-    public static class OffshorePumpTurnsToTheWaterTest extends GameTestInstance {
-
-        public static final MapCodec<OffshorePumpTurnsToTheWaterTest> CODEC =
-                RecordCodecBuilder.<OffshorePumpTurnsToTheWaterTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OffshorePumpTurnsToTheWaterTest::info))
-                                .apply(i, OffshorePumpTurnsToTheWaterTest::new));
-
-        public OffshorePumpTurnsToTheWaterTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            platform(helper, 6);
-            BlockPos shore = PUMP.below();
-
-            // Dry: the ghost stands where the click would have put it, the player's way, refused.
-            Multiblock.Ghost dry = Multiblock.ghost(ModBlocks.OFFSHORE_PUMP.get(), pumpClick(helper, shore));
-            helper.assertFalse(dry.allowed(), "the ghost of a pump on dry land says it will go");
-            helper.assertValueEqual(dry.facing(), Direction.NORTH, "the way a refused pump's ghost faces");
-            helper.assertValueEqual(dry.anchor(), helper.absolutePos(PUMP), "where a refused pump's ghost stands");
-
-            // Under where an east-facing intake would hang, and nowhere a north-facing one reaches.
-            helper.setBlock(PUMP.east().below(), naturalWater());
-
-            Multiblock.Ghost turned = Multiblock.ghost(ModBlocks.OFFSHORE_PUMP.get(), pumpClick(helper, shore));
-            helper.assertTrue(turned.allowed(), "the ghost of a pump beside a lake says it will not go");
-            helper.assertValueEqual(turned.facing(), Direction.EAST, "the way a pump's ghost turns to find water");
-            helper.assertValueEqual(
-                    ModBlocks.OFFSHORE_PUMP.get().placementMarks(helper.getLevel(), turned.anchor(), turned.facing()),
-                    List.of(helper.absolutePos(PUMP.east().below())), "what a pump's ghost marks");
-
-            BlockState placed = pumpPlacement(helper, shore);
-            helper.assertTrue(placed != null, "an offshore pump facing away from a lake beside it will not turn to it");
-            helper.assertValueEqual(placed.getValue(OffshorePumpBlock.FACING), Direction.EAST,
-                    "the way a pump clicked facing north turns when the water is to the east");
-
-            // Water the way the player faces wins over water beside, so a pump faces as placed
-            // whenever it can.
-            helper.setBlock(INTAKE_WATER, naturalWater());
-            BlockState straight = pumpPlacement(helper, shore);
-            helper.assertTrue(straight != null, "a pump with water ahead of it will not stand");
-            helper.assertValueEqual(straight.getValue(OffshorePumpBlock.FACING), Direction.NORTH,
-                    "the way a pump faces when the water is where the player looks");
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("offshore pump turns to the water");
-        }
     }
 
     /**
@@ -1897,19 +1479,12 @@ public final class NauvisFluidsGameTests {
      * place just above it, on the bottom. The pump's item lifts the placement to the air over the
      * surface, and the block then finds the water under its intake and stands.
      */
-    public static class OffshorePumpFloatsOnALakeTest extends GameTestInstance {
-
-        public static final MapCodec<OffshorePumpFloatsOnALakeTest> CODEC =
-                RecordCodecBuilder.<OffshorePumpFloatsOnALakeTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OffshorePumpFloatsOnALakeTest::info))
-                                .apply(i, OffshorePumpFloatsOnALakeTest::new));
+    public static class OffshorePumpFloatsOnALakeTest extends PackGameTest {
 
         private static final BlockPos BED = new BlockPos(2, 0, 2);
         private static final int DEPTH = 3;
 
-        public OffshorePumpFloatsOnALakeTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        OffshorePumpFloatsOnALakeTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1942,42 +1517,16 @@ public final class NauvisFluidsGameTests {
             helper.succeed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("offshore pump floats on a lake");
-        }
     }
 
     // --- the oil chain's recipes ------------------------------------------------------------
 
-    /**
-     * Every recipe of the oil chain is in the running recipe manager, as a timed recipe.
-     *
-     * <p>A recipe file that names an unregistered item, a fluid the mod does not have, or a
-     * field the recipe type does not know is not an error anybody sees: it is a line in the log
-     * and a recipe that is simply not there. The refinery's recipes are the first to carry fluid
-     * ingredients and results and the first to make no item at all, and this is what would say
-     * so if the recipe type stopped taking them. Asked of the recipe manager rather than the
-     * files, and by serializer id rather than class, so the mod needs nothing of Facrafting's to
-     * ask.
-     */
-    public static class OilRecipesLoadTest extends GameTestInstance {
-
-        public static final MapCodec<OilRecipesLoadTest> CODEC =
-                RecordCodecBuilder.<OilRecipesLoadTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OilRecipesLoadTest::info))
-                                .apply(i, OilRecipesLoadTest::new));
+    /** Every recipe of the oil chain is in the running recipe manager, as a timed recipe. */
+    public static class OilRecipesLoadTest extends PackGameTest {
 
         private static final Identifier FACRAFT = Identifier.fromNamespaceAndPath("facrafting", "facraft");
 
-        public OilRecipesLoadTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        OilRecipesLoadTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -1996,15 +1545,6 @@ public final class NauvisFluidsGameTests {
             helper.succeed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("oil recipes load");
-        }
     }
 
     // --- the storage tank and the oil machines -------------------------------------------------
@@ -2018,12 +1558,7 @@ public final class NauvisFluidsGameTests {
      * and those flow back until the pipes hold two. Either way the run goes dormant afterwards,
      * because nothing moves on the second visit.
      */
-    public static class StorageTankLevelsWithItsRunTest extends GameTestInstance {
-
-        public static final MapCodec<StorageTankLevelsWithItsRunTest> CODEC =
-                RecordCodecBuilder.<StorageTankLevelsWithItsRunTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(StorageTankLevelsWithItsRunTest::info))
-                                .apply(i, StorageTankLevelsWithItsRunTest::new));
+    public static class StorageTankLevelsWithItsRunTest extends PackGameTest {
 
         /** The north-west corner's north face is a connection; the pipes run north from it. */
         private static final BlockPos NEAR_PIPE = new BlockPos(2, 2, 1);
@@ -2031,9 +1566,7 @@ public final class NauvisFluidsGameTests {
         /** The corner's west face is not, and a pipe there stays unconnected. */
         private static final BlockPos FLANK_PIPE = new BlockPos(1, 2, 2);
 
-        public StorageTankLevelsWithItsRunTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        StorageTankLevelsWithItsRunTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -2074,15 +1607,6 @@ public final class NauvisFluidsGameTests {
                     .thenSucceed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("storage tank levels with its run");
-        }
     }
 
     /**
@@ -2091,21 +1615,14 @@ public final class NauvisFluidsGameTests {
      * output - Factorio's ports, which is what lets a player add advanced processing's pipes
      * without moving these - and stops when the crude runs out.
      */
-    public static class RefineryRunsBasicOilProcessingTest extends GameTestInstance {
-
-        public static final MapCodec<RefineryRunsBasicOilProcessingTest> CODEC =
-                RecordCodecBuilder.<RefineryRunsBasicOilProcessingTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(RefineryRunsBasicOilProcessingTest::info))
-                                .apply(i, RefineryRunsBasicOilProcessingTest::new));
+    public static class RefineryRunsBasicOilProcessingTest extends PackGameTest {
 
         /** The crude input: the fourth cell of the south row, on its south face. */
         private static final BlockPos CRUDE_CELL = new BlockPos(4, 2, 5);
         /** The petroleum output: the north-east corner, on its north face. */
         private static final BlockPos PETROLEUM_CELL = new BlockPos(5, 2, 1);
 
-        public RefineryRunsBasicOilProcessingTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        RefineryRunsBasicOilProcessingTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -2154,87 +1671,6 @@ public final class NauvisFluidsGameTests {
                     .thenSucceed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("refinery runs basic oil processing");
-        }
-    }
-
-    /**
-     * Advanced oil processing with nowhere to put the heavy oil makes no light oil and no gas
-     * either, and spends nothing - the whole puzzle of Factorio's oil in one assertion. Draw some
-     * heavy oil off and the other two flow again.
-     */
-    public static class RefineryOutputsBlockEachOtherTest extends GameTestInstance {
-
-        public static final MapCodec<RefineryOutputsBlockEachOtherTest> CODEC =
-                RecordCodecBuilder.<RefineryOutputsBlockEachOtherTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(RefineryOutputsBlockEachOtherTest::info))
-                                .apply(i, RefineryOutputsBlockEachOtherTest::new));
-
-        public RefineryOutputsBlockEachOtherTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            platform(helper, 7);
-            OilRefineryBlockEntity refinery = refinery(helper, MACHINE);
-            charge(refinery);
-            refinery.setRecipe(recipe(NauvisFluids.MODID, "advanced_oil_processing"));
-            Fluid heavy = ModFluids.HEAVY_OIL.get();
-            int full = ProcessingBlockEntity.TANK_CAPACITY;
-            helper.assertValueEqual(fill(refinery.inputAccess(OilRefineryBlockEntity.WATER_PORT), Fluids.WATER, full), full,
-                    "water into the water port");
-            helper.assertValueEqual(fill(refinery.inputAccess(OilRefineryBlockEntity.CRUDE_PORT), ModFluids.CRUDE_OIL.get(), full), full,
-                    "crude into the crude port");
-            // The heavy oil tank is jammed full before the first craft can start.
-            helper.assertValueEqual(fill(refinery.outputTank(OilRefineryBlockEntity.HEAVY_PORT), heavy, full), full,
-                    "jamming the heavy oil tank");
-
-            helper.startSequence()
-                    .thenExecuteAfter(120, () -> {
-                        helper.assertValueEqual(refinery.status(), ProcessingStatus.OUTPUT_FULL, "status with heavy oil jammed");
-                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.LIGHT_PORT).getAmountAsInt(0), 0,
-                                "light oil made while jammed");
-                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT).getAmountAsInt(0), 0,
-                                "petroleum gas made while jammed");
-                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.WATER_PORT).getAmountAsInt(0), full,
-                                "water spent while jammed");
-                        helper.assertFalse(isScheduled(helper, MACHINE, ModBlocks.OIL_REFINERY.get()),
-                                "a jammed refinery is still asking for ticks");
-                        helper.assertValueEqual(drain(refinery.outputAccess(OilRefineryBlockEntity.HEAVY_PORT), heavy, 100), 100,
-                                "drawing heavy oil off");
-                    })
-                    .thenExecuteAfter(110, () -> {
-                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.HEAVY_PORT).getAmountAsInt(0), 925,
-                                "heavy oil after one craft");
-                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.LIGHT_PORT).getAmountAsInt(0), 45,
-                                "light oil after one craft");
-                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT).getAmountAsInt(0), 55,
-                                "petroleum gas after one craft");
-                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.WATER_PORT).getAmountAsInt(0), 950,
-                                "water after one craft");
-                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.CRUDE_PORT).getAmountAsInt(0), 900,
-                                "crude after one craft");
-                    })
-                    .thenSucceed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("refinery outputs block each other");
-        }
     }
 
     /**
@@ -2242,18 +1678,11 @@ public final class NauvisFluidsGameTests {
      * second, and stops when the coal runs out. The recipe is Nauvis Materials', and
      * the test says so rather than failing when that mod is not in the run.
      */
-    public static class ChemicalPlantMakesPlasticTest extends GameTestInstance {
-
-        public static final MapCodec<ChemicalPlantMakesPlasticTest> CODEC =
-                RecordCodecBuilder.<ChemicalPlantMakesPlasticTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(ChemicalPlantMakesPlasticTest::info))
-                                .apply(i, ChemicalPlantMakesPlasticTest::new));
+    public static class ChemicalPlantMakesPlasticTest extends PackGameTest {
 
         private static final int OUTPUT_SLOT = ChemicalPlantBlockEntity.ITEM_INPUTS;
 
-        public ChemicalPlantMakesPlasticTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
+        ChemicalPlantMakesPlasticTest(Info info) { super(info); }
 
         @Override
         public void run(GameTestHelper helper) {
@@ -2291,256 +1720,6 @@ public final class NauvisFluidsGameTests {
                     .thenSucceed();
         }
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("chemical plant makes plastic");
-        }
     }
 
-    /**
-     * A refinery asks for a tick only while it has work, and is woken by each of the things that
-     * can give it some: a recipe, an ingredient, electricity, and room for a product.
-     *
-     * <p>The one to watch is the last: a machine that finished a craft into a full tank holds it
-     * unpaid, and drawing from the tank is what lets it bank the craft and carry on.
-     */
-    public static class OilMachinesSleepTest extends GameTestInstance {
-
-        public static final MapCodec<OilMachinesSleepTest> CODEC =
-                RecordCodecBuilder.<OilMachinesSleepTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OilMachinesSleepTest::info))
-                                .apply(i, OilMachinesSleepTest::new));
-
-        public OilMachinesSleepTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            platform(helper, 7);
-            OilRefineryBlockEntity refinery = refinery(helper, MACHINE);
-            Block block = ModBlocks.OIL_REFINERY.get();
-            Fluid crude = ModFluids.CRUDE_OIL.get();
-            Fluid petroleum = ModFluids.PETROLEUM_GAS.get();
-            int full = ProcessingBlockEntity.TANK_CAPACITY;
-
-            helper.startSequence()
-                    .thenExecuteAfter(5, () -> {
-                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_RECIPE, "status with no recipe");
-                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a refinery with no recipe is asking for ticks");
-                        refinery.setRecipe(recipe(NauvisFluids.MODID, "basic_oil_processing"));
-                        helper.assertTrue(isScheduled(helper, MACHINE, block), "choosing a recipe did not wake it");
-                    })
-                    .thenExecuteAfter(5, () -> {
-                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_INGREDIENTS, "status with no crude");
-                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a refinery with no crude is asking for ticks");
-                        fill(refinery.inputAccess(OilRefineryBlockEntity.CRUDE_PORT), crude, 100);
-                        helper.assertTrue(isScheduled(helper, MACHINE, block), "crude arriving did not wake it");
-                    })
-                    .thenExecuteAfter(5, () -> {
-                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_POWER, "status with no power");
-                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a refinery with no power is asking for ticks");
-                        charge(refinery);
-                        helper.assertTrue(isScheduled(helper, MACHINE, block), "power arriving did not wake it");
-                    })
-                    .thenExecuteAfter(5, () -> {
-                        helper.assertValueEqual(refinery.status(), ProcessingStatus.WORKING, "status while crafting");
-                        helper.assertTrue(isScheduled(helper, MACHINE, block), "a working refinery is not asking for ticks");
-                        // Jam the output while the craft is under way, so it finishes into a full tank.
-                        helper.assertValueEqual(fill(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT), petroleum, full), full,
-                                "jamming the petroleum tank");
-                    })
-                    .thenExecuteAfter(110, () -> {
-                        helper.assertValueEqual(refinery.status(), ProcessingStatus.OUTPUT_FULL, "status with the output jammed");
-                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a jammed refinery is asking for ticks");
-                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.CRUDE_PORT).getAmountAsInt(0), 100,
-                                "crude spent on a craft that could not be banked");
-                        drain(refinery.outputAccess(OilRefineryBlockEntity.PETROLEUM_PORT), petroleum, 100);
-                        helper.assertTrue(isScheduled(helper, MACHINE, block), "drawing from the jammed tank did not wake it");
-                    })
-                    .thenExecuteAfter(5, () -> {
-                        helper.assertValueEqual(refinery.outputTank(OilRefineryBlockEntity.PETROLEUM_PORT).getAmountAsInt(0), 945,
-                                "petroleum gas once the held craft was banked");
-                        helper.assertValueEqual(refinery.inputTank(OilRefineryBlockEntity.CRUDE_PORT).getAmountAsInt(0), 0,
-                                "crude once the held craft was banked");
-                        helper.assertValueEqual(refinery.status(), ProcessingStatus.NO_INGREDIENTS, "status after the crude was spent");
-                        helper.assertFalse(isScheduled(helper, MACHINE, block), "a refinery out of crude is asking for ticks");
-                    })
-                    .thenSucceed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("oil machines sleep");
-        }
-    }
-
-    /**
-     * A refinery runs oil processing and a chemical plant runs chemistry, and each refuses the
-     * other's recipes at the block entity, behind whatever the panel showed.
-     */
-    public static class OilMachinesRunOnlyTheirCategoryTest extends GameTestInstance {
-
-        public static final MapCodec<OilMachinesRunOnlyTheirCategoryTest> CODEC =
-                RecordCodecBuilder.<OilMachinesRunOnlyTheirCategoryTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OilMachinesRunOnlyTheirCategoryTest::info))
-                                .apply(i, OilMachinesRunOnlyTheirCategoryTest::new));
-
-        public OilMachinesRunOnlyTheirCategoryTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            platform(helper, 7);
-            ChemicalPlantBlockEntity plant = chemicalPlant(helper, MACHINE);
-            ResourceKey<Recipe<?>> basic = recipe(NauvisFluids.MODID, "basic_oil_processing");
-            ResourceKey<Recipe<?>> cracking = recipe(NauvisFluids.MODID, "heavy_oil_cracking");
-            plant.setRecipe(basic);
-            helper.assertTrue(plant.recipeKey() == null, "a chemical plant took an oil processing recipe");
-            plant.setRecipe(cracking);
-            helper.assertValueEqual(plant.recipeKey(), cracking, "a chemical plant refused cracking");
-            helper.assertValueEqual(plant.inputTank(ChemicalPlantBlockEntity.WATER_PORT).assigned(), Fluids.WATER,
-                    "the water port of a plant on heavy oil cracking");
-            helper.assertValueEqual(plant.inputTank(1).assigned(), ModFluids.HEAVY_OIL.get(),
-                    "the other port of a plant on heavy oil cracking");
-            helper.assertValueEqual(plant.outputTank(0).assigned(), ModFluids.LIGHT_OIL.get(),
-                    "the first output of a plant on heavy oil cracking");
-            helper.assertTrue(plant.outputTank(1).assigned() == null, "the second output of a plant on heavy oil cracking");
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("oil machines run only their category");
-        }
-    }
-
-    /**
-     * The refinery and the chemical plant have three module slots each, and modules in them change
-     * the machine's speed and draw by Factorio's arithmetic.
-     *
-     * <p>The modules are the machines mod's items and this mod does not name it, so the test finds
-     * them by id and passes on the slots alone when they are not there - the standalone run. With
-     * them, three speed modules are plus three fifths on the speed and half again three times on
-     * the draw: a 210 kW plant at 28 FE a tick draws 70.
-     */
-    public static class OilMachinesTakeModulesTest extends GameTestInstance {
-
-        public static final MapCodec<OilMachinesTakeModulesTest> CODEC =
-                RecordCodecBuilder.<OilMachinesTakeModulesTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(OilMachinesTakeModulesTest::info))
-                                .apply(i, OilMachinesTakeModulesTest::new));
-
-        public OilMachinesTakeModulesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            ChemicalPlantBlockEntity plant = chemicalPlant(helper, MACHINE);
-            helper.assertValueEqual(plant.layout().moduleSlots(), ChemicalPlantBlockEntity.MODULE_SLOTS,
-                    "module slots in the chemical plant's layout");
-            helper.assertValueEqual(plant.modules().size(), 3, "module slots on a chemical plant");
-            helper.assertValueEqual(OilRefineryBlockEntity.LAYOUT.moduleSlots(), 3, "module slots on a refinery");
-
-            var speed = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_machines", "speed_module"));
-            if (speed == Items.AIR) {
-                helper.succeed();
-                return;
-            }
-            for (int slot = 0; slot < 3; slot++) {
-                try (Transaction transaction = Transaction.openRoot()) {
-                    helper.assertValueEqual(plant.modules().insert(slot, ItemResource.of(speed), 1, transaction), 1,
-                            "a speed module taken by slot " + slot);
-                    transaction.commit();
-                }
-            }
-            helper.assertTrue(Math.abs(plant.modules().effect().speedFactor() - 1.6) < 1e-9,
-                    "three speed modules' speed factor: " + plant.modules().effect().speedFactor());
-            helper.assertValueEqual(plant.currentEnergyPerTick(),
-                    (int) Math.round(ChemicalPlantBlockEntity.ENERGY_PER_TICK * 2.5),
-                    "the draw under three speed modules");
-            helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("oil machines take modules");
-        }
-    }
-
-    /**
-     * A pumpjack takes Factorio's modules and reads them the way every other machine does: a
-     * speed module shortens the cycle by its speed and raises the draw by its cost. The module is
-     * {@code nauvis_machines}' and this mod does not name it, so it is looked up by id and the test
-     * passes trivially without it.
-     */
-    public static class PumpjackTakesModulesTest extends GameTestInstance {
-
-        public static final MapCodec<PumpjackTakesModulesTest> CODEC =
-                RecordCodecBuilder.<PumpjackTakesModulesTest>mapCodec(
-                        i -> i.group(TestData.CODEC.forGetter(PumpjackTakesModulesTest::info))
-                                .apply(i, PumpjackTakesModulesTest::new));
-
-        public PumpjackTakesModulesTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
-            var speed = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("nauvis_machines", "speed_module"));
-            if (ModuleSlots.moduleOf(new ItemStack(speed)) == null) {
-                helper.succeed();
-                return;
-            }
-            well(helper, WELL, CrudeOilBlockEntity.NORMAL);
-            PumpjackBlockEntity pumpjack = pumpjack(helper, PUMPJACK);
-            pumpjack.modules().set(0, ItemResource.of(speed), 1);
-            charge(pumpjack);
-            ModuleEffect effect = ModuleSlots.moduleOf(new ItemStack(speed)).effect();
-
-            helper.runAfterDelay(10, () -> {
-                helper.assertValueEqual(pumpjack.status(), PumpjackStatus.PUMPING, "status with a well, power and a module");
-                helper.assertValueEqual(pumpjack.cycleTicks(),
-                        (int) Math.round(PumpjackBlockEntity.CYCLE_TICKS / effect.speedFactor()),
-                        "ticks a cycle takes with a speed module");
-                helper.assertTrue(pumpjack.cycleTicks() < PumpjackBlockEntity.CYCLE_TICKS,
-                        "a speed module did not shorten the cycle");
-                helper.assertValueEqual(pumpjack.currentEnergyPerTick(),
-                        effect.scaleEnergy(PumpjackBlockEntity.ENERGY_PER_TICK), "draw with a speed module");
-                helper.succeed();
-            });
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a pumpjack takes modules");
-        }
-    }
 }

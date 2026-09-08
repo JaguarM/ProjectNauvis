@@ -41,52 +41,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/**
- * A belt block: which way it carries, and how fast.
- *
- * <p>It holds nothing and does nothing. <b>The run holds the items and the run ticks</b> - see
- * {@link BeltRun} - and a belt block is a fact about where the run goes. This is the third time
- * this pack has drawn that line, after {@code PowerNetwork} and {@code FluidNetwork}, and it
- * matters most here: a belt that were a block entity passing items to the next block would cost a
- * tick per block per second and take a tick per block to move anything, which is the difference
- * between a belt and a bucket chain.
- *
- * <h2>Speed is a subclass, not a field</h2>
- *
- * <p>Every tier is its own class with its own constant, rather than one class with a speed field.
- * That is not taste: {@code createBlockStateDefinition} runs inside {@code Block}'s constructor,
- * before any field of a subclass exists, and the drills already shipped one bug from reading a
- * field there. A constant on a subclass exists long before any block does. See
- * {@code docs/PITFALLS.md}.
- *
- * <p>It also settles what happens where two tiers meet: a run only continues through belts of the
- * same block, so a fast belt after a normal one is a second run that the first hands off into,
- * which is what Factorio does with its transport lines.
- *
- * <h2>Half a block high, and you walk over it</h2>
- *
- * <p>{@link Belts#HEIGHT} is 0.5, under vanilla's 0.6 step height, so crossing a belt is walking
- * rather than jumping. Collision and silhouette agree exactly here, which for something meant to
- * be walked across is the whole point.
- *
- * <p>And it carries you. See {@link #stepOn}.
- *
- * <h2>It climbs, the way a rail does</h2>
- *
- * <p>A belt hands to the first belt of its own kind directly ahead of it, one <em>above</em> that,
- * or one <em>below</em> - {@link #successorOf}, which is vanilla's {@code RailState.getRail} probe
- * with the nouns changed. So a line changes level by being built that way, with no item for it and
- * nothing to place but belts.
- *
- * <p>The block that gets the ramp is always the <em>low</em> one, which is also vanilla's rule: a
- * belt whose next belt is one along and one up is drawn climbing, and the belt on top of the step
- * is flat. See {@link BeltShape}.
- *
- * <p><b>The collision is a stair and the model is a ramp</b>, which is the one place in this pack
- * where the two are meant to disagree. Four steps of a quarter block, so every step up is 0.25 and
- * a slope is walked rather than jumped - vanilla's rail slope is a plain 8-pixel box you have to
- * jump, and a belt you cannot walk up would not be a belt. See {@link #RAMP_STEPS}.
- */
+/** A belt block: which way it carries, and how fast. */
 public abstract class BeltBlock extends BaseEntityBlock {
 
     /**
@@ -107,21 +62,7 @@ public abstract class BeltBlock extends BaseEntityBlock {
     /** Half a block, and the same box for collision and outline. */
     private static final VoxelShape BOX = Block.box(0, 0, 0, 16, Belts.HEIGHT * 16, 16);
 
-    /**
-     * How many steps a ramp is approximated in.
-     *
-     * <p>Sixteen, so each is one pixel - and the number is not about how it looks. <b>It is set by
-     * the slowest belt.</b> A player walks up anything under vanilla's 0.6 step height, but an item,
-     * a minecart and an experience orb have a step height of <em>zero</em>: {@code maxUpStep}
-     * returns 0 on {@code Entity} and only {@code LivingEntity} overrides it. Nothing carries those
-     * up a slope except {@link #stepOn} lifting them, and a lift can only be as big as the belt's
-     * own speed without shoving things along faster than the belt runs. A transport belt moves 1.5
-     * pixels a tick, so a riser has to be under that or the slowest belt's cargo stops dead against
-     * it - which it did.
-     *
-     * <p>They sit on the pixel grid, so the shape is cheap despite the count, and they hug the drawn
-     * ramp within a pixel, which is closer than the quarter-block steps this started with.
-     */
+    /** How many steps a ramp is approximated in. */
     private static final int RAMP_STEPS = 16;
 
     /** The stair under a ramp, by the horizontal direction the ramp climbs towards. */
@@ -161,19 +102,7 @@ public abstract class BeltBlock extends BaseEntityBlock {
         };
     }
 
-    /**
-     * A ramp's stair reaches above its own block, and this is what makes the game notice.
-     *
-     * <p>Without it a belt stops carrying anything over the top quarter of every slope, and nothing
-     * about that looks like a bug: {@code stepOn} is only ever called for
-     * {@code Entity.getOnPosLegacy}, which is the supporting block <em>or</em> the block a fifth of
-     * a block under the entity's feet - and standing on a step that reaches past the block it
-     * belongs to, that is the air above the ramp. So the belt asked the air to carry the player and
-     * the air declined.
-     *
-     * <p>This is the switch that makes {@code getOnPosLegacy} keep the supporting block instead, and
-     * it is there for fences and walls, which are tall for the same reason.
-     */
+    /** A ramp's stair reaches above its own block, and this is what makes the game notice. */
     @Override
     public boolean collisionExtendsVertically(BlockState state, BlockGetter level, BlockPos pos,
             Entity collidingEntity) {
@@ -213,26 +142,7 @@ public abstract class BeltBlock extends BaseEntityBlock {
                 context.getLevel(), context.getClickedPos());
     }
 
-    /**
-     * The belt this one hands to, or null if it hands to nothing.
-     *
-     * <p><b>Three places, in this order: straight ahead, one above that, one below it.</b> That is
-     * vanilla's rail probe - {@code RailState.getRail} - and copying it is the point: a Minecraft
-     * player already knows that a line of rails climbs by being built one block up, and a belt that
-     * behaved differently would be a second thing to learn for no gain.
-     *
-     * <p>Level wins over diagonal, so a line that could go either way goes straight on; and a belt
-     * facing back at this one is never a successor, because two belts cannot each hand to the other.
-     *
-     * <p>Same block, not just any belt: a run has one speed, so a tier change is a hand-off between
-     * two runs rather than a continuation of one. See {@link BeltLines}.
-     *
-     * <p><b>This is the rule, and {@link BeltLines} asks it a second way.</b> The two are not
-     * shared because they have different information - this one reads a {@code LevelReader} in the
-     * middle of a block update, that one walks the set of belts it already knows are loaded - but
-     * the *positions and their order* are shared, through {@link #successorCandidate}, because
-     * getting those out of step is what would draw a belt climbing in a direction nothing travels.
-     */
+    /** The belt this one hands to, or null if it hands to nothing. */
     public static @Nullable BlockPos successorOf(LevelReader level, BlockPos pos, BlockState state) {
         Direction travel = state.getValue(FACING);
         for (int step = 0; step < SUCCESSOR_CANDIDATES; step++) {
@@ -295,35 +205,7 @@ public abstract class BeltBlock extends BaseEntityBlock {
         return withShape(state, level, pos);
     }
 
-    /**
-     * Which way this belt bends or climbs, given what is around it.
-     *
-     * <h2>A slope first, and a bend only if it is not one</h2>
-     *
-     * <p>Because the drawing has to agree with where items actually go. A belt whose successor is
-     * one block up is climbing however many belts are beside it, and drawing it as a corner would
-     * put a bend under a line that is going over a step. The bend logic is what is left when the
-     * belt is level with both ends.
-     *
-     * <p>It climbs {@link BeltShape#UP} when it hands to the block one along and one up, and
-     * {@link BeltShape#DOWN} when the belt one <em>behind</em> and one up hands to it - a ramp
-     * always belonging to the lower of the two blocks, which is vanilla's rule for rails.
-     *
-     * <h2>Then the bend</h2>
-     *
-     * <p>One feeder, arriving from a side, is a corner. None, one from directly behind, or more
-     * than one, is a straight - two feeders being a side-load, which Factorio draws as a straight
-     * belt something joins rather than as a bend.
-     *
-     * <p>Only feeders level with this belt count towards a bend, because a corner that also
-     * changed level is not a shape this block can be in. The run still carries items through it;
-     * see {@code docs/GAPS.md}.
-     *
-     * <p>The test for a feeder is the same one {@link BeltLines} builds runs with, and it has to
-     * stay that way or a belt will be drawn bending in a direction nothing travels. It is written
-     * out twice rather than shared because the two ask different things: this one asks a
-     * {@code LevelReader} mid-update, and that one asks the set of belts it already knows about.
-     */
+    /** Which way this belt bends or climbs, given what is around it. */
     public static BlockState withShape(BlockState state, LevelReader level, BlockPos pos) {
         Direction travel = state.getValue(FACING);
 
@@ -373,20 +255,7 @@ public abstract class BeltBlock extends BaseEntityBlock {
         return pos.equals(successorOf(level, above, feeder));
     }
 
-    /**
-     * Re-reads the bend on this belt and on every belt beside it.
-     *
-     * <p>Called when a belt joins the graph, which covers the two ways a belt can arrive already
-     * pointing at something without {@code getStateForPlacement} ever having run: put there by a
-     * command, a structure or another mod, and loaded from disk with its neighbour in a chunk that
-     * had not arrived yet. Both leave a corner drawn as a straight belt, which works perfectly and
-     * looks like a mistake.
-     *
-     * <p>Its neighbours as well as itself, because the two halves of a corner learn about each
-     * other at different moments and only one of them gets a notification. All twelve of them since
-     * a line can climb - a belt one along and one up is as much a neighbour as one beside it, and
-     * it is the half of a new slope that gets no notification at all.
-     */
+    /** Re-reads the bend on this belt and on every belt beside it. */
     public static void refreshShapes(ServerLevel level, BlockPos pos) {
         refresh(level, pos);
         forEachNeighbour(pos, neighbour -> refresh(level, neighbour));
@@ -418,32 +287,7 @@ public abstract class BeltBlock extends BaseEntityBlock {
         return new BeltBlockEntity(pos, state);
     }
 
-    /**
-     * <b>A belt in hand puts that belt here, pointing the way you are facing.</b>
-     *
-     * <p>One rule, and it is Factorio's fast-replace. Whatever belt is in your hand becomes the
-     * belt under the cursor - a faster one, a slower one, or the same one turned - and it points
-     * the way a belt you had placed there would have pointed. So laying a line, fixing a line and
-     * upgrading a line are the same gesture, and running a belt along a row you have already built
-     * rewrites the lot to face the way you are walking.
-     *
-     * <p>The alternative for any of those is breaking a belt and putting it back, which drops what
-     * was on it and, halfway along a line, cuts the line in two to do it.
-     *
-     * <p><b>Crouch to place instead.</b> That needs no code: vanilla skips a block's own use when
-     * the player is crouching with something in hand, and falls through to putting the block down
-     * - see {@code ServerPlayerGameMode.useItemOn}. So the two things you want to do with a belt in
-     * your hand are the two things the same button already does.
-     *
-     * <h2>Two implementations of the one rule</h2>
-     *
-     * <p><b>The same belt is a state change</b>, which keeps the block entity and so keeps what is
-     * standing on it for free. The graph still has to be told, because no block entity was removed
-     * and so neither hook that maintains it fired - {@link BeltBlockEntity#setBlockState} is what
-     * catches that, on both sides.
-     *
-     * <p><b>A different belt is a new block</b>, which is a different job - see {@link #replace}.
-     */
+    /** <b>A belt in hand puts that belt here, pointing the way you are facing.</b> */
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
             Player player, InteractionHand hand, BlockHitResult hitResult) {
@@ -482,39 +326,7 @@ public abstract class BeltBlock extends BaseEntityBlock {
         return InteractionResult.SUCCESS;
     }
 
-    /**
-     * Puts a belt of another tier here, keeping the line and everything standing on it.
-     *
-     * <p>Factorio's fast-replace, and the reason a bus is ever upgraded rather than rebuilt: you
-     * run a red belt along a yellow line and the line becomes red under you, still carrying what it
-     * was carrying, pointing where you are walking. Doing the same by breaking and re-placing costs
-     * a dropped item for every belt and cuts the line in two while you do it.
-     *
-     * <p><b>Either way up.</b> A slower belt replaces a faster one exactly as readily, which is
-     * Factorio's rule: a belt in hand is a belt you are placing, and refusing half of that would
-     * make the gesture something you have to think about.
-     *
-     * <h2>Three things it has to get right</h2>
-     *
-     * <p><b>The block is swapped, not a property set.</b> Speed is a fact about the block - see the
-     * class note - so another tier is another block, which destroys the block entity and builds a
-     * new one. {@link BeltLines#beltRemoved} and {@link BeltLines#beltPlaced} fire on their own for
-     * that, so {@code beltTurned} is wrong here: it exists for the case where the block entity
-     * <em>survives</em> and nothing else would notice.
-     *
-     * <p><b>The load is carried across by hand.</b> Nothing does it for free, and the default is
-     * worse than nothing: replacing the block runs {@code preRemoveSideEffects}, which spills what
-     * is standing here onto the floor. So it comes off the old run before the swap and goes onto
-     * the new one after - see {@link BeltBlockEntity#takeCargo}. The rest of the line is untouched,
-     * because every item on it is pinned to the block it is standing on.
-     *
-     * <p><b>It is paid for.</b> One belt off the stack, the old one back in the player's hands,
-     * unless they are in creative - the same trade breaking and re-placing would have made.
-     *
-     * <p>The bend is worked out afresh rather than copied over, because the belts either side of
-     * this one may be a different block now and a run only follows one tier: a belt of another tier
-     * feeds this one at a seam, and a seam is not drawn as a corner.
-     */
+    /** Puts a belt of another tier here, keeping the line and everything standing on it. */
     private InteractionResult replace(ServerLevel level, BlockState state, BlockPos pos, Player player,
             ItemStack stack, BeltBlock tier, Direction facing) {
         List<BeltBlockEntity.Cargo> carried = level.getBlockEntity(pos) instanceof BeltBlockEntity belt
@@ -557,55 +369,14 @@ public abstract class BeltBlock extends BaseEntityBlock {
         return high == null ? BOX : RAMPS.get(high);
     }
 
-    /**
-     * Carries whatever is standing on it, at the speed it carries everything else.
-     *
-     * <p>Factorio's belts move the player, and a base is laid out on the assumption that they do -
-     * a long bus is something you ride rather than walk beside. You can still walk against a belt,
-     * or across one, because this is added to what the entity was already doing rather than
-     * replacing it.
-     *
-     * <p><b>Crouching stops it.</b> That is not Factorio's rule - there, a belt has you whatever
-     * you do - but it is Minecraft's, the same reflex that keeps a player on an edge or off a
-     * slime block, and without it placing a machine beside a working belt means being carried away
-     * mid-click. One line, if it is ever unwanted.
-     *
-     * <h2>Why this hook</h2>
-     *
-     * <p>Not {@code entityInside}: a belt is a bottom slab and something standing on top of it is
-     * inside the block <em>above</em>, so that never fires. {@code stepOn} is called from
-     * {@code Entity.applyEffectsFromBlocks} for whatever the entity is standing on, every tick it
-     * is on the ground and whether or not it is moving - which is exactly a conveyor's question.
-     *
-     * <p>It runs on the server, and on a client for the player it is that client's own - the guard
-     * is in {@code LivingEntity.aiStep} - so the two agree and being carried is not laggy.
-     */
+    /** Carries whatever is standing on it, at the speed it carries everything else. */
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
         super.stepOn(level, pos, state, entity);
         carry(pos, state, entity, true);
     }
 
-    /**
-     * A slope reaches whatever is touching it, not only what is standing on it.
-     *
-     * <p><b>This is what gets an item onto a ramp at all</b>, and the reason it is needed is a
-     * circle. {@link #stepOn} is only called for the block an entity is <em>supported</em> by, and
-     * something arriving off a flat belt is still supported by that flat belt while its nose is
-     * against the ramp's first step. So the ramp never gets asked to lift it, and it cannot become
-     * the supporting block until it has been lifted. An item measured coming up to a slope stopped
-     * dead at the seam and stayed there for as long as anyone watched.
-     *
-     * <p>Being <em>inside</em> the block has no such condition - the box only has to overlap, which
-     * it does the moment the item's nose crosses the line - so the lift can start before the ramp is
-     * carrying anything. Create and Immersive Engineering both drive their conveyors from here for
-     * the same reason.
-     *
-     * <p>Only the lift, never the push along the belt: whichever belt is actually underneath is
-     * already pushing, and doing it twice at a seam would carry things over it at double speed. And
-     * only when {@code stepOn} is not about to do the same job for this same block, which is the one
-     * case where the two hooks overlap.
-     */
+    /** A slope reaches whatever is touching it, not only what is standing on it. */
     @Override
     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity,
             InsideBlockEffectApplier effects, boolean precise) {
@@ -657,33 +428,7 @@ public abstract class BeltBlock extends BaseEntityBlock {
         hold(entity);
     }
 
-    /**
-     * How far a slope lifts what is standing on it this tick.
-     *
-     * <p><b>A push along a slope is not enough on its own.</b> A player or a mob walks up the stair
-     * under a ramp because {@code maxUpStep} is 0.6 for them; on {@code Entity} it is <em>zero</em>,
-     * so an item, a minecart, a boat or an experience orb is pushed straight into the first riser
-     * and stays there. Which is most of what a belt carries.
-     *
-     * <p>So the belt lifts them itself, and the rule is <b>to the height of the ramp under the
-     * leading edge of the thing, one step further on</b>. Three parts, and each is load-bearing:
-     *
-     * <ul>
-     *   <li><b>the leading edge</b>, not the middle, because a box resting on a rising ramp rests on
-     *       its front bottom corner, and it is that corner a riser stops. Measuring from the middle
-     *       asks for a lift half the box's width too small, which is exactly small enough to leave
-     *       an item wedged against the step in front of it - Immersive Engineering's conveyor does
-     *       the same and calls it fixing the entity to the highest point under it;</li>
-     *   <li><b>one step further on</b>, because a lift only to where the surface already is is no
-     *       lift at all - the thing is standing there;</li>
-     *   <li><b>and no higher</b>, which is what makes it safe. Something jammed against a wall at
-     *       the top of a slope stops rising the moment it reaches the surface, where a fixed nudge
-     *       every tick would quietly walk it up into the sky.</li>
-     * </ul>
-     *
-     * <p>Only climbing. Going down needs nothing - there is no riser in the way, and gravity is
-     * already pointing where the belt is going.
-     */
+    /** How far a slope lifts what is standing on it this tick. */
     private static double lift(BlockPos pos, BlockState state, Entity entity, Direction travel,
             double step) {
         if (state.getValue(SHAPE) != BeltShape.UP) {
@@ -701,22 +446,7 @@ public abstract class BeltBlock extends BaseEntityBlock {
         return Math.clamp(surface - entity.getY(), 0.0, step);
     }
 
-    /**
-     * Holds what a belt is carrying down onto it, and forgives it the drop.
-     *
-     * <p><b>A dropped item bounces.</b> {@code ItemEntity.tick} inverts and halves its downward
-     * speed every time it lands, which is the little hop a dropped item does on the floor - and
-     * while it is in the air {@code onGround} is false, so {@code applyEffectsFromBlocks} never
-     * reaches {@link #stepOn}. On the flat that only costs a stutter. On a slope it costs the ticks
-     * that would have lifted it.
-     *
-     * <p>Only what is not alive. A player or a mob leaving the ground is jumping, and a belt has no
-     * business cancelling that; nothing else on a belt has a reason to rise on its own.
-     *
-     * <p>And the fall distance goes, which both Create and Immersive Engineering do on their belts
-     * for the same reason: what a belt sets down, it set down gently, and a long descent should not
-     * end in damage at the bottom.
-     */
+    /** Holds what a belt is carrying down onto it, and forgives it the drop. */
     private static void hold(Entity entity) {
         if (entity instanceof LivingEntity) {
             return;

@@ -12,32 +12,8 @@ import com.jaguarm.nauvislib.multiblock.MachineShape;
 import net.minecraft.core.Direction;
 
 /**
- * What a pumpjack looks like and how much room it takes: three tiles by three, the size Factorio
- * made it, with the pump standing in the middle.
- *
- * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py}
- * holds this to the {@code size} recorded for {@code pumpjack} in {@code data/mapping.json}.
- * Everything else here is ours.
- *
- * <h2>Ten blocks, walkable but for the middle</h2>
- *
- * <p>Nine at ground level in the shared {@link MachineParts} shell - a wall at 1.0, a floor at
- * 0.75 - and the nodding donkey on the tenth, above the centre. A field of pumpjacks is walked
- * across, and the pumps are what you walk round.
- *
- * <h2>The oil leaves one corner</h2>
- *
- * <p>Factorio's pumpjack has a single fluid output at a corner of its footprint, pointing out along
- * the machine's facing, and rotating the machine is how you choose which corner. Here that is the
- * north-east cell's north face in the machine's own frame, and it turns with the facing exactly as
- * the boiler's steam port does. The corner is drawn without its north wall and with a wellhead on
- * it, so where the pipe goes is visible before a pipe is there.
- *
- * <h2>The well is under the middle</h2>
- *
- * <p>The block below the centre cell must be {@code nauvis_fluids:crude_oil}, and that is the only
- * place a pumpjack may stand. {@link PumpjackBlock#snapPart} is what lets a player click any of
- * the nine blocks over a well and get the machine centred on it.
+ * What a pumpjack looks like and how much room it takes: three tiles by three, the size
+ * Factorio made it, with the pump standing in the middle.
  */
 public final class PumpjackShape {
 
@@ -69,10 +45,6 @@ public final class PumpjackShape {
      * upper is the beam rocking on it: the walking beam along the block, the horse head at the
      * front and the counterweight at the back. It was one block once and read as a small box
      * from the item slot; a pumpjack is the tallest thing on an oil field and should look it.
-     *
-     * <p>The beam's ends sit inside the head and the weight, and the post meets the pivot face to
-     * face rather than sharing a plane the same way, so nothing z-fights - see
-     * {@code docs/PITFALLS.md}.
      */
     private static final float[][] HEAD_BOXES = {
         {4, 0, 4, 12, 2, 12},

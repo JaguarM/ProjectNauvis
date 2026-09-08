@@ -30,16 +30,8 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * The block half of the rocket silo: nine tiles by nine, a hundred and thirty-five blocks of it.
- *
- * <p>Right-click any of them to open it, holding anything or nothing, exactly like a chest.
- * Rocket part ingredients go in its three slots, a satellite in the fourth, and space science
- * comes out of the fifth. No facing: a Factorio silo has one way round, and the rocket stands in
- * the middle whichever way that is.
- *
- * <p>Everything about being made of several blocks is {@link Multiblock}'s, the same four rules
- * as every other machine - and at this size the one that matters most is placement, which
- * refuses unless all hundred and thirty-five blocks fit and nobody is standing in them.
+ * The block half of the rocket silo: nine tiles by nine, a hundred and thirty-five blocks of
+ * it.
  */
 public class RocketSiloBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 

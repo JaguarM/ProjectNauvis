@@ -36,48 +36,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-/**
- * Block and item models, generated from each machine's shape rather than written beside it.
- *
- * <p>Textures are placeholders and point at <em>vanilla</em> ones, which is not the same thing as
- * leaving them out. A model naming a texture this mod does not ship renders as the magenta-and-
- * black checkerboard, and that reads as a broken model rather than as art nobody has drawn yet -
- * which matters, because the person judging whether a machine looks right is looking at it in
- * game. A blast furnace body is the nearest vanilla thing to an assembler; a vanilla furnace's
- * own sides and top are the nearest thing to a stone furnace, iron to a steel one, and polished
- * deepslate to the electric one, so the three tiers tell apart across a base.
- *
- * <p>Real art is Yannic's half - see {@code texture-workshop/} for the
- * approach that produced the drills - and swapping it in is a one-line change here.
- *
- * <h2>One model per shape, not per block</h2>
- *
- * <p>An assembler is ten blocks but four models. Cells that are the same thing turned a quarter
- * turn - the four corners, the four edges - share a file and differ by the blockstate's {@code y}
- * rotation, which is the same rotation {@link MachineCell} applies to their collision boxes. That
- * is the point of {@link Boxes}: turn the model one way and the shape the other and you get a
- * machine you can see through on one side and walk into on the other, which no test would catch.
- *
- * <h2>Lit</h2>
- *
- * <p>A furnace has vanilla's {@code lit} property on every cell, and one cell - the stack, or
- * the electric furnace's hood - draws differently when it is on: its top turns to lava. So a
- * furnace's blockstate dispatches over {@code part} and {@code lit} together, and only the cell
- * that changes gets a second model; the rest map both values to the one file.
- *
- * <h2>No template, and no giant model on the middle block</h2>
- *
- * <p>There is no vanilla parent shaped like a machine, so these are written out directly:
- * {@code modelOutput} takes any {@code ModelInstance}, and a {@code ModelInstance} is a
- * {@code Supplier<JsonElement>}. That is what lets the geometry live in exactly one place, in
- * the shape class, and be read from here.
- *
- * <p>Every cell draws its own block rather than one cell drawing the lot, and that is deliberate.
- * A model may only reach one block in each direction - {@code CuboidModelElement} caps an element
- * at {@code -16..32} - so one big model does not scale past 3x3x3 and would fail outright on the
- * five-tile steam engine. Per-cell models also get per-block lighting for free, need no
- * {@code getRenderBoundingBox}, and cost nothing extra to draw.
- */
+/** Block and item models, generated from each machine's shape rather than written beside it. */
 public class NauvisMachinesModels extends ModelProvider {
 
     public NauvisMachinesModels(PackOutput output) {
@@ -262,19 +221,7 @@ public class NauvisMachinesModels extends ModelProvider {
         return id;
     }
 
-    /**
-     * The whole machine in one block, for the item in your hand.
-     *
-     * <p>An assembler's anchor cell on its own is the middle of a deck, which in the hand reads as
-     * a plain metal cube. The whole machine at full size does not fit. So the geometry is read out
-     * of the shape a second time - every cell turned by its own {@code turns}, moved to where that
-     * cell sits, and the lot scaled down until the machine's longest side is one block. It is a
-     * miniature, generated, and it cannot fall out of step with the block because it is the same
-     * numbers.
-     *
-     * <p>{@code PipeBlock} has a hand-written {@code pipe_inventory} for the same reason. This is
-     * that idea with the hand taken out of it.
-     */
+    /** The whole machine in one block, for the item in your hand. */
     private static Identifier inventoryModel(BlockModelGenerators blockModels, Block block,
             MachineShape shape, Textures textures) {
         Identifier id = ModelLocationUtils.getModelLocation(block, "_inventory");
@@ -309,20 +256,7 @@ public class NauvisMachinesModels extends ModelProvider {
         return id;
     }
 
-    /**
-     * One box, with the machine's three texture slots on its six faces.
-     *
-     * <p>{@code cullface} is set only on a face lying exactly on a block boundary, and only for a
-     * block model. That is what stops the nine cubes of a deck drawing eight interior walls
-     * nobody can see. It must never be set on a face that hangs outside its own block - there is
-     * nothing there to be culled against, and the face would vanish - and the miniature is one
-     * block containing a whole machine, so it gets none at all.
-     *
-     * <p>No {@code uv} either: absent, it is derived from the box's own footprint, which is what
-     * these want. {@code tools/check_models.py} is what makes that safe to leave implicit - it
-     * fails the build on a box that leaves {@code 0..16} without stating its uv, because the
-     * derived one would run off the end of the texture.
-     */
+    /** One box, with the machine's three texture slots on its six faces. */
     private static JsonObject element(float[] box, boolean cull) {
         JsonObject element = new JsonObject();
         element.add("from", vector(box[0], box[1], box[2]));

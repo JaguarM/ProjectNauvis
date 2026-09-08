@@ -11,27 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-/**
- * A box, in whichever size the block it belongs to asks for.
- *
- * <p>Vanilla's {@link ChestBlockEntity} with three things changed: the size, the screen that size
- * needs, and the name. Everything else a chest does - the lid animation and the openers counter
- * that drives it, the loot table dance, the sounds, saving and loading - is inherited, which is
- * the whole reason this extends it rather than {@code RandomizableContainerBlockEntity} directly.
- * Being a plain {@link net.minecraft.world.Container} also buys an item handler that inserters
- * already know how to use, through the capability registered in {@code ModCapabilities}.
- *
- * <p><b>The item list has to be replaced in the constructor.</b> {@code ChestBlockEntity}'s field
- * initialiser makes 27 slots, and only {@code loadAdditional} resizes it to whatever
- * {@code getContainerSize} says - so a chest that was placed rather than loaded would report
- * thirty-six slots while holding twenty-seven, and the screen would read past the end of the list
- * the moment a player opened it.
- *
- * <p>The size comes from the block rather than from a field on this class, so a tier is a
- * {@link MetalChestBlock} subclass and nothing here changes. Both tiers land on a row count
- * vanilla already has a screen for - four and six - which is the whole reason the slot counts are
- * 36 and 54 rather than Factorio's 32 and 48.
- */
+/** A box, in whichever size the block it belongs to asks for. */
 public class MetalChestBlockEntity extends ChestBlockEntity {
 
     private final int rows;

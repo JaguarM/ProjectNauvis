@@ -42,20 +42,7 @@ public class LabScreen extends MachineScreen<LabMenu> {
     /** Clear of the bars above and vanilla's "Inventory" label at y=72. */
     private static final int STATUS_Y = 20;
 
-    /**
-     * The button that opens the technology list.
-     *
-     * <p>The lab is where a player is standing when they wonder what to research next, so it is
-     * where the list lives. Factorio puts it behind a key of its own as well, which is worth
-     * having and is not this change.
-     *
-     * <p>It sits to the right of the pack row because that is the only part of a 176-wide panel
-     * nothing else claims: the title and the status line are each a full-width band, the bars run
-     * from 26 to 134 under the slots, and vanilla's "Inventory" label owns everything from y=72
-     * down. {@code tools/check_gui_layout.py} knows about this box and would fail the build if it
-     * were put anywhere it overlapped something, which is how it was found - the first version of
-     * it was drawn straight through the status line.
-     */
+    /** The button that opens the technology list. */
     private static final int RESEARCH_X = 138;
     private static final int RESEARCH_Y = 36;
     private static final int RESEARCH_WIDTH = 30;
@@ -103,19 +90,7 @@ public class LabScreen extends MachineScreen<LabMenu> {
         return STATUS_Y;
     }
 
-    /**
-     * One line saying which of the four things a stopped lab is doing.
-     *
-     * <p>They look identical from outside and want completely different things done about them:
-     * a wire, some science packs, a technology picked on the research screen, or nothing at all
-     * because it is already working. The one that is easy to leave out is the third, and it is
-     * the one a player meets first - a lab that is fed and powered and still does nothing is
-     * indistinguishable from a broken lab unless it says so.
-     *
-     * <p>The current research is read from {@link ClientResearch} rather than sent with the menu:
-     * it is a fact about the world, the client already has it, and a copy in the menu would be a
-     * second answer that could disagree.
-     */
+    /** One line saying which of the four things a stopped lab is doing. */
     @Override
     protected Component statusLine() {
         if (!menu.hasPower()) {

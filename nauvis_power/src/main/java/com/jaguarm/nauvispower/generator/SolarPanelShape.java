@@ -9,19 +9,6 @@ import com.jaguarm.nauvislib.multiblock.MachineShape;
 /**
  * What a solar panel looks like and how much room it takes: three tiles by three, the size
  * Factorio made it, and half a block high.
- *
- * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py}
- * holds this to the {@code size} recorded for {@code solar-panel} in {@code data/mapping.json}.
- * The height is ours, and it is the walkability table's lowest row: <b>0.5, crossed without a
- * jump</b>. A solar field in Factorio is something you walk straight across, and a field of these
- * is too - nine panels tile into a floor you would not notice you were on.
- *
- * <h2>Nine cells, one model</h2>
- *
- * <p>Every cell is the same framed panel: a slab to seven pixels with the glass inset a pixel on
- * top, so a field reads as panels in frames rather than as a sheet of blue. No walls, no deck, no
- * mechanism, because there is nothing to walk round - which is why this is not on the
- * {@code MachineParts} shell that every other machine wears.
  */
 public final class SolarPanelShape {
 

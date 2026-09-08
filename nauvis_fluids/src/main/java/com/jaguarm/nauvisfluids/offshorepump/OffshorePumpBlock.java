@@ -36,41 +36,7 @@ import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/**
- * The block half of the offshore pump: two blocks, one of which holds anything.
- *
- * <p>{@link OffshorePumpShape} is the footprint and the geometry; {@link Multiblock} is everything
- * about being made of several blocks. What is this machine's own is <b>where it may stand</b>:
- * with its intake at natural water and nowhere else, which is Factorio's rule to the letter - an
- * offshore pump can only be placed at water, and Factorio has no other kind.
- *
- * <h2>What counts as water</h2>
- *
- * <p>{@link #waterAt} looks at the blocks the intake reaches - under it, one and two down, so a
- * bank a block above the water still counts, and to its three open sides, so a pump standing in
- * the shallows reaches sideways - for a fluid in {@code #nauvis_fluids:offshore_pumpable}, which
- * is the still water of a lake or the sea and nothing a bucket poured. The still part matters:
- * the flowing skirt where a lake spills into a dug channel is water on the move, and a channel
- * does not bring the sea inland.
- *
- * <h2>It turns to the water, and it floats</h2>
- *
- * <p>Factorio's placement ghost snaps an offshore pump to the shoreline under the cursor, and a
- * pump here does the nearest thing a block can. {@link #aim} tries the way the player faces first
- * and then the other three, and the first whose intake finds natural water is the way the pump
- * goes - so a player walking along a beach places pumps that all look out to sea whichever way
- * they were looking. And a click on the lake itself, which lands on the lake bed because a block
- * in hand looks through water, is lifted by {@link OffshorePumpItem} to the air just over the
- * surface: the pump floats there, intake over the water, as Factorio 2.0's does.
- * {@code nauvis_lib}'s ghost draws the answer to the same two questions under the crosshair while
- * the pump is in hand, through {@link #placementFacing} and {@link #placementPart}, so what is
- * shown is what will happen.
- *
- * <p>When no facing finds water the placement is refused, and the player is told why on the
- * action bar: that there is no water here, or - the case worth a sentence - that the water here is
- * a bucket's, which the pump does not draw from. That message is the whole of how a player learns
- * the rule.
- */
+/** The block half of the offshore pump: two blocks, one of which holds anything. */
 public class OffshorePumpBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
     public static final MapCodec<OffshorePumpBlock> CODEC = simpleCodec(OffshorePumpBlock::new);

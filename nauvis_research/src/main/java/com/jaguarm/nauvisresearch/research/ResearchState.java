@@ -18,40 +18,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
-/**
- * What the world has researched, what it is researching, and how far in.
- *
- * <h2>Per world, not per player</h2>
- *
- * <p>This is the decision the rest of the design hangs off, and it was made against the cheaper
- * one. The obvious shortcut - a lab grants vanilla advancements and recipes gate on those - is
- * half a day's work and wrong, because <b>advancements are per player and research is not</b>.
- * Two people building one base with different unlocks is a different game from Factorio, where
- * research belongs to the force and everybody on it shares one tree. That is not a thing to find
- * out after building on it, so research is a {@link SavedData} whatever ends up drawn on top of
- * it.
- *
- * <p>One of these exists per world rather than per dimension. {@link Research} always fetches it
- * from the overworld's storage for that reason - a lab in the Nether researches the same tree.
- *
- * <h2>Progress lives here, not in the lab</h2>
- *
- * <p>Units are a property of the research rather than of any machine: twelve labs work on one
- * technology together, which is what makes a lab farm mean anything. {@code LabBlockEntity} keeps
- * its own count of the units it has contributed, but that is a readout, not the state.
- *
- * <h2>Progress is per technology, and it survives a switch</h2>
- *
- * <p>{@link #progress} is keyed on the technology rather than being one counter beside
- * {@link #current}, and that is the whole of it: <b>switching research keeps what was already
- * paid</b>. Factorio does the same - a research swapped away from is waiting where you left it
- * when you come back, and the packs already spent are not spent again. One counter meant a player
- * who looked at something else for a minute threw away an hour of labs, which is a thing you only
- * find out after it has happened to you.
- *
- * <p>The map holds only technologies part-way through - a completed one drops out of it - so it
- * stays a handful of entries rather than growing with the tree.
- */
+/** What the world has researched, what it is researching, and how far in. */
 public class ResearchState extends SavedData {
 
     private static final Codec<ResourceKey<Technology>> KEY_CODEC = ResourceKey.codec(ModTechnologies.REGISTRY);

@@ -20,36 +20,7 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
-/**
- * One connected run of pipes, and the machines it touches.
- *
- * <p><b>The network ticks, not the pipes.</b> The third time this pack has needed that sentence -
- * after the belt note and the electric network - and for the same reason: a pipe that ticks costs
- * N ticks a second for N pipes and takes N ticks to move a drop across them. A run that ticks
- * costs one iteration however long it is, and steam crosses it at once.
- *
- * <p>The run holds the fluid, exactly as Factorio's pipes do: a pipeline is one fluid box whose
- * capacity grows with its length, not a queue of little buffers. That is what makes
- * {@code Steam: 8.4 of 100} a sensible thing to say about a pipe, and it is why breaking a run in
- * half has to divide what was in it.
- *
- * <h2>Sources and sinks are not told apart</h2>
- *
- * <p>There is one endpoint table and nothing is labelled. A machine is a source if it will not
- * accept back the fluid it is offering: a boiler refuses steam - {@code FluidOutputAccess} is
- * extract-only - so it gives, and a steam engine accepts it, so it does not. The test is asked of
- * each machine about itself, which is why it still works on the tick a run is empty and has
- * nothing of its own to compare against.
- *
- * <h2>Except a tank, which is neither</h2>
- *
- * <p>A storage tank is a length of the pipeline that happens to hold twenty-five thousand, and
- * Factorio's fills and empties with the pipes around it. Pushed into as a sink it would swallow
- * the run; pulled from as a source it would be poured back out. A handler marked
- * {@link FluidBuffer} is left out of both and <em>levelled</em> instead: the run and every tank on
- * it settle at one fraction full, in one step, and then nothing moves - which is what lets a run
- * with a tank on it sleep like any other. A tank on two runs is levelled by each in turn.
- */
+/** One connected run of pipes, and the machines it touches. */
 public final class FluidNetwork {
 
     /**
@@ -158,14 +129,6 @@ public final class FluidNetwork {
     /**
      * Starts watching the machine at {@code pos} through {@code face}, the side of it a pipe of
      * this run touches - if there is a machine there, and it offers anything on that side.
-     *
-     * <p>The face is not optional. A machine's ports are sided - a boiler gives steam at its
-     * back, a pumpjack at one corner - and a capability asked for with no side answers for every
-     * side, which is NeoForge's convention and the right one for a hopper. For a run it meant
-     * that every face of every machine was an outlet, and the only thing saying otherwise was
-     * the pipe's drawn connection. The face a pipe actually lies on is the question a run has
-     * to ask, and it is what {@code PipeBlock.connects} asks too, so what is drawn and what flows
-     * agree.
      */
     void addEndpoint(long pos, Direction face) {
         if (endpoints.containsKey(pos)) {
@@ -306,14 +269,8 @@ public final class FluidNetwork {
     }
 
     /**
-     * Draws from anything that gives without taking, which is this network's whole definition of
-     * a source.
-     *
-     * <p>The test is asked of the endpoint about itself: would it accept back the very fluid it is
-     * offering? A boiler says no - {@code FluidOutputAccess} refuses insertion - so it is a source. An
-     * engine says yes, because an engine is a length of pipe that happens to consume, so it is
-     * not. Without that test a pipe run would drain the engines it is supposed to be feeding, and
-     * it would do it on exactly the tick the run was empty and had nothing to compare against.
+     * Draws from anything that gives without taking, which is this network's whole definition
+     * of a source.
      */
     private int pull() {
         int room = capacity() - contents.getAmountAsInt(0);
@@ -348,16 +305,7 @@ public final class FluidNetwork {
         return moved;
     }
 
-    /**
-     * Whether this handler would accept back what it is offering - a sink, not a source.
-     *
-     * <p>Two questions, because a full sink answers the first one the way a source does. A
-     * boiler's water tank that is full for a tick would take water if it had room, and a run
-     * that read "no" as "source" would drain it into itself and push it back next tick, for
-     * ever, each move waking the other. So a handler that will not take one unit now is asked
-     * whether it takes the fluid at all; {@code FluidOutputAccess} says it does not, which is
-     * what makes a boiler's steam port a source and its water port never one.
-     */
+    /** Whether this handler would accept back what it is offering - a sink, not a source. */
     private static boolean takesItBack(ResourceHandler<FluidResource> handler, int index, FluidResource offered) {
         try (Transaction probe = Transaction.openRoot()) {
             if (handler.insert(offered, 1, probe) > 0) {

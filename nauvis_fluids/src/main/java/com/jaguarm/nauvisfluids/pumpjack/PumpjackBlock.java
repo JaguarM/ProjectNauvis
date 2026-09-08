@@ -34,30 +34,7 @@ import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/**
- * The block half of the pumpjack: ten blocks, one of which holds anything.
- *
- * <p>{@link PumpjackShape} is the footprint and the geometry; {@link Multiblock} is everything
- * about being made of several blocks. What is this machine's own is <b>where it may stand</b>:
- * centred on an oil well and nowhere else, which is Factorio's rule to the letter - a pumpjack
- * can only be placed on a crude oil resource.
- *
- * <h2>Snapping</h2>
- *
- * <p>Factorio's placement ghost snaps a pumpjack to the well under the cursor. Here the same
- * thing is done in {@link #getStateForPlacement}: whichever of the nine blocks over a well the
- * player clicks, the machine lands centred on the well. Click a block that is not over a well and
- * nothing is placed, exactly as Factorio refuses. {@link #snapPart} is the rule, and it is answered
- * through {@link #placementPart} so that {@code nauvis_lib}'s ghost asks the same question and
- * what is drawn is what will happen.
- *
- * <h2>Facing</h2>
- *
- * <p>The facing decides which corner the oil leaves by and which way the pipe points. A player
- * placing one gets the outlet on the far side from them, pointing away - the way a boiler's steam
- * leaves at its back - so the pipe runs off towards the refinery rather than back through their
- * legs. Turn round to turn the machine.
- */
+/** The block half of the pumpjack: ten blocks, one of which holds anything. */
 public class PumpjackBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
     public static final MapCodec<PumpjackBlock> CODEC = simpleCodec(PumpjackBlock::new);
@@ -146,12 +123,6 @@ public class PumpjackBlock extends BaseEntityBlock implements Multiblock.Machine
     /**
      * Which cell of the machine should land on {@code clicked} so that its centre stands over a
      * well, or -1 if no cell can.
-     *
-     * <p>The centre is tried first, so a click exactly over a well is honoured as it stands; then
-     * the other eight ground cells, which is what makes a click anywhere on the 3x3 over a well
-     * land the machine on it. The pump cell above the centre is not a candidate: a click in the
-     * air over a well is not how anyone places a machine, and answering it would put the ground
-     * cells inside the ground.
      */
     public static int snapPart(LevelReader level, BlockPos clicked, Direction facing) {
         MachineShape shape = PumpjackShape.SHAPE;

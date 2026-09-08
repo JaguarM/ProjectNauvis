@@ -6,19 +6,7 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.BaseEntityBlock;
 
-/**
- * The stack inserter: the fast inserter's swing with a hand that holds several.
- *
- * <p>Factorio 2.0 calls it the bulk inserter; the pack speaks the dump's names. It turns at the
- * fast inserter's 864 degrees a second and moves a <em>handful</em> each swing rather than one
- * item, and the size of the hand is the point of the whole line of research behind it: the
- * technology that unlocks it grants the first extra item, and each level of
- * {@code inserter-capacity-bonus} another. That is why the hand size is a question to the world
- * rather than a number on this class - see {@link #handSize} and {@link Bonuses}.
- *
- * <p>It is the inserter a bus is loaded and unloaded with, and it costs what that is worth:
- * fifteen circuits, fifteen gears, an advanced circuit and a fast inserter.
- */
+/** The stack inserter: the fast inserter's swing with a hand that holds several. */
 public class StackInserterBlock extends ElectricInserterBlock {
 
     public static final MapCodec<StackInserterBlock> CODEC = simpleCodec(StackInserterBlock::new);

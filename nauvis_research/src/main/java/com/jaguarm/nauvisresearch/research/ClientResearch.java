@@ -11,22 +11,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.crafting.Recipe;
 
-/**
- * The client's copy of what the world has researched.
- *
- * <p>Two things read it: the research screen, which draws it, and the recipe panel's lock, which
- * decides what to hide. Both are presentation - the server checks everything again - and both
- * have to be right the moment a technology finishes, because the panel is very often open when
- * one does.
- *
- * <p>{@link #revision} is how the panel notices. It moves on every sync, and Facrafting's
- * {@code RecipeLock#revision} reports it, so a strip built before a technology completed is
- * rebuilt on the next frame after it did. There is no event for this on purpose: an event would
- * be Facrafting subscribing to something that knows what research is.
- *
- * <p>Nothing here is client-only by type, so common code may touch it. On a dedicated server it
- * simply stays empty and its revision stays zero.
- */
+/** The client's copy of what the world has researched. */
 public final class ClientResearch {
 
     private ClientResearch() {}

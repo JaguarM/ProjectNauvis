@@ -19,29 +19,8 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The clouds: how much pollution is over each chunk of a level, where in each chunk it last came
- * from, and how much the level has ever made.
- *
- * <h2>Factorio's model, at chunk size</h2>
- *
- * <p>Factorio keeps pollution per chunk - a number over each 32-by-32 - and every minute a chunk
- * gives two percent of what it holds to each of its four neighbours and the ground absorbs some.
- * This is the same, on Minecraft's 16-by-16 chunks: {@link #SPREAD} to each neighbour and an
- * absorption per chunk, every minute, in {@link #drift}. What the ground takes is the caller's
- * to say - {@link Absorption} reads the biome, so a forest takes more than a desert - and the
- * flat {@link #ABSORB_PER_MINUTE} is what a test with no world uses. What it gives is a cloud that
- * grows until the edges thin to nothing, which is the shape a Factorio cloud has.
- *
- * <p>The <b>source</b> of a chunk's cloud is the position of the last machine that breathed into
- * it. Factorio's attack groups walk to the polluters, so the cloud has to remember where they
- * are; one position a chunk is enough, since the group fights whatever else it finds there.
- *
- * <p>One of these per level, on that level's storage, since the clouds over the Nether are not the
- * clouds over the overworld. Pure arithmetic apart from the level it is fetched from, so the drift
- * is tested on a fresh one without a world.
- *
- * <p>The total is what the level has emitted since it began, which is what stands in for
- * Factorio's evolution: the longer and dirtier the factory, the worse what comes for it.
+ * The clouds: how much pollution is over each chunk of a level, where in each chunk it last
+ * came from, and how much the level has ever made.
  */
 public class PollutionState extends SavedData {
 

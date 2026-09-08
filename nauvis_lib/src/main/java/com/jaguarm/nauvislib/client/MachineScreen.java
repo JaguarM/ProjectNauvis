@@ -19,30 +19,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.client.fluid.FluidTintSource;
 import org.jspecify.annotations.Nullable;
 
-/**
- * The screen every machine in the pack is drawn on.
- *
- * <p>A dark panel in Facrafting's palette, which Yannic likes, with vanilla's slot sprite at every
- * slot the menu has, which he also likes: the panel reads as one interface with the crafting
- * panel that opens beside it, and the slots read as Minecraft. Over that a machine draws its own
- * meters and bars in {@link #paint}, and says what it is doing in {@link #statusLine}.
- *
- * <h2>Meters</h2>
- *
- * <p>A fire, a bolt and an arrow, each drawn the way vanilla's furnace draws its flame: the whole
- * sprite tinted dark as the empty meter, then the bright sprite over it from the bottom up - or
- * the left, for the arrow - as far as it is full. The sprites are this library's, in vanilla's
- * pixel idiom, from {@code texture-workshop/make_gui_textures.py}; vanilla's own flame and arrow
- * could not be used, because they carry the panel's grey baked in around the shape and are boxes
- * on a dark panel.
- *
- * <h2>Where the numbers are</h2>
- *
- * <p>Each screen keeps its own position constants, because {@code tools/check_gui_layout.py} reads
- * them out of the source and fails the build on two things drawn through each other. The panel is
- * the same size everywhere and the checker knows it; the status line's {@code STATUS_Y} is the
- * one number every screen has to declare, and {@link #statusY} hands it over.
- */
+/** The screen every machine in the pack is drawn on. */
 public abstract class MachineScreen<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> {
 
     public static final int PANEL_WIDTH = 176;

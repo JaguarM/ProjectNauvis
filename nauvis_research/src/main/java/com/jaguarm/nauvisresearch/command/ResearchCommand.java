@@ -31,26 +31,6 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
  * {@code /research}: the tree, by hand.
- *
- * <p>Research is per world and the only way to move it in game is to build a lab, power it, feed
- * it packs and wait - which is the right way round for playing and hopeless for looking at
- * anything. Half of what this pack has built is behind a technology, so <b>every playtest of a
- * machine was previously a playtest of the whole early game first</b>. That is what this is for.
- *
- * <p>It is not a gameplay path and does not pretend to be: gamemaster permission, the same level
- * {@code /time} and {@code /gamemode} want, so a survival world's players cannot reach it.
- *
- * <h2>Grant and forget both cascade, in opposite directions</h2>
- *
- * <p>{@code grant} completes a technology <em>and every prerequisite it has</em>, because what a
- * person testing wants is "put me where I can build a solar panel" and not a list of eleven names
- * in dependency order. {@code forget} drops a technology <em>and everything that depends on it</em>
- * for the mirror-image reason, and because the alternative is a tree that says a technology is
- * researched while its prerequisite is not - a state nothing else in the pack produces, so making
- * it easy to produce by accident would mean every odd screen afterwards had two possible causes.
- *
- * <p>Both report how many technologies moved rather than just the one named, so a cascade that did
- * more than you expected says so at the time.
  */
 @EventBusSubscriber(modid = NauvisResearch.MODID)
 public final class ResearchCommand {

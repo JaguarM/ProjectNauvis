@@ -9,25 +9,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.level.ServerPlayer;
 
-/**
- * Gives each player the advancement for what the world has researched.
- *
- * <h2>A record, not the record</h2>
- *
- * <p>Research is per world and advancements are per player - that difference is the reason the
- * tree is a {@code SavedData} in the first place, and nothing here changes it. These are awarded
- * <em>because</em> the world finished something, never the other way round, and their criterion is
- * {@code minecraft:impossible} so nothing a player does can earn one.
- *
- * <p>What they buy is the part Minecraft already does well: a toast in the corner with the
- * technology's name and the sound that goes with it, and a tab that fills in as a log of what has
- * been researched. Writing either by hand would be worse than what vanilla ships.
- *
- * <p>They are <b>not</b> the technology screen. An advancement has exactly one parent and a third
- * of these technologies have more than one prerequisite, so an advancement tree would silently
- * omit the edges a player opens it to see - which is why every one of these hangs off a single
- * root instead of pretending to be the graph.
- */
+/** Gives each player the advancement for what the world has researched. */
 public final class ResearchAdvancements {
 
     private ResearchAdvancements() {}

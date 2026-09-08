@@ -39,32 +39,7 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
-/**
- * A boiler: burns solid fuel to turn water into steam.
- *
- * <p>Factorio's boiler takes water in at both ends and gives steam out of the back, one steam for
- * one water, and does nothing at all without water. This one is the same. The water is real
- * water - {@code minecraft:water}, which is what an offshore pump puts into a pipe and what
- * {@code data/mapping.json} maps Factorio's water to - and the steam is a real fluid too, so a
- * pipe from {@code nauvis_fluids} carries either without this mod compiling against it. The
- * ratio is what is kept: {@value #STEAM_PER_TICK} steam a tick from as much water, an engine
- * burns {@value SteamEngineBlockEntity#STEAM_PER_TICK}, and an offshore pump gives forty - so one
- * boiler feeds two engines and one pump feeds twenty boilers, exactly as in Factorio.
- *
- * <h2>Water comes in two ways</h2>
- *
- * <p>A pipe run touching either end pushes water in, because {@link #waterAccess} accepts it. And
- * a boiler standing end to end with another draws from its neighbour's tank, the way an engine
- * draws steam from the engine before it - so a row of boilers off one pipe is fed along the row,
- * which is how Factorio's boilers pass water through. Two neighbours level their tanks rather
- * than one emptying the other, so a row settles and sleeps instead of shuffling one tankful back
- * and forth for ever.
- *
- * <p>What it does <em>not</em> do is push steam. Engines pull, which is what lets both ends
- * sleep: the boiler only runs when its own buffer has room, and its buffer only gains room when
- * an engine takes some - which happens through {@link FluidOutputAccess}, the extract-only view
- * a pipe or an engine sees.
- */
+/** A boiler: burns solid fuel to turn water into steam. */
 public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
 
     public static final int FUEL_SLOT = 0;
@@ -251,20 +226,7 @@ public class BoilerBlockEntity extends BlockEntity implements MenuProvider {
         return true;
     }
 
-    /**
-     * Levels this tank with whatever is just outside either water port.
-     *
-     * <p>Two faces, not six: a boiler takes water at its ends, which is what makes its facing
-     * mean something and what lets a row of them chain. It reaches through
-     * {@code Capabilities.Fluid.BLOCK}, so the boiler next along and anything else that holds
-     * water are the same thing to it; a pipe run holds its water in the run and not in any block,
-     * so a pipe answers nothing here and pushes instead.
-     *
-     * <p>Half the difference, never the lot. Taking everything a fuller neighbour has would leave
-     * that neighbour emptier than this one, and it would take it all back on its next tick: two
-     * boilers passing one tankful between them for ever, each waking the other. Meeting in the
-     * middle converges in one step and then nothing moves, which is what lets the row sleep.
-     */
+    /** Levels this tank with whatever is just outside either water port. */
     private void drawWater(ServerLevel level) {
         if (westEnd == null) {
             buildCaches(level);

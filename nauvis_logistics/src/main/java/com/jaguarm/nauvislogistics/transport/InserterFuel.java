@@ -9,16 +9,7 @@ import net.minecraft.world.level.block.entity.FuelValues;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 
-/**
- * The burner inserter's one slot: what it burns.
- *
- * <p>It refuses anything that will not burn. That check used to live in the right-click handler,
- * which is gone now that the inserter opens a screen, and a slot that takes a diamond and then
- * sits there doing nothing is a worse answer than one that will not take it.
- * {@code ResourceHandlerSlot} reads {@link #isValid} for {@code mayPlace} and
- * {@code StacksResourceHandler} already reports zero capacity for what it rejects, so this one
- * override closes the screen, the hopper and the other inserter at once.
- */
+/** The burner inserter's one slot: what it burns. */
 public class InserterFuel extends ItemStacksResourceHandler {
 
     private final Runnable onChanged;

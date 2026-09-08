@@ -7,16 +7,7 @@ import net.minecraft.world.item.equipment.ArmorMaterial;
 import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.item.equipment.EquipmentAssets;
 
-/**
- * Factorio's two plain armours, as chestplates.
- *
- * <p>Factorio's armour is one item for the whole body; Minecraft's is four, and a chestplate is
- * the one that reads as "armour" on its own. Light armour is forty iron plates and stops a fifth
- * of what hits you, which is chainmail's five points here; heavy armour is fifty steel and a
- * hundred copper and stops a good deal more, which is netherite's eight with its toughness and
- * its knockback resistance. Both are drawn with vanilla's own equipment models - chainmail and
- * netherite - since a texture of a worn armour is a great deal of art for two items.
- */
+/** Factorio's two plain armours, as chestplates. */
 public final class Armors {
 
     private Armors() {}

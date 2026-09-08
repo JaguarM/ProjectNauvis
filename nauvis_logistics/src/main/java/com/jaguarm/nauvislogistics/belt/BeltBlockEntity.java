@@ -26,26 +26,8 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 
 /**
- * A belt's membership of a run, and the items standing on its own block when nobody is asking the
- * run.
- *
- * <p>It never ticks. Like the pipe's and the pole's, it exists for the three lifecycle hooks a
- * block alone does not get - {@code onLoad}, {@code setRemoved}, {@code onChunkUnloaded} - and,
- * because a belt carries things, for one piece of state.
- *
- * <h2>Why the items are written here rather than on the run</h2>
- *
- * <p>The run owns the items and is the only thing that moves them. But a run is derived: it is
- * built out of whatever belts are loaded, and it is taken apart and rebuilt every time that
- * changes. It has nowhere to live on disk and no chunk to belong to.
- *
- * <p>A <em>block</em> has both. So what is saved is "these items are standing on this block, this
- * far along it", which is the same pinning {@link BeltRun#park()} uses when a line is rebuilt, and
- * it survives everything: a chunk cycling, a line being cut in half, two lines being joined.
- *
- * <p>It is also the whole of what a joining client needs. The update tag carries the same list, so
- * a player walking up to a working belt gets what is on each block as its chunk arrives, and then
- * follows along by simulating the run - see {@link BeltRun}.
+ * A belt's membership of a run, and the items standing on its own block when nobody is asking
+ * the run.
  */
 public class BeltBlockEntity extends BlockEntity {
 
@@ -121,20 +103,7 @@ public class BeltBlockEntity extends BlockEntity {
         }
     }
 
-    /**
-     * A belt's own state changed under it - it was turned, or it started or stopped climbing.
-     *
-     * <p><b>This is the only hook for that which fires on both sides</b>, and it is the reason the
-     * client's copy of a line stays right. {@code LevelChunk.setBlockState} calls it whenever a
-     * block state changes and the block entity survives, which is exactly the case no other
-     * lifecycle hook covers: nothing is placed, nothing is removed, and the lines through this
-     * block are different lines afterwards. The server used to say so by hand and the client was
-     * never told at all, so a turned belt left every client drawing items along the old line until
-     * the chunk was reloaded.
-     *
-     * <p>Only facing and shape, because they are the whole of what a run is built from. The world
-     * already holds the new state by the time this runs, so a rebuild reads what it should.
-     */
+    /** A belt's own state changed under it - it was turned, or it started or stopped climbing. */
     @Override
     public void setBlockState(BlockState state) {
         BlockState old = getBlockState();
@@ -167,16 +136,7 @@ public class BeltBlockEntity extends BlockEntity {
         }
     }
 
-    /**
-     * Spills what is standing on this block when it is broken.
-     *
-     * <p>This is the hook, not {@code Block#affectNeighborsAfterRemoval} - by the time that runs
-     * the block entity is gone and the run has already forgotten the belt, so it compiles, reads
-     * correctly and drops nothing. See {@code docs/API-26.2.md}.
-     *
-     * <p>Only this block's items. Everything else on the line is standing on belts that are still
-     * there, and {@link BeltRun#park()} puts it back on whichever line the break leaves behind.
-     */
+    /** Spills what is standing on this block when it is broken. */
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         super.preRemoveSideEffects(pos, state);
@@ -195,18 +155,7 @@ public class BeltBlockEntity extends BlockEntity {
         }
     }
 
-    /**
-     * Lifts everything standing on this block off whatever run has it, and hands it over.
-     *
-     * <p>For upgrading a belt in place - see {@code BeltBlock.useItemOn}. Swapping the block for a
-     * faster one destroys this block entity and builds another, and the items in between belong to
-     * neither: they have to come off the old run <em>before</em> the block changes, because the
-     * moment it does {@link #preRemoveSideEffects} would spill them on the floor, and the run
-     * itself is rebuilt around a belt that is no longer there.
-     *
-     * <p>What comes back is in the same form {@link #cargo()} answers in - a lane and a distance
-     * along this block - so it can be put on the new belt exactly where it was standing.
-     */
+    /** Lifts everything standing on this block off whatever run has it, and hands it over. */
     public List<Cargo> takeCargo() {
         BeltRun run = run();
         List<Cargo> taken = run == null ? stored : takeFrom(run);
@@ -214,16 +163,7 @@ public class BeltBlockEntity extends BlockEntity {
         return taken;
     }
 
-    /**
-     * Puts a lifted load onto this belt, now or as soon as it has a run.
-     *
-     * <p>The other half of {@link #takeCargo}. A block entity that has just been built by a
-     * {@code setBlock} is not in the graph yet - {@code onLoad} is deferred to the next
-     * {@code tickBlockEntities} - so this goes through {@link #stored}, which is the same route
-     * items take when a chunk is read from disk, and is handed over the moment the belt joins.
-     * That also puts it in the update tag, so a client swapping the same block gets the load with
-     * the block rather than losing it.
-     */
+    /** Puts a lifted load onto this belt, now or as soon as it has a run. */
     public void giveCargo(List<Cargo> cargo) {
         if (cargo.isEmpty()) {
             return;

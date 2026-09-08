@@ -21,32 +21,7 @@ import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
-/**
- * What automation sees when it looks at a machine, from any of the blocks it is made of.
- *
- * <p>The view published here is never the machine's own inventory: it accepts insertions into
- * the input slots only and allows extraction from the output slots only. Without that, a hopper
- * under an assembler would drain the ingredients it was just fed, and one under a furnace would
- * take its coal back.
- *
- * <h2>Why this is {@code registerBlock} and not {@code registerBlockEntity}</h2>
- *
- * <p>An assembler is ten blocks and one block entity. {@code registerBlockEntity} would publish
- * the inventory at the middle of the machine only - a block a player can barely reach and an
- * inserter can never stand next to, since it is surrounded by the machine's own deck. Registering
- * against the <em>block</em> lets any cell answer, resolving the anchor by arithmetic first.
- *
- * <p>The result is the Factorio behaviour and the reason the footprint was worth having: a machine
- * is fed or emptied anywhere along its perimeter, and on top of its deck, rather than at one
- * privileged spot.
- *
- * <p>Energy is published only by the machines that spend it. A burner furnace offers no energy
- * capability at all, so a pole beside a stone furnace never counts it as something to supply.
- *
- * <p>Nothing invalidates caches by hand here. NeoForge invalidates a position when its block
- * changes, and every cell of a machine is placed and removed as its own block change, so each
- * cell's entry goes stale exactly when it stops being true.
- */
+/** What automation sees when it looks at a machine, from any of the blocks it is made of. */
 @EventBusSubscriber(modid = NauvisMachines.MODID)
 public final class ModCapabilities {
 

@@ -17,14 +17,6 @@ import net.minecraft.world.level.material.Fluids;
 /**
  * A chemical plant: the machine for everything that is neither smelting nor assembling - the
  * crackings, solid fuel, lubricant, sulfur and sulfuric acid, plastic, batteries, explosives.
- *
- * <p>Factorio's numbers: two fluids in and two out, two item slots in and one out, crafting speed
- * one, and 210 kW - at the pack's ratio, {@value #ENERGY_PER_TICK} FE a tick. Its recipes are
- * {@code chemistry}, which {@code data/mapping.json} says of each of them.
- *
- * <p>Water keeps the left input, because every chemical plant recipe in Factorio that takes water
- * takes it first; the other fluid takes the right. The outputs are in recipe order, and no recipe
- * here makes two.
  */
 public class ChemicalPlantBlockEntity extends ProcessingBlockEntity {
 

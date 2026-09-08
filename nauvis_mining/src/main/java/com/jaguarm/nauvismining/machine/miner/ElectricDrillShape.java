@@ -6,26 +6,7 @@ import java.util.List;
 import com.jaguarm.nauvislib.multiblock.MachineCell;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 
-/**
- * Three tiles by three, the size Factorio made the electric mining drill.
- *
- * <p>It was a single block until version 2.0, and the change is not cosmetic. A drill is the thing
- * a player builds most of, in rows across an ore patch, so its footprint decides what a mining
- * field looks like more than any other number in this mod.
- *
- * <h2>Half a block high, so you walk over a drill field rather than through it</h2>
- *
- * <p>A field of drills is the arrangement where crossing a machine matters most: there are dozens
- * of them, they cover the ground you want to walk on, and there is nowhere else to put them. At
- * half a block the player's own step carries them across without a jump, so a hundred drills read
- * as one flat floor.
- *
- * <p>The exception is the output head at the front, which stands a full block and is the one thing
- * you walk around. It earns that by being the part that hands you the ore, and it stands where the
- * drill faces - so a row of drills all pointed at the same belt puts every head on the same side.
- *
- * <p>Nothing here is scenery you pass through: what you can see, you can stand on.
- */
+/** Three tiles by three, the size Factorio made the electric mining drill. */
 public final class ElectricDrillShape {
 
     private ElectricDrillShape() {}

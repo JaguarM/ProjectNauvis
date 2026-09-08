@@ -11,25 +11,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 /**
  * One block of a multi-block machine: where it sits in the machine's own frame, what it draws,
  * and what you bump into.
- *
- * <p><b>The boxes are the only description of this cell's shape.</b> The block builds its
- * {@code VoxelShape} from them and the model provider builds the model's elements from them, so
- * what you see and what you can hit are the same numbers rather than two lists that agree today.
- * That rule started on the electric pole, which was a mechanism of its own until it became one of
- * these; see {@code PoleBoxes} in nauvis_power for the same idea at its smallest.
- *
- * <p>Boxes are in model pixels - sixteen to a block - and relative to <em>this cell</em>, not to
- * the machine. A box may leave {@code 0..16} and hang into a neighbouring block, which is how a
- * chimney or a flywheel gets drawn without occupying a block of its own; the limit is
- * {@code -16..32}, from {@code CuboidModelElement}, and {@code tools/check_models.py} fails the
- * build on a box outside it. Collision, unlike drawing, is clipped to the cell by the game, so an
- * overhanging box is scenery you walk through unless a real cell is there too.
- *
- * <h2>Why collision is a second list</h2>
- *
- * <p>Same reason as the pole's crossarm: a shape you cannot see should not catch you. A machine's
- * silhouette is allowed to be taller than the thing you bump into, and for a field of machines
- * you are meant to walk across, it usually should be.
  */
 public final class MachineCell {
 

@@ -37,48 +37,6 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 /**
  * The technology screen: a list on the left, one technology's neighbourhood in the middle, and
  * what it costs and hands over on the right.
- *
- * <h2>This file paints; it does not decide</h2>
- *
- * <p>Which technologies are in the picture and where they go is {@link TechnologyLayout}'s, and
- * that split is the whole reason this was worth doing in two pieces. Nothing in this repository
- * can look at a screen - a permanent hole rather than a gap in the suite - so the half that is
- * <em>true or false</em> lives in common code with {@code technology_layout_is_sound} on it, and
- * what is left here is the half that is <em>nice or ugly</em> and can only ever be judged by
- * somebody looking.
- *
- * <h2>Why there is a list, and why the graph is not the whole tree</h2>
- *
- * <p>Two attempts drew all of it and both were unreadable in the same place: a graph with a couple
- * of hub technologies produces bundles of arrows no ordering can separate. Factorio does not draw
- * the whole tree either - it draws what you are pointed at, what leads to it, and a little of what
- * it leads to. <b>The list and the search box are the navigation</b>, the graph is context, and
- * clicking anything in the graph moves the view onto it.
- *
- * <p>That makes the graph a place to look rather than a place to click, so <b>starting a research
- * is a button on the right</b>. Clicking a node used to start it, which was the same gesture as
- * "show me what this needs" and could only ever be one of the two.
- *
- * <p><b>The list is sorted into what it is coloured by</b> - what can be advanced now in
- * yellow-brown, then what cannot in red, then what is done in green at the bottom. That is
- * Factorio's, and the sort is what makes the colours worth having: the top of the list is the
- * answer to "what next", and everything below the first block is there to be read rather than
- * acted on.
- *
- * <h2>What a node says without being hovered</h2>
- *
- * <p>Colour is state, and the states are the questions a player actually has: done, being
- * researched now, startable, waiting on a craft, or not yet reachable. Under the icon are
- * <b>the science packs it costs</b>, at twelve pixels rather than as a line of text, because
- * "everything past here needs green" is a thing you read a tech tree for and cannot read one
- * tooltip at a time. A bar under that is units paid, drawn on <b>every</b> technology that has any
- * rather than only the current one, because progress survives a switch - see {@code ResearchState}.
- *
- * <p>A descendant carries <b>{@code +n} in its corner</b> when it needs technologies the picture
- * does not show, so nothing reads as "research this and you get that" when three other things are
- * wanted too.
- *
- * <p>Pan by dragging, zoom with the wheel over the graph; the wheel scrolls the list over the list.
  */
 public class ResearchScreen extends Screen {
 
@@ -366,18 +324,7 @@ public class ResearchScreen extends Screen {
         return hovered;
     }
 
-    /**
-     * One prerequisite arrow, drawn as an elbow rather than a diagonal.
-     *
-     * <p>Right out of the parent, across, then right into the child - which is how vanilla's
-     * advancement screen and Factorio's technology screen both do it, and not only for taste:
-     * several diagonals converging on one node are impossible to tell apart, where elbows share
-     * their horizontal runs and read as a bus.
-     *
-     * <p><b>Where the across happens is the lane</b> - see {@link TechnologyLayout}. Two arrows out
-     * of one parent share their whole elbow, which is what a fan is; two out of different parents
-     * share a channel only where their runs cannot overlap.
-     */
+    /** One prerequisite arrow, drawn as an elbow rather than a diagonal. */
     private void renderEdge(GuiGraphicsExtractor graphics, TechnologyLayout.Edge edge,
             Set<ResourceKey<Technology>> path, int thickness) {
 
@@ -566,20 +513,8 @@ public class ResearchScreen extends Screen {
     }
 
     /**
-     * Which block of the list a technology belongs in: what can be advanced now, then what cannot,
-     * then what is done.
-     *
-     * <p>Factorio's order, and it is the order because it is a list of what to do next rather than
-     * an index of everything there is. A researched technology is still listed - you go back to
-     * them to read what they gave you - but it is listed last, because it is not work.
-     *
-     * <p>A triggered technology counts as ready: <em>craft fifty iron plates</em> is a thing to go
-     * and do, even though no lab does it, and burying it with what cannot be reached at all would
-     * hide the whole of the early game.
-     *
-     * <p>The one being researched sorts above the rest of its block and keeps its own colour. That
-     * is a fourth thing on a list of three, and it earns it: "which one am I on" is the question
-     * the screen is opened for most often.
+     * Which block of the list a technology belongs in: what can be advanced now, then what
+     * cannot, then what is done.
      */
     private int rank(Holder.Reference<Technology> holder) {
         if (ClientResearch.isCompleted(holder.key())) {

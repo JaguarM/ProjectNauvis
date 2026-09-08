@@ -13,16 +13,7 @@ import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
-/**
- * What a solar panel says: what it is making, and if nothing, why.
- *
- * <p>Three reasons for nothing and they want different things from the player - a full buffer
- * wants something to draw from it, a roof wants removing, and the night wants waiting out - so the
- * line says which. Jade's own energy bar draws the buffer.
- *
- * <p>Two classes, a data half and a {@code Client} half, because Jade throws at registration if
- * one object is both.
- */
+/** What a solar panel says: what it is making, and if nothing, why. */
 public class SolarPanelReadout implements IServerDataProvider<BlockAccessor> {
 
     public static final SolarPanelReadout INSTANCE = new SolarPanelReadout();

@@ -7,22 +7,8 @@ import com.jaguarm.nauvislib.multiblock.MachineCell;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 /**
- * What an accumulator looks like and how much room it takes: two tiles by two, the size Factorio
- * made it, and one block high.
- *
- * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py}
- * holds this to the {@code size} recorded for {@code accumulator} in {@code data/mapping.json}. The
- * height is ours: a full block, which is the walkability table's wall row, one jump and no more. A
- * field of accumulators is the one thing in a Factorio base you do walk round rather than across,
- * so a block-high box is right, and a 2x2 has no inside for a recessed floor anyway.
- *
- * <h2>Four cells, one model</h2>
- *
- * <p>Every cell is the same quarter of a squat cabinet, turned to its corner: a body to ten
- * pixels, a lid a pixel in from the two outer edges so the four lids read as one plate with a lip
- * round it, and a raised square on the inner corner so the four meet in a terminal block in the
- * middle of the top. Nothing leaves its cell, which keeps every face's texture where it belongs;
- * {@code check_models.py} refuses a box past {@code 0..16} with no {@code uv} of its own.
+ * What an accumulator looks like and how much room it takes: two tiles by two, the size
+ * Factorio made it, and one block high.
  */
 public final class AccumulatorShape {
 

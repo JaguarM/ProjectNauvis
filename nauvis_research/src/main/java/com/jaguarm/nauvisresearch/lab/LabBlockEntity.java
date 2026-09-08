@@ -36,45 +36,7 @@ import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
-/**
- * A lab: turns science packs and electricity into research.
- *
- * <h2>What it is researching</h2>
- *
- * <p>The world is. A lab does not choose and does not remember - it asks {@link Research} what
- * the current technology is, takes one of each pack that technology names, and reports a unit
- * done. That is Factorio's arrangement exactly, and it is why twelve labs finish a technology
- * twelve times as fast without any of them knowing about the others.
- *
- * <p>The two things that changed when the tree arrived were both handovers rather than rewrites:
- * a cycle consumes the packs the <em>technology</em> asks for instead of one of everything the
- * lab happens to be holding, and it takes the technology's own time instead of a fixed
- * {@link #IDLE_TICKS_PER_CYCLE}. {@link #cycles()} still counts what this lab has contributed,
- * because a player looking at one machine wants to know whether it is doing anything.
- *
- * <h2>The numbers</h2>
- *
- * <p>Factorio's lab draws 60 kW against an assembling machine 1's 75, and the pack keeps the
- * ratio rather than the units - so eight FE a tick against the assembler's ten. That much is
- * identity by proportion. The time a unit takes is not the lab's to choose: it comes from the
- * technology, which is what {@link Technology#ticksPerUnit()} is.
- *
- * <h2>Sleeping</h2>
- *
- * <p>No ticker. A lab with no packs, or no power, schedules nothing and costs nothing - see
- * non-negotiable #5. Three things can give it work again, and it needs all three: a pack arriving
- * in its slots, energy arriving in its buffer (which is what {@link MachinePower}'s callback is for,
- * because a lab that ran dry has stopped scheduling and cannot notice anything itself), and a
- * neighbour changing, which covers a pole being connected.
- *
- * <p><b>There is a fourth thing that can give it work and no signal for it:</b> somebody picking
- * a technology on the research screen, possibly in another dimension. A lab that is fed and
- * powered but has nothing to research therefore looks again every {@link #IDLE_RECHECK_TICKS}
- * rather than sleeping - the same compromise the long-handed inserter makes, and for the same
- * reason: the news it is waiting for comes from outside the one-block radius a {@code setChanged}
- * reaches. It is bounded by the number of labs a player has deliberately loaded with packs while
- * researching nothing, which is a state that lasts as long as it takes to open a screen.
- */
+/** A lab: turns science packs and electricity into research. */
 public class LabBlockEntity extends BlockEntity implements MenuProvider {
 
     /** One slot per kind of science pack, which is Factorio's arrangement. See {@link LabInventory}. */

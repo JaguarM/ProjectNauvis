@@ -32,25 +32,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 
-/**
- * The block half of the steam engine. Right-click to ask how much charge it is holding.
- *
- * <p>It wakes on two things a boiler does not care about: a neighbouring block changing, which is
- * a boiler being placed or broken, and a neighbouring block <em>entity</em> changing, which is a
- * boiler gaining steam. The second is the same {@code onNeighborChange} trick the inserter uses -
- * every {@code setChanged} reaches all six neighbours - and without it an engine that ran dry
- * would sleep through the boiler beside it coming back to life.
- *
- * <h2>Five tiles by three</h2>
- *
- * <p>{@link SteamEngineShape} is the footprint and the geometry, and it is the machine that proves
- * the mechanism: five tiles is past what any single block model can draw. {@link Multiblock} is
- * everything about being made of seventeen blocks.
- *
- * <p>Both wakes now arrive at any of those seventeen and are forwarded to the one holding the
- * block entity. That matters more here than anywhere else in the pack - an engine has a great deal
- * of surface, and the block that hears a pipe fill up is rarely the block that has to act on it.
- */
+/** The block half of the steam engine. Right-click to ask how much charge it is holding. */
 public class SteamEngineBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
     public static final MapCodec<SteamEngineBlock> CODEC = simpleCodec(SteamEngineBlock::new);

@@ -1,82 +1,27 @@
 #!/usr/bin/env python3
 """
-Generate the technology tree from Factorio's tree plus the mapping table.
+Generate the technology tree from Factorio's tree plus the mapping table (CLAUDE.md, rule 2).
 
-    data/technologies.json  +  data/mapping.json  ->  nauvis_research technology JSON
+    data/technologies.json + data/mapping.json -> nauvis_research technology JSON
 
-Non-negotiable #2, for the other generated half of the pack: a research cost is the same kind of
-fact as an ingredient list. It lives in world saves and in the player's head, so it comes from
-Factorio's own data and never from anybody's memory of the game.
+Two files per technology: the technology, in the datapack registry `nauvis_research:technology`
+at `nauvis_research/src/main/resources/data/nauvis_research/nauvis_research/technology/<name>.json`
+(the doubled namespace is NeoForge's layout for a modded datapack registry), and a vanilla
+advancement at `.../data/nauvis_research/advancement/<name>.json` with an `impossible` criterion
+that the server awards when the world completes the technology, so the toast and sound are
+vanilla's. The icon is the first unlocked item that is vanilla, else the lab, because an icon is
+registry-validated and most unlocks are unregistered.
 
-Two files come out per technology. The first is the technology itself, in the datapack registry
-`nauvis_research:technology`:
-
-  nauvis_research/src/main/resources/data/nauvis_research/nauvis_research/technology/<name>.json
-
-The doubled namespace is NeoForge's layout for a modded datapack registry, not a mistake: the
-first is the datapack supplying the entry and the second is the registry's own namespace.
-
-The second is a **vanilla advancement**, purely so that finishing a technology pops the toast and
-plays the sound Minecraft already has for exactly this feeling:
-
-  nauvis_research/src/main/resources/data/nauvis_research/advancement/<name>.json
-
-It is never earned by anything the player does - its criterion is `minecraft:impossible` and the
-server awards it when the *world* completes the technology. Research is per world and advancements
-are per player, so these are a per-player *record* of a world fact rather than the fact itself.
-They are generated here rather than written because there is one per technology and the tree
-grows; a hand-kept list would be one commit behind for ever.
-
-**The icon is the one thing that has to be careful.** An advancement's icon is registry-validated
-at load, so naming an item no mod has registered yet fails the file - and most of what this tree
-unlocks does not exist yet. So the icon is the first unlocked item that is *vanilla*, where there
-is one, and the lab otherwise: both are certain to exist.
-
-Two ways a technology is paid for
----------------------------------
-
-**A cost** - N units, one of each science pack per unit, so many seconds a unit. A lab works
-through it.
-
-**Or a trigger** - *craft fifty iron plates*, *craft a lab*, *pump crude oil once* - and it
-completes the moment that happens, with no lab and no packs at all. Two trigger types: `craft-item`
-names an item, `mine-entity` names a resource a machine takes out of the world - the id of the
-block it stands on, which for crude oil is the same id as the fluid. That is what makes the opening work: the first
-technologies are triggered, so a new world researches its way to the boiler and the lab with
-nothing but a pickaxe and a furnace, and only then does science become a thing you build for.
-
-Exactly one of the two, and the generator refuses anything with both or neither.
-
-What is dropped, and why each is a decision rather than an omission
-------------------------------------------------------------------
-
-**Nothing, any more, of the modifiers - but most of them still do nothing.** A technology's other
-effects - a bigger inserter hand, a faster lab, a harder-hitting bullet - are written into the
-file as `modifiers`, each a Factorio modifier type and a number, and the research mod sums the
-earned ones by type and answers whatever machine asks through `nauvis_lib`'s `Bonuses`. A type no
-machine reads is a number nobody asks for; the summary counts them by type so it is visible how
-much is waiting on a mechanic. `ammo-damage` and `turret-attack` keep their category or turret as
-`target`, since one bullet bonus is not another.
-
-**Technologies whose prerequisites are not in the tree.** The tree is a graph and a dangling edge
-is a technology nobody can ever start - it would sit in the list looking perfectly normal. They
-are dropped transitively and named in the summary.
-
-**Recipes the pack does not model.** A technology effect names a *recipe*, and Factorio's recipe
-names are not always its item names: `small-lamp` makes a lamp, `solar-panel-equipment` makes a
-portable solar panel. `mapping.json`'s `unlocks` table is where that is written down, one line per
-name, and an unknown name is a `GenError` rather than a guess.
-
-The one guard
--------------
-
-**The tree has to be bootstrappable from an empty world.** A trigger that asks for an item no
-technology has unlocked yet is where a run begins; everything else is reached from there. This
-walks that graph and fails if any technology cannot be reached, which is the difference between a
-tree with an awkward corner and a save file that can never research anything.
+A technology is paid for by exactly one of a cost (units, packs, seconds a unit) or a trigger
+(`craft-item` with an item and a count, or `mine-entity` with a resource id). `modifiers` go
+through whole, with `ammo_category` / `turret_id` folded into `target`; the summary counts them by
+type. Dropped, and named in the summary: technologies whose prerequisites are not in the tree
+(transitively) and unlocks of `skip` items. An `unlock_recipes` name in neither the items nor the
+`unlocks` table is a GenError. The tree must be bootstrappable from an empty world, or the
+generator fails.
 
 Usage:
-    python tools/gen_technologies.py                summary only, writes nothing
+    python tools/gen_technologies.py                summary only
     python tools/gen_technologies.py --check        semantic diff against what is on disk
     python tools/gen_technologies.py --out DIR      write the tree to a staging directory
     python tools/gen_technologies.py --write        write into nauvis_research's resources

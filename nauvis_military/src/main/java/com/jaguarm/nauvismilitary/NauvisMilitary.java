@@ -15,16 +15,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
 
-/**
- * Weapons, armour, the gun turret, the stone wall, and the pollution that makes them necessary.
- *
- * <p>Milestone 5. Factorio's factory is not left alone: what it breathes out drifts across the
- * map and brings the biters, and the pistol, the turret and the wall are what you answer with.
- * Here the biters are Minecraft's own hostiles, drawn to a factory by its pollution rather than
- * spawned in the dark - {@code PLAN.md} has the model - and the machines that pollute are in five
- * other mods, none of which name this one: they hand their figures to {@code nauvis_lib}'s
- * {@link Pollution} and this mod is what listens.
- */
+/** Weapons, armour, the gun turret, the stone wall, and the pollution that makes them necessary. */
 @Mod(NauvisMilitary.MODID)
 public class NauvisMilitary {
 

@@ -29,19 +29,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 
-/**
- * The silo's models, generated from its shape, and flat icons for the three items.
- *
- * <p>Textures are placeholders pointing at vanilla's, as every machine's are: grey concrete for
- * the pad, which is what a silo is made of, white concrete for the rocket and red for its nose.
- * The items borrow too - a firework rocket for the part, a nether star for the satellite, quartz
- * for space science - until there is art. A model naming a texture this mod does not ship is
- * the magenta checkerboard, which reads as broken rather than as art nobody has drawn.
- *
- * <p>One model per shape, not per block: the silo is a hundred and thirty-five blocks and nine
- * files, because the four corners of anything are one corner turned four ways. See
- * {@code NauvisMachinesModels} for the arrangement this copies.
- */
+/** The silo's models, generated from its shape, and flat icons for the three items. */
 public class NauvisRocketModels extends ModelProvider {
 
     public NauvisRocketModels(PackOutput output) {

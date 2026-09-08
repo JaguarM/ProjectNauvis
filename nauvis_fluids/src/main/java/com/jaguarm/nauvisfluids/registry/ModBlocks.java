@@ -20,14 +20,7 @@ public final class ModBlocks {
 
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(NauvisFluids.MODID);
 
-    /**
-     * A length of pipe, which carries steam - and now crude oil, and water.
-     *
-     * <p>It began as an ingredient that happened to be placeable - the boiler costs four of them -
-     * and PLAN.md put moving fluid in milestone 4. Steam brought it forward, because a boiler and
-     * a steam engine that can only be built touching each other is not Factorio's arrangement.
-     * What it carries belongs to the run rather than to the block; see {@code FluidNetwork}.
-     */
+    /** A length of pipe. What it carries belongs to the run, not the block; see {@code FluidNetwork}. */
     public static final DeferredBlock<PipeBlock> PIPE = BLOCKS.registerBlock(
             "pipe",
             PipeBlock::new,
@@ -66,16 +59,7 @@ public final class ModBlocks {
                     .sound(SoundType.METAL)
                     .requiresCorrectToolForDrops());
 
-    /**
-     * The water in every lake and sea the world generates: Factorio's water tile.
-     *
-     * <p>Vanilla's water block with the fluid swapped, property for property - vanilla's own
-     * {@code LiquidBlock} on our {@code NaturalWaterFluid}, so a bucket lifts it the way a bucket
-     * lifts water and gets a water bucket for it. Worldgen puts it down in place of every
-     * {@code minecraft:water} it made - see {@code NaturalWaterFeature} - and nothing else does:
-     * there is no item, because a liquid's item is a bucket and this one's bucket is vanilla's.
-     * A test world gets a lake from {@code /fill}, the way it gets a well from {@code /oil}.
-     */
+    /** The water in every lake and sea the world generates: Factorio's water tile. */
     public static final DeferredBlock<LiquidBlock> WATER = BLOCKS.registerBlock(
             "water",
             properties -> new LiquidBlock(ModFluids.WATER.get(), properties),

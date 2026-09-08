@@ -31,19 +31,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
-/**
- * The lab's models, generated from its shape, and a flat icon for the science pack.
- *
- * <p>Textures are placeholders pointing at <em>vanilla</em> ones on purpose: a model naming a
- * texture this mod does not ship renders as the magenta checkerboard, which reads as broken rather
- * than as art nobody has drawn yet. Prismarine for the shell and sea lantern for the dome, because
- * a lab should look like the one machine in the factory that is not made of iron.
- *
- * <p>One model per distinct shape, not per block: ten blocks and four files, since the corners and
- * the edges are one each turned by the blockstate. See {@code NauvisPowerModels} for the same
- * arrangement and {@link Boxes} for why the turn has to be the same rotation the collision boxes
- * get.
- */
+/** The lab's models, generated from its shape, and a flat icon for the science pack. */
 public class NauvisResearchModels extends ModelProvider {
 
     public NauvisResearchModels(PackOutput output) {

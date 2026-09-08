@@ -1,120 +1,58 @@
 Project Nauvis
 ==============
 
-A Minecraft modpack that recreates Factorio. Read `docs/PLAN.md` before starting work.
-**`docs/NEXT.md` says what to pick up now** and how to run the build, the server and the tests.
-Beside them: `ARCHITECTURE.md` for the rules a machine is built to, **`PITFALLS.md` for the
-things that compile, pass tests and are still wrong**, `GAPS.md` for what is deliberately
-missing, and `MAPPING.md` and `API-26.2.md` for the mapping and the 26.x renames.
+A Minecraft 26.2 / NeoForge modpack that recreates Factorio. `docs/NEXT.md` says what to pick up
+and how to run everything. Read `docs/PITFALLS.md` before writing code and `docs/API-26.2.md`
+before writing against any Minecraft API. `docs/ARCHITECTURE.md` is the rules a machine is built
+to, `docs/GAPS.md` what is deliberately missing, `docs/PLAN.md` the settled decisions and the mod
+list, `docs/MAPPING.md` the data files and their generators.
 
 Non-negotiables
 ---------------
 
-**1. Shortcuts on implementation, never on identity.**
-Item ids, block ids, recipe ingredient lists and craft times must be Factorio-correct from
-the first commit — they live in world saves and in the player's head. Everything behind them
-may be crude and rewritten later. A belt that is a BlockEntity per block is acceptable; a
-belt that costs the wrong ingredients is not.
+1. **Identity is Factorio's; implementation is free.** Item and block ids, ingredient lists, craft
+   times, footprints and stack sizes are Factorio's from the first commit, because they live in
+   world saves and in the player's head. Everything behind them may be crude and rewritten later.
+2. **Recipes, technologies and vanilla removals are generated, never typed.** `tools/gen_recipes.py`
+   turns `reference/factorio/recipes.json` plus `data/mapping.json` into recipe JSON;
+   `tools/gen_technologies.py` turns `data/technologies.json` into the tree; `tools/gen_removals.py`
+   turns `data/removals.json` into the vanilla-replacement datapack. Each has `--check`, which
+   diffs against disk, and `./gradlew build` runs all three. A vanilla recipe is removed only
+   when the pack already does that job.
+3. **One mod per subsystem, arrows one way.** Subsystem mods never compile against each other;
+   they meet through capabilities, `nauvis_lib`, Facrafting's hooks and `neoforge:mod_loaded`
+   recipe conditions. The only compile-time dependencies allowed are `nauvis_lib` (the framework;
+   it registers nothing a player can hold and depends on nothing of ours) and `facrafting` (the
+   timed crafting model and the crafting UI), each declared `required` in `neoforge.mods.toml`.
+   Pack policy lives in the `nauvis` mod, which compiles against `nauvis_lib` and nothing else.
+4. **Verify every 26.x API against the decompiled sources.** Minecraft 26.2 postdates training
+   and renamed a great deal; guessed names have failed silently. `docs/API-26.2.md` says where
+   the sources are and lists the confirmed renames.
+5. **Machines sleep.** No server-side `BlockEntityTicker`. A machine with nothing to do costs
+   zero ticks and is woken by a change; `hasScheduledTick` is how a test asserts it.
 
-**2. Recipes and technologies are generated, never hand-written.**
-`reference/factorio/recipes.json` is the spec: 214 entries, a closed graph, `time` already in
-seconds. `data/mapping.json` says what stands in for what. `tools/gen_recipes.py` turns the
-two into recipe JSON. If you are about to type a recipe by hand, you are doing it wrong.
+Writing
+-------
 
-**A research cost is the same kind of fact as an ingredient list** — units, packs, seconds,
-prerequisites — so the technology tree is generated too, from `data/technologies.json` by
-`tools/gen_technologies.py`. A technology is paid for in science, or finished by a trigger —
-*craft fifty iron plates* — and the first ones are triggered, which is what lets a new world
-research its way to a boiler and a lab before it has any science at all.
-
-Run `python tools/gen_recipes.py --check` and `python tools/gen_technologies.py --check` before
-trusting anything on disk. They diff the generated output against the committed files, and the
-recipe one has already caught two wrong recipes in a released mod. Seven items genuinely cannot
-be generated; the tool names them rather than letting you discover it in-game. Both are wired
-into `./gradlew build`.
-
-**3. One mod per subsystem, arrows pointing one way.**
-Each mod is a separate jar with its own permanent mod id, usable standalone, glued to the
-others by `neoforge:mod_loaded` recipe conditions. No cycles. Pack policy — vanilla recipe
-removal — lives in the `nauvis` mod or the pack datapack, never inside a subsystem mod. It is
-`data/removals.json` plus `tools/gen_removals.py`, and its rule is enforced by the build: **a
-vanilla recipe is removed only when the pack can already do that job**, so nothing is ever taken
-away and left with nothing in its place.
-
-**Facrafting is the exception, and the foundation.** It owns the timed crafting model and the
-crafting interface, and a subsystem mod may depend on it at compile time: a machine that runs a
-`FacraftRecipe` has to be able to name the type, and a machine screen should be an extension of
-Facrafting's panel rather than a second one beside it. Declare it `required` in
-`neoforge.mods.toml` when you do — a mod that cannot work without another must say so.
-
-**`nauvis_lib` is the other exception, and the framework.** It is the code every machine is
-built on — the multi-block mechanism, the views a machine publishes to inserters and poles, the
-screen a machine is drawn on, the bench-recipe datapack — and it depends on nothing of ours, so
-every subsystem mod may depend on it at compile time and declare it `required`. It registers no
-blocks, items or recipes and never will; a thing a player can hold does not belong in it.
-
-Everything else stays coupled by data. No subsystem mod depends on another subsystem mod, and
-the pack mod depends on nothing at compile time; if two subsystems need the same code, it belongs
-in Facrafting when it is about crafting and in `nauvis_lib` when it is not. No cycles, ever.
-
-**4. Verify every 26.x API against decompiled sources.**
-Minecraft 26.2 is past the model's training cutoff and renamed a great deal. Guessing has
-produced wrong code repeatedly. `docs/API-26.2.md` lists the confirmed renames and where the
-sources are. Check before writing, not after it fails to compile.
-
-**5. Machines sleep.**
-A machine with no work and no power must cost zero ticks, waking on neighbour change. Cheap
-now, a horrible retrofit later. Factorio bases are thousands of machines.
+A javadoc is its first paragraph: what the thing is. Why it is that way is written once, in
+`docs/ARCHITECTURE.md` for a rule and `docs/PITFALLS.md` for a way of getting it wrong, and is
+not repeated in code. No history anywhere: a doc says what is true now, and git says how it got
+there. A gametest is a lambda in `GameTests.add`, and a class only when it needs fields.
 
 Licensing
 ---------
 
-`reference/` is gitignored in full. It holds other people's work:
+`reference/` is gitignored in full: Wube's recipe dump, Create, Immersive Engineering and other
+people's source. Read it for architecture and reimplement. MIT code wants attribution; assets are
+always reserved. Depending on a mod is never a licence question; copying from one always is.
 
-- **`reference/factorio/recipes.json`** — Wube's data. Read it, generate from it, never commit it.
-- **`reference/mods/*.jar`, `reference/create-src/`** — Create, by the Create Team.
-  **Code is MIT** (adapting with attribution is permitted). **Assets are All Rights Reserved** —
-  textures, models and sounds must never be copied. Ours are ours.
+The siblings
+------------
 
-Read Create for architecture and reimplement. Its belt code is welded to the kinetics
-framework — stress, rotation, contraptions — and lifting it drags in the exact weight this
-pack exists to avoid.
-
-The same applies to any mod worth learning from. Most of the tech ecosystem is stranded on
-1.21.1 and will never be shipped here, which makes it free to read and nothing more. Check the
-licence before adapting a line of it — MIT wants attribution, and assets are almost always
-reserved regardless of what the code says. Ours are ours.
-
-The two sibling mods
---------------------
-
-They live in their own repos at `../` and Project Nauvis consumes them via `includeBuild`, which
-means an edit to one is picked up here immediately — no publishing step. **One of them is
-released and one is not, and that is the whole difference:**
-
-| Repo | Mod id | Owns | |
-|---|---|---|---|
-| `../Facrafting` | `facrafting` | The timed crafting model, and the crafting UI. | **ours to change** |
-| `../CrumblingOre` | `crumblingore` | Ore depletion. | released |
-
-**Facrafting is not published** — no remote, no tags. Change it freely: it is part of this
-project and the foundation the rest builds on. Its crafting panel is the interface every machine
-screen should grow out of rather than sit beside. Folding it into this repo is a reasonable thing
-to want and a separate job from changing it — ask before doing it, because its git history is not
-this repo's to rewrite.
-
-**Crumbling Ore is on GitHub and in players' worlds.** Its ids are permanent and its behaviour
-should not change under an existing save.
-
-**Two more were siblings once, and both are subprojects now.** Neo Progressive Automation is
-released; `nauvis_mining` is a fork of it, under Factorio's ids — `nauvis_mining:burner_mining_drill`,
-not `neoprogressiveautomation:burner_drill`, which is a thing a released mod could never be given.
-Neo Progressive Materials was never published or even a git repository, so on 2026-09-08 it was
-folded in whole as `nauvis_materials`, with the pack's own ids: `nauvis_materials:iron_gear_wheel`.
-The originals still exist at `../NeoProgressiveAutomation` and `../NeoProgressiveMaterials`, and
-the released NPA names the old materials ids in its shipped recipes, which is why the old NPM is
-left where it is; the pack builds neither, and nothing here should change them.
-
-One id is frozen anyway, whatever the above says, because the released NPA names it in its own
-shipped recipes: **`facrafting:facraft`**. The pack's own ids are permanent from the first world
-that holds them, which is the reason to get them right before that world exists.
+`../Facrafting` (`facrafting`) is unpublished and ours to change freely; folding it into this repo
+is a separate decision to ask about. `../CrumblingOre` (`crumblingore`) is released, so its ids and
+behaviour are frozen. Both are `includeBuild`s, so an edit is picked up here at once.
+`nauvis_mining` is a fork of the released Neo Progressive Automation under Factorio's ids;
+`nauvis_materials` is Neo Progressive Materials folded in under the pack's ids. The originals at
+`../NeoProgressiveAutomation` and `../NeoProgressiveMaterials` are not built and not to be
+changed. `facrafting:facraft` is frozen because released NPA names it in its recipes.

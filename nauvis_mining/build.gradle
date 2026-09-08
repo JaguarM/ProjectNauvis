@@ -1,3 +1,4 @@
+// Why things are the way they are: docs/ARCHITECTURE.md (dependencies, Jade), docs/API-26.2.md (datagen, gradle).
 plugins {
     id 'java-library'
     id 'maven-publish'
@@ -17,12 +18,9 @@ base {
     archivesName = mod_id
 }
 
-// Mojang ships Java 25 to end users, so mods target Java 25.
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 sourceSets.main.resources {
-    // Two generated roots, not one. Each datagen run deletes output it does not recognise, so
-    // pointing both at the same directory makes whichever ran last wipe the other's work.
     srcDir 'src/generated/client'
     srcDir 'src/generated/server'
     exclude '**/*.bbmodel'
@@ -30,8 +28,6 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // See docs/API-26.2.md: the NeoForged mirror intermittently serves zero-byte files with
-    // HTTP 200 for these groups. exclusiveContent makes Central the only source for them.
     exclusiveContent {
         forRepository { mavenCentral() }
         filter {
@@ -49,26 +45,12 @@ repositories {
 }
 
 dependencies {
-    // The code every machine here is built on: multi-blocks, the views a machine publishes,
-    // the screen it is drawn on. The one compile-time dependency between the pack's own mods,
-    // and it points one way - the library depends on nothing of ours.
     implementation project(':nauvis_lib')
 
-    // Jade, for the look-at readout: compileOnly, never implementation. The @WailaPlugin
-    // class is only loaded when Jade is present, so the mod runs standalone without it.
     compileOnly "maven.modrinth:jade:${jade_version}"
 
-    // No compile-time dependency, deliberately. A drill puts what it digs into whatever is
-    // beside it through Capabilities.Item.BLOCK, which is NeoForge's - it never needs to know
-    // what a Facrafting recipe is. nauvis_machines is the one mod in the pack that compiles
-    // against a sibling, and it should stay the only one.
-    //
-    // These two are runtime only, so a standalone run of this mod has the mods its recipes
-    // name: Facrafting supplies the timed recipe type, Neo Progressive Materials the iron
-    // gear wheel a drill is paid for in.
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly project(':nauvis_materials')
-    // The burner drill is paid for in a stone furnace, which is a machine of nauvis_machines.
     runtimeOnly project(':nauvis_machines')
 }
 
@@ -87,20 +69,12 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
-        // Runs every registered gametest, then exits - non-zero if any failed. The pack's own
-        // :nauvis:runGameTestServer runs these too, on a classpath with the whole pack.
         gameTestServer {
             type = 'gameTestServer'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-            // The bench-recipe datapacks off, which is not the default and cannot be:
-            // GameTestServer force-enables every pack it can see, and a bench copy ships
-            // under the same id as the timed recipe it replaces. See ModPacks.
             systemProperty 'jaguarm.benchRecipePacks', 'false'
         }
 
-        // Client and server datagen are separate runs since 1.21.4. Models and language go
-        // through clientData, loot tables and tags through serverData; running only one
-        // silently generates half of what you asked for.
         clientData {
             clientData()
             programArguments.addAll '--mod', project.mod_id,
@@ -130,7 +104,6 @@ neoForge {
     }
 }
 
-// Expands the properties in src/main/templates into the mod metadata.
 var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
     var replaceProperties = [
             minecraft_version      : minecraft_version,
@@ -167,8 +140,6 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-// Recipes are generated, never hand-written - so a build that would ship a hand-edited one
-// should not succeed. See the root build.gradle.
 tasks.named('check') {
     dependsOn rootProject.tasks.named('checkRecipes')
 }

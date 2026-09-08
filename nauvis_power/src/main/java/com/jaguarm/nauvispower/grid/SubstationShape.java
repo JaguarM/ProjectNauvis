@@ -5,17 +5,7 @@ import java.util.List;
 import com.jaguarm.nauvislib.multiblock.MachineCell;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 
-/**
- * Two tiles by two, five blocks tall: the same tower as the big pole, one storey shorter.
- *
- * <p>The footprint is Factorio's. The height is ours, and being <em>under</em> the big pole rather
- * than over it is the point: a substation is a squat thing that covers ground, and a big pole is a
- * tall thing that spans it. Standing them side by side should say which is which before the player
- * has read either tooltip.
- *
- * <p>It shares every box with {@link BigPoleShape} - same legs, same ring - so the two read as the
- * same family of tower, which they are. What tells them apart is one storey and the metal.
- */
+/** Two tiles by two, five blocks tall: the same tower as the big pole, one storey shorter. */
 public final class SubstationShape {
 
     private SubstationShape() {}

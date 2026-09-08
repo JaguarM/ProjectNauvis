@@ -14,30 +14,6 @@ import net.minecraft.core.Direction;
 /**
  * What a steam engine looks like and how much room it takes: five tiles by three, the size
  * Factorio made it.
- *
- * <p>Five is the number that matters. It is why a boiler feeds a <em>row</em> of engines rather
- * than a cluster of them, and it is past what any single block model can draw - an element is
- * capped at one block in each direction, so a machine this long could only ever have been made of
- * blocks that each draw themselves. See {@code docs/ARCHITECTURE.md}.
- *
- * <h2>Seventeen blocks: a channel with two flywheels in it</h2>
- *
- * <p>Fifteen at ground level and two flywheels above. The long axis runs along the machine's
- * facing, so the two ends steam goes in and out of are the two ends you can see, and a row of
- * engines is built by walking the line.
- *
- * <p>Down the middle runs a spine of plain deck, open at both ends - <b>the gap in the wall is the
- * port</b>, so where the pipe goes is visible before anything is connected to it. The flanks carry
- * the wall at 1.0 with the floor recessed to 0.75 inside it, which is {@link MachineParts} and the
- * same shell every machine in the pack wears.
- *
- * <h2>The flywheels stand apart on purpose</h2>
- *
- * <p>They sit at the second and fourth tiles, not along the whole spine. A tall strip running the
- * length of the machine would be a wall, and engines are chained end to end - a row of them would
- * fence the player out of their own power plant, which is exactly the failure the assembler was
- * shaped to avoid. With a gap at the waist, every engine in a chain however long can be crossed at
- * its middle, and both ends are walkable anyway.
  */
 public final class SteamEngineShape {
 

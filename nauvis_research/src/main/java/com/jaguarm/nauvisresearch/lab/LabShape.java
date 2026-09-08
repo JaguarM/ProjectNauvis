@@ -8,22 +8,8 @@ import com.jaguarm.nauvislib.multiblock.MachineParts;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 /**
- * What a lab looks like and how much room it takes: three tiles by three, the size Factorio made
- * it.
- *
- * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py} holds
- * this to the {@code size} recorded for {@code lab} in {@code data/mapping.json}.
- *
- * <h2>Ten blocks, and a dome you walk around</h2>
- *
- * <p>Nine at ground level and the dome above the middle. The shell is {@link MachineParts}: a wall
- * at 1.0 and a recessed floor at 0.75, so a lab is climbed onto once and walked over after that,
- * and the dome is the only thing to go around. Labs are built in blocks of six or a dozen fed by
- * one belt, so a row of them has to stay crossable for the same reason an assembler field does.
- *
- * <p>The dome is what tells a lab from an assembler at a glance. Both are three by three with
- * something in the middle; an assembler has a squared-off gearbox and a lab has a stack of
- * narrowing steps, which is as close to a dome as a block model gets without curves.
+ * What a lab looks like and how much room it takes: three tiles by three, the size Factorio
+ * made it.
  */
 public final class LabShape {
 

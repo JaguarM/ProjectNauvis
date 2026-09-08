@@ -9,18 +9,6 @@ import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 /**
  * The silo's slots: three for what a rocket part is made of, one for the satellite, one for
  * what comes back.
- *
- * <p>Each ingredient slot takes one ingredient of the rocket part - the first slot the first,
- * and so on - and nothing else, which is Factorio's rule for a machine with a fixed recipe. It is
- * what keeps an inserter from filling all three with low density structures and stalling the
- * silo, and the reason a satellite offered to the whole machine lands in the satellite slot rather
- * than the first slot with room. A slot holds twice what a part takes of its ingredient, or a
- * stack if that is more, as an assembler's does - a low density structure stacks to ten and a
- * part takes ten, so a slot that stopped at a stack would run dry the moment a part began. The
- * satellite slot takes one thing and one of it, because a
- * rocket carries one satellite and a stack of them in the slot would be a hundred launches'
- * worth of cargo sitting where an inserter could not tell it had done its job. The output is the
- * machine's to write.
  */
 public class RocketSiloInventory extends ItemStacksResourceHandler {
 

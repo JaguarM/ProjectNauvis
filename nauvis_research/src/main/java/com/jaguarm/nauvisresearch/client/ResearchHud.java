@@ -24,26 +24,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
-/**
- * What is being researched, in the corner, all the time.
- *
- * <p>Factorio has this and it is doing more work than it looks like: research is the one thing in
- * the game that progresses while you are not looking at it, so a screen you have to open to check
- * on it is a screen you forget to open. <b>And when there is nothing to show it says so</b> - the
- * prompt to go and pick something is the most useful state this widget has, because "nothing is
- * being researched" is otherwise indistinguishable from "something is being researched slowly".
- *
- * <h2>Three states, and the middle one is the interesting one</h2>
- *
- * <ol>
- *   <li>a technology is being researched - its name and how far through its units it is;</li>
- *   <li>nothing is, but a <b>triggered</b> technology is part-way there - its name and how many of
- *       the thing it wants have been made. This is what a new world sees for its whole opening,
- *       and without it the first half hour would show the prompt below while research was in fact
- *       happening every time the player took a plate out of a furnace;</li>
- *   <li>neither - the prompt, naming whatever key the player has actually bound.</li>
- * </ol>
- */
+/** What is being researched, in the corner, all the time. */
 @EventBusSubscriber(modid = NauvisResearch.MODID, value = Dist.CLIENT)
 public final class ResearchHud {
 

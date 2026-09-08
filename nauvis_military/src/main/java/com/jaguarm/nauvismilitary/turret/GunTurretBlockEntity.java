@@ -36,25 +36,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 import org.jspecify.annotations.Nullable;
 
-/**
- * A gun turret: given magazines, it shoots whatever hostile comes within eighteen blocks.
- *
- * <p>Factorio's numbers: a range of eighteen, ten rounds a second, the magazine's damage raised by
- * both physical projectile damage research - {@code ammo-damage} for bullets - and the turret's
- * own {@code turret-attack} bonus, which is what the {@code physical-projectile-damage} ladder
- * grants and what its screen has promised since the tree was transcribed.
- *
- * <p>What it shoots is anything Minecraft calls an enemy: the hostiles pollution brings, and any
- * other that wanders in. Never a player, never an animal.
- *
- * <h2>It sleeps, mostly</h2>
- *
- * <p>A turret with no ammunition schedules nothing and costs nothing; a magazine arriving wakes
- * it. A turret with ammunition looks around twice a second - an entity search in a box, which is
- * the cheapest thing a server does with entities - and while it has a target it ticks at its rate
- * of fire. That look is the one bounded poll in this mod: Minecraft does not tell a block when a
- * zombie walks into range, and a turret that waited to be told would be a wall.
- */
+/** A gun turret: given magazines, it shoots whatever hostile comes within eighteen blocks. */
 public class GunTurretBlockEntity extends BlockEntity implements MenuProvider, Damageable {
 
     public static final int AMMO_SLOT = 0;

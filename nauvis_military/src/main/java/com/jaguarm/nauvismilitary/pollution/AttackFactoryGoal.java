@@ -17,22 +17,6 @@ import org.jspecify.annotations.Nullable;
 /**
  * What a hostile the pollution sent does: walks at the machine that made it, and chews through
  * whatever stands in the way.
- *
- * <p>Factorio's biters path to the polluter and attack anything that blocks the path - which is
- * how a wall gets chewed through and a turret gets swarmed. This goal is that in two rules. While
- * it can walk, it walks at its target. When it cannot - the path is done and it is not there, or
- * there is no path - it hits the block in front of it in the direction of its target, once a
- * second for its own attack damage, through {@code nauvis_lib}'s {@link Health}, which is what a
- * wall at two hundred and a turret at four hundred are measured in. Cracks show on the block as
- * they would under a pickaxe. When the target is gone it picks the nearest remembered polluter
- * within a couple of chunks, and when there is none left it stops and is an ordinary hostile.
- *
- * <p>It runs only while the mob has nobody to fight: a player who comes within reach is a target
- * the vanilla goals take, and this one waits. Which is Factorio's rule too - biters fight what
- * fights them.
- *
- * <p>The target is not saved. A hostile that lives through a reload forgets the factory and is a
- * zombie again, which is written down in {@code GAPS.md}.
  */
 public class AttackFactoryGoal extends Goal {
 

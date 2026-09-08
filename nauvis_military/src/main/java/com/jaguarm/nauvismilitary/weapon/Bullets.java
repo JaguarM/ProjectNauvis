@@ -15,18 +15,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import org.jspecify.annotations.Nullable;
 
-/**
- * A bullet: a line from a muzzle, and whatever it meets first.
- *
- * <p>Not a projectile entity. Factorio's bullets are instant - the pistol and the turret hit what
- * they aim at on the tick they fire - and an entity per bullet at ten a second per turret is
- * exactly the cost this pack exists to avoid. So a shot is a ray, clipped against the blocks first
- * and then against the living things along what is left of it; the one nearest the muzzle is hit.
- * A tracer of particles along the ray is what a player sees.
- *
- * <p>Bullets ignore Minecraft's invulnerability frames. A submachine gun fires ten rounds a second
- * and vanilla would let one in ten land; Factorio's does not work that way and neither does this.
- */
+/** A bullet: a line from a muzzle, and whatever it meets first. */
 public final class Bullets {
 
     private Bullets() {}

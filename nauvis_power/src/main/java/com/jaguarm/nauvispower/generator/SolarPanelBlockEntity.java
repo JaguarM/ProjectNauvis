@@ -13,35 +13,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 
-/**
- * A solar panel: makes electricity from daylight, and nothing else.
- *
- * <p>Factorio's panel peaks at 60 kW, which at this pack's ratio - a 900 kW steam engine is
- * 120 FE a tick - is {@value #PEAK} FE a tick. The engine keeps that ratio too, so the arithmetic
- * a player knows holds: it takes a hair over twenty-three panels to match one engine at noon,
- * and a panel makes nothing at night, which is why Factorio's solar power comes with accumulators
- * and this pack's does not yet - see {@code GAPS.md}.
- *
- * <h2>Daylight is the sky's darkening</h2>
- *
- * <p>{@code Level.getSkyDarken()} is the number the game already keeps for how much the sky is
- * dimmed: 0 at noon, 11 at midnight, and part way in rain and at dusk. The output is the peak
- * scaled by how far from 11 it is, so a panel ramps up at dawn and down at dusk the way
- * Factorio's does, and loses a third in rain, which Factorio's does not - a divergence this pack
- * is content with, since weather is a thing Minecraft has and a solar panel that ignored it
- * would read as broken. The fraction is carried between ticks rather than rounded away.
- *
- * <p>And the panel has to see the sky. A panel under a roof makes nothing, which is the one thing
- * Minecraft can say about solar power that Factorio cannot.
- *
- * <h2>Sleeping</h2>
- *
- * <p>No ticker. A panel full of power stops and is woken by whatever draws from it, through
- * {@link GeneratorAccess}, exactly as the steam engine is. A panel in the dark, or under a roof, has
- * no work and no signal that will arrive when the sun does - there is no event for dawn - so it
- * looks up once every {@value #RECHECK_TICKS} ticks, which is the one bounded poll in this mod and
- * is written down in {@code GAPS.md}. Everything else about it is free.
- */
+/** A solar panel: makes electricity from daylight, and nothing else. */
 public class SolarPanelBlockEntity extends BlockEntity {
 
     /** 60 kW at the pack's ratio of 120 FE/t to a 900 kW engine. The ratio is what is kept. */

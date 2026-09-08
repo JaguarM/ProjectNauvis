@@ -33,18 +33,7 @@ public final class PowerGridEvents {
         }
     }
 
-    /**
-     * The one hook that says "a block changed" without naming which mod owns it.
-     *
-     * <p>This is how a machine placed two blocks from a pole is noticed at all: it is in nobody's
-     * neighbourhood, it cannot announce itself without {@code nauvis_machines} learning what a
-     * pole is, and a pole that went looking on a schedule would be the per-tick scan this design
-     * exists to avoid. {@code updateNeighborsAt} fires for a block placed or broken by any means,
-     * and the manager's first act is one hash lookup that rejects everywhere near no pole.
-     *
-     * <p>Nothing is done here beyond remembering the position. The block entity may not be ready
-     * to answer a capability query yet, and this fires deep inside a {@code setBlock}.
-     */
+    /** The one hook that says "a block changed" without naming which mod owns it. */
     @SubscribeEvent
     static void blockChanged(BlockEvent.NeighborNotifyEvent event) {
         if (event.getLevel() instanceof ServerLevel level) {

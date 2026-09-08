@@ -12,16 +12,7 @@ import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
-/**
- * What a steam engine says: whether it is running, and what it is making while it does.
- *
- * <p>Jade's universal energy provider already draws the charge, because the engine publishes
- * {@code Capabilities.Energy.BLOCK} like anything else would. What it cannot know is that a full
- * engine has deliberately stopped rather than broken, or that the thing limiting it is the steam
- * behind it rather than the wire in front.
- *
- * <p>Split into a server half and a {@link Client} half - see {@link BoilerReadout} for why.
- */
+/** What a steam engine says: whether it is running, and what it is making while it does. */
 public class SteamEngineReadout implements IServerDataProvider<BlockAccessor> {
 
     public static final SteamEngineReadout INSTANCE = new SteamEngineReadout();

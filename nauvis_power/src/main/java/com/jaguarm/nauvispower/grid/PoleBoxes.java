@@ -1,33 +1,6 @@
 package com.jaguarm.nauvispower.grid;
 
-/**
- * The geometry every pole is built from, so the three tiers read as one family.
- *
- * <p>{@code MachineParts} is the equivalent for machines and this is deliberately not part of it:
- * a pole is not a housing with a wall and a floor, it is a post with an arm on top, and putting
- * the two vocabularies in one file would mean every mod that has machines carrying boxes for a
- * block only this one has.
- *
- * <p>Boxes are in model pixels - sixteen to a block - and none of them leaves {@code 0..16}. That
- * is a rule rather than a coincidence: a face hanging outside its own block takes its texture
- * coordinates from its own position unless an explicit {@code uv} says otherwise, and the pole's
- * model writer does not write one. {@code tools/check_models.py} fails the build on it.
- *
- * <h2>Why the arms are thinner than the post</h2>
- *
- * <p>Each crossarm is two pixels thick against the post's four, so it passes <em>through</em> the
- * post rather than butting against it, and the crossing arm is split in two so the two never
- * overlap. Nothing here shares a plane with anything else facing the same way - faces that do
- * z-fight, which looks like the model flickering. Vanilla's {@code fence_side} is built this way
- * for the same reason.
- *
- * <h2>You can walk through the crossarm</h2>
- *
- * <p>The collision lists are the bare post and nothing else. An arm that reaches most of the way
- * across its block would otherwise catch you as you walked past the top of a pole, from a shape
- * you cannot see because it is four blocks over your head. Collision is the post; the outline you
- * get when you look at it is the whole thing.
- */
+/** The geometry every pole is built from, so the three tiers read as one family. */
 public final class PoleBoxes {
 
     private PoleBoxes() {}

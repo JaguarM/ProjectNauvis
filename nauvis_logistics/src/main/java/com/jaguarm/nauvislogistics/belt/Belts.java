@@ -2,32 +2,7 @@ package com.jaguarm.nauvislogistics.belt;
 
 import net.minecraft.core.Direction;
 
-/**
- * The numbers a belt is made of, in one place.
- *
- * <h2>Why sixty-four</h2>
- *
- * <p>Distances along a run are whole numbers of a sixty-fourth of a block, never floats. A float
- * would drift: an item's place on a belt is arrived at by adding a step twenty times a second for
- * as long as the world exists, and it is saved to disk and sent to clients in between. Integers
- * add exactly, compare exactly and serialise exactly, and the belt's whole compression trick
- * depends on {@code slack == 0} meaning what it says. See {@link BeltLane}.
- *
- * <p>Sixty-four is chosen so that every number Factorio publishes lands on a whole one:
- *
- * <ul>
- *   <li>items sit a quarter of a tile apart, so {@link #SPACING} is 16 and a tile holds four
- *       items a lane, eight in all - Factorio's figure;</li>
- *   <li>a transport belt moves 1.875 tiles a second, which over twenty ticks is exactly 6 units a
- *       tick. The fast and express belts are exactly 12 and 18;</li>
- *   <li>and the throughput follows rather than being a second number to keep straight: four items
- *       a tile, two lanes, 1.875 tiles a second is the 15 items a second on the wiki.</li>
- * </ul>
- *
- * <p>The speeds themselves are identity and live in {@code data/mapping.json} beside the ids;
- * {@code tools/check_models.py} holds the constant in each belt block to the number recorded
- * there, so the figure is written down once and checked rather than remembered.
- */
+/** The numbers a belt is made of, in one place. */
 public final class Belts {
 
     private Belts() {}

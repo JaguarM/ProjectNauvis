@@ -12,16 +12,7 @@ import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
-/**
- * What an oil well says: its yield, which is the one thing Factorio's tooltip says about one.
- *
- * <p>Server data, because the amount is never sent to clients otherwise - it changes once a
- * second under a working pumpjack, and a block update a second per well to everyone in range is
- * the wrong price for a number one player is looking at.
- *
- * <p>Two classes, a data half and a {@code Client} half, because Jade throws at registration if
- * one object is both.
- */
+/** What an oil well says: its yield, which is the one thing Factorio's tooltip says about one. */
 public class CrudeOilReadout implements IServerDataProvider<BlockAccessor> {
 
     public static final CrudeOilReadout INSTANCE = new CrudeOilReadout();

@@ -5,20 +5,7 @@ import java.util.List;
 import com.jaguarm.nauvislib.multiblock.MachineCell;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 
-/**
- * One tile, four blocks tall.
- *
- * <p>A pole is a multi-block in the way a door is, and since 26.2 it is one in the way every other
- * machine in this pack is: the same {@link MachineShape} the boiler and the engine use, with a
- * footprint of one. It used to have a mechanism of its own - a {@code PolePart} enum, four rules
- * written out by hand - and that mechanism was the thing {@code Multiblock} was generalised from,
- * so having the pole keep its own copy of it was two implementations of one idea. The tiers are
- * what made it untenable: a five-block pole needs a five-value enum and a two-by-two one needs
- * two more axes, both of which {@link MachineShape} already has.
- *
- * <p>Four blocks because a pole has to stand well clear of the machines it feeds - three left it
- * looking like a tall fence. Height is ours rather than Factorio's; see ARCHITECTURE.md.
- */
+/** One tile, four blocks tall. */
 public final class SmallPoleShape {
 
     private SmallPoleShape() {}

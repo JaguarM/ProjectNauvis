@@ -153,9 +153,7 @@ public final class ModBlocks {
                     .sound(SoundType.METAL)
                     .noOcclusion());
 
-    /**
-     * The splitter: 2x1 multiblock balancing items across two belt tracks.
-     */
+    /** The splitter: 2x1 multiblock balancing items across two belt tracks. */
     public static final DeferredBlock<BasicSplitterBlock> SPLITTER = BLOCKS.registerBlock(
             "splitter",
             BasicSplitterBlock::new,

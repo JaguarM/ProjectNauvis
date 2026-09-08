@@ -10,19 +10,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-/**
- * The two messages a belt sends, and nothing else.
- *
- * <p>Worth stating what is <em>not</em> here. There is no message for an item moving along a belt,
- * none for a belt line being joined or cut, and none for an item passing from one line to the
- * next. The client runs the same simulation over the same block states and works all of that out
- * for itself - see {@code BeltRun}. Only what the belt cannot predict travels: an inserter putting
- * something on, and an inserter taking something off.
- *
- * <p>That is the difference between belts that draw their items and belts that cannot afford to.
- * A packet per item per tick for a base of a few thousand belts is tens of thousands of packets a
- * second; this is one packet per item that enters or leaves the belt network at all.
- */
+/** The two messages a belt sends, and nothing else. */
 @EventBusSubscriber(modid = NauvisLogistics.MODID)
 public final class ModNetwork {
 

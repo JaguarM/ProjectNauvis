@@ -26,21 +26,7 @@ import net.minecraft.world.item.component.FireworkExplosion;
 import net.minecraft.world.item.component.Fireworks;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * The launch: what a rocket leaving the pad looks and sounds like, and what it means.
- *
- * <p>Factorio's launch is a forty-second animation of doors, a gantry and a rocket climbing out
- * of frame; this pack's silo is block models and has no animation to give. So the launch is
- * smoke and fire at the base of the rocket for the length of the countdown, and then a firework
- * of the rocket's own colour climbing off the nose and bursting high over the base - the one
- * thing Minecraft already has that goes up and is seen from across a factory. The rocket itself
- * stays where it is drawn, because it is drawn whether or not one has been built; see
- * {@code GAPS.md}.
- *
- * <p>What it means is the game's end: {@link #ADVANCEMENT} for every player on the server, in
- * the challenge frame with the sound that goes with it, a title on every screen, and a line in
- * chat. The science it sends back is the silo's business.
- */
+/** The launch: what a rocket leaving the pad looks and sounds like, and what it means. */
 public final class Launch {
 
     private Launch() {}

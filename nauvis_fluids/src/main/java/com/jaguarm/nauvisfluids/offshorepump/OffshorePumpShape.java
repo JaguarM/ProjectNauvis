@@ -11,26 +11,8 @@ import com.jaguarm.nauvislib.multiblock.MachineShape;
 import net.minecraft.core.Direction;
 
 /**
- * What an offshore pump looks like and how much room it takes: one tile by two, the size Factorio
- * made it, with the intake at the water and the pump on the shore.
- *
- * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py}
- * holds this to the {@code size} recorded for {@code offshore-pump} in {@code data/mapping.json}.
- * Everything else here is ours.
- *
- * <h2>Two blocks, and the intake is the front</h2>
- *
- * <p>Factorio's offshore pump stands at the shoreline with its intake over the water and its
- * outlet on the land side, and turning it is choosing which way the pipe runs. Here the same:
- * the cell the player's click lands on is the body, the intake goes down one block ahead of it -
- * out over the water when the pump stands at the edge - and the water comes out of the body's
- * back, the face away from the sea. A player standing on the beach facing the water and placing
- * one gets exactly that.
- *
- * <p>The body is a housing with the pump on top and a stub of pipe out of the back; the intake
- * is the pipe carried forward, turned down, and ended in a strainer that sits on the water's
- * surface. All of it inside its two blocks, so the textures are the shell's and nothing is drawn
- * with a derived uv off the end of the sprite.
+ * What an offshore pump looks like and how much room it takes: one tile by two, the size
+ * Factorio made it, with the intake at the water and the pump on the shore.
  */
 public final class OffshorePumpShape {
 

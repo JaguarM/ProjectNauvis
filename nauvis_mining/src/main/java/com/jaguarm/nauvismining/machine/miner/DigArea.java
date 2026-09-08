@@ -5,33 +5,7 @@ import com.jaguarm.nauvislib.multiblock.MachineShape;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 
-/**
- * The columns a drill works: its own footprint, grown outward a ring at a time.
- *
- * <h2>The machine is the area, which is what Factorio does</h2>
- *
- * <p>A burner mining drill covers the two-by-two it stands on and an electric one covers its
- * three-by-three. You can see what a drill will take by looking at it, and a mining field is laid
- * out by putting drills next to each other rather than by reading a radius out of a config file.
- *
- * <p>That is why this is a rectangle and not a radius. The area used to be a square spiral centred
- * on the machine's anchor block, which can only ever describe an odd-sided square — one column,
- * then three by three, then five by five. <b>A two-by-two has no centre column</b>, so no
- * spiral centred anywhere can produce a burner drill's footprint, and the anchor of a two-by-two is
- * one of its corners rather than its middle. Growing a rectangle outward has neither problem and
- * says the same thing about a three-by-three.
- *
- * <h2>Rings, and why the order matters at all</h2>
- *
- * <p>Ring 0 is the footprint itself. Ring <i>k</i> is the border exactly <i>k</i> blocks outside
- * it. Columns are handed out ring by ring so that a drill which runs out of fuel has cleared a tidy
- * area around itself rather than one long strip — the property the spiral was there for, kept.
- *
- * <p>Nothing here is materialised. A ring's size is arithmetic and so is a column's position within
- * it, because the ring count is a config value and a module effect: four modules against a
- * generous config reach thousands of columns, and a list of those is not a thing to build every
- * time a drill looks for its next block.
- */
+/** The columns a drill works: its own footprint, grown outward a ring at a time. */
 public record DigArea(int minX, int minZ, int maxX, int maxZ, int y, int rings) {
 
     /**

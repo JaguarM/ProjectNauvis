@@ -1,186 +1,47 @@
-// Root build. The mods are subprojects; this file holds only what applies to the repo.
+// Root build. The mods are subprojects; this file holds the checks the build runs, each a Python
+// script that reads files and starts nothing. CLAUDE.md non-negotiable 2 is what they enforce;
+// docs/NEXT.md lists them. checkRecipes skips itself when Wube's gitignored dump is absent.
 
-/**
- * Non-negotiable #2, enforced rather than remembered.
- *
- * Diffs every recipe on disk against what the generator produces from Factorio's dump. A
- * hand-edited recipe, or one left behind when the mapping changed, fails the build instead of
- * reaching a world save.
- *
- * Skips itself when reference/factorio/recipes.json is absent. That file is Wube's and
- * gitignored, so a fresh clone has no copy and must still be able to build.
- */
-tasks.register('checkRecipes') {
-    group = 'verification'
-    description = "Diffs generated recipes against the ones committed to each mod."
-
-    def dump = file('reference/factorio/recipes.json')
-    def mapping = file('data/mapping.json')
-    def script = file('tools/gen_recipes.py')
-
-    inputs.file(mapping).withPropertyName('mapping')
-    inputs.file(script).withPropertyName('generator')
-    outputs.upToDateWhen { false }
-
-    doLast {
-        if (!dump.exists()) {
-            logger.lifecycle("checkRecipes: skipped, ${dump} is absent (it is gitignored - see reference/README.md)")
-            return
-        }
-
-        // ProcessBuilder rather than Gradle's exec {}, which is gone from task actions in
-        // Gradle 9 and would otherwise need an injected ExecOperations for a one-line call.
-        def process = new ProcessBuilder('python', script.absolutePath, '--check')
-                .directory(projectDir)
-                .redirectErrorStream(true)
-                .start()
-        def output = process.inputStream.text
-        def exitValue = process.waitFor()
-
-        logger.lifecycle(output)
-
-        if (exitValue != 0) {
-            throw new GradleException(
-                    "Recipes on disk disagree with the generator. Regenerate them rather than " +
-                    "editing by hand: python tools/gen_recipes.py --write")
-        }
-    }
-}
-
-/**
- * Non-negotiable #2 again, for the other generated half of the pack.
- *
- * The technology tree is generated from Factorio's own tree by tools/gen_technologies.py, so a
- * research cost is as exact as an ingredient list and as impossible to type by hand. This diffs
- * every technology on disk against what the generator produces, and unlike checkRecipes it also
- * fails on a file the generator no longer produces - a stale technology would still load, still
- * show in the research list, and answer to nothing.
- *
- * It also enforces the tree's one guard: it has to be bootstrappable from an empty world. A
- * technology nothing can ever reach fails the build rather than sitting in the research list
- * looking perfectly normal.
- *
- * Both inputs are committed, so unlike checkRecipes this always runs.
- */
-tasks.register('checkTechnologies') {
-    group = 'verification'
-    description = "Diffs the generated technology tree against the one committed to nauvis_research."
-
-    def tree = file('data/technologies.json')
-    def mapping = file('data/mapping.json')
-    def script = file('tools/gen_technologies.py')
-
-    inputs.file(tree).withPropertyName('tree')
-    inputs.file(mapping).withPropertyName('mapping')
-    inputs.file(script).withPropertyName('generator')
-    outputs.upToDateWhen { false }
-
-    doLast {
-        def process = new ProcessBuilder('python', script.absolutePath, '--check')
-                .directory(projectDir)
-                .redirectErrorStream(true)
-                .start()
-        def output = process.inputStream.text
-        def exitValue = process.waitFor()
-
-        logger.lifecycle(output)
-
-        if (exitValue != 0) {
-            throw new GradleException(
-                    "The technology tree on disk disagrees with the generator. Regenerate it " +
-                    "rather than editing by hand: python tools/gen_technologies.py --write")
-        }
-    }
-}
-
-/**
- * The vanilla-replacement datapack, held to its own rule.
- *
- * PLAN.md's milestone 3: once research gates progression there is somewhere for stripped vanilla
- * recipes to go. data/removals.json is the list and tools/gen_removals.py turns it into
- * condition-false recipe files in the nauvis pack mod.
- *
- * It checks three things, and the first is the one that matters: every removal names the pack
- * recipe that does the job instead, and the build fails if that recipe is not shipped - so the
- * pack can never take something away and leave nothing in its place. It also holds every id to
- * Minecraft's own recipe list, and fails if the pack ships a recipe for a vanilla item whose
- * vanilla recipe is still there.
- *
- * Unlike checkRecipes this needs no gitignored dump, so it always runs; the two checks that read
- * Minecraft's own recipes skip themselves if the client jar is not in the Gradle cache.
- */
-tasks.register('checkRemovals') {
-    group = 'verification'
-    description = "Diffs the vanilla-recipe removals against data/removals.json."
-
-    def removals = file('data/removals.json')
-    def script = file('tools/gen_removals.py')
-
-    inputs.file(removals).withPropertyName('removals')
-    inputs.file(script).withPropertyName('generator')
-    outputs.upToDateWhen { false }
-
-    doLast {
-        def process = new ProcessBuilder('python', script.absolutePath, '--check')
-                .directory(projectDir)
-                .redirectErrorStream(true)
-                .start()
-        def output = process.inputStream.text
-        def exitValue = process.waitFor()
-
-        logger.lifecycle(output)
-
-        if (exitValue != 0) {
-            throw new GradleException(
-                    "The vanilla-recipe removals on disk disagree with data/removals.json. " +
-                    "Regenerate them rather than editing by hand: python tools/gen_removals.py --write")
-        }
-    }
-}
-
-/**
- * The checks that need no game, wired in so they actually run.
- *
- * Every visual bug this pack has shipped compiled, passed its tests and passed datagen. What
- * caught them was a person looking at the game, which is not a process. These look at what was
- * actually written rather than at what was asked for, which is where the difference lives - an
- * unresolvable model reference, or a screen drawn through itself.
- *
- * All of them read files and start nothing, so they cost a second and can run on any tree.
- */
-['checkGameTests': ['tools/check_gametests.py',
-                   'Checks that every gametest has its type registered as well as its instance.',
-                   'A gametest is registered to run and its codec is not, so the test passes and ' +
-                   'a client cannot serialise it. See tools/check_gametests.py.'],
- 'checkModels': ['tools/check_models.py',
-                 'Follows every blockstate, model, parent and texture reference to a real file.',
-                 'A model, texture or blockstate the pack names does not exist. Nothing about ' +
-                 'that fails a compile or a datagen run - see docs/PITFALLS.md.'],
- 'checkGuiLayout': ['tools/check_gui_layout.py',
-                    'Checks the machine screens for boxes drawn through each other.',
-                    'Two things on a machine screen overlap. The constants are read out of the ' +
-                    'source, so fix them there.']].each { name, spec ->
-    def (scriptPath, describe, complaint) = spec
+[checkRecipes: ['tools/gen_recipes.py', ['--check'],
+                'Diffs generated recipes against the ones committed to each mod.',
+                'Recipes on disk disagree with the generator. Regenerate them rather than editing by hand: python tools/gen_recipes.py --write'],
+ checkTechnologies: ['tools/gen_technologies.py', ['--check'],
+                     'Diffs the generated technology tree against the one committed to nauvis_research.',
+                     'The technology tree on disk disagrees with the generator: python tools/gen_technologies.py --write'],
+ checkRemovals: ['tools/gen_removals.py', ['--check'],
+                 'Diffs the vanilla-recipe removals against data/removals.json.',
+                 'The vanilla-recipe removals on disk disagree with data/removals.json: python tools/gen_removals.py --write'],
+ checkModels: ['tools/check_models.py', [],
+               'Follows every blockstate, model, parent and texture reference to a real file.',
+               'A model, texture or blockstate the pack names does not exist. See docs/PITFALLS.md.'],
+ checkGuiLayout: ['tools/check_gui_layout.py', [],
+                  'Checks the machine screens for boxes drawn through each other.',
+                  'Two things on a machine screen overlap. The constants are read out of the source, so fix them there.']
+].each { name, spec ->
+    def (scriptPath, args, describe, complaint) = spec
 
     tasks.register(name) {
         group = 'verification'
         description = describe
 
         def script = file(scriptPath)
-        inputs.file(script).withPropertyName('checker')
+        def dump = file('reference/factorio/recipes.json')
+        inputs.file(script).withPropertyName('script')
         outputs.upToDateWhen { false }
 
         doLast {
-            // ProcessBuilder rather than Gradle's exec {}, for the reason given above.
-            def process = new ProcessBuilder('python', script.absolutePath)
+            if (name == 'checkRecipes' && !dump.exists()) {
+                logger.lifecycle("checkRecipes: skipped, ${dump} is absent (gitignored - see reference/README.md)")
+                return
+            }
+            // ProcessBuilder rather than exec {}, which is gone from task actions in Gradle 9.
+            def process = new ProcessBuilder(['python', script.absolutePath] + args)
                     .directory(projectDir)
                     .redirectErrorStream(true)
                     .start()
             def output = process.inputStream.text
             def exitValue = process.waitFor()
-
             logger.lifecycle(output)
-
             if (exitValue != 0) {
                 throw new GradleException(complaint)
             }

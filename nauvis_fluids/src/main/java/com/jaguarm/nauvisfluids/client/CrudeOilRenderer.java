@@ -20,25 +20,6 @@ import net.minecraft.world.phys.shapes.Shapes;
 /**
  * The oil x-ray: while a pumpjack is in hand, every oil well in view is outlined, through
  * whatever is in the way.
- *
- * <p>Factorio finds oil for you on the map, where every field is a magenta blot. This pack has no
- * map, and a well is a dark block on the ground that a tree or a rise hides completely, so this is
- * the substitute: pick up a pumpjack and the wells within render distance light up in Factorio's
- * map colour, walls and hills notwithstanding. Put it away and they go dark again. Where the
- * machine itself would land is {@code nauvis_lib}'s ghost, which draws every machine and marks
- * the well a pumpjack would centre on.
- *
- * <h2>Why a block entity renderer, and why off-screen</h2>
- *
- * <p>A well has a block entity, so it has a renderer, and the renderer is visited only for wells
- * that are loaded - there is no scan. What it has to fight is culling: a well behind a hill is in a
- * chunk section the visibility graph has already thrown away, and the per-section pass never
- * visits it. {@link #shouldRenderOffScreen} moves wells into the level-wide pass, which is the one
- * pass that visits a block entity whose section was culled. One frustum test per loaded well per
- * frame; wells are rare.
- *
- * <p>The lines are {@link NauvisLibClient#XRAY}: every vanilla line pipeline tests depth, and
- * lines that fail a depth test are exactly the hidden ones this exists to draw.
  */
 public class CrudeOilRenderer implements BlockEntityRenderer<CrudeOilBlockEntity, CrudeOilRenderState> {
 

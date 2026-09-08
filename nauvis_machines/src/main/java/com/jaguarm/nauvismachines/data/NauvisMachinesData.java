@@ -33,19 +33,7 @@ import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
-/**
- * Generates the resources that are mechanical rather than creative.
- *
- * <p>Models, language strings and loot tables all follow from the block list, so writing them
- * by hand only creates chances for the silent failures in {@code docs/API-26.2.md} - a plural
- * {@code loot_tables/} directory that makes a block drop nothing, an item icon missing one of
- * its two required files. Generated, they are right or they fail loudly.
- *
- * <p>Recipes are not here. They come from {@code tools/gen_recipes.py} and Factorio's own dump,
- * and {@code checkRecipes} fails the build if one on disk disagrees.
- *
- * <p>Run with {@code ./gradlew :nauvis_machines:runClientData} and {@code :runServerData}.
- */
+/** Generates the resources that are mechanical rather than creative. */
 @EventBusSubscriber(modid = NauvisMachines.MODID)
 public final class NauvisMachinesData {
 
@@ -163,16 +151,7 @@ public final class NauvisMachinesData {
         }
     }
 
-    /**
-     * Every block drops itself, once.
-     *
-     * <p>The condition is what makes "once" true. An assembler is ten blocks, and breaking any of
-     * them takes all ten down through {@code Multiblock}'s teardown - with drops enabled, which is
-     * what hands the player their machine back whichever cell they hit. Without a condition that
-     * would be ten machines. Only the anchor drops; the other nine are structure.
-     *
-     * <p>This is {@code SmallElectricPoleBlock}'s arrangement, where only the foot has a drop.
-     */
+    /** Every block drops itself, once. */
     private static class BlockLoot extends BlockLootSubProvider {
 
         BlockLoot(HolderLookup.Provider registries) {

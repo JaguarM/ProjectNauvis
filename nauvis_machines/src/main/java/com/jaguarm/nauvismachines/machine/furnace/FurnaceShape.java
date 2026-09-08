@@ -10,22 +10,6 @@ import com.jaguarm.nauvislib.multiblock.MachineShape;
 /**
  * What a burner furnace looks like and how much room it takes: two tiles by two, the size
  * Factorio made the stone furnace and the steel furnace both, with a stack on one corner.
- *
- * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py}
- * holds this to the {@code size} recorded for {@code stone-furnace} in {@code data/mapping.json}.
- * The steel furnace is the same two by two and shares this shape; the two differ in what they are
- * made of and how fast they run, which is the block's business.
- *
- * <h2>Five blocks: a hearth you can walk over, and a stack you walk round</h2>
- *
- * <p>Four corner cells of the shared shell make a walled square with a recessed floor - the
- * hearth - and the stack stands on the north-west corner. A column of furnaces with belts down
- * either side is the most-built thing in Factorio, and here it has to stay crossable: the hearths
- * are the shell's wall-and-floor, so a column is climbed onto once and walked along, and the stacks
- * stand two apart with a gap between each pair.
- *
- * <p>The stack is where the fire shows. Its top is drawn in lava while the furnace is lit, which
- * is the one thing a furnace column needs to say from across a base: which ones are working.
  */
 public final class FurnaceShape {
 

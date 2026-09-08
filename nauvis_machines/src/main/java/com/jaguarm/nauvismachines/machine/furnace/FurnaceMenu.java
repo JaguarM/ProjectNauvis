@@ -22,15 +22,6 @@ import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 /**
  * The furnace's menu: an input slot, a fuel slot for the burner tiers, an output slot, and the
  * numbers a screen draws.
- *
- * <p>Not a {@code RecipeSelector}, on purpose. A furnace is told nothing; it smelts what is put
- * in it. So the crafting panel beside this screen behaves as it does beside a chest - it queues
- * the player's own crafts - and the machine's recipe is whatever the input slot says.
- *
- * <p>One menu for three tiers. Which slots it has is decided by the block at the machine's
- * position, which both sides can read: an electric furnace simply has no fuel slot, and its
- * inventory's fuel index is a slot nothing can go in. The position travels with the menu for that
- * reason and for the screen to name what is being smelted, which it reads off the block entity.
  */
 public class FurnaceMenu extends AbstractContainerMenu {
 
@@ -75,16 +66,7 @@ public class FurnaceMenu extends AbstractContainerMenu {
     /** How many of those are item slots; the module slots follow them. */
     private final int itemSlots;
 
-    /**
-     * Client side: NeoForge's menu factory hands the machine's position across.
-     *
-     * <p>The stand-in inventory is told the same rules the server's has, as far as the client
-     * can know them, so a shift-click is predicted where it will land: coal into the fuel slot,
-     * a stick nowhere. With a permissive stand-in, coal jumped into the input slot and was moved
-     * a tick later when the server's answer arrived. {@link ClientSlotRules} is a client class,
-     * and this constructor is the only thing that runs on a client - the server builds its menu
-     * from the block entity.
-     */
+    /** Client side: NeoForge's menu factory hands the machine's position across. */
     public FurnaceMenu(int containerId, Inventory playerInventory, BlockPos machinePos) {
         this(containerId, playerInventory,
                 clientInventory(playerInventory.player.level(), isBurnerAt(playerInventory.player.level(), machinePos)),

@@ -7,23 +7,7 @@ import com.jaguarm.nauvislib.multiblock.MachineCell;
 import com.jaguarm.nauvislib.multiblock.MachineParts;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 
-/**
- * Two tiles by two, the size Factorio made the burner mining drill.
- *
- * <p>It was a single block until version 2.0. See {@link ElectricDrillShape} for why a drill's
- * footprint matters more than most: it is the machine a player builds by the dozen, across the
- * ground they want to walk on.
- *
- * <h2>A full block, with a chimney over the firebox</h2>
- *
- * <p>Chunkier than the electric drill, because a firebox is not a flat thing and this is the
- * machine you are meant to want to replace. One jump gets you on top, and everything after that
- * is walking - the chimney is the only obstacle, and packed drills stand theirs two blocks apart.
- *
- * <p>The chimney is over the front-left corner rather than in a middle, because a two-by-two
- * footprint has no middle. Any of the four would do; the front-left is the one the block entity
- * sits in, so the smoke comes out of the block that is doing the burning.
- */
+/** Two tiles by two, the size Factorio made the burner mining drill. */
 public final class BurnerDrillShape {
 
     private BurnerDrillShape() {}

@@ -17,22 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 
-/**
- * Every pipe run in one level, and the only thing in this mod that runs every tick.
- *
- * <p>It iterates <em>runs</em>, of which a base has a handful, rather than pipes, of which it has
- * thousands. A run that moved nothing last tick drops out of the active set and stops costing
- * anything per tick at all. This is {@code PowerNetworkManager} with the nouns changed, and
- * deliberately so - it is the third time this pack has needed the shape.
- *
- * <h2>Why this one is simpler than the electric grid</h2>
- *
- * <p>A pole reaches 7.5 blocks and supplies a 5x5 area, so the grid needs a spatial index to find
- * its neighbours and a level-wide block-change hook to notice a machine appearing two blocks away.
- * A pipe connects to the six blocks it touches, which is exactly the range
- * {@code neighborChanged} already reports for free. So there is no cell index here, no chunk
- * pre-filter and no global subscription: the pipe is simply told.
- */
+/** Every pipe run in one level, and the only thing in this mod that runs every tick. */
 public final class FluidNetworkManager {
 
     /** How often a run that is moving nothing is looked at again. */

@@ -23,69 +23,8 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
- * An inserter: takes one item from the block behind it, puts it into the block in front, over and
- * over. Everything here except what pays for the swing.
- *
- * <p>It knows nothing about what is on either side. Both are reached through
- * {@code Capabilities.Item.BLOCK}, so a vanilla chest, a furnace, an assembling machine and
- * another mod's machine are all the same thing to it. That is the whole reason inserters are
- * worth building before belts: one block makes every container in the game automatable.
- *
- * <p>What differs between tiers is the drive - {@link BurnerInserterBlockEntity} burns coal,
- * {@link ElectricInserterBlockEntity} draws from the grid - how fast it swings, how far it
- * reaches, and how many it holds. None of those is a different block entity: the numbers live on
- * the block, which is what a tier actually is, and the hand size is the block asking the world
- * what has been researched. Filters will join them the same way.
- *
- * <h2>Sleeping, and how it hears about work</h2>
- *
- * <p>Non-negotiable #5, and harder here than for a machine. An assembler can sleep perfectly
- * because everything that gives it work touches its own inventory. An inserter's work arrives
- * in <em>somebody else's</em> inventory, and a chest does not know the inserter exists. Vanilla
- * solves this for hoppers by ticking forever with a cooldown, which is exactly what a base of
- * thousands cannot afford.
- *
- * <p>It turns out no polling is needed. Every {@link BlockEntity#setChanged()} runs
- * {@code Level.updateNeighbourForOutputSignal}, which calls {@code onNeighborChange} on all six
- * neighbours — NeoForge widened it from vanilla's horizontal comparator check. So a chest
- * gaining an item, a furnace finishing a smelt or an assembler banking a craft all reach the
- * inserter beside them for free, as an exact signal rather than a poll. {@link InserterBlock}
- * turns that into a scheduled tick, and this entity stops scheduling the moment it has nothing
- * to do. An idle inserter is not visited at all.
- *
- * <p>{@link BlockCapabilityCache} does the other half: it holds each end's handler so a swing is
- * not a lookup, and drops it by itself when that block is replaced or its chunk cycles. Its
- * invalidation listener is deliberately <em>not</em> used as a wake-up — the contract forbids
- * touching the level from inside it, and every case it would report is one
- * {@code neighborChanged} already reports from a context where scheduling is safe.
- *
- * <h2>Except when it reaches two, and then it has to look</h2>
- *
- * <p>All of that rests on the signal reaching this block, and the signal travels exactly one
- * block: {@code updateNeighbourForOutputSignal} walks the six positions touching the block entity
- * that changed, and stops. A long-handed inserter's source and destination are both two away, so
- * <b>neither of its own ends can ever wake it</b> - a chest filling up beside a machine says
- * nothing to the arm reaching over that machine, and no vanilla hook carries the news further.
- *
- * <p>So an inserter that reaches past its own neighbours re-checks on a timer rather than
- * sleeping outright: {@link #IDLE_RECHECK_TICKS} between looks, each look being one energy
- * comparison and one simulated move. This is the bargain {@code PowerNetwork} already strikes
- * when it re-checks a network that moved nothing every ten ticks - a fact nothing owes us a
- * signal for is a fact that has to be looked at - and it is kept as small as it can be:
- *
- * <ul>
- *   <li><b>an unpowered one still costs nothing.</b> A tier that cannot swing sleeps outright,
- *       because electricity arriving <em>is</em> an exact wake-up; only a powered inserter with
- *       nothing to move pays for the timer;</li>
- *   <li><b>a working one never pays it.</b> A move that succeeds schedules the next tick
- *       immediately, so the re-check only ever runs across a gap in the work;</li>
- *   <li><b>a reach of one never pays it at all</b>, so nothing that exists today gets slower.</li>
- * </ul>
- *
- * <p>What it costs where a player can see it is up to {@link #IDLE_RECHECK_TICKS} of delay after
- * a gap, which reads as a long arm taking a moment to notice the first item of a new batch. If a
- * general "tell me when the block entity at this position changes" hook ever exists, this is the
- * thing in the pack waiting for it.
+ * An inserter: takes one item from the block behind it, puts it into the block in front, over
+ * and over. Everything here except what pays for the swing.
  */
 public abstract class InserterBlockEntity extends BlockEntity {
 
@@ -209,15 +148,6 @@ public abstract class InserterBlockEntity extends BlockEntity {
     /**
      * Moves a handful of one item from the block behind to the block in front, all or nothing.
      *
-     * <p>One transaction spans both halves, so an item that cannot be delivered is never taken.
-     * Without that, an inserter aimed at a full chest would destroy one item per swing.
-     *
-     * <p>The hand takes up to {@code hand} of one kind from one slot, and as many of those as the
-     * far side has room for: a nested transaction asks how many fit and is rolled back, and the
-     * move proper then takes exactly that many. Factorio's inserter holds the rest in its hand
-     * until there is room; here it leaves them where they were, which comes to the same thing a
-     * swing later.
-     *
      * @param hand   how many items the tier's hand holds this swing. See {@link InserterBlock#handSize}.
      * @param commit false to ask whether a move is possible without performing it.
      * @return whether anything was, or would have been, moved.
@@ -259,16 +189,8 @@ public abstract class InserterBlockEntity extends BlockEntity {
     }
 
     /**
-     * What this inserter is picking up from, or null if there is nothing within reach behind it.
-     *
-     * <p>For a tier that has to look at the items before it moves them. The burner is the only
-     * one so far - it takes its own fuel out of whatever it is picking up, which is what keeps a
-     * burner inserter on a coal belt alive; see {@link BurnerInserterBlockEntity}.
-     *
-     * <p>Read through the same {@link BlockCapabilityCache} {@link #move} uses, and read afresh
-     * every time rather than handed out to keep: there is no second cache to invalidate, and a
-     * subclass cannot end up holding a handler the neighbour has since replaced. Null until the
-     * first {@link #wake()}, which always happens before the first tick.
+     * What this inserter is picking up from, or null if there is nothing within reach behind
+     * it.
      */
     protected @Nullable ResourceHandler<ItemResource> sourceHandler() {
         return handler(source);

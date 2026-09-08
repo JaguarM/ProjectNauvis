@@ -13,29 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.crafting.Recipe;
 
-/**
- * Teaches Facrafting's crafting panel about the technology tree.
- *
- * <h2>Why this is a whole package of its own</h2>
- *
- * <p>{@code neoforge.mods.toml} declares Facrafting <b>optional</b>, and it stays optional: the
- * lab and its science pack have standalone bench recipes precisely so this mod can be played
- * without it. But this class names Facrafting types, so loading it without Facrafting present
- * would be a {@code NoClassDefFoundError} at mod construction.
- *
- * <p>So it lives behind a branch. {@code NauvisResearch}'s constructor calls {@link #install()}
- * only when {@code ModList} says Facrafting is loaded, and the JVM resolves the reference the
- * first time that call actually executes - so with Facrafting absent this class is never touched.
- * That is exactly the trick the Jade plugins in this pack use, for exactly the same reason.
- *
- * <h2>Two sides, one class</h2>
- *
- * <p>Facrafting asks the same question on both sides and means different things by it. On the
- * server it is the gate and the answer has to come from the {@code SavedData}; on the client it
- * is a display filter and the answer comes from what was last synced. Splitting on the level is
- * the whole of it, and the two are allowed to disagree for a tick - the server checks again on
- * every click, so a client that thinks something is unlocked and is wrong gets nothing.
- */
+/** Teaches Facrafting's crafting panel about the technology tree. */
 public final class FacraftingLock implements RecipeLock {
 
     private FacraftingLock() {}

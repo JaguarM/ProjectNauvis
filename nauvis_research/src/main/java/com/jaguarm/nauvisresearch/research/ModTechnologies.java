@@ -12,23 +12,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 
-/**
- * The technology registry: a datapack registry, so a technology is a JSON file.
- *
- * <p>Same argument as recipes. The tree is data, and data is edited, reviewed and generated
- * without a compile - {@code tools/gen_technologies.py} writes all 216 files and
- * {@code checkTechnologies} holds the ones on disk to it. A Java constant per technology would
- * put a generated table in a source file and make the build the thing that ships the tree.
- *
- * <p>Entries live in {@code data/nauvis_research/nauvis_research/technology/}. The doubled
- * namespace is NeoForge's layout and not a mistake: the first is the datapack supplying the
- * entry, the second is the registry key's own namespace.
- *
- * <p><b>It is synced.</b> The network codec is not optional here - the research screen and the
- * recipe panel both run on the client and both have to know what a technology costs and unlocks.
- * Passing one makes the mod required on clients, which it is anyway: this is a pack mod, and a
- * client without it could not draw the lab.
- */
+/** The technology registry: a datapack registry, so a technology is a JSON file. */
 public final class ModTechnologies {
 
     private ModTechnologies() {}

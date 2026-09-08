@@ -64,47 +64,8 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A mining drill: it stands on the ground, takes the ore out from under it, and puts what it took
- * down in front of itself. Factorio's drill, on Minecraft's ground.
- *
- * <h2>The ore patch is whatever ore is under the drill</h2>
- *
- * <p>Factorio's ore is a number painted on the tiles; Minecraft's is blocks in the ground, at
- * every depth. So the drill's area is its columns - the footprint under a burner, the footprint
- * and a ring around it under an electric, see {@link DigArea} - and its patch is every ore block
- * in those columns, from just under the machine down to the floor. It reaches down through the
- * ground for them and <b>leaves everything else standing</b>: no hole, no shaft, no cobblestone
- * to deal with. A spent ore block becomes the rock it was in, the way a spent Factorio tile
- * becomes bare ground.
- *
- * <p>Each ore is mined the way a player would mine it, through a {@link BreakBlockEvent} on a fake
- * player holding the drill's pickaxe. That is what makes the drill visible to the rest of the game
- * - protection mods can refuse it, and Crumbling Ore, the pack's answer to a patch that runs out,
- * takes over the break and hands back one harvest of eight - and it is why the pickaxe matters:
- * its tier decides which ores the drill can take at all, Fortune multiplies the yield, and every
- * ore costs a point of durability. Silk Touch is stripped, because a drill makes ore and never
- * the block.
- *
- * <h2>The rate is Factorio's</h2>
- *
- * <p>An ore takes a second at mining speed one; a burner drill mines at a quarter of that and an
- * electric at half, so an ore every four seconds and every two. Speed modules and Efficiency on
- * the pickaxe shorten it, mining productivity research and productivity modules bank a free ore
- * now and then, exactly as they do in an assembler.
- *
- * <h2>It outputs to the front</h2>
- *
- * <p>What it mines goes into the block in front of its output head - a belt, a chest, an
- * inserter's reach - and nowhere else, which is what makes a drill-and-belt line a thing you lay
- * out. Until something takes it, it waits in the drill's one output slot, and when that fills the
- * drill stops.
- *
- * <h2>It sleeps</h2>
- *
- * <p>No ticker. A tick is scheduled while there is mining to do and nothing is scheduled
- * otherwise; it wakes on its inventory changing, on a neighbour changing, and on electricity
- * arriving. A drill that has walked its whole area and found nothing left goes quiet until its
- * pickaxe is changed, since a better one reaches ores the old one could not.
+ * A mining drill: it stands on the ground, takes the ore out from under it, and puts what it
+ * took down in front of itself. Factorio's drill, on Minecraft's ground.
  */
 public class MinerBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -463,16 +424,7 @@ public class MinerBlockEntity extends BlockEntity implements MenuProvider {
                 && level.mayInteract(miner, pos);
     }
 
-    /**
-     * Takes one ore out of the target.
-     *
-     * <p>Announced as a break by the fake player, holding the pickaxe less its Silk Touch. When
-     * something else handles the break - Crumbling Ore taking one harvest and dropping it where
-     * the ore stands - whatever landed there is swept up; when nothing does, the ore's ordinary
-     * drops are taken and the block becomes the rock it was in. Either way the ground stays
-     * closed: a spent ore under Crumbling Ore is destroyed to air by that mod, and the drill puts
-     * the rock back.
-     */
+    /** Takes one ore out of the target. */
     private void mine(ServerLevel level) {
         BlockPos ore = target;
         if (ore == null) {

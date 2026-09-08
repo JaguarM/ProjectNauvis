@@ -1,75 +1,36 @@
 #!/usr/bin/env python3
 """
-Generate recipe JSON from Factorio's recipe dump plus the mapping table.
+Generate recipe JSON from Factorio's recipe dump plus the mapping table (CLAUDE.md, rule 2).
 
-    reference/factorio/recipes.json  +  data/mapping.json  ->  recipe JSON per owning mod
+    reference/factorio/recipes.json + data/mapping.json + data/fluid_recipes.json -> recipe JSON per mod
 
-Non-negotiable #2: recipes are generated, never hand-written. Ingredient lists, counts and
-craft times come straight from the dump, so nothing in the pack is balanced by hand.
+Per craftable item, `<ns>` the owning mod and `<name>` the product:
+  data/<ns>/recipe/<name>.json                   facrafting:facraft, timed. Always written.
+  data/<ns>/recipe/<name>_standalone.json        minecraft:crafting_shapeless, for a world without
+                                                 Facrafting; only when the ingredients fit nine slots.
+                                                 A `smelting` recipe's is a vanilla furnace recipe.
+  crafting_table/data/<ns>/recipe/<name>_bench.json  the same shapeless copy in the optional bench
+                                                 datapack, under its own id. Not for machine-only
+                                                 or fluid recipes.
 
-Up to three files come out per craftable item, matching the shape Nauvis Materials
-already ships. `<ns>` is the owning mod and `<name>` is the item the recipe produces:
-
-  data/<ns>/recipe/<name>.json                 facrafting:facraft, timed, the real recipe.
-                                               Always generated.
-  data/<ns>/recipe/<name>_standalone.json      minecraft:crafting_shapeless, for playing the
-                                               mod without Facrafting. Only when the
-                                               ingredients fit nine grid slots.
-  crafting_table/data/<ns>/recipe/<name>_bench.json
-                                               The same shapeless recipe, in the optional
-                                               built-in datapack that ships disabled, so a
-                                               player can put bench crafting back if they
-                                               want it. Its own id, beside the timed recipe
-                                               rather than over it: under the timed id it
-                                               replaced the recipe, and a world with the pack
-                                               on had no timed recipes for its assemblers.
-
-Conditions are derived, not fixed: every recipe requires `facrafting`, plus `mod_loaded` for
-any other mod supplying an ingredient. The standalone copy negates only the Facrafting
-clause, so it appears when Facrafting is absent but still requires the mods its ingredients
-come from.
-
-A recipe the mapping marks with a `category` is a machine's, not the hand's: Factorio's four
-smelting recipes - the plates, steel and stone brick - are `smelting`, and the character cannot
-craft them. The facraft recipe carries the category and Facrafting keeps it out of the hand
-panel; a furnace runs it. Its standalone fallback, for a world with no Facrafting and so no
-machines, is a vanilla furnace recipe where one can express it - one ingredient, one at a time -
-and the ordinary shapeless copy where it cannot, because steel has to come from somewhere there.
-It gets no bench copy: the bench pack is for skipping the hand's craft times, and a bench does
-not smelt.
-
-Craft times need no rounding: every time in the dump is a whole number of ticks once
-multiplied by 20, from 5 (0.25s) to 6000 (300s), and Facrafting accepts 1..12000.
-
-Four kinds of entry produce nothing, and the summary counts each: items the mapping marks
-`skip`, items the dump gives no recipe (ores, fluids, filled barrels), recipes too large for
-a bench (the facraft recipe is still written, only the fallback is skipped), and
-`uranium-processing`, whose probabilistic output no crafting recipe can express.
-
-Fluids
-------
-
-The dump names fluids as ingredients and as products - plastic is coal and petroleum gas,
-lubricant is heavy oil - and `data/fluid_recipes.json` carries the recipes the dump cannot,
-the ones that make several fluids at once or one thing several ways. An ingredient whose dump
-entry is a `Liquid` becomes a `fluid_ingredient`, a product that is one becomes a
-`fluid_result`, and a recipe with any fluid in it gets no bench fallback, because a bench has
-no pipes. The fluid recipes are named after the recipe rather than the product, which is why
-they exist as a separate file: `solid-fuel-from-heavy-oil` is not an item.
+Conditions are derived: `facrafting`, plus `mod_loaded` for every mod supplying an ingredient; the
+standalone copy negates only the Facrafting clause. A `category` in the mapping marks a machine's
+recipe, which Facrafting keeps out of the hand panel. Fluid ingredients become `fluid_ingredient`,
+fluid products `fluid_result`; `data/fluid_recipes.json` carries the recipes the dump cannot, named
+after the recipe. Craft times are whole ticks (5 to 6000). The summary counts what produced
+nothing: `skip` items, raw items, recipes too large for a bench, and `uranium-processing`.
 
 Usage:
-    python tools/gen_recipes.py                     summary only, writes nothing
+    python tools/gen_recipes.py                     summary only
     python tools/gen_recipes.py --check             semantic diff against what is on disk
     python tools/gen_recipes.py --out DIR           write the tree to a staging directory
     python tools/gen_recipes.py --write             update the recipes already on disk
     python tools/gen_recipes.py --write --all       write every recipe, on disk or not
     python tools/gen_recipes.py --only MODID        restrict to one mod (repeatable)
 
-`--write` on its own rewrites the timed recipes that exist and adds their fallbacks, and leaves
-alone a timed recipe with no file yet: its product is usually an item nobody has registered, and
-a recipe naming an unregistered item is a load error on every start. It also leaves alone a
-fallback that differs from what it would write, because the drills' were written by hand on
-purpose. `--all` writes the lot, for a mod whose items all exist.
+`--write` rewrites the timed recipes that exist and adds their fallbacks; a timed recipe with no
+file yet is left alone (its item is usually unregistered, and that is a load error), and so is a
+fallback that differs from what it would write (the drills' were written by hand on purpose).
 """
 
 from __future__ import annotations

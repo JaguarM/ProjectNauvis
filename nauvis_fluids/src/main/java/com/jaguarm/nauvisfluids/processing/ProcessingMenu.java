@@ -27,15 +27,6 @@ import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 /**
  * The menu of a refinery or a chemical plant: its item slots, if it has any, and everything the
  * screen draws as a number - progress, charge, status, and what is in each tank.
- *
- * <p>Implements {@link RecipeSelector}, which is what makes Facrafting's panel change its mind
- * about what a click means: with this menu open, clicking a recipe points the machine at it, and
- * the panel offers only the recipes {@link #accepts} says this machine runs. There is deliberately
- * no recipe list in the screen itself.
- *
- * <p>A tank travels as two ints, its amount and its fluid's registry id. The fluid registry is
- * synced to the client in the server's order, so the id means the same thing on both sides, and
- * the client turns it back into a fluid to draw the bar in that fluid's colour.
  */
 public abstract class ProcessingMenu extends AbstractContainerMenu implements RecipeSelector {
 

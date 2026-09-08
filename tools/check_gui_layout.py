@@ -1,12 +1,8 @@
 """Overlap check for the pack's machine screens, read out of the source rather than retyped.
 
-The bug the first screenshot showed - a progress bar drawn through a column of slots, and two
-labels drawn through each other - is arithmetic, and arithmetic can be checked without eyes.
-
-Every screen in the pack is listed here. They share a shape, nauvis_lib's MachineScreen: a
-176x166 panel, the player's inventory in the usual place, a title at the top and a status line
-somewhere on it. What differs is the machine's own slots and bars, so that is all each entry has
-to describe.
+Every screen shares nauvis_lib's MachineScreen (176x166, the player's inventory, a title and a
+status line); each entry here describes the machine's own slots, bars and buttons, and any two
+that overlap fail. Only boxes in the table are checked.
 """
 import re
 import sys

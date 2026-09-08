@@ -12,17 +12,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-/**
- * Getting the tree to the clients, and taking one instruction back.
- *
- * <p>Two messages. {@link ResearchSyncPayload} goes out whenever the state moves and when a
- * player joins; {@link StartResearchPayload} comes in when somebody picks a technology on the
- * research screen.
- *
- * <p>The technologies themselves need no message: they are a synced datapack registry, so
- * {@code ModTechnologies} gets them to the client with the rest of the datapack. What is sent
- * here is only what has been <em>done</em> with them.
- */
+/** Getting the tree to the clients, and taking one instruction back. */
 @EventBusSubscriber(modid = NauvisResearch.MODID)
 public final class ResearchNetwork {
 

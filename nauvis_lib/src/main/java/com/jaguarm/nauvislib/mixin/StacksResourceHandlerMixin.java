@@ -14,16 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * A handler's size is its constructor's, not its save's.
- *
- * <p>NeoForge's {@code deserialize} replaces the slot list with whatever list was saved, so a
- * machine that gained a slot reads an older save and comes up one slot short - and the first
- * menu to open on it asks for the slot that is not there and throws. The pack's rocket silo
- * did exactly that in a dev world. A machine's slot count is a fact of its code, so the list
- * read back is padded or cut to the size the handler was built with, and the difference is
- * logged once so a layout change under a save is not silent.
- */
+/** A handler's size is its constructor's, not its save's. */
 @Mixin(StacksResourceHandler.class)
 public abstract class StacksResourceHandlerMixin<S> {
 

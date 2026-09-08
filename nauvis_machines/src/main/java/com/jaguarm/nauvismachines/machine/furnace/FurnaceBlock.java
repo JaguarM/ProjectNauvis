@@ -29,26 +29,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/**
- * The block half of a furnace, whichever tier: placement, breaking, opening, and the fire.
- *
- * <p>Three furnaces share this - stone, steel and electric - and they are three classes because
- * a tier is a class: crafting speed, whether it burns fuel and what a tick of electricity costs
- * are constants on the subclass, read by the one block entity. The shape is a constant on the
- * subclass too, because {@code createBlockStateDefinition} runs inside {@code Block}'s
- * constructor and the two burner tiers are two by two where the electric one is three by three.
- *
- * <h2>Lit</h2>
- *
- * <p>Vanilla's {@code lit} property, on every cell, and the block entity sets it across the
- * machine when a smelt starts and clears it when the machine stops. Only the stack or the hood
- * draws it differently - its top turns to fire - but the property is on every cell because the
- * machine is one block id, and a furnace column that lights up is the thing that says which ones
- * are working from across a base. A lit furnace gives light, as vanilla's does.
- *
- * <p>Everything else is the assembler's arrangement: right-click any cell to open it, break any
- * cell to take it down, and an inserter against any cell reaches the same slots.
- */
+/** The block half of a furnace, whichever tier: placement, breaking, opening, and the fire. */
 public abstract class FurnaceBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
     public static final BooleanProperty LIT = BlockStateProperties.LIT;

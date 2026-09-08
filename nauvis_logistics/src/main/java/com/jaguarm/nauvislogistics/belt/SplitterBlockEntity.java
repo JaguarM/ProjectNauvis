@@ -28,30 +28,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 
-/**
- * The block entity of a splitter. Sits at the anchor block (left track, cell 0).
- *
- * <p>Holds four internal tracks/lanes (two tracks, left and right, each with two lanes).
- *
- * <h2>It is ticked by {@link BeltLines}, on both sides</h2>
- *
- * <p>Not by a scheduled block tick. A splitter is one block of belt with a rule about which way
- * items leave, so it has to be part of the same simulation the runs either side of it are, and
- * that simulation runs on the client too - which is what lets a belt show moving items without a
- * packet per item per tick. See {@link BeltRun}. A splitter on a scheduled tick is a splitter the
- * client never advances: items go in, nothing comes out, and the belt in front of it stays empty
- * however well the server is routing them.
- *
- * <p>So {@link #wake()} joins {@link BeltLines}' active set rather than the tick queue, and
- * {@link #tick} is called from there. The sleep rule of non-negotiable #5 is unchanged and is the
- * same one a run keeps: a splitter with nothing on it is not in the set and costs nothing.
- *
- * <h2>Balancing</h2>
- * <p>Items entering from either input track are carried across the 1-block deck. When reaching the
- * exit (distance 0), the splitter hands off to the preferred output track (alternating 50/50 per
- * lane). If the preferred output is missing or backed up, it overflows to the open output. If both
- * outputs are blocked, the item waits at the front of the splitter.
- */
+/** The block entity of a splitter. Sits at the anchor block (left track, cell 0). */
 public class SplitterBlockEntity extends BlockEntity {
 
     /**
@@ -238,18 +215,7 @@ public class SplitterBlockEntity extends BlockEntity {
         return exits[track][lane].getInt(index);
     }
 
-    /**
-     * Where an item on the deck is in the world, in level coordinates.
-     *
-     * <p>{@link BeltRun#pointAt} for a splitter, and the same idea: an item goes from the edge it
-     * came in at to the edge it leaves by, and the drawing falls out of that rather than being a
-     * second description of the machine. The difference is that a splitter's two edges can be on
-     * different tracks, so the line across is a diagonal - which is what a Factorio splitter looks
-     * like, and the reason an item is told its exit on arrival rather than at the far side.
-     *
-     * <p>Lanes do not cross. An item on the left lane of the left track leaves on the left lane of
-     * whichever track it is bound for, a block over.
-     */
+    /** Where an item on the deck is in the world, in level coordinates. */
     public Vec3 pointAt(int track, int exit, int lane, double position, Direction facing) {
         // 0 at the edge it came in over, 1 at the edge it leaves by.
         double progress = Math.clamp(1.0 - position / Belts.UNITS_PER_BLOCK, 0.0, 1.0);

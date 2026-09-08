@@ -6,17 +6,7 @@ import com.jaguarm.nauvislib.multiblock.MachineShape;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Two tiles by two, the size Factorio made the gun turret.
- *
- * <p>The family's shell at the back - the corner every machine in the pack turns - and the front
- * open, with the two barrels standing on the floor and running out over the front edge. Twin
- * barrels because Factorio's gun turret has two, and because a turret is the one machine a
- * player looks at to see which way it points: the barrels are where the shots come from.
- *
- * <p>Nothing here reaches outside its own block, and the barrels sit on the floor rather than in
- * the wall, so no two faces share a plane facing the same way - which is what would flicker.
- */
+/** Two tiles by two, the size Factorio made the gun turret. */
 public final class GunTurretShape {
 
     private GunTurretShape() {}

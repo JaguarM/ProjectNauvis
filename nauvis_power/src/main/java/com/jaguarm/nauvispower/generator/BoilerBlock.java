@@ -31,26 +31,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/**
- * The block half of the boiler. Right-click any of its seven blocks to open it.
- *
- * <p>It used to be fuelled by right-clicking with coal in hand and questioned by right-clicking
- * empty-handed, which was a stand-in for a screen and a bad one: you could not see what was in it,
- * could not take the coal back out, and had no way to tell a full boiler from an unfuelled one
- * without a line of text. {@link BoilerMenu} replaces both.
- *
- * <h2>Three tiles by two, with a facing</h2>
- *
- * <p>{@link BoilerShape} is the footprint and the geometry; {@link Multiblock} is everything about
- * being made of several blocks, and it is {@code ElectricPoleBlock}'s four rules with two more
- * axes. This is the first machine in the pack with <em>both</em> a footprint and a facing, so it is
- * the first to exercise the rotation: the cells turn, the geometry turns with them, and the steam
- * port turns with both.
- *
- * <p>The facing is the furnace's - the front looks back at whoever placed it - because a boiler has
- * a front worth seeing, and because the steam then leaves at the back, away from the player and
- * towards whatever the boiler is feeding.
- */
+/** The block half of the boiler. Right-click any of its seven blocks to open it. */
 public class BoilerBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
     public static final MapCodec<BoilerBlock> CODEC = simpleCodec(BoilerBlock::new);

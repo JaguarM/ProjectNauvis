@@ -34,25 +34,8 @@ import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
 /**
- * What the rest of the world sees of a pumpjack and an offshore pump: an electricity buffer, and
- * the fluid each one makes.
- *
- * <p>Electricity through {@code Capabilities.Energy.BLOCK}, so a pole from {@code nauvis_power}
- * fills it without either mod compiling against the other; fluid through
- * {@code Capabilities.Fluid.BLOCK}, so a pipe carries it away on the same terms. Both are
- * NeoForge's, which is the whole reason PLAN.md chose FE over a first-party grid.
- *
- * <h2>Registered against the block, not the block entity</h2>
- *
- * <p>A pumpjack is ten blocks with one block entity, in the middle, where nothing can stand next
- * to it. Registering against the block lets any cell answer, resolving the anchor by arithmetic.
- *
- * <h2>Fluid has a place, and the rest of the machine does not offer it</h2>
- *
- * <p>The outlet is one face of one cell, and it turns with the machine - see
- * {@link PumpjackShape} and {@link OffshorePumpShape}. A pipe anywhere else gets nothing, sees
- * where the outlet is, and moves. <b>Electricity is not sided.</b> A pole may meet the machine
- * anywhere along it. The offshore pump has none to offer: Factorio's needs no power.
+ * What the rest of the world sees of a pumpjack and an offshore pump: an electricity buffer,
+ * and the fluid each one makes.
  */
 @EventBusSubscriber(modid = NauvisFluids.MODID)
 public final class ModCapabilities {

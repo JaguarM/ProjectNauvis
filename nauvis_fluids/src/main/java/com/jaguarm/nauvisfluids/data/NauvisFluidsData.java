@@ -90,16 +90,7 @@ public final class NauvisFluidsData {
         }
     }
 
-    /**
-     * What natural water is, as far as everything else is concerned.
-     *
-     * <p>It is water: swimming, drowning, boats, fire, farmland, sugar cane and a hundred other
-     * checks ask {@code #minecraft:water}, and both halves of the fluid are in it. Its still half
-     * is also in the three vanilla tags that name water's source by itself - a lily pad floats on
-     * it, frogs lay in it, a magma block under it makes a bubble column - and in the one tag of
-     * this mod's own, which is what an offshore pump may stand at. That last one holds natural
-     * water and nothing else: a bucket's water is not on the list, and that is the whole rule.
-     */
+    /** What natural water is, as far as everything else is concerned. */
     private static class FluidTagsData extends FluidTagsProvider {
 
         FluidTagsData(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {

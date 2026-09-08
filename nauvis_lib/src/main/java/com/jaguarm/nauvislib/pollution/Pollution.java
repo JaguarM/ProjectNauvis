@@ -6,19 +6,6 @@ import net.minecraft.server.level.ServerLevel;
 /**
  * What a machine breathes out: Factorio's pollution, as a number a machine hands to whoever is
  * keeping count.
- *
- * <p>Every working machine in Factorio emits pollution at a rate written on the entity - a stone
- * furnace two a minute, a boiler thirty - and the pollution is what brings the biters. The
- * machines are in five mods and the thing that keeps count is in a sixth, and none of them may
- * name each other, so the number goes through here: a machine calls {@link #emit} on every tick
- * it works, with its own figure, and whoever owns the clouds installs a {@link Sink}. Nothing
- * installed means the number goes nowhere, which is what every machine did before this existed.
- *
- * <p>The figures are Factorio's, in Factorio's unit, written on the machine that emits them;
- * this class has no opinion about what they mean. The same seam as {@code Bonuses}: a number out,
- * to whoever is listening.
- *
- * <p>Server only, like everything about the world's state.
  */
 public final class Pollution {
 

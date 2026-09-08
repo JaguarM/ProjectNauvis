@@ -10,12 +10,6 @@ import com.jaguarm.nauvislib.multiblock.MachineShape;
 /**
  * What an electric furnace looks like: three tiles by three, the size Factorio made it, with a
  * hood over the middle.
- *
- * <p>The ground is the assembler's - nine cells of the shared shell, a wall at 1.0 and a floor at
- * 0.75, so a field of them stays crossable - and the one thing standing on it is a low stepped
- * hood rather than a gearbox, whose top glows while the furnace runs. The shape is stated here
- * once and read by the block, the models and the loot table; {@code tools/check_models.py} holds
- * it to the {@code size} for {@code electric-furnace} in {@code data/mapping.json}.
  */
 public final class ElectricFurnaceShape {
 

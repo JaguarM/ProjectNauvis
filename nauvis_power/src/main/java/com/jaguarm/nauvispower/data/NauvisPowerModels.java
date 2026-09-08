@@ -143,18 +143,7 @@ public class NauvisPowerModels extends ModelProvider {
         return id;
     }
 
-    /**
-     * The whole machine in one block, for the item in your hand.
-     *
-     * <p>A boiler's anchor cell on its own is a slab of brick, and the whole machine at full size
-     * does not fit anywhere. So the geometry is read out of the shape a second time - every cell
-     * turned by its own {@code turns}, moved to where that cell sits, and the lot scaled down
-     * until the machine's longest side is one block. It cannot fall out of step with the block,
-     * because it is the same numbers.
-     *
-     * <p>{@code PipeBlock} has a hand-written {@code pipe_inventory} for the same reason. This is
-     * that idea with the hand taken out of it.
-     */
+    /** The whole machine in one block, for the item in your hand. */
     private static Identifier inventoryModel(BlockModelGenerators blockModels, Block block,
             MachineShape shape, Identifier side, Identifier top) {
         Identifier id = ModelLocationUtils.getModelLocation(block, "_inventory");
@@ -199,19 +188,7 @@ public class NauvisPowerModels extends ModelProvider {
         return model;
     }
 
-    /**
-     * One box of a machine, with the shell's three texture slots on its six faces.
-     *
-     * <p>{@code cullface} is set only where a face lies exactly on a block boundary, and only for
-     * a block model: that is what stops the deck of a machine drawing interior walls nobody can
-     * see. It must never be set on a face hanging outside its own block - there would be nothing
-     * to cull against and the face would simply vanish - and the miniature is a whole machine
-     * inside one block, so it gets none at all.
-     *
-     * <p>No {@code uv}: absent, it is derived from the box's own footprint, which is what these
-     * want. {@code tools/check_models.py} is what makes leaving it implicit safe - it fails the
-     * build on a box that leaves {@code 0..16} without stating its uv.
-     */
+    /** One box of a machine, with the shell's three texture slots on its six faces. */
     private static JsonObject machineElement(float[] box, boolean cull) {
         JsonObject element = new JsonObject();
         element.add("from", vector(box[0], box[1], box[2]));
@@ -257,15 +234,6 @@ public class NauvisPowerModels extends ModelProvider {
      */
     /**
      * The four poles: the same {@link #turnless} generator four times over, in four materials.
-     *
-     * <p>A pole has no facing and every other machine here does, which is the only reason it is
-     * not simply {@code machine()}. The geometry, the models and the item all come off the shape
-     * exactly as a boiler's do - a pole stopped having a mechanism of its own when it became a
-     * {@code MachineShape}, and this is the last place that showed.
-     *
-     * <p>Wood, then three metals darkening upwards. The tiers already differ in height and the top
-     * two in footprint; the material is what tells them apart from the side of a base, where the
-     * height of a pole against nothing is not much of a clue.
      */
     private void poles(BlockModelGenerators blockModels) {
         // Material wraps the sprite id; the model file wants the plain identifier.

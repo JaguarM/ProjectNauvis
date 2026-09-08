@@ -50,20 +50,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
-/**
- * Generates the drills' models, blockstates and loot tables.
- *
- * <p>New in version 2.0, and not there before because it was not needed: two drills that were one
- * block each are four small JSON files a person can keep right by reading them. A drill that is
- * nine blocks is not. An electric drill's blockstate has nine parts times four facings times two
- * lit states, and hand-writing seventy-two variants is how a wrong one gets shipped.
- *
- * <p>So the geometry is stated once, in {@code BurnerDrillShape} and {@code ElectricDrillShape},
- * and everything here reads it. The textures are unchanged - they are the ones the texture
- * workshop produced and they are the good part of this mod's looks.
- *
- * <p>Run with {@code ./gradlew runClientData} and {@code runServerData}.
- */
+/** Generates the drills' models, blockstates and loot tables. */
 @EventBusSubscriber(modid = NauvisMining.MODID)
 public final class NauvisMiningData {
 
@@ -326,17 +313,7 @@ public final class NauvisMiningData {
         }
     }
 
-    /**
-     * One drill per drill, however many blocks it is made of.
-     *
-     * <p>Breaking any block of a drill takes the rest down with drops enabled - that is what hands
-     * the player their drill back whichever block they hit - so without a condition a nine-block
-     * drill would drop nine drills. Only the anchor carries the entry.
-     *
-     * <p>Generated rather than written out for exactly that reason: the anchor is an index into a
-     * list of cells, and a hand-written loot table naming the wrong index is a duplication bug
-     * with nothing to catch it.
-     */
+    /** One drill per drill, however many blocks it is made of. */
     private static class DrillLoot extends BlockLootSubProvider {
 
         DrillLoot(HolderLookup.Provider registries) {

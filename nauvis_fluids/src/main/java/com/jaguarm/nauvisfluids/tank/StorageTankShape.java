@@ -14,17 +14,6 @@ import net.minecraft.core.Direction;
 /**
  * What a storage tank looks like and how much room it takes: three tiles by three, the size
  * Factorio made it, with the drum standing two blocks high in the middle.
- *
- * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py}
- * holds this to the {@code size} recorded for {@code storage-tank} in {@code data/mapping.json}.
- *
- * <h2>Four connections, in a pinwheel</h2>
- *
- * <p>Factorio's tank connects at one corner of each side, and not the same corner: the north
- * face of the north-west corner, the east face of the north-east, the south face of the
- * south-east, the west face of the south-west, so that tanks tiled edge to edge chain into one
- * another. All four are one port - a tank has no inside and outside - and all four cells are one
- * model turned a quarter each time.
  */
 public final class StorageTankShape {
     private StorageTankShape() {}

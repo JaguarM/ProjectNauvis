@@ -13,18 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 
-/**
- * The boiler's menu: one fuel slot and three numbers.
- *
- * <p>It replaces what used to be right-click handling - coal in hand to fuel it, empty hand to
- * print a line of text. Both were stand-ins for a screen, and a machine you interact with by
- * holding the right item and clicking is a machine whose contents you cannot see, cannot take back
- * out, and cannot point a hopper at with any confidence.
- *
- * <p>No position travels with this menu, unlike the assembler's. The screen reads everything it
- * needs out of {@link ContainerData}, so the client half can be built from nothing - which is what
- * the two-argument constructor is for, and why the menu type is a plain vanilla one.
- */
+/** The boiler's menu: one fuel slot and three numbers. */
 public class BoilerMenu extends AbstractContainerMenu {
 
     /** Ticks of fuel left, what the last item was worth, and the two tanks. */

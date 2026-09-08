@@ -13,17 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 
-/**
- * The burner inserter's menu: one fuel slot, and how far through a swing it is.
- *
- * <p>It replaces right-clicking with coal in hand to fuel it and right-clicking empty-handed to
- * print a line of text. Both were stand-ins for a screen: you could not see what was in the slot,
- * could not take it back out, and could not tell an inserter that was out of coal from one that
- * simply had nothing to move.
- *
- * <p>The electric inserter deliberately has none of this. It has no slot, so there would be
- * nothing in the screen but a bar - which is what the hover display is for.
- */
+/** The burner inserter's menu: one fuel slot, and how far through a swing it is. */
 public class BurnerInserterMenu extends AbstractContainerMenu {
 
     public static final int DATA_BURN_TIME = 0;

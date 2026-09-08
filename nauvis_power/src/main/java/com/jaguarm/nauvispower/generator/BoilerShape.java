@@ -12,38 +12,8 @@ import com.jaguarm.nauvislib.multiblock.MachineShape;
 import net.minecraft.core.Direction;
 
 /**
- * What a boiler looks like and how much room it takes: three tiles by two, the size Factorio made
- * it, with a chimney.
- *
- * <p>Footprint is identity - see {@code docs/ARCHITECTURE.md} - and {@code tools/check_models.py} holds
- * this to the {@code size} recorded for {@code boiler} in {@code data/mapping.json}. Everything
- * else here is ours: Factorio is two-dimensional and has no opinion about chimneys.
- *
- * <h2>Seven blocks, and a lane between them</h2>
- *
- * <p>Six at ground level and the chimney above the middle of the back. The shell is
- * {@link MachineParts} - a wall at 1.0, a floor at 0.75 - so a boiler is climbed onto once and
- * walked over after that, and the chimney is the only thing to go around.
- *
- * <p><b>Where the chimney sits is a walkability decision, not a drawing one.</b> Factorio players
- * chain boilers in a row, and a row of them here has to stay crossable. The chimney is on the
- * middle of the three, so chained boilers stand their chimneys three blocks apart and leave a
- * two-wide lane between each pair. Put it on a corner instead and two chained boilers would leave
- * their chimneys touching, with the wall running the length of the row.
- *
- * <h2>Steam leaves one block, and water comes in at two</h2>
- *
- * <p>The steam port is the back face of the cell under the chimney, and nowhere else. Water comes
- * in at the two ends of the front row - Factorio's boiler has its water connections at either end
- * and its steam output at the back, which is what lets a row of boilers pass water along
- * themselves with the steam pipe running behind. A one-block boiler had to offer steam on all six
- * sides because it had only one block to offer it from; with a footprint there is somewhere
- * specific to put each pipe, and getting it wrong is a thing the player can see and fix. That is
- * what a footprint buys.
- *
- * <p>Each port is a gap in the wall: the back middle is a plain deck where the steam pipe goes,
- * and the front row has its wall along the front only, so both ends stand open where the water
- * pipes meet them.
+ * What a boiler looks like and how much room it takes: three tiles by two, the size Factorio
+ * made it, with a chimney.
  */
 public final class BoilerShape {
 

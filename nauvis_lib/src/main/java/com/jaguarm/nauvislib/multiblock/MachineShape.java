@@ -19,39 +19,6 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 /**
  * What shape a machine is: which blocks it occupies, which one holds everything, and where the
  * player's click lands.
- *
- * <p>One of these per machine, built once in a static initialiser and read by everything else -
- * the block for placement and collision, the model provider for geometry, the loot table for
- * which cell drops the item. A footprint is Factorio identity (see {@code docs/ARCHITECTURE.md}), so it
- * is stated once and never restated.
- *
- * <h2>Cells are a set, not a box</h2>
- *
- * <p>A 3x3 machine two blocks tall is not necessarily eighteen blocks. The assembler is nine at
- * ground level and one more for the gearbox on top, because the rest of its upper storey is air
- * you can walk through - which is the whole reason a field of assemblers stays crossable. A
- * boiler will be six with a chimney on one tile. Stating the occupied cells rather than a
- * bounding box is what makes that possible, and it costs nothing.
- *
- * <p>The set must be <b>orthogonally connected</b>, and the constructor throws if it is not.
- * That is not tidiness: the teardown rule in {@link Multiblock} propagates from cell to touching
- * cell, so an island would survive its own machine being broken.
- *
- * <h2>Where the anchor is, and why finding it costs nothing</h2>
- *
- * <p>One cell is the anchor. It carries the block entity, the loot table entry and the menu; the
- * rest are structure. Every cell stores <em>which cell it is</em> in an {@code IntegerProperty},
- * so the anchor's position is this cell's position minus its own offset - arithmetic on a
- * blockstate the caller already has, with no block read and no block entity on the other cells.
- * Nine block entities per machine, in a base of thousands of machines, to hold a number that is
- * already in the blockstate would be a poor trade.
- *
- * <h2>Rotation</h2>
- *
- * <p>Cells are stated in the machine's north-facing frame and turned by {@link Boxes}' single
- * rotation, the same one the geometry uses. A machine with no facing - a Factorio assembler has
- * none, because what goes in and what comes out is decided by the inserters around it - simply
- * never asks for anything but north.
  */
 public final class MachineShape {
 

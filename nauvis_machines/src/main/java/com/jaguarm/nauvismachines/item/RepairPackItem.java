@@ -19,16 +19,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.context.UseOnContext;
 
-/**
- * Factorio's repair pack: two circuits and two gears, and it mends what the biters chewed.
- *
- * <p>Factorio's is a tool with durability, used by holding the button on a damaged entity. Here a
- * pack is a charge of {@value #MENDS} health: click a damaged block or machine and one pack is
- * spent mending up to that much, whatever it was - a wall, a turret, an assembler - through
- * {@code nauvis_lib}'s {@link Health}. Clicking something whole spends nothing. A charge rather
- * than durability because a consumable with durability does not stack and a stack of these is
- * what a player carries to a wall; see {@code GAPS.md} for what that costs.
- */
+/** Factorio's repair pack: two circuits and two gears, and it mends what the biters chewed. */
 public class RepairPackItem extends Item {
 
     /** How much one pack mends: Factorio's durability of three hundred, taken as health. */

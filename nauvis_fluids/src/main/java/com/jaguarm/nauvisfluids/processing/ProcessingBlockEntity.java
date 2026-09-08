@@ -58,37 +58,8 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
- * A machine that turns fluids into fluids, and sometimes items into either: the oil refinery and
- * the chemical plant, which are one machine with two sets of numbers.
- *
- * <p>Told what to make through Facrafting's panel, exactly as the assembler is, and run on the
- * assembler's model: check the ingredients once as a craft starts, count down, pay and bank at
- * the end in one transaction, and stall - never spin - when a product will not fit. What is new
- * is that the ingredients and the products are in <em>tanks</em>, one behind each port, and which
- * tank is which is the recipe's to say.
- *
- * <h2>Where each fluid goes</h2>
- *
- * <p>Factorio's oil is a puzzle about pipes: a refinery's three products come out of three
- * different places, each has to be piped somewhere, and a full tank of the one you are not using
- * stops the other two. That only works if a fluid's port is fixed, so this machine fixes it. A
- * recipe's fluid ingredients are given input ports in order and its fluid results output ports in
- * order, except where the machine has a place it keeps for a fluid - the refinery keeps crude oil
- * at its second input and petroleum gas at its third output, so that switching from basic to
- * advanced oil processing adds pipes rather than moving them, as it does in Factorio. See
- * {@link #preferredInput} and {@link #preferredOutput}.
- *
- * <p>The tanks behind unused ports take nothing, and changing the recipe throws away whatever the
- * new one has no port for; see {@link PortTank}.
- *
- * <h2>Sleeping</h2>
- *
- * <p>No ticker. The machine schedules its own tick while it is working and stops when it cannot
- * start or cannot finish, and each thing that could change that reports from outside: a tank
- * changing - a pipe filling an input, or drawing from an output through {@link FluidOutputAccess}
- * - an item slot changing, electricity arriving through {@link MachinePower}, a recipe being
- * chosen, or a neighbour changing. {@code oil_machines_sleep} is the test that fails if any of
- * them stops working.
+ * A machine that turns fluids into fluids, and sometimes items into either: the oil refinery
+ * and the chemical plant, which are one machine with two sets of numbers.
  */
 public abstract class ProcessingBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -511,11 +482,6 @@ public abstract class ProcessingBlockEntity extends BlockEntity implements MenuP
 
     /**
      * Pays for one craft and banks its products, all or nothing.
-     *
-     * <p>Every fluid in, every item in, every fluid out and the item out, inside one transaction,
-     * so a product that will not fit rolls the ingredients back untouched. That is what makes a
-     * full tank of heavy oil stall an advanced refinery rather than void its light oil, which is
-     * the whole puzzle of Factorio's oil.
      *
      * @param commit false to ask whether the craft is possible without performing it.
      */

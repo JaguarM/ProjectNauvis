@@ -28,43 +28,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/**
- * An electric pole, and the reason the rest of this package exists.
- *
- * <p><b>It has no ticker and no {@code tick} override</b>, and that is the point rather than an
- * omission. A pole does nothing on its own: it joins a {@link PowerNetwork} when it loads and
- * leaves when it goes, and the network is what ticks. Compare the boiler and the steam engine,
- * which schedule their own ticks because each can answer "have I got work?" by looking at itself.
- * A pole cannot - it is a node in a graph, and the graph is the thing with work to do.
- *
- * <h2>A tier is a shape and a reach</h2>
- *
- * <p>Three of them: one tile four blocks tall, one tile five blocks tall, and two tiles by two
- * six blocks tall. Both numbers are constants on a subclass rather than constructor arguments,
- * because {@code createBlockStateDefinition} runs inside {@link Block}'s constructor and a field
- * of a subclass does not exist yet when it does - see PITFALLS.md. An overridden method returning
- * a static is safe there, and is what {@link #shape()} and {@link #wireReach()} are.
- *
- * <p>The three share a block entity type, the way the two electric inserters do: what differs is
- * a number the block already knows, and nothing that is saved changes.
- *
- * <h2>The multi-block is not this class's</h2>
- *
- * <p>Placement, teardown, which cell holds the block entity and which one you clicked are all
- * {@link Multiblock}'s - the same mechanism the boiler and the steam engine use. It did not start
- * that way: the pole had four rules of its own over a {@code PolePart} enum, and {@code Multiblock}
- * was generalised out of them. Keeping both was tolerable while a pole was one tile and always
- * four blocks tall; the tiers ended it, because a five-block pole needs a five-value enum and a
- * two-by-two one needs two more axes, and {@link MachineShape} has had both all along.
- *
- * <p>What is still the pole's own is the part {@code Multiblock} has no opinion about: it is
- * climbable, so you go up it like a ladder, which is why the post collides even though the
- * crossarm does not. That is Immersive Engineering's behaviour too, and it is the difference
- * between a pole being scenery and being somewhere to stand while you wire the next one.
- *
- * <p>Right-click any part to see what it is connected to, which is the only way to see a network
- * from inside the game and is how the wire reach and the supply area were checked by hand.
- */
+/** An electric pole, and the reason the rest of this package exists. */
 public abstract class ElectricPoleBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
     protected ElectricPoleBlock(Properties properties) {

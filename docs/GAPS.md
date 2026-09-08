@@ -1,497 +1,151 @@
 What is deliberately missing
 ============================
 
-Known holes, each a decision rather than an oversight. If something looks broken, look here before
-treating it as a bug. `PITFALLS.md` is the other list: things that *are* wrong.
+Each a decision. If something looks broken, look here before treating it as a bug. Entries marked
+*kept* are divergences from Factorio chosen on purpose and are not debt.
 
 Power and fluids
 ----------------
 
-- **An accumulator's rates are per tick because the network asks once a tick.** Forty FE in and
-  forty out are the handler's per-call limits, and `PowerNetwork` makes one call each way at most;
-  a second network cannot reach the same accumulator, since poles that see each other merge. A mod
-  that drove the handler itself every tick could move more, and nothing here stops it.
-- **An accumulator covers the whole shortfall, up to its rate, at any charge level.** Factorio's
-  does the same. There is no reserve, no low-charge cut-off, and no circuit-network reading of it;
-  the readout on a pole says how full the network's accumulators are between them, and that is the
-  only place the number is shown.
-- **A network that moved nothing is re-checked every ten ticks** rather than woken exactly. It hears
-  about members and machines the moment they appear, but "a generator elsewhere filled up" is a fact
-  about a handler in another mod that owes us no signal.
-- **No brownout.** PLAN.md wants a machine whose buffer cannot refill to run *slower*; ours stops.
-- **A dark or roofed solar panel looks up every ten seconds.** The sun has no event, so a panel
-  with nothing to make schedules one tick two hundred ticks out rather than waiting for a signal
-  that will never come. It is the one bounded poll in `nauvis_power`, and it is the reason a panel
-  starts making power within ten seconds of dawn rather than on the tick.
-- **A solar panel loses output in rain, and Factorio's does not.** The panel reads the sky's
-  darkening, which weather is part of. A panel that ignored the rain over it would read as broken
-  in Minecraft, so this is a divergence the pack keeps; it is worth a third of the output while it
-  rains.
-- **No pipeline length limit.** Factorio caps a segment at 320 pipes and its tooltip says `6/320`;
-  ours says `6 pipes`. Adding the cap is a real gameplay change — refusal to connect, not a number.
-- **A row of boilers levels its water rather than flowing it.** Factorio's boilers pass water
-  through end to end by its flow model; here each boiler draws from the one beside it until the
-  two hold the same, half the difference at a time, which converges in a step and lets the row
-  sleep. It means the far end of a long row fills more slowly than the near end, and a row fed at
-  one end only runs as fast as that levelling carries water along it. Pipe the row at both ends,
-  or along its front, and it does not matter.
-- **A boiler holds a tick of water short of full and burns nothing for it.** Fuel is spent per
-  tick of running, and a tick makes as much steam as there is room and water for; a boiler that
-  is one water short makes one steam for a tick of coal. Factorio's does the same in its own
-  units.
-- **A long-handed inserter with power and nothing to do costs one look a second**, because the wake
-  signal has a radius of one block and its ends are two away. Every other machine sleeps for free.
-  Two things would remove it and neither exists: a hook that fires when the block entity at a
-  watched position changes, or a reason to believe every source a long arm reaches is one of ours.
+- Accumulator rates (forty FE in, forty out) are per handler call; the network calls once a tick.
+- An accumulator covers the whole shortfall at any charge, as Factorio's does. No reserve, no
+  cut-off; the pole readout is the only place its charge shows.
+- A network that moved nothing is re-checked every ten ticks rather than woken exactly.
+- No brownout: a machine short of power stops. Factorio's runs slower.
+- A dark or roofed solar panel looks up every ten seconds; the sun has no event.
+- A solar panel loses two thirds of its output in rain. *Kept.*
+- No pipeline length limit; the readout says `6 pipes`, not `6/320`.
+- A row of boilers levels its water rather than flowing it; pipe a long row at both ends.
+- A boiler one water short of full makes one steam for a tick of coal, as Factorio's does.
+- A long-handed inserter with power and nothing to do looks once a second; every other machine
+  sleeps for free.
 
-Oil
----
+Oil and water
+-------------
 
-- **An oil well is not finite, and that is Factorio's rule, not a softening of it.** A well is pumped
-  down ten a cycle to a floor — 60000, or a fifth of what it started with, whichever is more — and
-  pumps at that rate for ever. Two a second from a well that began at 100%. A player who runs their
-  only field dry would have no way to plastic, and Factorio never lets that happen. The readout
-  says *At its floor* so the falling number is not mistaken for a countdown to nothing.
-- **Where fields go is an approximation of Factorio's autoplace, and how rich they are is half
-  Wube's numbers.** The prototype states `additional_richness = 220000` and a distance factor of
-  `max((1300 + d) / 2600, 1)`, and both are used as written. The density term on top — the spread
-  between 90% and 200% at the edge of the starting area — is this pack's, chosen to match what a
-  Factorio player finds there, because the real one lives in a noise program this pack has no copy
-  of. **Fields are four times as common as Factorio's**: one per 300 chunks against the one per 1200
-  that would be its 1.8 per square kilometre, and none within 150 blocks of the origin rather than
-  Factorio's wider starting area. Factorio's oil is rare and easy to find because the map shows it;
-  here the only map is a pumpjack in hand outlining wells within render distance, so the density
-  does the map's job and puts the nearest field typically inside a hundred and fifty blocks. Wells
-  per field, three to eight; spacing, a 4-block grid. All of that is placement behaviour, and none
-  of it is identity — the yield percentages and what a pumpjack does with them are.
-- **A superflat world has no oil, and no trees or ores either.** The default "Classic Flat" preset
-  runs no biome features at all (`features: false`); only the "Overworld" flat preset does. Nothing
-  in a biome modifier can change that. `/oil field` puts a field where you stand, placed by the same
-  code worldgen uses, and `/oil well` puts one well under your feet. Gamemaster only, like
-  `/research`.
-- **Distance is measured from the world origin, not the world spawn.** Factorio measures from the
-  starting position, which is its origin. Minecraft's spawn is near 0,0 and can move; a rule that
-  read the spawn would make new chunks richer or poorer after `/setworldspawn`.
-- **There is no map, so there is an x-ray.** Factorio's map view is how oil is found. Holding a
-  pumpjack outlines every well within render distance through the terrain; further than that,
-  nothing. Whether that finds a field at this density is a judgement only a player makes.
-- **The pumpjack's screen exists for its module slots.** Factorio's pumpjack has no screen; ours
-  opens one because two module slots need somewhere to be, and it draws the charge, the cycle and
-  the tank while it is open. Mining productivity research and productivity modules bank a free
-  cycle's oil without touching the well, which is Factorio's rule for pumpjacks too.
-- **No brownout, again.** A pumpjack short of 12 FE stops; Factorio's runs slower.
-- **The tank is one number and the pipe run is one tank**, as for steam. Factorio 2.0's flow
-  model — segments, throughput falling with length — is not modelled, and a pipeline here carries
-  whatever is put in at once.
-- **Where each fluid enters and leaves a machine is a table on the machine, not a field on the
-  recipe.** Factorio fixes it per recipe with `fluidbox_index`, which `data/fluid_recipes.json`
-  does not carry. The refinery keeps water and crude at its first and second inputs and heavy,
-  light and petroleum at its three outputs; the chemical plant keeps water at its first input;
-  everything else takes the next free port in recipe order. That reproduces Factorio for every
-  recipe the pack ships - basic oil processing's crude and gas are where advanced processing's
-  are, so the upgrade adds pipes rather than moving them - and a recipe from another pack with a
-  fluid no table names gets the next free port, which is Factorio's default too.
-- **Changing a machine's recipe throws away what the new recipe has no port for.** Factorio does
-  the same, behind a confirmation; there is no confirmation here. A refinery switched from
-  advanced to basic processing loses its heavy and light oil.
-- **A machine's ports have no throughput.** A port takes whatever its run offers up to its tank,
-  and a craft's worth leaves an output in one tick; Factorio's fluid boxes fill and drain through
-  its flow model. The same gap as the pipes' - see above - seen from the machine.
-- **No pollution and no brownout on the refinery and the chemical plant**, as for the
-  pumpjack and the assemblers. Both take three modules, which is Factorio's number.
-- **The storage tank has no window.** Factorio's shows a bar; the hover readout says the same
-  line. And nothing empties a tank on purpose: there is no pump, by decision - see `PLAN.md` - so
-  what leaves a tank is what its run's sinks draw, and a tank of the wrong fluid on a run is
-  emptied by breaking it.
-- **No trains, no vehicles, and no pump**, by decision rather than by schedule: `PLAN.md` has it.
-- **A tank on two runs is levelled by each in turn**, one tick apart, rather than as one segment.
-  It converges within a few ticks and then sleeps, which is close enough to be indistinguishable at
-  the readout, and not Factorio's single fluid segment.
-- **No coal liquefaction.** Its technology needs production science, which the tree does not
-  reach, and a recipe no technology names is free from the first tick, so the recipe is left out
-  of `data/fluid_recipes.json` rather than shipped unlocked.
-- **An assembler's fluid boxes are two fixed faces.** Factorio's assembling machine 2 has its
-  input box on one side and its output on the opposite one and is rotated to move them; here
-  the machine faces the way the player stood when placing it, input towards them, and is not
-  turned afterwards - break it and place it again. The first machine has no fluid box and no
-  facing, as in Factorio.
-- **Explosives do nothing.** The item exists because the chemical plant makes it and the mapping
-  owns it; cliff explosives and artillery are milestones away.
-- **A mine trigger is only heard with Facrafting installed.** The pumpjack reports through
-  Facrafting's `MiningListeners`, the one seam two subsystem mods may share, and `nauvis_fluids`
-  now requires Facrafting outright, since its machines run Facrafting's recipes. A standalone run
-  of `nauvis_research` without it can complete craft triggers from vanilla's own events and mine
-  triggers from nothing. The pack always ships Facrafting, so this is a fact about the seam rather
-  than a hole a player meets.
-
-Water
------
-
-- **Every lake and sea is `nauvis_fluids:water`, and a bucket turns it into `minecraft:water`.**
-  That is the design, not a hole: Factorio's water is where the map put it, and Minecraft's two
-  buckets make a spring anywhere. Natural water is scooped as a water bucket, poured back as
-  vanilla water, and never makes a new source - and an offshore pump draws from natural water and
-  nothing else. What follows is what that costs.
-- **Chunks generated before this stay vanilla.** The swap runs as the last step of a chunk's
-  generation; a world made earlier keeps the water it has, and a pump finds nothing in it.
-- **Natural water waterlogs nothing.** Waterlogging is hard-coded to vanilla's fluid, block by
-  block: a slab, a stair or a fence placed in a lake goes in dry, and natural water will not flow
-  into one. The water inside kelp, seagrass, coral and a shipwreck's stairs is vanilla's for the
-  same reason, and breaking one leaves a block of vanilla water standing in the sea. It is scooped
-  as before and pumped by nothing, so the rule holds; it just looks like a block of water.
-- **Fish, squid, dolphins, glow squid and the nautilus spawn by a rule of ours.** Vanilla's asks
-  for the water block by name; `NaturalWaterSpawns` adds the same rule reading ours, alongside
-  vanilla's rather than in place of it. Anything else that names the block - kelp and seagrass
-  growing, bone meal on water, frost walker, a fishing bobber's splash particles, a frozen lake
-  refreezing, ice melting back to vanilla water, a turtle's way to the sea - does not apply in
-  natural water, and is left alone until somebody misses it.
-- **A neighbouring chunk can put a little vanilla water back.** A feature that reaches over a
-  chunk border - a lush cave's clay pool, an iceberg - may write vanilla water into a chunk that
-  was already made natural. Rare, at the edges, and harmless: it is not pumpable and it cannot
-  spread into natural water.
-- **An offshore pump's intake reaches five blocks: one and two under it, and its three open
-  sides.** Two down so that a bank a block above the water is a place to stand; not the block the
-  intake itself replaced, so a pump set down in a one-deep puddle of natural water finds the
-  puddle gone. Still water only: the flowing skirt where a lake spills into a dug channel is not
-  a lake, and a channel does not bring the sea inland. A pump clicked onto the lake floats on it,
-  which is Factorio 2.0's rule and not 1.1's.
-- **Its numbers are the pack's ratio, not Factorio's units.** 1200 a second and a fluid box of
-  200 in Factorio; forty a tick and a tank of 200 here, so that one pump is twenty boilers as it
-  is there. The footprint, the recipe, the technology and needing no power are identity.
-- **What the pump gives is `minecraft:water`**, which is what `data/mapping.json` maps Factorio's
-  water to, what any mod's tank understands, and what the boiler boils. Natural water is the
-  thing in the world; water is the thing in the pipe.
-- **`#nauvis_fluids:offshore_pumpable` is the switch.** A pack that wants Minecraft's infinite
-  water back adds `minecraft:water` to it and changes no code.
+- A well is never exhausted: it falls ten a cycle to a floor of 60000 or a fifth of its start.
+- Field placement approximates Factorio's autoplace: richness uses Wube's `additional_richness`
+  220000 and distance factor; density is four times Factorio's (one per 300 chunks, none within
+  150 blocks of the origin) because there is no map. Three to eight wells a field on a 4-block grid.
+- A superflat world with the default preset runs no features: no oil, trees or ores. `/oil field`
+  and `/oil well` place them; gamemaster only, like `/research`.
+- Distance is measured from the world origin, not spawn.
+- There is no map, so a pumpjack in hand x-rays every well in render distance.
+- The pumpjack's screen exists for its module slots.
+- A pipe run is one tank; no flow model, no throughput on ports.
+- Fluid ports are a table on the machine, not `fluidbox_index` on the recipe (see `MAPPING.md`).
+- Changing a recipe throws away fluids the new recipe has no port for, without a confirmation.
+- The storage tank has no window; nothing empties a tank on purpose (no pump, by decision).
+- A tank on two runs is levelled by each in turn.
+- No coal liquefaction: its technology needs production science, which the tree does not reach,
+  and an unnamed recipe would be free.
+- An assembling machine 2's fluid boxes are two fixed faces, set by placement, not rotatable.
+- Explosives do nothing.
+- A mine trigger is heard only with Facrafting installed, which the pack always ships.
+- Every lake and sea is `nauvis_fluids:water`, bucketed as vanilla water, never a new source.
+  Chunks generated before this stay vanilla. Natural water waterlogs nothing; kelp, seagrass,
+  coral and shipwrecks hold vanilla water. Fish, squid, dolphins, glow squid and the nautilus
+  spawn by a rule of ours; kelp growth, bone meal, frost walker, refreezing and turtles do not
+  apply in natural water. A feature reaching over a chunk border may write a little vanilla water.
+- The offshore pump's intake is one and two below and its three open sides, still water only,
+  and it floats on a lake (Factorio 2.0's rule). Forty a tick and a tank of 200, so one pump is
+  twenty boilers. It gives `minecraft:water`; `#nauvis_fluids:offshore_pumpable` is the switch.
 
 Belts
 -----
 
-- **A belt does not load a chest.** Factorio-faithful: a belt running into a container backs up, and
-  taking things off is what inserters are for. `belt_does_not_load_a_chest` pins it.
-- **Crouching stops a belt carrying you**, which Factorio does not do. It is in for the Minecraft
-  reflex — without it, placing a machine beside a working belt means being carried off mid-click.
-- **A dropped item entity is carried erratically, and sometimes stalls outright.** Measured over
-  six runs of the same setup it travelled between 0.5 and 6.4 blocks in the same time, and one run
-  in six it stopped on a flat belt and stayed there. `stepOn` is only reached while `onGround` is
-  true, and an item bounces every time it lands — `ItemEntity.tick` inverts and halves its downward
-  speed — so it spends much of its life just off the belt. `BeltBlock.hold` cancels that bounce,
-  which helps and does not cure it. A player is carried properly; a thrown item is not, and
-  **anything asserting how far one travelled will be flaky** — see `belt_slope_risers_are_climbable`
-  for the shape this has to be tested in instead.
-- **And so nothing tests that a belt carries anything at all.** `belt_carries_what_stands_on_it`
-  asserted a distance, which for a resting item is not a fact about the belt — it failed one run in
-  five, and was deleted rather than weakened. **A belt that stopped carrying the player would pass
-  every test in this repo.** Standing on one is the only instrument there is.
-- **A belt does not turn you as it carries you.** An entity on a corner is pushed the way that block
-  faces, so a bend is two straight shoves rather than an arc. Items do curve.
-- **A belt in hand re-points the belt it replaces**, which is Factorio's fast-replace and is worth
-  knowing before you walk a line with one: upgrading a corner points it wherever you were looking,
-  so a bus is upgraded by walking *along* it. Turning and replacing are one gesture on purpose.
-- **Fast-replace does not extend to a splitter.** Clicking a splitter with a splitter in hand does
-  nothing, whichever tier is in the hand. A belt is one block and one block state, so swapping it is
-  a swap; a splitter is two blocks, a multiblock anchor and a deck with items on both tracks of it,
-  and re-anchoring that in place is a different problem from re-pointing a belt. Break it and place
-  the other one — the deck drops what it was carrying, as breaking any belt does.
-- **A replacement is one belt per click.** Factorio has an upgrade planner that does a whole line at
-  once; here you walk the line with a belt in hand, which is the same gesture laying one takes.
-- **Items cross a ramp faster than they cross flat ground**, by the diagonal of a square: about 41%.
-  A run measures itself in 64ths of a *block* and every block is worth 64 of them, which is what
-  makes `frontEdge` and `blockAt` arithmetic rather than a scan and what lets a lane's positions add
-  exactly for ever. A ramp is 16 root 2 pixels long and would be 90.5 units - not a whole number,
-  and the exactness is the property the whole lane model is built on. Factorio has no slopes, so
-  non-negotiable #1 has nothing to say about which number is right here; this is the one that costs
-  nothing. The tread's texture is stretched over the ramp by the same 41%, so what you see and what
-  the items do agree.
-- **A slope that also turns is carried but not drawn.** A belt hands to the first belt straight
-  ahead of it, level or one step either way - so a line can change level and change direction in the
-  same block, and there is no shape for that. Items still cross at the right height, because the
-  height of a seam comes from the two blocks sharing it rather than from either one's shape; they
-  simply glide over a belt with no ramp drawn under them. Build the turn and the climb as two
-  blocks and it looks right.
-- **A ramp's collision is sixteen steps and its model is a smooth 45 degrees.** They are meant to
-  disagree here, and the step count is set by physics rather than by looks: a riser has to be
-  smaller than one tick of the slowest belt's lift, because an item, a minecart or an orb has a step
-  height of *zero* and is carried up a slope only by `BeltBlock.stepOn` lifting it. One pixel is
-  under a transport belt's 1.5 a tick with room to spare, and it hugs the drawn ramp within a pixel.
-- **A ramp reaches out of its own block at both ends**, and is meant to. Up into the block above,
-  which is where the surface has to be to meet the belt at the top of the climb - vanilla's raised
-  rail does the same - and, because a rotated box's ends tilt with it, a third of a block *along*
-  the belt into the block that belt is in. There the ramp's material lies inside the belt or along
-  the top of it. It does mean a solid block placed directly above a ramp will clip it.
-- **The slanted slab is a tenth of a pixel narrower than its block**, which is the whole of the
-  z-fighting fix: it overlaps the square box under its low end and the flat belt at the top of the
-  climb, neither of which can be avoided, and while all three spanned the full width they sat their
-  side faces on the same planes. Pulling in the slanted piece - rather than the square ones - leaves
-  every flat joint exactly as wide as the belt it meets.
-- **Client and server runs can differ at a chunk edge**, because a client only has the belts in its
-  loaded chunks. It costs a belt at the very edge of the loaded world appearing to back up when it
-  is not; a chunk arriving re-seeds that block's items from the block entity.
+- A belt does not load a chest; inserters do. Crouching stops a belt carrying you. *Kept.*
+- A dropped item entity is carried erratically and sometimes stalls (`stepOn` needs `onGround`,
+  and an item bounces). Nothing tests that a belt carries anything; a player on one is the only
+  instrument. Anything asserting how far an item travelled will be flaky.
+- A belt does not turn you on a corner; items do curve.
+- A belt in hand re-points the belt it replaces, so a bus is upgraded by walking along it.
+  Fast-replace does not extend to a splitter. One belt per click.
+- Items cross a ramp 41% faster than flat ground, because distances are integer sixty-fourths;
+  the tread texture is stretched to match. *Kept.*
+- A slope that also turns is carried but not drawn; build the turn and the climb as two blocks.
+- A ramp's collision is sixteen one-pixel steps under a smooth model; a ramp reaches into the
+  block above and a third of a block along, so a solid block placed directly above clips it.
+- Client and server runs can differ at a chunk edge.
 
 Mining
 ------
 
-- **The ore patch is Minecraft's veins, not a painted number.** Factorio's drill sits on a patch
-  it can see; ours reaches down through the ground for whatever ore blocks are in its columns, down
-  to `mineFloor`, and a player places it blind. The hover outline shows the volume and the status
-  line says "No minable resources" after the first walk, which is the whole of the feedback; a
-  count of what is under a drill before it is placed would be the Factorio thing and is not built.
-  How much a vein yields is Crumbling Ore's `crumbleHarvests`, eight a block, and that is the
-  pack's resource number rather than a block entity of the pack's own.
-- **A drill wants a pickaxe, and Factorio's does not. That one is kept.** It is the pack's
-  clearest deliberate divergence: a machine you hand a tool to reads as a Minecraft machine, and
-  the tool's tier, its enchantments and its durability all do something - the tier decides which
-  ores it can take, Fortune multiplies the yield, Efficiency shortens the cycle a tenth a level,
-  Silk Touch is stripped, and every ore costs a point. Going 1:1 with Factorio is what keeps the
-  *balance* legible, which is why ids, ingredients, craft times and footprints are held to it
-  without exception - a mechanic that is simply more fun here is a different question, and this
-  one was answered. **Do not read it as debt.**
-- **A drill with nowhere to put its ore polls.** The output goes to the block in front of the
-  head; a belt clearing is not a block change and wakes nothing, so a drill that stopped on a
-  full output looks again once a second rather than sleeping. A chest placed in front wakes it at
-  once. And it never drops ore on the ground the way Factorio's does when the tile is bare - the
-  ore waits in the drill's one output slot instead.
-- **A depleted drill stays depleted until its pickaxe changes.** Walking three thousand blocks
-  again on every neighbour change was the alternative. Ore does not grow back, so the only thing
-  that makes new ore minable is a better pickaxe, and that is the one change that restarts the
-  walk. A drill loaded from disk walks once regardless.
-- **Only the first mining productivity.** `mining-productivity-1` is in the tree at Factorio's
-  cost and the drills read it; the rest of the ladder is infinite research on higher science.
+- The ore patch is Minecraft's veins reached down to `mineFloor`; the drill is placed blind and
+  the status line says "No minable resources" after its first walk.
+- A drill wants a pickaxe: tier decides ores, Fortune multiplies, Efficiency shortens the cycle a
+  tenth a level, Silk Touch is stripped, every ore costs a point. *Kept.*
+- A drill with nowhere to put its ore polls once a second; a chest in front wakes it at once. It
+  never drops ore on the ground.
+- A depleted drill stays depleted until its pickaxe changes.
+- Only `mining-productivity-1`; the rest is infinite research.
 
 Military and pollution
 ----------------------
 
-- **The biters are zombies.** Minecraft's hostiles walking at the factory, wearing a cap against
-  the sun, in place of Factorio's biters, spitters, nests, expansion and evolution. They chew
-  through what is in their way and hit the machine they came for, through `nauvis_lib`'s
-  `Health`; they turn on a player only within six blocks or when hit. `PLAN.md`'s military note
-  has the model and its knobs; a creature of the pack's own is the version after this one.
-- **A hostile forgets the factory over a reload.** Which machine it was sent at is on its goal
-  and not saved, so a zombie that lives through a restart is a zombie again. The attacks that
-  matter are over in minutes; the case is a hostile left standing at a wall overnight.
-- **Health is a hundred times hardness, except where a machine says otherwise.** Only the turret
-  carries Factorio's own figure so far - four hundred, which is also its hardness times a
-  hundred. An assembler is three hundred by the rule and Factorio's is three hundred; a
-  cobblestone wall is two hundred and Factorio's stone wall is three hundred and fifty. Close
-  enough not to keep a table; a machine that wants its exact number implements `Damageable`.
-- **A repair pack is a charge, not a tool.** Factorio's has durability and mends at two a tick for
-  as long as the button is held; ours is spent whole on a click, mending up to three hundred,
-  and kept when there was nothing to mend. A scratch costs a whole pack, and a wall that lost
-  four hundred costs two clicks. Consumables stack here; a tool with durability would not.
-- **The ground absorbs by the biome at the chunk's middle.** Factorio's absorption is per tile;
-  reading every block once a minute is more than the model is worth, so a forest, jungle or taiga
-  chunk takes three times the flat five, a beach or badlands a fifth, water half again, and the
-  rest five. One tree does nothing; a forest does. A chunk that is not loaded takes the flat five.
-- **Nothing comes for an empty base.** An attack is only sent when a player is within ninety-six
-  blocks of the polluted chunk, so a factory left running overnight is not found overrun - or
-  defended - in the morning. Factorio's attacks do not care where you are.
-- **A turret does not turn.** The barrels point the way it was placed and the shots come from its
-  middle whichever way the target is. And a loaded turret looks around twice a second whether or
-  not anything is near, which is the one bounded poll the mod has - Minecraft tells a block
-  nothing about a zombie walking into range.
-- **Bullets are lines and go through nothing.** A shot hits the first living thing along it and
-  stops; Factorio's bullets do the same. What it cannot do is miss - there is no spread and no
-  travel time - and a player in the line of a turret's fire is not in it, because a turret only
-  ever aims at an enemy and the bullet's line is to that enemy's eyes.
-- **The guns reach twice as far as Factorio's.** Thirty blocks for the pistol and thirty-six for
-  the submachine gun, where Factorio's are fifteen and eighteen: Yannic's call after the first
-  playtest, because a Factorio tile-range is a Minecraft yard. A range is balance, not identity,
-  and the turret keeps Factorio's eighteen. Not debt.
-- **Magazines stack to Factorio's two hundred.** A gun loads one at a time and keeps the rounds
-  on itself as a component, drawn as the item's bar; a turret chambers one at a time out of the
-  stack in its slot. The first version made a magazine's rounds its durability, and durability
-  does not stack - Yannic's first look caught it.
-- **Armour is a chestplate, drawn as vanilla's.** Factorio's armour is one item for the whole
-  body with a resistance table and, later, a grid; here light armour is chainmail's five points
-  and heavy armour netherite's eight with its toughness, worn as chestplates and drawn with
-  vanilla's equipment models. Modular armour and the equipment grid are not built.
-- **The shotgun is not built.** `military` unlocks it and its shells in Factorio; here it unlocks
-  the submachine gun and nothing else, and the shells have no entry in the dump at all.
-- **Only the first physical projectile damage.** `physical-projectile-damage-1` is in the tree and
-  the guns and the turret read it - `ammo-damage` for bullets and `turret-attack` for the gun
-  turret, by target; the rest of the ladder and `weapon-shooting-speed` are not transcribed.
+- The biters are zombies, skeletons and creepers in caps. No nests, expansion or evolution.
+- A hostile forgets the factory over a reload.
+- Health is a hundred times hardness except where a machine implements `Damageable`; only the
+  turret does (four hundred).
+- A repair pack is spent whole on a click, mends up to three hundred, kept when nothing needed it.
+- Absorption reads the biome at the chunk's middle, once a minute; an unloaded chunk takes five.
+- Nothing comes for an empty base: attacks need a player within ninety-six blocks.
+- A turret does not turn, shoots from its middle, and looks around twice a second while loaded.
+- Bullets are lines: no spread, no travel time, cannot miss, never hit a player.
+- The guns reach twice Factorio's range (thirty and thirty-six); the turret keeps eighteen. *Kept.*
+- Magazines stack to two hundred; rounds live on the gun or turret as a component.
+- Armour is a chestplate on vanilla's models (chainmail's five, netherite's eight). No modular
+  armour, no equipment grid, no shotgun.
+- Only `physical-projectile-damage-1`; `weapon-shooting-speed` is not transcribed.
 
-Modules
--------
-
-- **No beacon.** `effect-transmission` is not in the tree. A module works in the machine it
-  sits in and nowhere else. The three ladders go to tier three, because the silo's technology
-  needs the third speed and productivity modules; the numbers on each tier are Factorio 2.0's.
-- **A refused recipe says nothing.** Choosing a recipe that may not have productivity modules
-  while one sits in the machine is refused, as Factorio refuses it - but Factorio says so and
-  this pack's panel does not, so the click looks like nothing happened. Take the module out
-  first, or read the tooltip on the slot.
-- **A module's effect is read as a craft starts and held for the craft.** Pull a speed module
-  out mid-craft and that craft finishes at the speed it began at, which is Factorio's rule.
-
-The rocket
-----------
-
-- **The rocket is drawn whether or not one has been built.** Factorio's silo is a hole with
-  doors, and its rocket appears part by part as they are built; ours is a pad with the rocket
-  standing on it from the day it is placed, because the silo is block models and a rocket that
-  grew would be a hundred model variants. How far the real rocket has got is a number on the
-  screen and in the hover readout.
-- **The launch is a firework.** Five seconds of fire and smoke under the rocket, then a firework
-  in the rocket's colours climbs off the nose and bursts high over the base, and the rocket on
-  the pad stays where it is. What it means is not a shortcut: the advancement in the challenge
-  frame goes to every player on the server, with a title and a line in chat, and the science
-  comes back.
-- **Automatic launch is Factorio 2.0's rule and the Launch button is 1.1's, and the screen has
-  both.** A silo launches on its own the moment it holds a hundred parts and a satellite, and a
-  rocket with no cargo waits. The *A* toggle on the screen switches that off, and the Launch
-  button sends a complete rocket up by hand, satellite or none - an empty rocket goes and nothing
-  comes back, which is what 0.16 and 1.1 allowed. Both go through vanilla's menu-button packet.
-  Nothing comes back from a launch but space science, and nothing in the tree is paid for in space
-  science yet - the packs are for the infinite research the tree does not transcribe.
-- **A launch's thousand space science packs are owed to the output slot.** A pack stacks to
-  Factorio's two thousand, so a launch fits in the slot when the slot is empty; what does not fit
-  - a second launch with nobody taking - the silo keeps as a number and pays in as the slot
-  clears. Break the silo and what is owed spills.
-- **The silo's three ingredient slots are one ingredient each**, in the recipe's order, and each
-  holds twice what a part takes - Factorio's rule for a machine with a fixed recipe, the reason a
-  belt of low density structures cannot fill the machine and stall it, and the reason an inserter
-  offering a satellite finds the satellite slot. The first version let any ingredient into any
-  slot, and Yannic's first look at the silo caught it. The assembler's slots follow the same rule;
-  see *Crafting*.
-- **A silo with no recipe says so in the log and looks again every ten seconds.** The screen's
-  line is *no rocket part recipe - this pack has none*, which is what the first playtest saw on a
-  silo whose recipes were on disk and loaded; the cause was not found in the log, so the silo now
-  writes one warning naming which of the two recipes it could not find and how many timed
-  rocket-building recipes the server holds, and re-checks rather than sleeping on it.
-- **The radar keeps chunks loaded and charts nothing.** Factorio's radar reveals the map, and
-  there is no map. What it keeps is the seven-by-seven chunks around it loaded and ticking while
-  it has power - Factorio's continuously charted area at Minecraft's chunk size, the same rule
-  pollution follows - so an outpost runs while nobody is there. The far scan has nothing to
-  reveal on to and is not built. A running radar costs one tick a second; without power it
-  releases its tickets and sleeps.
-
-Smelting
---------
-
-- **A furnace runs vanilla's furnace recipes too, at vanilla's times.** Factorio's four are asked
-  first and win where they exist; sand, food, cobblestone and the rest fall through to vanilla's
-  `minecraft:smelting` list at two hundred ticks over the tier's speed. No experience is given for
-  them - Factorio has none - and blasting and smoking recipes are not run, because those are other
-  machines'. A vanilla furnace found in a village is a decoration; its recipe went in milestone 3.
-- **A silk-touched ore block smelts into nothing.** Factorio's iron ore is the raw item and the pack
-  maps it there; the ore-block recipes were conflicts and are gone.
-- **Fuel is vanilla's burn time, spent only while working.** A coal is 1600 ticks in a furnace as
-  in a boiler, and a stone furnace takes 64 of them per plate, so a coal is twenty-five
-  plates where Factorio's is thirteen. The ratio between the tiers is Factorio's - a steel furnace
-  smelts twice as much with the same coal - and the absolute number is not identity.
-- **Steel needs five plates in the slot at once.** A furnace holding three says so and waits,
-  which is what Factorio's does.
-- **A locked recipe is refused at the slot.** Iron plates will not go into a furnace before steel
-  processing is researched, because nothing in it can smelt them yet; the inserter holding them
-  waits. Plates already in when a gamemaster forgets the technology stay there with the furnace
-  saying it cannot smelt them.
-- **The fire is a lava texture.** A furnace's stack, or the electric furnace's hood, draws its top
-  in `lava_still` while lit, because that is the one opaque, animated, fire-coloured sprite vanilla
-  ships. Real art is the same job it is for every other machine.
-
-Crafting and the panel
+Modules and the rocket
 ----------------------
 
-- **An assembler's input slots are one ingredient each, and each holds twice what the recipe
-  wants, however much that is.** Factorio's arrangement - slot one is ingredient one - and what
-  keeps an inserter from filling all six with the first thing it picks up. A machine with no
-  recipe takes nothing. The slot's size is what lets a silo be built at all: a thousand concrete
-  in one slot, where a slot that stopped at a stack could never hold a craft's worth, so the slot
-  is saved as a resource and an amount, since vanilla's stack codec stops at ninety-nine.
-- **A rocket silo cannot be crafted by hand.** Its recipe is forty-two stacks of ingredients and a
-  player has thirty-six slots, so the crafting panel will never find them all at once. It is
-  made in an assembling machine, whose slots hold what the recipe wants.
-- **Personal crafts pay at the end, not the start.** `CraftTicker` checks affordability every tick
-  and consumes on completion, so moving ingredients away mid-craft stalls the job rather than losing
-  it. It looks like a queue that stopped for no reason, and has been mistaken for a bug.
-- **Factorio's recipe picker is a modal** anchored to the machine; ours is a persistent column
-  beside the screen. The modal is the more faithful one. A Facrafting change, and it wants an eye.
-- **Within a tab, recipes are in alphabetical order, and Factorio's are not.** Factorio sorts by
-  subgroup and then a per-item order string; `reference/factorio/recipes.json` has neither, so
-  `stamp_order` falls back to the display name. The fix is a dump with Factorio's item order in it,
-  after which `stamp_order` is the only thing that changes.
-- **Facrafting's grouping button is hidden in this pack, not removed.**
-  `Config.SHOW_GROUPING_BUTTON` defaults on, because a pack that has not laid its recipes out
-  genuinely wants the choice. Turning it off is `nauvis/pack/config/facrafting-client.toml`.
+- No beacon; `effect-transmission` is not in the tree. A refused recipe (productivity module in a
+  machine that may not have one) says nothing. A module's effect is held for the craft it started.
+- The rocket is drawn whether or not one is built; the launch is a firework and the rocket stays.
+  The advancement goes to every player.
+- Automatic launch (2.0) and the Launch button (1.1) both exist; an empty rocket sent by hand
+  brings nothing back. Space science buys nothing yet.
+- A launch's thousand packs are owed to the output slot and paid as it clears; breaking the silo
+  spills what is owed.
+- A silo with no recipe logs one warning and looks again every ten seconds.
+- The radar keeps a seven-by-seven of chunks loaded while powered and charts nothing.
 
-Research
---------
+Smelting, crafting and research
+-------------------------------
 
-- **The tree is the early game plus the branches the pack can reach, not Factorio's whole one.**
-  `data/technologies.json` is the list; adding one is a JSON entry, and the build reports missing
-  prerequisites.
-- **A technology that unlocks nothing is still offered**, and now says so. 128 of the 216 unlock no
-  recipe, because their only effects are mechanics this pack lacks; four of those are in the tree
-  today. They were kept because a technology's cost and place in the graph are identity and go into
-  world saves; a tree that grew later would move under a player who had researched past it. The
-  mitigation is presentation and is built: a node whose unlock list comes out empty says **no effect
-  yet** in its tooltip where the others list what they hand over.
-- **Most of a technology's modifiers still do nothing, and the screen says which.** Every
-  modifier is in the tree now - a type and a number, summed over what is researched and
-  answered through `nauvis_lib`'s `Bonuses` - and three types are read: `laboratory-speed` by
-  the lab, `inserter-stack-size-bonus` by every inserter, `bulk-inserter-capacity-bonus` by the
-  stack inserter. Damage bonuses and mining speed are summed and asked for by nothing, and their
-  lines on the technology screen say *does nothing yet*. Wire a mechanic to one and the lang
-  line is what changes.
-- **Nothing gates a vanilla bench recipe.** The `crafting_table` datapacks ship a shapeless copy of
-  every recipe, off by default, and a vanilla crafting recipe never goes near Facrafting, where the
-  gate lives. There is no hook that would let it, so the labels read **"(skips research)"** — not a
-  caveat but the point, and the one line a player reads before turning one on.
-- **The opening's recipes can never be gated, and that is arithmetic rather than policy.**
-  A lab costs circuits, gears and belts; red science costs a plate and a gear; running a lab needs a
-  boiler, an engine and a pole; a boiler needs a furnace and pipes. Gate any of those and a new
-  world can never reach its own first research. The tree solves it the other way: the first
-  technologies are *triggered*. The generator fails on a tree it cannot bootstrap, and
-  `research_gates_the_early_machines` asserts the free set again at run time, because the
-  generator's answer and the server's could drift and only one is what a player meets.
-  **Note what is not in that set: a mining drill.** In Minecraft you mine ore with a pickaxe, so a
-  drill is a convenience — which is why the electric drill is the first technology a lab is paid
-  for.
-- **A lab that has never had a technology picked rechecks once a second**, because choosing research
-  happens on a screen and reaches no block. Bounded: only a lab with packs *and* power *and* no
-  research pays it.
-- **Research progress is sent whole to every client on every unit** — a list of finished keys, one
-  optional key and an int, at best once every five seconds of one lab's work. It buys the property
-  that a client is either exactly up to date or exactly one message behind.
-- **Research is un-researched only by a gamemaster.** `/research` grants, forgets, starts, stops and
-  resets, and both grant and forget cascade — a grant brings the prerequisites, a forget takes the
-  dependants. There is nothing a player can do about a finished technology, which is Factorio's
-  rule; the command exists so the tree can be reached by hand during a playtest.
+- A furnace runs vanilla's smelting recipes after Factorio's four, at 200 ticks over the tier's
+  speed, no experience. Blasting and smoking are not run. A silk-touched ore block smelts into
+  nothing. Fuel is vanilla's burn time spent only while working. Steel needs five plates in the
+  slot at once. A locked recipe is refused at the slot. The fire is `lava_still`.
+- A rocket silo cannot be crafted by hand (forty-two stacks); an assembling machine 2 makes it.
+- Personal crafts pay at the end; moving ingredients away mid-craft stalls the job.
+- Facrafting's recipe picker is a column, not Factorio's modal. Within a tab, recipes are
+  alphabetical; the dump has no order string. The grouping button is hidden by config.
+- The tree is the early game plus what the pack reaches; 128 of 216 technologies unlock no
+  recipe and say *no effect yet*. Only `laboratory-speed`, `inserter-stack-size-bonus`,
+  `bulk-inserter-capacity-bonus`, `mining-drill-productivity-bonus`, `ammo-damage@bullet` and
+  `turret-attack@gun-turret` are read; the rest say *does nothing yet*.
+- Nothing gates a bench recipe; the `crafting_table` packs are off and labelled "(skips research)".
+- The opening's recipes can never be gated (a lab needs circuits, gears, belts, a boiler, an
+  engine, a pole), so the first technologies are triggered; the generator refuses a tree that
+  cannot bootstrap and `research_gates_the_early_machines` asserts the free set. A mining drill is
+  not in it: the electric drill is the first thing a lab is paid for.
+- A lab with packs, power and no research picked rechecks once a second.
+- Research progress is sent whole to every client on every unit.
+- Only `/research` un-researches; grant and forget cascade.
 
 Vanilla, and what is left alone
 -------------------------------
 
-- **Vanilla's own progression is barely touched.** Twenty recipes are removed, and fourteen of
-  them are one thing - vanilla smelting iron and copper, which the pack's furnaces do at Factorio's
-  price. The rule is that nothing is taken away before the pack can do that job. The conflict half
-  of `data/removals.json` is a check rather than a list and will force the rest as items land; the
-  bypass half is a judgement and grows one line at a time.
-- **Redstone is vanilla's, for good.** Repeaters, comparators, observers, pistons and the lamp are
-  Minecraft's signal system and keep their vanilla recipes; Factorio's circuit network is not
-  built, by decision - see `PLAN.md`. The dropper stays too, and a test asserts it, because it
-  needs a clock to move anything - that is a build rather than a free ride.
-- **One tool, and the ladder kept.** Four planks is a stone pickaxe, the wooden one has no recipe,
-  and `mineable/pickaxe` absorbs the axe, shovel and hoe tags. Material tiers are untouched, and the
-  other tools still exist — they are simply never necessary.
-- **Stacks are Factorio's sizes, and Minecraft's ninety-nine is lifted.** Every item the pack
-  registers says Factorio's stack size - plates a hundred, circuits two hundred, machines fifty, a
-  satellite one - written as `stack` in `data/mapping.json` and held to the code by
-  `check_models.py`. Minecraft stops a stack at ninety-nine in the codecs that save and send one,
-  in every container, and in NeoForge's handlers; `nauvis_lib` carries the pack's one mixin
-  config to lift all of that to ten thousand, and a count of three or four digits is scaled to fit
-  its slot. Not lifted, because nothing of the pack's goes there: minecart chests, bundles, and
-  any other mod's container that answers ninety-nine on its own.
-- **The vanilla stand-ins have Factorio's sizes too, and three go down.** An iron ingot is a
-  plate and stacks to a hundred; so do copper, planks, logs, stone bricks and concrete. Factorio's
-  stone, coal and ore stack to fifty, so cobblestone, coal, raw iron and raw copper stack to fifty
-  here - less than vanilla's sixty-four, the one number in this list a player will feel, and kept
-  because a stack size is the same kind of fact as an ingredient count. Each is one line in the
-  pack mod's `StandInStacks` to move, and Yannic's to move.
-
-Smaller
--------
-
-Nothing tests that inventories survive a save and reload, or that a network rebuilds after a chunk
-cycle — both paths exist and are only reasoned about. An inserter at a chunk border whose source chunk cycles while it stays loaded can sleep through
-items appearing.
+- Twenty recipes are removed, fourteen of them vanilla smelting of iron and copper. Redstone is
+  vanilla's for good, the dropper included.
+- One tool: four planks is a stone pickaxe, the wooden one has no recipe, `mineable/pickaxe`
+  absorbs axe, shovel and hoe. Tiers are untouched.
+- Stacks are Factorio's; Minecraft's ninety-nine is lifted to ten thousand by `nauvis_lib`'s
+  mixins and a count of three or four digits is scaled to fit. Not lifted: minecart chests,
+  bundles, another mod's container that answers ninety-nine itself. Cobblestone, coal and raw ore
+  go down to fifty; one line each in `StandInStacks`.
+- Nothing tests that inventories survive a save and reload, or that a network rebuilds after a
+  chunk cycle. An inserter at a chunk border whose source chunk cycles can sleep through items.

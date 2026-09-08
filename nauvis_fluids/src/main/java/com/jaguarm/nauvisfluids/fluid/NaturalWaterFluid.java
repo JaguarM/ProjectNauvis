@@ -20,36 +20,7 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 
-/**
- * The water the world was made with: Factorio's water tile, as a Minecraft fluid.
- *
- * <p>Factorio's water is where the map put it. It cannot be carried, poured or made, and an
- * offshore pump is the only thing that does anything with it - which is what makes water a
- * resource you build towards rather than a thing you have. Minecraft's water is the opposite: two
- * buckets make a spring that never runs dry, anywhere. So worldgen's water is this fluid instead,
- * and the two rules that make it Factorio's are here:
- *
- * <ul>
- *   <li><b>a bucket of it is a bucket of water.</b> {@link #getBucket()} is vanilla's water bucket,
- *       so scooping a lake gives exactly what scooping a lake always gave, and pouring it out
- *       puts down {@code minecraft:water} - which an offshore pump does not draw from. Natural
- *       water is picked up, and never put down;
- *   <li><b>it makes no new sources.</b> Two of these a block apart flow into the gap and stay
- *       flowing there, where vanilla's would settle into a third source. A lake is exactly as big
- *       as the world made it. The {@code FluidType} says so, and nothing else needs to.
- * </ul>
- *
- * <p>Everything else is water's. It is in the {@code #minecraft:water} tag, so you swim in it,
- * drown in it, boat on it and put out fires with it; it flows and drains as water does; and it is
- * drawn with water's own textures and the biome's colour. What vanilla decides by the
- * <em>block</em> rather than the tag - fish spawning, above all - is answered in
- * {@code water/}.
- *
- * <p>Two fluids, as every flowing fluid is: a source and a flowing one. {@link Source} and
- * {@link Flowing} are {@code BaseFlowingFluid}'s two halves with this class between them, because
- * three of water's habits are not in the base: what a waterfall does when it lands on more water,
- * the bubbles and the drip, and putting a burning thing out.
- */
+/** The water the world was made with: Factorio's water tile, as a Minecraft fluid. */
 public abstract class NaturalWaterFluid extends BaseFlowingFluid {
 
     protected NaturalWaterFluid(Properties properties) {

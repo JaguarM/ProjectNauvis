@@ -6,23 +6,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 
-/**
- * A machine's module slots: so many, one module in each, and the sum of what they do.
- *
- * <p>Factorio's slot counts are the machine's identity as much as its footprint is - an assembling
- * machine 2 has two, a refinery three, a stone furnace none - so the count is a number on the
- * block, like the crafting speed, and this is the handler behind it. A slot takes one module and
- * nothing else; a stack of modules in one slot would be several modules' worth for one slot's
- * price, which is why {@link #getCapacity} is one.
- *
- * <p>{@link #effect()} is read once a craft, at the moment the craft starts, which is also when
- * Factorio reads it. A module pulled out mid-craft finishes that craft at the speed it began at.
- *
- * <p>The optional rule is for the one restriction Factorio has: a productivity module goes only
- * into a machine making an intermediate product. A machine that has such a rule passes it in, and
- * the slot refuses a module the rule refuses - which is how the refusal reaches the screen, since
- * a menu slot asks {@link #isValid} before it lets anything be put down.
- */
+/** A machine's module slots: so many, one module in each, and the sum of what they do. */
 public class ModuleSlots extends ItemStacksResourceHandler {
 
     private final Runnable onChanged;

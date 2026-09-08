@@ -6,9 +6,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
-/**
- * The burner inserter's screen: what it is burning, and how far through a swing it is.
- */
+/** The burner inserter's screen: what it is burning, and how far through a swing it is. */
 public class BurnerInserterScreen extends MachineScreen<BurnerInserterMenu> {
 
     /** The flame, above the fuel slot, where players have looked for it since the furnace. */

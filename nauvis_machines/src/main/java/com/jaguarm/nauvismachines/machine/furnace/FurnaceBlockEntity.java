@@ -56,42 +56,7 @@ import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
-/**
- * A furnace: given ore and something to burn, or electricity, it makes plates.
- *
- * <p>The difference from an assembler is that nobody tells it what to make. Factorio's furnace
- * runs the {@code smelting} category - iron, copper, steel and stone brick - and chooses among
- * them by what is put into it, so there is no recipe selector and one input slot. The recipes
- * are Facrafting recipes carrying that category, generated from Factorio's own numbers; a furnace
- * is the one machine that runs them, and the panel shows them dimmed and refuses to queue them,
- * which is Factorio's arrangement.
- *
- * <p>And it runs vanilla's furnace recipes for whatever Factorio has no recipe for - sand to
- * glass, food to cooked food - at vanilla's times over its own speed. Factorio's recipes are asked
- * first, so where the pack has an opinion the pack's number wins; vanilla's is there so that the
- * only furnace in the pack is not one that cannot cook a fish.
- *
- * <h2>Three tiers, one entity</h2>
- *
- * <p>Stone and steel burn fuel; the electric one spends FE. Crafting speed, which kind it is and
- * what a tick costs are read off the block, so a tier is a class and this is the same entity
- * for all three. A burner spends its fuel <em>only while working</em>, which is Factorio's rule
- * and not vanilla's: a furnace with coal lit and nothing to smelt keeps the coal, and - the part
- * that matters here - has nothing to tick for, so it sleeps.
- *
- * <h2>Sleeping</h2>
- *
- * <p>Non-negotiable #5, the assembler's way: no ticker, a block tick scheduled while a smelt is
- * under way and nothing scheduled otherwise. It wakes on its inventory changing (ore, coal or a
- * plate taken away), on a neighbour changing, and on electricity arriving.
- *
- * <h2>What it reports</h2>
- *
- * <p>Every plate it finishes is announced through Facrafting's machine listener, because "craft
- * fifty iron plates" is Factorio's first technology and iron plates are never crafted by hand.
- * And before it runs a recipe it asks Facrafting's lock whether the world has researched it, so
- * a furnace fed steel's five plates before steel processing simply waits.
- */
+/** A furnace: given ore and something to burn, or electricity, it makes plates. */
 public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
 
     public static final int INPUT_SLOT = 0;
@@ -310,15 +275,6 @@ public class FurnaceBlockEntity extends BlockEntity implements MenuProvider {
     /**
      * What a furnace here would do with this item, if anything: Factorio's smelting recipe for
      * it, or vanilla's furnace recipe where Factorio has none.
-     *
-     * <p>Factorio's are a walk over the timed recipes rather than a lookup, because Facrafting keys
-     * recipes by result and a furnace is asked by ingredient. Two hundred string compares, once per
-     * craft start and once per insertion attempt; a base of a thousand furnaces spends less on
-     * this in a tick than on one block update. Vanilla's is the recipe manager's own lookup.
-     *
-     * <p>The lock is part of the answer. Steel's recipe exists from the first tick and is
-     * researched later, and a furnace that smelted it regardless would make steel processing a
-     * technology that unlocks nothing.
      */
     public static @Nullable Smelt smeltingRecipeFor(ServerLevel level, ItemStack stack) {
         if (stack.isEmpty()) {

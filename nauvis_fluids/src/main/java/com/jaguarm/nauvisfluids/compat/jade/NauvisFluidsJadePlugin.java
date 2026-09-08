@@ -15,13 +15,6 @@ import snownee.jade.api.WailaPlugin;
 /**
  * What this mod tells Jade to say about a pipe, an oil well, a pumpjack, an offshore pump, a
  * storage tank, and the two machines that process oil.
- *
- * <p>Nothing here loads unless Jade is installed - Jade finds this class by its annotation and
- * only then touches it, so the dependency stays {@code compileOnly} and the mod runs standalone
- * without it.
- *
- * <p>Each readout is two classes, a data half and a {@code Client} half. Jade throws at
- * registration if one object is both, and has since 1.21.6.
  */
 @WailaPlugin
 public class NauvisFluidsJadePlugin implements IWailaPlugin {

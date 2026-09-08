@@ -21,27 +21,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 
-/**
- * Every belt run in one level, and the only thing in this mod that runs every tick.
- *
- * <p>It iterates <em>runs</em> that have something on them, of which a base has a handful, rather
- * than belts, of which it has thousands. An empty run costs nothing at all, and - unlike the pipe
- * and power networks, which re-check dormant members every ten ticks - a run that is jammed rather
- * than empty stays awake, because {@link BeltLane} makes a jam cost nothing to tick. Being awake
- * is about having items, not about moving them, which is why belts need no wake-up plumbing.
- *
- * <p>This is {@code FluidNetworkManager} with the nouns changed, and the third time this pack has
- * needed the shape. Two things here are new:
- *
- * <ul>
- *   <li><b>It runs on the client too.</b> A run is derived from block states, and a client has
- *       those, so it can build the same runs and move the same items - which is how belts get
- *       visibly moving items without a packet per item per tick. See {@link BeltRun}.</li>
- *   <li><b>Runs are directed.</b> A pipe joins the six blocks it touches and the graph is a set of
- *       edges; a belt line is a <em>sequence</em>, and merging or splitting one moves the point
- *       every distance on it is measured from. That is what {@link BeltRun#park()} is for.</li>
- * </ul>
- */
+/** Every belt run in one level, and the only thing in this mod that runs every tick. */
 public final class BeltLines {
 
     private static final Map<Level, BeltLines> LINES = new IdentityHashMap<>();
@@ -59,17 +39,7 @@ public final class BeltLines {
     /** Reused every tick: a run may put an item on another run, which touches {@link #active}. */
     private final List<BeltRun> ticking = new ArrayList<>();
 
-    /**
-     * Splitters with something on them, kept and ticked here for the same reason runs are.
-     *
-     * <p><b>A splitter is part of the belt simulation, not a machine beside it.</b> It was a
-     * scheduled block tick to begin with, which is server-only, so the client's copy of every
-     * splitter took items in and never moved them on: items vanished at the splitter, the belt
-     * behind it appeared to jam, and the belt in front of it stayed empty - while the server was
-     * routing them correctly the whole time. Every gametest passed, because a gametest is a
-     * server. Ticking a splitter from here is what puts it on the same footing as the runs either
-     * side of it, on both sides of the wire.
-     */
+    /** Splitters with something on them, kept and ticked here for the same reason runs are. */
     private final Set<SplitterBlockEntity> activeSplitters = new LinkedHashSet<>();
 
     /** Reused every tick, for the same reason {@link #ticking} is. */
@@ -142,19 +112,7 @@ public final class BeltLines {
         rebuildAround(pos);
     }
 
-    /**
-     * A belt is still there but points somewhere else, or climbs where it used to lie flat.
-     *
-     * <p>Nothing else notices. Changing a belt's state leaves its block entity in place, so neither
-     * {@link #beltPlaced} nor {@link #beltRemoved} ever hears about it - while the lines through it
-     * are now entirely different lines, or the same line at a different height. The items on them
-     * are put back where they were standing, block by block, exactly as they are when a line is cut.
-     *
-     * <p>It is called from {@link BeltBlockEntity#setBlockState}, which is the one hook that fires
-     * on <b>both</b> sides. That matters: the client keeps its own copy of every run and draws from
-     * it, so a client that never heard about a turn would go on drawing items along a line that no
-     * longer exists.
-     */
+    /** A belt is still there but points somewhere else, or climbs where it used to lie flat. */
     public void beltTurned(BlockPos pos) {
         if (belts.contains(pos.asLong())) {
             rebuildAround(pos);
@@ -195,18 +153,6 @@ public final class BeltLines {
 
     /**
      * Rebuilds every line the block at {@code around} can have changed.
-     *
-     * <p>Only a belt's own neighbours can gain or lose a feeder, so only the lines through those
-     * thirteen positions can be different afterwards. They are taken apart, their items lifted off
-     * by block, the lines rebuilt from what is there now, and the items put back where they stood.
-     *
-     * <p>Thirteen rather than five because a line can climb: a belt one along and one up is as much
-     * a neighbour as one beside it. {@link BeltBlock#forEachNeighbour} is where that set is written
-     * down, so this and the drawing agree about what counts as next to what.
-     *
-     * <p>The order runs are rebuilt in is fixed - by packed position - so that a client doing this
-     * from the same block states arrives at exactly the same answer. That is what lets a player
-     * edit a belt line with nothing being sent about it.
      */
     private void rebuildAround(BlockPos around) {
         LongOpenHashSet pending = new LongOpenHashSet();
@@ -357,17 +303,8 @@ public final class BeltLines {
     }
 
     /**
-     * The belt this one hands to: straight ahead, one above that, or one below - the first of the
-     * three that holds a belt of the same tier not facing straight back at it.
-     *
-     * <p>Three places rather than one because a belt line climbs the way a rail line does, and the
-     * order matters: level wins, so a line that could go either straight on or up a step goes
-     * straight on. {@link BeltBlock#successorCandidate} is where the three and their order are
-     * written down, and this walks it rather than repeating it - the drawing asks the same question
-     * of a {@code LevelReader} and the two must not drift.
-     *
-     * <p>Same tier, because a run has one speed. A fast belt after a yellow one is a second run
-     * that the first hands off into, which is what Factorio does with its transport lines.
+     * The belt this one hands to: straight ahead, one above that, or one below - the first of
+     * the three that holds a belt of the same tier not facing straight back at it.
      */
     private @Nullable BlockPos successor(BlockPos pos, BeltBlock block) {
         Direction out = facing(pos);

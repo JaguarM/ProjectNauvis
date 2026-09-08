@@ -2,25 +2,7 @@ package com.jaguarm.nauvislib.bonus;
 
 import net.minecraft.server.level.ServerLevel;
 
-/**
- * A named number the world answers: how much of some effect has been earned.
- *
- * <p>Factorio's technologies do two kinds of thing. They unlock recipes, which the crafting hook
- * carries, and they <em>modify</em> - an inserter's hand grows, a lab works faster, a bullet hits
- * harder - and a machine that wants to know how much has to ask the world. The machine and the
- * world are in different mods that may not name each other, so the question goes through here:
- * whoever keeps the world's progress installs a {@link Source}, and a machine asks by the effect's
- * name. Nothing installed means nothing earned, which is what every machine did before this
- * existed - a hook's default is always the old behaviour.
- *
- * <p>The names are Factorio's own modifier types - {@code inserter-stack-size-bonus},
- * {@code laboratory-speed} - written where they are used, on the machine that reads them and in
- * the tree that grants them. This class has no opinion about what any of them means: it is a
- * string in and a number out, the same seam as {@code RecipeLocks} for the other kind of effect.
- *
- * <p>Server only. A bonus is a fact about the world's research and lives on the server; a client
- * that wants to draw one reads it off the synced technologies rather than asking here.
- */
+/** A named number the world answers: how much of some effect has been earned. */
 public final class Bonuses {
 
     private Bonuses() {}

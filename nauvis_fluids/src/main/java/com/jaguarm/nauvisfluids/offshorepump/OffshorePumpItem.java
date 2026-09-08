@@ -8,16 +8,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
 
-/**
- * The offshore pump in hand: a click on a lake puts the pump on the lake, not under it.
- *
- * <p>A block in hand looks through water, so pointing at a lake and clicking lands on the lake
- * bed, and vanilla would place the block in the water just above it - on the bottom, for a pump.
- * {@link #updatePlacementContext} is the hook a block item has for moving where it will place,
- * and this one lifts the click to the air just over the water's surface, where
- * {@link OffshorePumpBlock#getStateForPlacement} turns the pump to the water beside it. A click
- * on the shore is left exactly where it was.
- */
+/** The offshore pump in hand: a click on a lake puts the pump on the lake, not under it. */
 public class OffshorePumpItem extends BlockItem {
 
     public OffshorePumpItem(Block block, Properties properties) {

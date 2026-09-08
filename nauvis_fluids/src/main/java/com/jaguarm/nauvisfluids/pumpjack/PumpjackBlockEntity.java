@@ -36,46 +36,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 import org.jspecify.annotations.Nullable;
 
-/**
- * A pumpjack: stands over an oil well, spends electricity, and fills its tank with crude oil.
- *
- * <p>Factorio's numbers, and only Factorio's numbers:
- *
- * <ul>
- *   <li><b>one cycle a second</b> - {@code mining_time 1} over {@code mining_speed 1};
- *   <li><b>ten units times the well's yield</b> per cycle, so ten a second from a 100% well and
- *       two a second from one at its 20% floor;
- *   <li>the well loses {@code infinite_depletion_amount = 10} per cycle, which is what makes the
- *       yield fall - one percent every three hundred cycles;
- *   <li><b>90 kW</b>, which at this pack's ratio - a 900 kW steam engine is 120 FE a tick - is
- *       {@value #ENERGY_PER_TICK} FE a tick while pumping;
- *   <li>a tank of {@value #TANK_CAPACITY}, Factorio's output fluid box - which is also the most
- *       one cycle can produce. Factorio caps a pumpjack's cycle at its fluid box volume, so a well
- *       of any richness fills the tank in a second and no faster;
- *   <li>and <b>two module slots</b>. Speed modules shorten the cycle and raise the draw,
- *       efficiency modules lower it, and productivity modules - and mining productivity research,
- *       which Factorio applies to pumpjacks as it does to drills - bank a free cycle's worth of
- *       oil now and then without taking anything off the well.
- * </ul>
- *
- * <p>The yield is a fraction, and the output is integer units, so the fraction is carried between
- * cycles rather than rounded away: a 57.3% well produces 5.73 a cycle exactly, over time.
- *
- * <h2>Sleeping</h2>
- *
- * <p>No ticker. The machine schedules its own tick while it has a well, power and room, and stops
- * scheduling the moment it lacks any of the three. Each of those comes back from outside:
- * electricity arriving reports through {@link MachinePower}, room appearing reports through
- * {@link FluidOutputAccess} when a pipe draws, and the well is a neighbour, so
- * {@code neighborChanged} covers it. {@code pumpjack_sleeps} is the test that fails if any of
- * the three wakes stops working.
- *
- * <h2>Pushing</h2>
- *
- * <p>It does not. Like the boiler, it fills its own tank and offers it extract-only at the outlet;
- * the pipe run pulls, which is what lets both ends sleep and what makes a pumpjack with nothing
- * connected simply fill up and stop.
- */
+/** A pumpjack: stands over an oil well, spends electricity, and fills its tank with crude oil. */
 public class PumpjackBlockEntity extends BlockEntity implements MenuProvider {
 
     /** Ten a minute, Factorio's figure. */

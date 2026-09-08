@@ -17,84 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 
-/**
- * The piece of the technology tree worth drawing around one technology, and where it goes.
- *
- * <h2>Why this is here and not in the screen</h2>
- *
- * <p>Nothing in this repository can look at a screen - that is a standing hole and not a gap in
- * the suite, and three of this pack's bugs have lived in it. So the part of "draw a tech tree"
- * that <em>can</em> be checked is separated from the part that cannot: this computes which nodes
- * are in view, their positions, their arrows and their lanes, and is asserted by
- * {@code technology_layout_is_sound}; the screen does nothing but paint what it is handed. It is
- * also common code rather than client code, which is what lets a gametest reach it at all.
- *
- * <h2>The whole tree is not the picture. One technology's neighbourhood is</h2>
- *
- * <p>Drawing all of it was the first two attempts and both failed the same way: a graph with a
- * couple of hub technologies produces bundles of arrows that no ordering can separate, and the
- * measurements said so - the ordering was already optimal at twenty-two crossings and sixty
- * randomised restarts never beat it. <b>Factorio does not draw the whole tree either.</b> It shows
- * what you are pointed at, everything that leads to it, and a little of what it leads to, with a
- * list and a search box for getting anywhere else.
- *
- * <p>So a view is:
- *
- * <ul>
- *   <li><b>the selected technology</b>, in the middle;</li>
- *   <li><b>every ancestor</b> - the full transitive closure of what it needs, because that is the
- *       question a player opens this to answer. Researched ones can be hidden, and what is left is
- *       exactly the work outstanding;</li>
- *   <li><b>descendants two deep</b>, so it is clear what the thing is for. Each of those carries
- *       {@link Placed#outside}, the number of its prerequisites that are <em>not</em> in the
- *       picture, or a player reads "research this and you get that" when three other technologies
- *       are also wanted.</li>
- * </ul>
- *
- * <h2>Columns are measured from the selection, not from the roots</h2>
- *
- * <p><b>An ancestor's column is the longest path from it to the selected technology</b>, negated,
- * and a descendant's is the longest path from the selection to it. Reusing the tree's global depth
- * is the obvious shortcut and it is wrong: a technology that is a root of the whole tree would sit
- * at the far left of every view it appears in, with one arrow reaching all the way across to
- * whatever late prerequisite it feeds. Measured from the selection, everything sits as far away as
- * it actually is <em>from what you are looking at</em>.
- *
- * <p>Hiding the researched ancestors does not break the picture: an arrow is drawn between two
- * visible technologies whenever a path joins them through nothing but hidden ones, so the shape of
- * what is left survives. An arrow that another arrow already implies is then dropped - a
- * transitive reduction - because saying it twice is what made the first version unreadable.
- *
- * <h2>Rows, in the two steps a layered layout takes</h2>
- *
- * <p><b>Order first.</b> Sweeping a column and sorting it by the median row of its neighbours in
- * the column before is the standard cheap answer to edge crossings; sweeping back the other way,
- * several times, and keeping whichever pass crossed least is the rest of it. Adjacent pairs are
- * then swapped wherever a swap crosses fewer arrows. Ties break on the tree's own `order` string
- * throughout, so the result is <b>deterministic</b> - the same view lays out the same way every
- * time, which matters because a layout that shuffled between openings would be unusable whatever
- * it looked like.
- *
- * <p><b>Then position.</b> Order says who is above whom; it does not say a child should be level
- * with its parent. Each column is pulled towards the average row of its neighbours and squeezed
- * back into distinct rows by isotonic regression, which is the least-squares way to keep an order
- * while honouring what everything wanted. Rows are sparse, so a column of two sits where its
- * arrows point rather than at the top.
- *
- * <p><b>An arrow that skips a column</b> gets an invisible node in each column it skips, so every
- * arrow the ordering sees joins neighbours - which is what makes a crossing count mean anything.
- *
- * <h2>Lanes</h2>
- *
- * <p>An arrow is drawn as an elbow - out of the parent, across, then into the child - and the
- * across is a vertical run in the gap between two columns. Every arrow out of one parent shares
- * one, which is what makes a fan read as a fan. Two <em>different</em> parents share one only when
- * their runs cannot overlap, which is greedy interval colouring and is optimal on intervals.
- *
- * <p><b>Nothing is authored.</b> There are no coordinates in the data files and there must not be:
- * the tree is twenty-six technologies today and Factorio's is two hundred, and hand-placing them
- * is a job that has to be redone every time one is added.
- */
+/** The piece of the technology tree worth drawing around one technology, and where it goes. */
 public final class TechnologyLayout {
 
     private TechnologyLayout() {}
@@ -156,11 +79,7 @@ public final class TechnologyLayout {
      * The picture around one technology.
      *
      * @param all       every technology, in the tree's own order - {@code ModTechnologies.all}.
-     *                  That order is the tiebreak throughout, so an unsorted list would still lay
-     *                  out validly and not the same way twice.
      * @param selected  what the view is centred on. Null, or a technology this list does not hold,
-     *                  gives {@link Layout#EMPTY} rather than throwing - a datapack reload can take
-     *                  a technology away while a screen is open.
      * @param completed what the world has researched, for {@code hideResearched}.
      * @param hideResearched drops researched ancestors, keeping the arrows that ran through them.
      */
@@ -292,21 +211,8 @@ public final class TechnologyLayout {
     }
 
     /**
-     * What the selection leads to, and how far - the <b>longest</b> way round, capped at
-     * {@link #DESCENDANT_DEPTH}.
-     *
-     * <p>Longest rather than shortest so that a technology which is both a child and a grandchild
-     * sits in the grandchild column, where its other arrow can reach it from the left. Shortest
-     * would put it beside its own prerequisite.
-     *
-     * <p>And longest means longest, not the last step that happened to reach it. Factorio's tree
-     * has diamonds wider than the view: oil processing leads to sulfur processing and then to the
-     * chemical science pack in two steps, and to plastics, the advanced circuit and <em>then</em>
-     * the chemical science pack in three. A walk of two steps finds the pack at two and puts it
-     * beside the circuit it needs, and an arrow cannot run within a column - so the depths are
-     * relaxed to true longest paths afterwards, and anything that ends up past the view's reach is
-     * left out rather than drawn somewhere the picture would lie about. {@code
-     * technology_layout_is_sound} is what found this, the day those technologies were added.
+     * What the selection leads to, and how far - the <b>longest</b> way round, capped at {@link
+     * #DESCENDANT_DEPTH}.
      */
     private static Map<ResourceKey<Technology>, Integer> descendants(
             ResourceKey<Technology> selected,
@@ -749,12 +655,6 @@ public final class TechnologyLayout {
 
         /**
          * A row for every vertex, order kept, pulled towards what each is joined to.
-         *
-         * <p>Order says who is above whom and nothing about how far; this is the step that puts a
-         * child level with its parent. Each column asks for the average row of its neighbours and
-         * is then squeezed back into distinct rows by {@link #isotonic}, which is the least-squares
-         * way to honour what everything wanted while keeping the order the crossing count was
-         * computed for.
          *
          * @return one row per technology, the dummies dropped.
          */

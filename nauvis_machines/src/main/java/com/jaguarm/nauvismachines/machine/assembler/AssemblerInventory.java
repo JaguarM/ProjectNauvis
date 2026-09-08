@@ -14,27 +14,6 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 /**
  * The assembler's slots: ingredients in the first {@link AssemblerBlockEntity#INPUT_SLOTS},
  * results after them.
- *
- * <h2>One slot per ingredient</h2>
- *
- * <p>Factorio's assembler has a slot for each ingredient of its recipe and nothing else goes in,
- * which is what keeps an inserter from filling the machine with the first thing it picks up.
- * Slot {@code i} here takes the recipe's ingredient {@code i} and refuses the rest, asked of the
- * block entity through {@code wanted}; a machine with no recipe takes nothing. The first version
- * let anything into any slot, and a belt of plates filled all six and stalled the line - which
- * is exactly the Factorio rule being for something.
- *
- * <p>And a slot holds what its recipe wants: up to twice what a craft needs of that ingredient,
- * however many that is, or the item's stack size if that is more. That is what lets a rocket
- * silo be built at all - it is a thousand concrete and a thousand steel, and a slot that stopped
- * at a stack could never hold a craft's worth of either.
- *
- * <p>A stack of a thousand does not fit vanilla's stack codec, which caps a count at ninety-nine
- * while saving, so these slots are saved as a resource and an amount instead - and read back
- * from either form, so an assembler saved before this rule loads with what it had.
- *
- * <p>Six input slots is not a round number. Six is the most ingredients any of Factorio's 214
- * recipes asks for - the satellite - so six slots can always hold one craft's worth.
  */
 public class AssemblerInventory extends StacksResourceHandler<ItemStack, ItemResource> {
 

@@ -18,19 +18,7 @@ import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
-/**
- * What a pole says about the network it belongs to.
- *
- * <p>This is the one readout in the pack that <em>cannot</em> be done any other way. A network is
- * a server-side object - {@code PowerNetworkManager} exists only there - so a pole has nothing on
- * it for a client to read, and no amount of block-entity syncing would help. Jade asks the server,
- * and only while somebody is looking at it.
- *
- * <p>It answers from any of the pole's four blocks. The network hangs off the foot, so a player
- * pointing at the head is resolved down to it rather than told there is nothing there.
- *
- * <p>Split into a server half and a {@link Client} half - see {@link BoilerReadout} for why.
- */
+/** What a pole says about the network it belongs to. */
 public class PoleReadout implements IServerDataProvider<BlockAccessor> {
 
     public static final PoleReadout INSTANCE = new PoleReadout();

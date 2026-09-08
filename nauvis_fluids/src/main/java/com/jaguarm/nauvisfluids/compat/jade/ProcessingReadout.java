@@ -25,13 +25,6 @@ import snownee.jade.api.config.IPluginConfig;
 /**
  * What a refinery or a chemical plant says: what it is making, whether it is running - and if
  * not, why not - and what is in each tank that has anything in it or is waiting for something.
- *
- * <p>Factorio's machine window is those things and the energy bar, and Jade's own universal
- * provider draws the energy bar off the capability with no help from here. One readout for both
- * machines, since they are one machine with two sets of numbers.
- *
- * <p>Two classes, a data half and a {@code Client} half, because Jade throws at registration if
- * one object is both.
  */
 public class ProcessingReadout implements IServerDataProvider<BlockAccessor> {
     public static final ProcessingReadout INSTANCE = new ProcessingReadout();

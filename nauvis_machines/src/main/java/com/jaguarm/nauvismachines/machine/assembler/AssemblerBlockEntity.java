@@ -63,38 +63,6 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 /**
  * An assembling machine: told what to make, it makes it, over and over, from whatever is put
  * into it.
- *
- * <p>This is the shortcut PLAN.md asks for and no more - a recipe selector over one flat input
- * inventory, running Facrafting's timed recipes. The later version has a fixed recipe per
- * machine, a buffer per ingredient, module slots and three tiers. What must not change is the
- * recipe itself: three electronic circuits, five iron gear wheels, nine iron plates and half a
- * second are Factorio's numbers, and they are generated rather than typed.
- *
- * <h2>Sleeping</h2>
- *
- * <p>Non-negotiable #5: a machine with nothing to do costs nothing. There is deliberately no
- * {@code BlockEntityTicker} here, because a ticker runs whether or not there is work. The
- * machine schedules a block tick for itself while a craft is under way and simply stops
- * scheduling when there is none, which is free - an unscheduled position is never visited -
- * and scheduled ticks are saved with the chunk, so a craft survives a reload.
- *
- * <p>It wakes on anything that could give it something to do: a change to its inventory
- * (ingredients arriving, a result being taken away), a recipe being chosen, a neighbour changing,
- * or electricity arriving. A Factorio base is thousands of machines and most of them are idle at
- * any moment.
- *
- * <h2>Power</h2>
- *
- * <p>It runs on FE and stops when the buffer is empty, which is the whole of it for now -
- * PLAN.md's brownout, where a machine that cannot refill runs slower instead of stopping, is a
- * later refinement. What it publishes is an insert-only buffer under NeoForge's energy
- * capability, so a pole from {@code nauvis_power} fills it without either mod knowing what the
- * other is, and so would a cable from anywhere else.
- *
- * <p>The last item in the wake list is the one that is easy to miss. A machine that ran dry has
- * stopped scheduling ticks, so the grid coming back has to reach it from outside - see
- * {@code MachinePower}, and {@code assembler_wakes_when_power_arrives}, which is the test that
- * fails if it does not.
  */
 public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -106,16 +74,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
     public static final int SLOT_COUNT = INPUT_SLOTS + 1;
 
-    /**
-     * FE burnt per tick of a craft by the first machine.
-     *
-     * <p>Factorio's assembling machine 1 draws 75 kW where a steam engine makes 900, so one
-     * engine runs twelve of them and one boiler runs twenty-four. Those ratios are the number
-     * worth keeping; the FE it is expressed in is not, and neither figure is identity, so both
-     * are tunable. The engine's ENERGY_PER_TICK is the other half of the pair. The tiers each say
-     * their own - see {@link AssemblerBlock#energyPerTick()} - and this is the first tier's, kept
-     * as the number every other machine's cost is quoted against.
-     */
+    /** FE burnt per tick of a craft by the first machine. */
     public static final int ENERGY_PER_TICK = AssemblingMachine1Block.ENERGY_PER_TICK;
 
     /**
@@ -546,12 +505,6 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
     /**
      * Pays for one craft and banks its result, all or nothing.
      *
-     * <p>{@link CraftPlanner} works out which slots pay - one ingredient may have to draw from
-     * several stacks, and two ingredients may compete for the same one - and the transaction
-     * makes the exchange atomic. A craft whose result will not fit rolls back with the
-     * ingredients untouched, which is what lets a full output slot stall the machine rather
-     * than void a craft.
-     *
      * @param commit false to ask whether the craft is possible without performing it.
      * @return whether the craft was, or would have been, paid for in full.
      */
@@ -711,22 +664,7 @@ public class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
         return new AssemblerMenu(containerId, playerInventory, inventory, modules, menuData, worldPosition);
     }
 
-    /**
-     * Spilled when the machine is broken, so a factory is not a way to lose iron.
-     *
-     * <p><b>This is the hook, not {@code Block.affectNeighborsAfterRemoval}.</b> In 26.2 the
-     * base implementation here is what drops a machine's contents, and it only does so for a
-     * {@link net.minecraft.world.Container} - which a {@code ResourceHandler} is not. A
-     * capability-based inventory that does not override this silently eats everything in it,
-     * and nothing in the removal path complains. {@code assembler_spills_when_broken} is the
-     * test that caught exactly that.
-     *
-     * <p>Each slot is emptied before its contents are dropped, rather than handing
-     * {@code copyToList()} to {@code Containers.dropContents}. That would work today only
-     * because the copied list holds the same {@link ItemStack} objects the handler does, and
-     * dropping drains them in place - an aliasing detail the method's name denies. If it ever
-     * stopped being true, every broken machine would duplicate its contents silently.
-     */
+    /** Spilled when the machine is broken, so a factory is not a way to lose iron. */
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         super.preRemoveSideEffects(pos, state);

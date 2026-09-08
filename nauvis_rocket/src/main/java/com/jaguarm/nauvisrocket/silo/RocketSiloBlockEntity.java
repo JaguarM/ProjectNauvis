@@ -52,31 +52,6 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 /**
  * A rocket silo: builds rocket parts out of what it is given, a hundred of them make a rocket,
  * and a satellite in its slot sends the rocket up.
- *
- * <h2>Two recipes, neither chosen</h2>
- *
- * <p>Factorio's silo runs one recipe and nobody picks it: {@code rocket-part}, in the
- * {@code rocket-building} category only the silo has. It is found here by what it makes, the way
- * a furnace finds smelting recipes, and run the assembler's way - a craft's ingredients checked as
- * it starts, paid for and banked in one transaction as it ends - except that what it makes goes
- * into the rocket rather than into a slot: {@link #parts} climbs by one.
- *
- * <p>The launch is the dump's other recipe, {@code space-science-pack}: a hundred rocket parts
- * and a satellite make a thousand packs. The silo does not run it as a timed craft - its three
- * hundred seconds are the hundred parts' three seconds each, already spent - but it reads its
- * numbers off it, so how many parts a rocket is and what comes back are the generated data's and
- * not this class's. When the parts are there and the slot holds the satellite, the countdown
- * starts on its own, as Factorio 2.0's does - or, with automatic launch switched off on the
- * screen, waits for the Launch button, which sends the rocket up with whatever it holds, cargo or
- * none, as Factorio 1.1's did. The science is owed to the output slot and paid into it as fast as
- * it is taken away, since a thousand of anything is sixteen stacks.
- *
- * <h2>Sleeping</h2>
- *
- * <p>No ticker. A silo ticks while it is building or counting down, and stops for want of
- * ingredients, of a satellite, or of power; it wakes on its inventory changing, on a neighbour
- * changing, and on electricity arriving through {@link MachinePower}. The one thing it never
- * does is poll.
  */
 public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
 

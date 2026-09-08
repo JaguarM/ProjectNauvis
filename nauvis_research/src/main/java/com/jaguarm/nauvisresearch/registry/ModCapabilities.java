@@ -17,18 +17,7 @@ import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
-/**
- * What automation sees when it looks at a lab, from any of the ten blocks it is made of.
- *
- * <p>Science packs go in and nothing comes back out - see {@code MachineAccess}. Without that a hopper
- * under a lab would pull the packs straight back out of it.
- *
- * <p>Registered against the <em>block</em> rather than the block entity, because a lab is ten
- * blocks and one block entity, and that block entity sits in the middle where nothing can stand
- * next to it. Any cell answers, resolving the anchor by arithmetic first. The result is the
- * Factorio behaviour: a lab is fed anywhere along its twelve perimeter faces or on its roof, and a
- * pole supplies it if its area covers any part of it.
- */
+/** What automation sees when it looks at a lab, from any of the ten blocks it is made of. */
 @EventBusSubscriber(modid = NauvisResearch.MODID)
 public final class ModCapabilities {
 

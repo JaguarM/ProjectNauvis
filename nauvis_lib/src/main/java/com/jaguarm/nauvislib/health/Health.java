@@ -9,25 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
-/**
- * Hurting and mending the things a base is made of.
- *
- * <p>Factorio's entities have health and the biters chew through them, walls first. Minecraft's
- * blocks have none, so this gives every block one: a machine that is {@link Damageable} says its
- * own, Factorio's number, and anything else is worth a hundred times its hardness - which puts a
- * cobblestone wall at two hundred, an assembler at three hundred and a turret at four, close to
- * Factorio's own figures without a table. Bedrock and anything else unbreakable cannot be hurt.
- *
- * <p>A machine is hurt as one thing whichever of its blocks is hit, through the anchor, and comes
- * down as one thing: the anchor is destroyed without drops, and the teardown rule takes the rest.
- * A destroyed machine spills what it held and hands back nothing, which is Factorio's rule too. A
- * block with no block entity keeps its wounds in {@link BlockHealth}, so a wall half chewed through
- * stays half chewed through until it is repaired or falls.
- *
- * <p>Who does the hurting is another mod's business - the military mod's hostiles, through a goal
- * that reaches this - and who does the mending is the machines mod's repair pack. Neither names
- * the other; both name this.
- */
+/** Hurting and mending the things a base is made of. */
 public final class Health {
 
     private Health() {}

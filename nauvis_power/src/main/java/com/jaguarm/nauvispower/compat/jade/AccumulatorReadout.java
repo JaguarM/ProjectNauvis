@@ -12,17 +12,7 @@ import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
-/**
- * What an accumulator says: which way its charge is moving, and how fast.
- *
- * <p>Jade's own energy bar draws the charge. What it cannot know is the direction - a battery at
- * half looks the same filling as emptying - and that is the one thing a player wants from a glance
- * at an accumulator field at dusk. Three states, and the idle one says the level in words because
- * a full battery and an empty one are both idle and want opposite things done about them.
- *
- * <p>Two classes, a data half and a {@code Client} half, because Jade throws at registration if
- * one object is both.
- */
+/** What an accumulator says: which way its charge is moving, and how fast. */
 public class AccumulatorReadout implements IServerDataProvider<BlockAccessor> {
 
     public static final AccumulatorReadout INSTANCE = new AccumulatorReadout();

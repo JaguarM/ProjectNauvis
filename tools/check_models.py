@@ -1,48 +1,16 @@
 """Resolves every model, texture and blockstate the pack ships, without starting the game.
 
-Three visual failures shipped in one day and not one of them failed a compile, a test or a
-datagen run: a model renamed out from under its item, a fluid with no FluidModel, and a texture
-nobody looked at. Datagen reports nothing in any of those cases, because in every case both files
-were written exactly as asked - it is the *reference between* them that is wrong.
+Datagen reports nothing when the reference *between* two files is wrong, so this walks the
+generated assets as the model manager would - blockstate -> model -> parent -> texture -> PNG -
+into the vanilla client jar too when it is in the Gradle cache. It also checks: belt speeds
+against `data/mapping.json`; stack sizes (`Stacks.of(n)` and `StandInStacks`) against `stack`;
+footprints (cells read out of each `*Shape.java` naming a `FACTORIO_ID`) against `size`; boxes
+outside `-16..32` (fail to parse) and overhanging boxes without explicit `uv` (smear); each
+blockstate variant's `y` against the shape's own cell-plus-facing arithmetic; and that every
+texture a first-party model names is opaque unless listed in `TRANSPARENT_TEXTURES_ALLOWED`. The
+PNG is read with the standard library, because the build runs this and cannot assume Pillow.
 
-That is what this checks. It walks the generated assets the way the game's model manager would,
-resolving each reference to a file that has to exist:
-
-    blockstate -> model -> parent -> ... -> texture -> a real PNG
-
-and it resolves into the vanilla client jar too, because almost every model in the pack points at
-a vanilla texture on purpose. Without the jar it still checks everything first-party and says so;
-with it, `minecraft:block/bricks` is a file that either exists or does not.
-
-It also checks belt speeds, the same way and for the same reason: a belt's tiles per second
-is identity, it lives in `data/mapping.json`, and the constant in the block is held to it.
-
-And it checks the two ways an overhanging box goes wrong, and it checks footprints. A machine
-cell may draw geometry that hangs into its neighbours, and both failures are silent:
-
-  - **`-16..32`.** `CuboidModelElement` in 26.2 holds MIN_EXTENT = -16 and MAX_EXTENT = 32. A box
-    outside that fails to parse and the block is a checkerboard.
-  - **explicit `uv` once a box leaves `0..16`.** An absent `uv` is derived from the box position,
-    so an overhanging box gets coordinates off the end of its texture and smears. Nothing warns.
-
-Footprints are the third thing: a machine's cells, read back out of its `*Shape.java`, against
-the `size` recorded for that Factorio entity in `data/mapping.json`. A footprint is identity, so
-it is checked rather than remembered - the same argument that makes recipes generated.
-
-And the fourth is rotation. A multi-block turns twice over - each cell has its own quarter turn,
-and the whole machine has a facing - and the model and the collision shape have to add those the
-same way. They did not, for a day: see `check_rotations`.
-
-The fifth is opacity. A machine is solid geometry on vanilla textures, and a vanilla texture is
-not always a full opaque square: `anvil_top.png` is the sprite for a block that is not a cube and
-has three transparent columns down each side, and a pumpjack drawn with it had a slit through every
-upward face. Nothing complained - the PNG exists and the model parses - and a person found it in a
-screenshot. So every texture a first-party model names is opened and has to be opaque, unless it is
-listed in `TRANSPARENT_TEXTURES_ALLOWED` as meant to be see-through. The PNG is read with the
-standard library, because the build runs this and cannot assume Pillow.
-
-Run it as `python tools/check_models.py`; `./gradlew build` runs it too. It reads only files, so
-it is safe to run at any time and needs no client.
+    python tools/check_models.py
 """
 import json
 import re

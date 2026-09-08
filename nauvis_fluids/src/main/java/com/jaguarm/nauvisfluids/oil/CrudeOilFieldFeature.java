@@ -21,41 +21,7 @@ import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-/**
- * Puts an oil field into the world: a handful of wells, each on its own patch of level ground.
- *
- * <p>Factorio's oil comes as fields of several wells with a few tiles between them, never in the
- * starting area, at about 1.8 fields per square kilometre - and it is easy to find, because the
- * map view shows every field as a magenta blot. This pack has no map, only a pumpjack in hand that
- * outlines wells within render distance, so the density has to do the map's job: <b>about four
- * times Factorio's</b>, one field per three hundred chunks, which puts the nearest one typically
- * inside a hundred and fifty blocks of wherever you stand. The chance per chunk is in the placed
- * feature JSON; the starting area is {@link #STARTING_AREA} here, because it is a rule about where
- * a field may begin rather than about how often one is rolled. Placement is behaviour, not
- * identity - see {@code GAPS.md}.
- *
- * <p><b>A superflat world runs none of this.</b> The default "Classic Flat" preset has
- * {@code features: false} - no trees, no ores, no oil - and only the "Overworld" flat preset turns
- * them on. {@code /oil field} is for that world, and for a playtest that does not want to walk.
- *
- * <h2>Wells are four blocks apart</h2>
- *
- * <p>A pumpjack is 3x3, so two wells three apart could each take one with the machines touching,
- * and four apart leaves a one-block lane for the pipe. Factorio's wells are typically five to
- * eight tiles apart; four is the tightest a field can be here and still be pumpable without a
- * pipe going over or under a machine. Every well in a field sits on that grid, which is what makes
- * a field a thing you lay pumpjacks out on rather than squeeze them into.
- *
- * <h2>Each well levels its own three by three</h2>
- *
- * <p>Factorio's terrain is flat and Minecraft's is not, so a well flattens the ground a pumpjack
- * will need: the eight blocks round it are filled up to its level with dirt where they dip, and
- * cleared down to it where they rise or hold a plant or a tree. That is a small pit or a small
- * pad on a hillside, and it is what makes a generated field pumpable without a shovel.
- *
- * <p>Runs in {@code top_layer_modification}, after trees and grass, so nothing grows on the pad
- * afterwards.
- */
+/** Puts an oil field into the world: a handful of wells, each on its own patch of level ground. */
 public class CrudeOilFieldFeature extends Feature<NoneFeatureConfiguration> {
 
     /**

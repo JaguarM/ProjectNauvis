@@ -6,43 +6,7 @@ import java.util.List;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 
-/**
- * One lane of a belt run: the items on it, and where they are.
- *
- * <p>A Factorio belt has two lanes and they never mix. That is identity rather than detail - it is
- * why an inserter takes from the far lane, why a splitter behaves as it does, and why half a belt
- * of iron beside half a belt of copper is a thing players build. So a lane is a real object and a
- * run has exactly two of them.
- *
- * <h2>Gaps, not positions</h2>
- *
- * <p><b>Nothing here stores where an item is.</b> {@code slack} holds the <em>free space in front
- * of</em> each item: entry 0 is how far the leading item still has to travel to reach the end of
- * the run, and entry {@code i} is how much room there is between item {@code i} and the item ahead
- * of it <em>beyond</em> the {@link Belts#SPACING} two items always occupy. A position is a running
- * sum, worked out when something actually asks - see {@link #positions()}.
- *
- * <p>That representation is the whole reason a belt in this pack is cheap, and it is Factorio's
- * own. Storing positions would mean writing every item every tick: eight hundred numbers a tick
- * for a hundred blocks of full belt, twenty times a second, for one belt. Storing gaps means a
- * belt that is <em>flowing</em> writes one number - every item moves the same distance, so every
- * gap between them is unchanged - and a belt that is <em>jammed</em> writes none at all. Work is
- * proportional to the length of the front where the two meet, which is a handful of items however
- * long the belt is.
- *
- * <p>Two facts make that safe, and both are worth stating because {@link #advance(int)} leans on
- * them:
- *
- * <ul>
- *   <li><b>Movement never decreases down the lane.</b> An item moves as far as the item ahead did,
- *       plus whatever slack it had, capped at the belt's speed. So once one item moves a full
- *       step, every item behind it does too - which is why the loop may stop there.</li>
- *   <li><b>A packed prefix stays packed.</b> {@code packed} counts the items at the front with no
- *       slack at all. They move exactly as far as the leader does and their gaps do not change, so
- *       they can be skipped outright. This is what makes a jammed belt free rather than its worst
- *       case.</li>
- * </ul>
- */
+/** One lane of a belt run: the items on it, and where they are. */
 public final class BeltLane {
 
     /** The items, leading item first - "leading" meaning nearest the end of the run. */

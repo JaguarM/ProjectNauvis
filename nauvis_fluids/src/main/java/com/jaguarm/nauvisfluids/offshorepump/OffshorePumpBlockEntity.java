@@ -16,40 +16,7 @@ import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
-/**
- * An offshore pump: stands at the water's edge and fills its tank with water, for nothing.
- *
- * <p>Factorio's numbers, at the pack's ratio:
- *
- * <ul>
- *   <li><b>no power and no fuel.</b> Factorio's offshore pump has had no energy source since
- *       0.17; water is free, and the cost of it is having to build out to where it is;
- *   <li><b>{@value #WATER_PER_TICK} a tick.</b> Factorio's pump gives 1200 a second, and its
- *       boiler takes 60 a second, so one pump feeds twenty boilers. A boiler here makes two steam
- *       a tick - {@code nauvis_power} keeps Factorio's ratios rather than its units - so twenty
- *       boilers' worth of water is forty a tick. The ratio is what is kept;
- *   <li><b>a tank of {@value #TANK_CAPACITY}</b>, Factorio's fluid box for the machine.
- * </ul>
- *
- * <p>What comes out is {@code minecraft:water}, not the natural water it stands in. Factorio's
- * water fluid is mapped to vanilla's in {@code data/mapping.json}, a pipe or a tank from any mod
- * knows what that is, and it is what a bucket of the lake becomes too. Natural water is the
- * thing in the world; water is the thing in the pipe.
- *
- * <h2>Sleeping</h2>
- *
- * <p>No ticker. The machine schedules its own tick while it has water and room, and stops
- * scheduling the moment it lacks either. Both come back from outside: room appears when a pipe
- * draws, which {@link FluidOutputAccess} reports, and water at the intake is a neighbour of the
- * intake cell, so {@code neighborChanged} covers it. {@code offshore_pump_sleeps} is the test
- * that fails if either wake stops working.
- *
- * <h2>Pushing</h2>
- *
- * <p>It does not. Like the boiler and the pumpjack, it fills its own tank and offers it
- * extract-only at the outlet; the pipe run pulls, which is what lets both ends sleep and what
- * makes a pump with nothing connected simply fill up and stop.
- */
+/** An offshore pump: stands at the water's edge and fills its tank with water, for nothing. */
 public class OffshorePumpBlockEntity extends BlockEntity {
 
     /** Factorio's 1200 a second, at the pack's ratio: twenty boilers at two a tick each. */

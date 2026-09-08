@@ -8,28 +8,8 @@ import com.jaguarm.nauvislib.multiblock.MachineParts;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 /**
- * What a rocket silo looks like and how much room it takes: nine tiles by nine, the size Factorio
- * made it, and the biggest thing in the pack by a distance.
- *
- * <h2>A pad with a rocket standing on it</h2>
- *
- * <p>Factorio's silo is a hole in the ground with doors that open for the launch. That is a
- * rendered animation on a machine nine tiles across, and this pack's machines are block models;
- * so the silo here is a pad, the shared shell nine wide with the family's wall and recessed floor,
- * and the rocket stands on a solid three-by-three deck in the middle of it. The rocket is drawn
- * whether or not a rocket has been built - the parts a silo holds are a number in its screen and
- * its readout - which is the shortcut {@code GAPS.md} names. Five blocks of body with the corners
- * chamfered, so it reads as round at a distance, and a stepped nose over that: seven tall, and
- * the tallest thing a factory has.
- *
- * <p>The floor inside the wall is walked over, which is the walkability rule of every machine
- * here; the deck and the rocket are the one thing to go round, and they leave three blocks of
- * floor on every side.
- *
- * <p>Every cell is written out rather than looped, all {@value #CELL_COUNT} of them, because a
- * cell's place in the list is its {@code part} value and {@code part} values are in world saves;
- * {@code tools/check_models.py} reads them back and holds the footprint to the {@code size} for
- * {@code rocket-silo} in {@code data/mapping.json}. <b>Do not reorder this list</b>, only append.
+ * What a rocket silo looks like and how much room it takes: nine tiles by nine, the size
+ * Factorio made it, and the biggest thing in the pack by a distance.
  */
 public final class RocketSiloShape {
 

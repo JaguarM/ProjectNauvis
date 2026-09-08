@@ -22,27 +22,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * The wires between poles.
- *
- * <p>There is no wire coil and there are no connectors to place: <b>poles that can see each other
- * are wired.</b> The network already decided which those are - it has to, to know what is
- * connected to what - so drawing them is a matter of showing what is already true rather than of
- * asking the player to say it twice. Immersive Engineering's manual coils are a whole subsystem
- * this pack does not want, and Factorio does not have one either.
- *
- * <p>The client is told the set of links per pole rather than working it out, because it has no
- * copy of the graph and rediscovering it would mean every pole scanning a fifteen-block cube for
- * others and then somehow noticing when one moved. See
- * {@link ElectricPoleBlockEntity#links()}.
- *
- * <h2>Each wire is drawn once</h2>
- *
- * <p>Both ends know about a link, so without a rule both would draw it and the wire would be
- * double-rendered - which shows up as z-fighting rather than as anything obviously wrong. The end
- * with the lower packed position draws; the other does nothing. Links only ever name loaded poles,
- * so there is always exactly one of them present to do it.
- */
+/** The wires between poles. */
 public class PoleWireRenderer implements BlockEntityRenderer<ElectricPoleBlockEntity, PoleRenderState> {
 
     /**
@@ -117,13 +97,6 @@ public class PoleWireRenderer implements BlockEntityRenderer<ElectricPoleBlockEn
 
     /**
      * Where a wire meets the pole whose foot is at {@code foot}, in world coordinates.
-     *
-     * <p>The middle of the footprint horizontally, not the middle of the foot block: a big pole is
-     * two tiles across and its wires come off the tower rather than off one of its legs. For a
-     * one-tile pole the two are the same point.
-     *
-     * <p>Falls back to a small pole's head if the block is not one of ours, which can only happen
-     * in the tick between a pole being broken and the client hearing about it.
      */
     private static Vec3 attachment(Level level, BlockPos foot) {
         float width = 1;
@@ -212,17 +185,7 @@ public class PoleWireRenderer implements BlockEntityRenderer<ElectricPoleBlockEn
                 .setNormal(pose, 0.0F, 1.0F, 0.0F);
     }
 
-    /**
-     * <b>The box the frustum test uses, and the reason wires stay drawn.</b>
-     *
-     * <p>Its default is the unit cube at the block entity, so a pole whose foot had gone off the
-     * edge of the screen stopped drawing wires that were still in plain sight. Vanilla leashes
-     * never look wrong this way because an entity is culled against a box that already contains
-     * what it draws; a block entity is culled against one block, and has to say otherwise.
-     *
-     * <p>Computed on the block entity so that a headless test can assert it - see
-     * {@link ElectricPoleBlockEntity#wireBounds()}.
-     */
+    /** <b>The box the frustum test uses, and the reason wires stay drawn.</b> */
     @Override
     public AABB getRenderBoundingBox(ElectricPoleBlockEntity pole) {
         return pole.wireBounds();

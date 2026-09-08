@@ -16,17 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.crafting.Recipe;
 
-/**
- * The server's view of research: read the state, move it, tell everybody.
- *
- * <p>Everything that changes the tree goes through here rather than through {@link ResearchState}
- * directly, because every change has a second half - the clients have to be told, or the recipe
- * panel keeps drawing a locked recipe as locked and the research screen keeps drawing a finished
- * technology as available.
- *
- * <p>{@link ResearchState} lives on the <b>overworld's</b> storage and is fetched from there
- * whatever level asks. A lab in the Nether contributes to the same tree; there is one force.
- */
+/** The server's view of research: read the state, move it, tell everybody. */
 public final class Research {
 
     private Research() {}

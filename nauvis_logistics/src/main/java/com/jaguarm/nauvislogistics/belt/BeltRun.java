@@ -25,49 +25,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
-/**
- * One belt line: the blocks it runs over, the two lanes on it, and everything on those lanes.
- *
- * <p><b>A run is one object however long it is, and items on it are positions rather than
- * entities.</b> That is the model Factorio uses to move millions of items, it is the model Create
- * arrived at, and it is the one this pack settled on over the block-entity-per-belt shortcut
- * {@code PLAN.md} originally allowed. The two reasons are the same two the pipe run gives: a run
- * ticks once whatever its length, and an item crosses it at the belt's speed rather than at one
- * block a tick.
- *
- * <p>Never an {@code ItemEntity}. An entity costs a tick, a chunk membership, collision and a
- * network presence each, cannot be compressed against its neighbour, and cannot be on a lane.
- * Immersive Engineering's conveyors do move real entities, and reading them is the quickest way to
- * see why its conveyors are not Factorio belts.
- *
- * <h2>Where a run starts and stops</h2>
- *
- * <p>A belt feeds the block it faces. A run follows that link for as long as it is unambiguous:
- * the moment a belt has <em>two</em> belts feeding it, it begins a run of its own and the feeders
- * hand off into it. So a line that turns a corner is one run - a curve has one feeder - and a
- * merge is two runs meeting a third, which is exactly what a merge is. A run never spans two
- * tiers, because {@link BeltBlock} makes speed a property of the block.
- *
- * <h2>The same simulation runs on the client</h2>
- *
- * <p>The client builds runs too, out of the same block states, and advances them with this same
- * code. That is what makes visible moving items affordable: the alternative is telling every
- * client where every item is, every tick, which is a packet per item per tick and the reason most
- * mods draw belts badly.
- *
- * <p>Everything the two sides do from the same information they both hold - moving, jamming,
- * handing off between runs - needs no message at all. Only the boundary with the rest of the world
- * does: an inserter putting something on, or taking something off. Those two go out as
- * {@link BeltItemAddedPayload} and {@link BeltItemRemovedPayload}, once each, when the transaction
- * that caused them commits.
- *
- * <h2>Transactions</h2>
- *
- * <p>An inserter moves an item by extracting and inserting inside one transaction, and rolls the
- * whole thing back if either half fails. So a belt has to be able to un-accept an item. The
- * journal below is that: every change made inside a transaction records how to undo itself, a
- * snapshot is just a mark in that list, and rolling back is popping down to the mark.
- */
+/** One belt line: the blocks it runs over, the two lanes on it, and everything on those lanes. */
 public final class BeltRun extends SnapshotJournal<Integer> {
 
     private final Level level;
@@ -81,18 +39,7 @@ public final class BeltRun extends SnapshotJournal<Integer> {
     /** Each block's direction of travel, read once so the tick never touches a block state. */
     private final Direction[] facings;
 
-    /**
-     * How far each block's surface climbs across itself, in blocks, in the direction of travel.
-     *
-     * <p>+1 on a belt drawn climbing, -1 on one drawn descending, 0 flat - {@link BeltShape#rise}.
-     * Read once with the facings and for the same reason, and safe to hold for the life of the run
-     * because a run is rebuilt whenever any of its belts changes shape: {@code BeltBlockEntity}
-     * catches that, on both sides, from {@code setBlockState}.
-     *
-     * <p>It is only consulted at the two ends of the run. Everywhere inside it, the height of the
-     * seam between two blocks is decided by the blocks themselves - see {@link #exitHeight} - which
-     * cannot disagree with itself the way two neighbouring shapes could.
-     */
+    /** How far each block's surface climbs across itself, in blocks, in the direction of travel. */
     private final int[] rises;
 
     private final Long2IntOpenHashMap indexByBlock = new Long2IntOpenHashMap();
@@ -248,22 +195,8 @@ public final class BeltRun extends SnapshotJournal<Integer> {
     }
 
     /**
-     * How high the surface is at the seam a block's items arrive over, and the one they leave by.
-     *
-     * <p><b>Inside the run it is decided by the two blocks sharing the seam, not by either one's
-     * shape</b> - the higher of the two, plus the belt's own half block. That is what makes the
-     * line continuous by construction: two neighbours cannot disagree about a number they both read
-     * off the same pair of coordinates, where two independently-derived shapes could, and an item
-     * would step through the gap between them.
-     *
-     * <p>It also comes out right for both ways a line changes level, which is the whole reason a
-     * ramp belongs to the lower block: climbing, the seam ahead is the high one and the ramp lifts
-     * items to it; descending, the seam behind is the high one and the ramp lets them down. The
-     * arithmetic is the same either way round.
-     *
-     * <p>Only the two ends of the run have no neighbour to ask, and there the block's own shape
-     * answers - a run that begins or ends mid-slope, which is a merge at the top of a climb or a
-     * split at the bottom of one.
+     * How high the surface is at the seam a block's items arrive over, and the one they leave
+     * by.
      */
     private double entryHeight(int index) {
         int y = blocks.get(index).getY();
@@ -311,13 +244,6 @@ public final class BeltRun extends SnapshotJournal<Integer> {
 
     /**
      * Which side of {@code from} the block {@code to} lies on, on the flat.
-     *
-     * <p><b>The height difference is deliberately thrown away.</b> Two belts joined across a step
-     * are a block apart horizontally and a block apart vertically, and asking for the nearest of
-     * the six directions to that would answer UP or DOWN - which is not a side a belt has, and
-     * which the caller would then quietly turn into a zero-length step rather than an error. What
-     * an item crosses is still the north, south, east or west edge of a tile; it is simply higher
-     * on one side than the other, and that part is {@link #entryHeight}'s business.
      */
     private static Direction directionBetween(BlockPos from, BlockPos to) {
         return Direction.getApproximateNearest(to.getX() - from.getX(), 0, to.getZ() - from.getZ());
@@ -348,44 +274,7 @@ public final class BeltRun extends SnapshotJournal<Integer> {
         return moved;
     }
 
-    /**
-     * Tells the world about every block of this run that has just gained its first item.
-     *
-     * <p><b>This is what wakes an inserter beside a belt, and without it the belt is a machine no
-     * other machine can hear.</b> An inserter with nothing to do schedules no ticks - non-negotiable
-     * #5 - so the signal that there is work again has to arrive from outside it. Every other source
-     * in the pack manages that for free, because a chest or a furnace gaining an item calls
-     * {@code setChanged}, which NeoForge routes to all six neighbours. A belt does not: an item
-     * <em>travelling</em> into the tile beside an inserter changes no block entity and touches no
-     * chunk, so until this existed a dry burner inserter beside a working coal belt, or any
-     * inserter unloading a belt with a gap in it, went to sleep and never woke up. It was found by
-     * putting coal four tiles upstream of a sleeping inserter and watching it arrive and jam.
-     *
-     * <p><b>It is deliberately not {@code setChanged}.</b> {@link #markChanged} is the boundary
-     * signal and it dirties the chunk, which is right for an item crossing between the belt and the
-     * world and wrong twenty times a second: an item shuffling forward is not a reason to save a
-     * chunk. {@code updateNeighbourForOutputSignal} is the half of {@code setChanged} that carries
-     * the news, without the half that costs disk.
-     *
-     * <p>Two filters keep it quiet enough to be affordable:
-     *
-     * <ul>
-     *   <li><b>Only a run that moved.</b> A jammed run is skipped outright, so
-     *       {@link BeltLane}'s promise that a jam costs the same as an empty belt survives.</li>
-     *   <li><b>Only empty to occupied.</b> A compressed belt's blocks never fall empty, so a busy
-     *       belt sends nothing at all - the notifications happen where the gaps are, which is
-     *       exactly where an inserter can have gone to sleep. Notifying every occupied block every
-     *       tick would be a poll with extra steps.</li>
-     * </ul>
-     *
-     * <p>The cost is one pass over the run's items per moving run per tick, to work out which
-     * blocks are occupied. That is the one thing here that is not O(1), and it is the price of the
-     * belt being audible; the alternative is inserters registering interest in particular blocks,
-     * which is a subscription to keep in step with every cut, join and turn. If it ever shows up in
-     * a profile, the thing to do is make the occupancy incremental rather than to drop the signal.
-     *
-     * <p>Server only. The client runs this same simulation and has nothing to wake.
-     */
+    /** Tells the world about every block of this run that has just gained its first item. */
     private void announceArrivals() {
         if (!(level instanceof ServerLevel)) {
             return;
@@ -474,16 +363,7 @@ public final class BeltRun extends SnapshotJournal<Integer> {
         }
     }
 
-    /**
-     * Carries the leading item off the head of a loop and back on at its tail.
-     *
-     * <p>The two are the same face, so nothing about this is a jump: the item crosses one edge, as
-     * it does at every other block boundary on the run. It keeps its lane, because going round a
-     * corner does not swap a Factorio belt's lanes over.
-     *
-     * <p>Nothing here talks to another run, which is what makes a loop cheap: a ring of belts is
-     * one object that never hands anything to anyone.
-     */
+    /** Carries the leading item off the head of a loop and back on at its tail. */
     private void wrapRound(int lane) {
         if (!lanes[lane].hasRoomAt(length())) {
             // The ring is full, all the way round to its own tail. It jams, as it should.
@@ -597,18 +477,7 @@ public final class BeltRun extends SnapshotJournal<Integer> {
     /** Where one item was, as a block and an offset into it - which survives the run changing. */
     public record Parked(BlockPos block, int lane, int offset, ItemResource item) {}
 
-    /**
-     * Lifts every item off, saying which block and where on it each one was.
-     *
-     * <p><b>This is what makes placing and breaking belts safe.</b> A run is rebuilt from scratch
-     * whenever the belts around it change - two runs become one, one becomes two, a chunk arrives
-     * with more of it - and every one of those moves the point distances are measured from. An
-     * item pinned to a block and an offset into that block does not care: it is put back exactly
-     * where it was standing, on whatever run now owns that block.
-     *
-     * <p>It is also why the client needs no message when a player edits a belt line. Both sides
-     * lift, rebuild and replace by the same rule, from block states they both already have.
-     */
+    /** Lifts every item off, saying which block and where on it each one was. */
     List<Parked> park() {
         List<Parked> parked = new ArrayList<>(itemCount());
         for (int lane = 0; lane < Belts.LANES; lane++) {

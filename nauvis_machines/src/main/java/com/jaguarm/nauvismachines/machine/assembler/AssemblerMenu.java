@@ -28,20 +28,6 @@ import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 /**
  * The assembler's menu: six ingredient slots, one output slot, the tier's module slots, and the
  * machine's progress.
- *
- * <p>Implements {@link RecipeSelector}, which is what makes Facrafting's crafting panel change
- * its mind about what a click means. With this menu open, clicking a recipe over there points
- * this machine at it. There is deliberately no recipe list in this screen: the panel already has
- * one, with search and tabs and a picture of everything the pack can make, and two of them would
- * be two things to keep in step.
- *
- * <p>The chosen recipe is not a data slot, because a recipe key is not an int. The client reads
- * it off the block entity instead, which it already has - {@link AssemblerBlockEntity} pushes its
- * state to watching clients whenever the recipe changes.
- *
- * <p>How many module slots there are is the tier's, read off the block at the machine's position
- * on both sides, so an assembling machine 1 draws none and an assembling machine 2 draws two, and
- * the client's stand-in handler is the right size for the slots it is asked to show.
  */
 public class AssemblerMenu extends AbstractContainerMenu implements RecipeSelector {
 

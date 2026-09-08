@@ -9,14 +9,8 @@ import com.jaguarm.nauvisrocket.silo.RocketSiloInventory;
 import net.minecraft.world.item.crafting.RecipeHolder;
 
 /**
- * The silo's slot rules as the client can work them out, so a shift-click lands where the server
- * will put it.
- *
- * <p>A menu's client half is built with a stand-in inventory, and the stand-in's {@code isValid}
- * and capacity are what the client predicts a click by. Facrafting sends every timed recipe to the
- * client, so the rocket part's is here to read: the recipe that makes a rocket part, found the way
- * the server finds it. A client that was never sent it - there is none, short of a broken
- * connection - refuses, and the server's answer would stand anyway.
+ * The silo's slot rules as the client can work them out, so a shift-click lands where the
+ * server will put it.
  */
 public final class ClientSiloRules {
 

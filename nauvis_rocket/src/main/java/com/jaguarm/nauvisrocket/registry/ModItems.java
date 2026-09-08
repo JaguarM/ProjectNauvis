@@ -16,9 +16,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-/**
- * The four items of the rocket, at the dump's ids and the dump's recipes.
- */
+/** The four items of the rocket, at the dump's ids and the dump's recipes. */
 public final class ModItems {
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(NauvisRocket.MODID);

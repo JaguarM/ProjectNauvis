@@ -12,20 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 
-/**
- * A module: an item that changes the machine it is put in, for as long as it is in there.
- *
- * <p>Factorio's first tier, at Factorio 2.0's numbers. A <b>speed module</b> is a fifth faster for
- * half again the power; an <b>efficiency module</b> is three tenths cheaper to run and nothing
- * else; a <b>productivity module</b> banks a free craft every twenty-five, and pays for it with
- * a twentieth of the speed and two fifths more power. The effects add across a machine's slots,
- * and {@code nauvis_lib}'s {@link ModuleEffect} holds the floors.
- *
- * <p>The item is this mod's because {@code PLAN.md} gives the modules to the machines mod; the
- * {@link Module} interface it implements is the library's, so every other machine mod's slots
- * take it without naming this one. The tooltip says what it does in the same words the machine
- * screens use, one line per effect that is not zero.
- */
+/** A module: an item that changes the machine it is put in, for as long as it is in there. */
 public class ModuleItem extends Item implements Module {
 
     /** Speed module 1: +20% speed, +50% energy. */

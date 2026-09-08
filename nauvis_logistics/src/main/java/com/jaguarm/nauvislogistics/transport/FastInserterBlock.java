@@ -5,15 +5,8 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.world.level.block.BaseEntityBlock;
 
 /**
- * The fast inserter: the basic arm swinging nearly three times as fast, for three times the power.
- *
- * <p>Factorio turns it at 864 degrees a second where the basic inserter manages 302, which is
- * 2.31 items a second against 0.83: nine ticks a swing here against twenty-four, and as near as a
- * whole tick gets. It is the inserter a belt-fed assembler line is built from once there is a
- * grid worth the name, and it reaches one block, like the arm it is built out of.
- *
- * <p>No block entity of its own, no menu, no capability registration: a tier is a block, as
- * {@link LongHandedInserterBlock} established, and this one is two numbers and a codec.
+ * The fast inserter: the basic arm swinging nearly three times as fast, for three times the
+ * power.
  */
 public class FastInserterBlock extends ElectricInserterBlock {
 

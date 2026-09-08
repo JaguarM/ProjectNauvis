@@ -30,20 +30,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/**
- * The 2x1 splitter block: splits and balances items across two belt lines.
- *
- * <p>Directional multiblock (2 wide, 1 deep). The left cell (part 0) carries the block entity.
- *
- * <h2>Abstract, for the same reason {@link BeltBlock} is</h2>
- *
- * <p>A splitter has a tier and the tier is a speed, so speed is {@link #speed()} on the block and
- * never a constant anybody reads through a class name. It was one for a while, and that is a trap
- * worth naming: {@code SplitterBlockEntity} read {@code SplitterBlock.SPEED} statically, so a fast
- * splitter would have carried items at the yellow one's speed and passed every test in the file
- * except the one that measures it. A method on a subclass is also safe from the
- * {@code createBlockStateDefinition} trap a field would fall into - see docs/PITFALLS.md.
- */
+/** The 2x1 splitter block: splits and balances items across two belt lines. */
 public abstract class SplitterBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;

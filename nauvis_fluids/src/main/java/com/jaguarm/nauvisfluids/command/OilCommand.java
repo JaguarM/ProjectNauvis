@@ -21,17 +21,6 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
  * {@code /oil}: puts oil in the ground where there is none.
- *
- * <p>Factorio's map editor can place a crude oil resource anywhere, and this is that. Two things
- * need it. A <b>superflat world runs no features</b> - the default "Classic Flat" preset has
- * {@code features: false}, which is why it has no trees, no ores and no oil - so a test world of
- * the kind everyone builds a factory in has no oil at all unless somebody puts it there. And a
- * playtest that wants to try a pumpjack should not have to walk three hundred blocks first.
- *
- * <p>{@code /oil field} puts a whole field down around where you stand, exactly as worldgen would
- * - the same placement, the same spacing, the same levelling - and says how many wells it managed.
- * {@code /oil well} puts one well under your feet. Gamemaster only, like {@code /research}: this is
- * the editor's tool, not the player's.
  */
 @EventBusSubscriber(modid = NauvisFluids.MODID)
 public final class OilCommand {

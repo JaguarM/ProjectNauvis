@@ -11,15 +11,6 @@ import net.minecraft.resources.Identifier;
 
 /**
  * S2C: something has taken an item off the belt at {@code belt}.
- *
- * <p>The other half of {@link BeltItemAddedPayload}. A client never invents a removal of its own -
- * it cannot know whether the chest an inserter is filling had room - so an item that reaches the
- * end of a line simply waits there until this arrives, which is also exactly what the server's
- * copy of it is doing.
- *
- * <p>The offset says which item, rather than the client assuming it is the leading one: the two
- * sides can be a tick apart, and picking the nearest item to a named place is right whether or not
- * they are.
  */
 public record BeltItemRemovedPayload(BlockPos belt, int lane, int offset) implements CustomPacketPayload {
 

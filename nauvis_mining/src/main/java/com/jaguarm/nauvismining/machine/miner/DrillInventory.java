@@ -7,20 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 
-/**
- * A drill's three slots: what it burns, what it digs with, and what it dug.
- *
- * <p>The fuel slot takes something that burns, and on an electric drill nothing at all - the
- * rule is handed in by the block entity, which knows the tier and can ask the level what burns.
- * The pickaxe slot takes a pickaxe, which is the one thing about this drill that Factorio's does
- * not have and the one thing that is staying: see {@code docs/GAPS.md}. The output slot takes
- * anything, because the machine writes to it; automation is kept out of it by
- * {@link com.jaguarm.nauvislib.transfer.MachineAccess}.
- *
- * <p>{@code ResourceHandlerSlot} reads {@link #isValid} for {@code mayPlace} and the handler
- * reports zero capacity for what it rejects, so one override closes the screen, the hopper and
- * the inserter at once.
- */
+/** A drill's three slots: what it burns, what it digs with, and what it dug. */
 public class DrillInventory extends ItemStacksResourceHandler {
 
     private final Runnable onChanged;

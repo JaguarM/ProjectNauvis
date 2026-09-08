@@ -34,23 +34,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-/**
- * Block and item models.
- *
- * <p>Most textures here are placeholders and point at <em>vanilla</em> ones on purpose. A model
- * naming a texture this mod does not ship renders as the magenta-and-black checkerboard, which
- * reads as a broken model rather than as art nobody has drawn yet - and the difference matters
- * when the person judging whether a machine looks right is looking at it in game.
- *
- * <p><b>The belt is the exception and has art of its own</b>, from
- * {@code texture-workshop/make_belt_textures.py}. It had to: a belt's facing has to be legible at
- * a glance, and its tread has to move, neither of which a borrowed texture can do.
- *
- * <p>A furnace body gives the inserter a distinct front face, which is the one thing its model
- * genuinely has to communicate: an inserter that is facing the wrong way looks exactly like one
- * that is working. Real art is Yannic's half; see
- * {@code texture-workshop/}.
- */
+/** Block and item models. */
 public class NauvisLogisticsModels extends ModelProvider {
 
     /**
@@ -95,53 +79,13 @@ public class NauvisLogisticsModels extends ModelProvider {
     /** How tall a belt is drawn, in pixels: {@link Belts#HEIGHT} in the units a model speaks. */
     private static final float BELT_PIXELS = (float) (Belts.HEIGHT * 16.0);
 
-    /**
-     * How far the slanted slab is held in from the sides of its block.
-     *
-     * <p>A tenth of a pixel, and it is the whole of the z-fighting fix. The slab overlaps two
-     * things it cannot help overlapping - the square box under its low end, and the flat belt at
-     * the top of the climb, which its tilted underside reaches into - and while all three spanned
-     * the full width, they sat their side faces on the same two planes and flickered against each
-     * other.
-     *
-     * <p><b>It is the slanted piece that gives way, not the square ones</b>, because it is the one
-     * doing the overlapping: pull it in and every pair of coincident planes goes at once, while the
-     * flat joints stay exactly as wide as the belts they meet. A tenth of a pixel is a hundred and
-     * sixtieth of a block - far too small to see, far too big for a depth buffer to confuse.
-     *
-     * <p>In rather than out. A slab wider than its block would reach into the belt line laid beside
-     * it, and belt lines are laid side by side all the time.
-     */
+    /** How far the slanted slab is held in from the sides of its block. */
     private static final float RAMP_INSET = 0.1F;
 
     /**
      * A sloped belt: one slanted slab, and one square box to end it with.
      *
-     * <p><b>Vanilla's raised rail is a plane with no thickness</b> - {@code template_rail_raised_ne}
-     * is a single element whose Y extent is zero - which is why it can be rotated 45 degrees and
-     * still meet a flat rail cleanly. A belt is half a block thick, and both of the awkward parts
-     * here come from that.
-     *
-     * <p>The slab is sized to the block's <em>diagonal</em> rather than its side, so its top surface
-     * runs corner to corner: from half a block up at the low edge to half a block up in the block
-     * above at the high edge, which is exactly where the flat belts at either end are.
-     * {@code rescale} would stretch it corner to corner too, and would stretch the thickness with
-     * it - an 8-pixel belt would come out 11.
-     *
-     * <p><b>Its ends tilt with it</b>, being a rotated box, so neither end meets a flat belt's
-     * upright face squarely. At the low end that leaves a wedge of open air between two belts that
-     * are meant to be one line, and the square box below closes it. At the high end it is the other
-     * way about - the underside reaches past the block and into the belt at the top of the climb -
-     * and that one is left alone, because the material is inside that belt or lying along the top
-     * of it, which is a thing a conveyor does.
-     *
-     * <p>What is <em>not</em> left alone is the flickering, and {@link #RAMP_INSET} is the whole of
-     * that fix. Both overlaps are unavoidable - a square box cannot end flush against a 45-degree
-     * face without either overlapping it or leaving a gap, and a tilted end cannot stop square at a
-     * block boundary - but neither has to share a plane with what it overlaps.
-     *
      * @param rises whether the ramp climbs the way the belt faces, which is the whole of the
-     *              difference between {@link BeltShape#UP} and {@link BeltShape#DOWN}
      */
     private static Identifier beltRamp(BlockModelGenerators blockModels, Block block, String base,
             String suffix, boolean rises) {
@@ -176,12 +120,6 @@ public class NauvisLogisticsModels extends ModelProvider {
      * One box of a belt model, textured the way a slab is: tread on top, tin down the sides.
      *
      * @param stretch whether the top and bottom carry one whole tread stretched over the element,
-     *                which is what the ramp itself wants: it is longer than its block, so a derived
-     *                UV would sample the tread from past the edge of its own texture and bring it
-     *                back wrapped. Everything else takes the slice of tread under its own footprint.
-     *                Neither is left to be derived, because none of these elements stays inside its
-     *                block - {@code tools/check_models.py} fails the build on a derived UV that
-     *                cannot be trusted.
      */
     private static JsonObject beltElement(float[] box, boolean cull, boolean stretch) {
         JsonObject element = new JsonObject();
@@ -274,15 +212,11 @@ public class NauvisLogisticsModels extends ModelProvider {
     }
 
     /**
-     * An inserter: a plate on the ground, a post on it, and an arm reaching from the post to the
-     * front edge of the block with a hand on the end. The plate and the post are iron; the arm and
-     * the hand carry the tier's colour. The hand is at the front - the side the inserter gives to -
-     * so the one thing the model has to say, which way it points, it says with the part that moves.
-     *
-     * <p>Written out as elements rather than from a template, the way the machines are: no vanilla
-     * parent is shaped like an arm. The model faces north and the blockstate turns it, and
-     * {@code InserterBlock}'s collision boxes are the same numbers turned the same way. Nothing
-     * leaves its block, and no two boxes share a face, so nothing flickers and nothing needs a uv.
+     * An inserter: a plate on the ground, a post on it, and an arm reaching from the post to
+     * the front edge of the block with a hand on the end. The plate and the post are iron; the
+     * arm and the hand carry the tier's colour. The hand is at the front - the side the
+     * inserter gives to - so the one thing the model has to say, which way it points, it says
+     * with the part that moves.
      */
     private static void inserter(BlockModelGenerators blockModels, Block block, String colour) {
         Identifier id = ModelLocationUtils.getModelLocation(block);

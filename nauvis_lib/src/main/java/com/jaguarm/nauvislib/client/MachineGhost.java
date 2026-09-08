@@ -31,25 +31,8 @@ import net.neoforged.neoforge.client.event.ExtractLevelRenderStateEvent;
 import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
 
 /**
- * Every machine's ghost: while a multi-block machine is in hand, it is drawn where a click would
- * put it, turned the way it would turn, blue if it will go and red if it will not.
- *
- * <p>Factorio's placement ghost is how a player learns where a machine goes, and a machine three
- * tiles across with a facing and a port is a thing worth seeing before it is placed. This draws
- * it for any block that is a {@link Multiblock.MachineBlock}, with no code of the machine's own:
- * the click is built exactly as a right-click would build it - the same hit, the same hand, the
- * block item's own {@code updatePlacementContext} - and {@link Multiblock#ghost} asks the block
- * the questions placement asks, in the order placement asks them. What is drawn is what will
- * happen, and there is no second copy of any machine's rule.
- *
- * <p>The outline is the machine's own, cell by cell from its shape, so a boiler's chimney and a
- * pole's height are in it. A machine that uses something in particular marks it too - the well
- * a pumpjack centres on, the water an offshore pump draws from - in water's blue. All of it
- * through terrain, so a pump aimed at a lake behind a bank is still shown.
- *
- * <p>Two events rather than a renderer, because a ghost belongs to no block entity: the
- * placement is worked out once a frame while the world is being extracted, when the world may be
- * read, and drawn when custom geometry is collected, when it may not.
+ * Every machine's ghost: while a multi-block machine is in hand, it is drawn where a click
+ * would put it, turned the way it would turn, blue if it will go and red if it will not.
  */
 @EventBusSubscriber(modid = NauvisLib.MODID, value = Dist.CLIENT)
 public final class MachineGhost {

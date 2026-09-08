@@ -1,26 +1,6 @@
 package com.jaguarm.nauvislib.multiblock;
 
-/**
- * The shell every machine in the pack is built out of, so they read as one family.
- *
- * <p>A machine is a housing with a wall round the outside and a recessed floor inside it, and
- * whatever makes it that machine stands in the middle. The wall, the floor and the corner where
- * the wall turns are here; the gearbox, the chimney and the flywheel are not, because those are
- * what tells an assembler from a boiler.
- *
- * <p>One file, in the library every machine mod is built on, and that is the point: a boiler that
- * grew a slightly different wall from an assembler would look like a mistake long before anyone
- * could say which of the two was wrong. Compare {@code texture-workshop/}, where every block
- * texture in the pack comes off a handful of shared maps for the same reason - a family cannot
- * drift apart if there is only one of it.
- *
- * <h2>The heights are the walkability rule</h2>
- *
- * <p>Wall at 1.0, floor at 0.75. A player jumps about 1.25 and steps 0.6 for free, so the wall is
- * one climb and everything after it is walking. That is what lets machines be packed edge to edge
- * without walling the player out of their own base - see {@code docs/ARCHITECTURE.md}. Anything a machine
- * puts in the middle is the part you walk around, so put it where tiled machines leave a lane.
- */
+/** The shell every machine in the pack is built out of, so they read as one family. */
 public final class MachineParts {
 
     private MachineParts() {}
@@ -58,16 +38,7 @@ public final class MachineParts {
         {0, 0, 0, 16, FLOOR, 16},
     };
 
-    /**
-     * A recessed floor with the outer wall along the north edge.
-     *
-     * <p>Nothing here leaves the block it belongs to, which is worth saying because the first
-     * version of this did: the wall stood proud at {@code y 16..20} and reached into the air block
-     * above. {@code tools/check_models.py} refused it - an element outside {@code 0..16} takes its
-     * texture coordinates from its own position, so the wall would have been drawn with the
-     * texture running off the end. Keeping it inside the block is the simpler fix and it reads
-     * better anyway.
-     */
+    /** A recessed floor with the outer wall along the north edge. */
     public static final float[][] EDGE_BOXES = {
         {0, 0, 0, 16, FLOOR, 16},
         {0, FLOOR, 0, 16, WALL, 3},

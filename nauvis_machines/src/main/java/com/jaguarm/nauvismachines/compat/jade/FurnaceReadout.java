@@ -17,17 +17,7 @@ import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
-/**
- * What a furnace says when looked at: what it is smelting, or why it has stopped.
- *
- * <p>Jade's own providers already show the slots and, for the electric tier, the energy bar. The
- * one thing they cannot know is the difference between a furnace waiting for coal, one waiting
- * for its plates to be taken away, and one holding five iron plates for a recipe nobody has
- * researched - and those want three different things done about them.
- *
- * <p>Two classes, a data half and a {@link Client} half, sharing one uid: Jade refuses one object
- * that is both. See the boiler's readout in {@code nauvis_power} for the pattern.
- */
+/** What a furnace says when looked at: what it is smelting, or why it has stopped. */
 public class FurnaceReadout implements IServerDataProvider<BlockAccessor> {
 
     public static final FurnaceReadout INSTANCE = new FurnaceReadout();

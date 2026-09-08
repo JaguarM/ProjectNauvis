@@ -5,21 +5,7 @@ import java.util.List;
 import com.jaguarm.nauvislib.multiblock.MachineCell;
 import com.jaguarm.nauvislib.multiblock.MachineShape;
 
-/**
- * Two tiles by two, six blocks tall: a lattice tower rather than a post.
- *
- * <p>The footprint is Factorio's and so is not ours to change - see ARCHITECTURE.md. The height is
- * ours, and six is chosen so the three tiers read as a ladder from any distance: four, five, six,
- * and the last of them twice as wide as the other two.
- *
- * <p>Four legs, one per cell, because a two-by-two footprint has no middle - every cell is a
- * corner. So the whole tower is three models turned four ways each, which is what keeps the four
- * legs from drifting into four slightly different legs. The heads' arms meet across the seams to
- * make one closed ring; see {@link PoleBoxes#LEG_HEAD}.
- *
- * <p>Twenty-four blocks is a lot for one item, and it is the point: this is the pole you put up
- * once and run a bus off, not the one you dot around a field of drills.
- */
+/** Two tiles by two, six blocks tall: a lattice tower rather than a post. */
 public final class BigPoleShape {
 
     private BigPoleShape() {}

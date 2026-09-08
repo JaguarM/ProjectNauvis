@@ -32,39 +32,8 @@ import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
 /**
- * What the rest of the world sees: the boiler's fuel slot and its steam, and the engine's charge.
- *
- * <p>The engine publishes {@code Capabilities.Energy.BLOCK}, which is NeoForge's, not ours - so
- * any cable or machine from any mod can draw from a steam engine without knowing what one is.
- * That is the whole reason PLAN.md chose FE over a first-party grid. Steam moves through
- * {@code Capabilities.Fluid.BLOCK} for the same reason: a pipe from {@code nauvis_fluids} carries
- * it without either mod compiling against the other.
- *
- * <h2>Everything here is registered against the block, not the block entity</h2>
- *
- * <p>A boiler is seven blocks and an engine is seventeen, with one block entity each.
- * {@code registerBlockEntity} would publish at that one block, and for the engine that block is
- * the middle of a five-tile machine - somewhere nothing can stand next to. Registering against
- * the block lets any cell answer, resolving the anchor by arithmetic first.
- *
- * <h2>Steam has a place, and the rest of the machine does not offer it</h2>
- *
- * <p>This is what the footprints were for. A one-block boiler had to offer steam on all six sides
- * because it had one block to offer it from. Now:
- *
- * <ul>
- *   <li>a <b>boiler</b> gives steam at the back face of the block under its chimney, and takes
- *       water at the two ends of its front row, and nowhere else;
- *   <li>an <b>engine</b> takes and gives steam at the open ends of its spine - the two blocks the
- *       wall deliberately does not cover - and nowhere along its flanks.
- * </ul>
- *
- * <p>The ports live in the shapes, in the machine's own frame, and turn with the machine. A player
- * who puts the pipe in the wrong place gets nothing, sees where the opening is, and moves it; that
- * is a better game than a machine which accepts a pipe anywhere.
- *
- * <p><b>Fuel and energy are not sided.</b> A hopper, a cable or a pole may meet a boiler or an
- * engine anywhere along it, because there is nothing to learn from being fussy about coal.
+ * What the rest of the world sees: the boiler's fuel slot and its steam, and the engine's
+ * charge.
  */
 @EventBusSubscriber(modid = NauvisPower.MODID)
 public final class ModCapabilities {

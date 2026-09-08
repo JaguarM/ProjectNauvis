@@ -35,30 +35,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 /**
  * The block half of the assembling machine: placement, breaking, and how a player tells it what
  * to make.
- *
- * <p>Right-click opens it, holding anything or nothing, exactly like a chest. Everything else is
- * done in the screen: ingredients go in its slots, and the recipe is chosen by clicking one in
- * Facrafting's panel beside it.
- *
- * <p>It used to be cleverer. Before there was a screen, clicking the block with an item pointed
- * the machine at that item's recipe, and clicking with an ingredient loaded it - the only way to
- * work a machine with no interface. With an interface those are two hidden rules that fire when a
- * player expects a container to open, so they are gone.
- *
- * <p>Building against the machine works the way it does for a chest or a furnace: sneak while
- * holding the block you are placing.
- *
- * <h2>It is ten blocks</h2>
- *
- * <p>Three tiles by three, the size Factorio made it - see {@link AssemblerShape} for the
- * footprint and for why the upper storey is mostly air. Everything about being a multi-block is
- * {@link Multiblock}'s, and it is {@code SmallElectricPoleBlock}'s four rules with two more axes:
- * refuse placement unless the whole machine fits, put the rest in from {@link #setPlacedBy}, let
- * one {@link #updateShape} rule be the entire teardown, and keep the block entity on one cell.
- *
- * <p>Which cell the player touched never matters. Clicking any of the ten opens the machine,
- * breaking any of the ten takes the machine down, and a hopper against any of the ten reaches the
- * same inventory - see {@code ModCapabilities}.
  */
 public abstract class AssemblerBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
@@ -228,11 +204,6 @@ public abstract class AssemblerBlock extends BaseEntityBlock implements Multiblo
      * A neighbour changing is a wake-up. Nothing next door matters to the machine yet, but
      * power will, and a machine that only wakes on its own inventory would sleep through a
      * cable being connected.
-     *
-     * <p>The tick is scheduled on the <em>anchor</em>, whichever cell heard about the change.
-     * There are twelve faces round a 3x3 machine and a wire may reach any of them; a cell that
-     * kept the news to itself would schedule a tick on a block with no block entity, which does
-     * nothing at all and leaves the machine asleep.
      */
     @Override
     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block block,

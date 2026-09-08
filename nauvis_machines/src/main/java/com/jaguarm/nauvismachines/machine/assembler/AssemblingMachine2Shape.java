@@ -11,20 +11,7 @@ import com.jaguarm.nauvislib.multiblock.MachineShape;
 
 import net.minecraft.core.Direction;
 
-/**
- * Assembling machine 2: the same three by three as the first machine, with a fluid box.
- *
- * <p>Factorio's second and third assembling machines take one fluid ingredient - the electric
- * engine unit's lubricant, the processing unit's sulfuric acid - and give one fluid back for the
- * barrel recipes, through fluid boxes on the machine's front and back. The first machine has no
- * fluid box at all, which is Factorio's rule and the reason there are tiers. So this is
- * {@link AssemblerShape} with its north and south edge cells opened for a pipe, and two named
- * ports: {@link #FLUID_IN} on the north face, {@link #FLUID_OUT} on the south. The machine faces,
- * so the player chooses which way the pipes go by which way they stand when they place it.
- *
- * <p>The cells are the same ten in the same order as the first machine's, so the {@code part}
- * values in a world saved before the second machine had a fluid box still name the same cells.
- */
+/** Assembling machine 2: the same three by three as the first machine, with a fluid box. */
 public final class AssemblingMachine2Shape {
 
     private AssemblingMachine2Shape() {}

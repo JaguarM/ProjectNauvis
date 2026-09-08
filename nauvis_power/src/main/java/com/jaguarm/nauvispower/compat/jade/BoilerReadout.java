@@ -15,16 +15,6 @@ import snownee.jade.api.config.IPluginConfig;
 /**
  * What a boiler says: how much steam it is holding, how much water it has to make more, and
  * whether it is burning.
- *
- * <p>All three matter, and only together. A boiler that has stopped because it is full, one that
- * has run dry and one that has run out of coal are the same block from the outside, and the
- * difference is what the player needs to do about it.
- *
- * <p><b>The reading and the drawing are two classes on purpose.</b> Jade has refused to let one
- * object be both a data provider and a component provider since 1.21.6 - it throws at registration
- * - because the data half runs on the server and the drawing half on the client, and one class
- * doing both is one class that can accidentally reach across. {@link Client} is the drawing half,
- * and the pair shares a uid so a player toggling this readout off turns off both.
  */
 public class BoilerReadout implements IServerDataProvider<BlockAccessor> {
 

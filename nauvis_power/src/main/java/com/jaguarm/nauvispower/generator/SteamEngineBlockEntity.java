@@ -28,17 +28,8 @@ import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
- * A steam engine: turns steam into electricity, and is the first thing in the pack that makes any.
- *
- * <p>It pulls its own steam from whichever boilers it touches rather than being pushed at. That
- * choice is what makes the whole chain sleep: an engine with a full energy buffer stops, so it
- * stops drawing steam, so the boiler's buffer fills, so the boiler stops burning coal. A factory
- * with nothing to do costs nothing all the way back to the fuel, which is non-negotiable #5
- * applied to three blocks at once rather than one.
- *
- * <p>Power is Minecraft FE, buffered per machine - PLAN.md settled that over a first-party grid so
- * third-party cables keep working. What the engine publishes is an extract-only view: a generator
- * is not a battery, and a network must not be able to push energy back into it.
+ * A steam engine: turns steam into electricity, and is the first thing in the pack that makes
+ * any.
  */
 public class SteamEngineBlockEntity extends BlockEntity {
 
@@ -138,19 +129,7 @@ public class SteamEngineBlockEntity extends BlockEntity {
         level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
     }
 
-    /**
-     * Fills the engine's small buffer from whatever is on either end of it.
-     *
-     * <p>Two faces, not six: an engine has fluid connections along its own axis, which is what
-     * makes its facing mean something and what lets a row of them chain. It reaches through
-     * {@code Capabilities.Fluid.BLOCK}, so a boiler, another engine and a pipe from a mod this one
-     * does not compile against are all the same thing to it.
-     *
-     * <p>It only pulls from a neighbour holding <em>more</em> than it does. Without that rule two
-     * engines side by side would pass the same steam back and forth for ever; with it, steam runs
-     * downhill from the boiler, which holds far more than any engine, to whichever engine is
-     * emptiest.
-     */
+    /** Fills the engine's small buffer from whatever is on either end of it. */
     private boolean drawSteam(ServerLevel level) {
         if (behind == null) {
             buildCaches(level);

@@ -3,16 +3,7 @@ package com.jaguarm.nauvismining.machine;
 import com.mojang.serialization.Codec;
 import net.minecraft.util.StringRepresentable;
 
-/**
- * The two drills, and the numbers Factorio gives them.
- *
- * <p>What separates them is what powers them, how far they reach and how fast they mine, which
- * are Factorio's figures for the burner mining drill and the electric mining drill: a burner
- * takes the two by two it stands on at a quarter of an ore a second, an electric takes a five by
- * five - its own three by three and a ring around it - at half an ore a second, and only the
- * electric one takes modules, three of them. Those numbers are identity, the way the footprint
- * is, so they are written here once and nothing in a config file moves them.
- */
+/** The two drills, and the numbers Factorio gives them. */
 public enum MachineTier implements StringRepresentable {
     /**
      * The drill you start with. Burns solid fuel, covers exactly what it stands on, and has no

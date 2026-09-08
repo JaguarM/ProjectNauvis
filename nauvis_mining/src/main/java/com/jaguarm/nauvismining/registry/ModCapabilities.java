@@ -14,19 +14,6 @@ import org.jspecify.annotations.Nullable;
 /**
  * What automation and the grid see when they look at a drill, from any of the blocks it is made
  * of.
- *
- * <p>The item view is never the drill's own inventory: it accepts fuel and a pickaxe and lets the
- * ore out, so a hopper under a drill takes the ore rather than the pickaxe. The energy view is
- * insert only, published by the electric drill and not by the burner, which no pole should think
- * it supplies.
- *
- * <h2>Registered against the block, not the block entity</h2>
- *
- * <p>An electric drill is nine blocks with one block entity, sitting in the middle of the nine.
- * {@code registerBlockEntity} would publish at that middle block only - and the middle of a drill
- * is the one place nothing can be built next to. So this resolves the anchor from whichever block
- * was asked and answers for all of them: a cable run along the edge of a drill field powers the
- * drills it touches, and an inserter beside any edge of a drill can feed it coal.
  */
 public final class ModCapabilities {
 

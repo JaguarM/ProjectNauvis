@@ -4,31 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 
-/**
- * How rich an oil well is, given where it is.
- *
- * <p>Factorio's placement puts oil in <em>fields</em> of a few wells each, none of them in the
- * starting area, and richer the further out they are. The exact curve lives in its resource
- * autoplace noise program, which this pack does not have; what it does have is the two numbers
- * Wube's prototype states in the open, and the shape of the rule:
- *
- * <ul>
- *   <li>{@code additional_richness = 220000} is added to every oil spot regardless of distance,
- *       which is why a fresh field near the start is a little under 100% and not a trickle;
- *   <li>and richness is multiplied by {@code max((D + d) / 2D, 1)} where {@code d} is the
- *       distance from the start and {@code D} is 1300 tiles: flat out to 1300, then linear, so a
- *       well at 3900 is twice as rich as the same well at 1300.
- * </ul>
- *
- * <p>The spread on top of the 220000 is this pack's approximation of the density term, chosen so
- * that a well at the edge of the starting area reads between about 90% and 200%, which is what a
- * Factorio player finds there. It is placement behaviour, not identity - see {@code GAPS.md} -
- * and the two Factorio constants above are the part that must not drift.
- *
- * <p>Everything here is a pure function of the world seed and the well's position, so a well
- * needs nothing written into it by worldgen and a creative-placed well is exactly as rich as a
- * generated one at that spot would be.
- */
+/** How rich an oil well is, given where it is. */
 public final class CrudeOilField {
 
     private CrudeOilField() {}

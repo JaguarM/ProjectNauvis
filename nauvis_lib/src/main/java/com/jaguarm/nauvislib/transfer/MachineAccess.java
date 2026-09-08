@@ -7,20 +7,6 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 /**
  * A machine's inventory as the outside world is allowed to use it: put things in the front,
  * take things out of the back.
- *
- * <p>A machine's own inventory is one flat list of indices, and it has to stay unrestricted so
- * the machine can spend its ingredients and bank its results. This is the view published as
- * {@code Capabilities.Item.BLOCK} instead. Insertion is confined to the first
- * {@code inputSlots} indices and extraction to everything after them, so a hopper under an
- * assembler takes the product rather than draining the ingredients back out.
- *
- * <p>With {@code inputSlots} equal to the inventory's size it is insert-only, which is what a
- * boiler's fuel slot, an inserter's fuel slot and a lab's pack slots publish: coal in, nothing
- * out, so the inserter that fed it cannot empty it again next swing.
- *
- * <p>Only the index-addressed methods need restricting: {@link ResourceHandler}'s
- * whole-handler {@code insert} and {@code extract} defaults walk every index and call these,
- * so they inherit the same rule.
  */
 public record MachineAccess(ResourceHandler<ItemResource> backing, int inputSlots)
         implements ResourceHandler<ItemResource> {

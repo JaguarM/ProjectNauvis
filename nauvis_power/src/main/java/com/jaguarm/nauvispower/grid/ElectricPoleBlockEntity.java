@@ -26,25 +26,6 @@ import net.minecraft.world.phys.AABB;
 /**
  * A pole's membership of a network, and the wires it draws. One class and one block entity type
  * for every tier, because a tier differs by how far it reaches and not by anything saved here.
- *
- * <p>It never ticks. It exists for three lifecycle hooks a block alone does not get - {@code
- * onLoad} when its chunk arrives, {@code setRemoved} when it is broken, {@code onChunkUnloaded}
- * when its chunk leaves - and, since there are wires, for one piece of state.
- *
- * <p>Only the foot of a pole has one of these. The other blocks - three of them for a small pole,
- * twenty-three for a big one - are structure.
- *
- * <h2>The wires</h2>
- *
- * <p>{@link #links()} is the poles this one is wired to. It is not a second copy of the graph and
- * nothing reads it on the server: it exists so the <em>client</em> knows what to draw, because a
- * client has no {@link PowerNetworkManager} and working it out over there would mean every pole
- * scanning a fifteen-block cube for other poles and then somehow noticing when one changed.
- *
- * <p>The manager already computes exactly this set whenever a pole is placed or removed, which is
- * the only time it can change, so it pushes it here and this pushes it to the clients watching.
- * That is also why there is no wire coil and no connector to place: poles that can see each other
- * are wired, because the network already said so.
  */
 public class ElectricPoleBlockEntity extends BlockEntity {
 
@@ -79,21 +60,7 @@ public class ElectricPoleBlockEntity extends BlockEntity {
         return links;
     }
 
-    /**
-     * A box containing this pole and every wire hanging off it.
-     *
-     * <p><b>This is what decides whether the wires are drawn at all.</b> A block entity renderer is
-     * frustum-culled against its render bounding box, and the default is the one-block cube at the
-     * block entity - which for a pole is the block at its foot. So the moment that one block leaves
-     * the screen every wire attached to it vanished, while the wire itself was still in plain view.
-     *
-     * <p>It lives here rather than in the renderer so that a headless test can assert it, because
-     * the thing it goes wrong as is invisible geometry rather than an exception.
-     *
-     * <p>The sag needs no allowance: a wire dips at most {@code span * SAG} below the line between
-     * two heads, which is under a block, and this box already reaches from the heads down to the
-     * feet.
-     */
+    /** A box containing this pole and every wire hanging off it. */
     public AABB wireBounds() {
         double minX = worldPosition.getX();
         double minY = worldPosition.getY();

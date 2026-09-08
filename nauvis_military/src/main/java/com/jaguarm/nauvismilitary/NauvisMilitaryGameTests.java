@@ -14,20 +14,12 @@ import com.jaguarm.nauvismilitary.turret.GunTurretBlock;
 import com.jaguarm.nauvismilitary.turret.GunTurretBlockEntity;
 import com.jaguarm.nauvismilitary.weapon.GunItem;
 import com.jaguarm.nauvismilitary.weapon.MagazineItem;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.jaguarm.nauvislib.test.GameTests;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.GameTestInstance;
-import net.minecraft.gametest.framework.TestData;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
@@ -40,13 +32,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
-import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 
 /**
@@ -57,84 +44,16 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
  * <p>The hostile in every test is a husk, which is a zombie that does not burn: gametest worlds
  * are daylit, and a zombie dying of sunshine would pass a test about turrets for the wrong reason.
  */
-@EventBusSubscriber(modid = NauvisMilitary.MODID)
 public final class NauvisMilitaryGameTests {
 
     private NauvisMilitaryGameTests() {}
 
-    private static final Identifier EMPTY_STRUCTURE = Identifier.withDefaultNamespace("empty");
-    private static final BlockPos TURRET = new BlockPos(0, 1, 0);
-    private static final int PADDING = 24;
+    static void register(IEventBus modEventBus) {
+        GameTests tests = new GameTests(NauvisMilitary.MODID, modEventBus);
 
-    private static final DeferredRegister<MapCodec<? extends GameTestInstance>> TEST_TYPES =
-            DeferredRegister.create(Registries.TEST_INSTANCE_TYPE, NauvisMilitary.MODID);
-
-    static {
-        TEST_TYPES.register("a_pistol_hits_what_it_points_at", () -> PistolTest.CODEC);
-        TEST_TYPES.register("a_turret_shoots_what_comes_near", () -> TurretShootsTest.CODEC);
-        TEST_TYPES.register("a_turret_without_ammunition_sleeps", () -> TurretSleepsTest.CODEC);
-        TEST_TYPES.register("pollution_drifts_and_thins", () -> PollutionDriftsTest.CODEC);
-        TEST_TYPES.register("pollution_brings_something", () -> PollutionAttacksTest.CODEC);
-        TEST_TYPES.register("a_turret_is_hurt_and_falls", () -> TurretHealthTest.CODEC);
-        TEST_TYPES.register("a_wall_is_worth_its_hardness", () -> WallHealthTest.CODEC);
-        TEST_TYPES.register("hostiles_chew_through_to_the_polluter", () -> HostilesChewTest.CODEC);
-        TEST_TYPES.register("the_ground_absorbs_by_its_biome", () -> AbsorptionTest.CODEC);
-    }
-
-    public static void register(IEventBus modEventBus) {
-        TEST_TYPES.register(modEventBus);
-    }
-
-    @SubscribeEvent
-    static void registerTests(RegisterGameTestsEvent event) {
-        Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(
-                Identifier.fromNamespaceAndPath(NauvisMilitary.MODID, "default"),
-                new TestEnvironmentDefinition.AllOf(List.of()));
-        register(event, environment, "a_pistol_hits_what_it_points_at", PistolTest::new, 40);
-        register(event, environment, "a_turret_shoots_what_comes_near", TurretShootsTest::new, 100);
-        register(event, environment, "a_turret_without_ammunition_sleeps", TurretSleepsTest::new, 40);
-        register(event, environment, "pollution_drifts_and_thins", PollutionDriftsTest::new, 40);
-        register(event, environment, "pollution_brings_something", PollutionAttacksTest::new, 40);
-        register(event, environment, "a_turret_is_hurt_and_falls", TurretHealthTest::new, 40);
-        register(event, environment, "a_wall_is_worth_its_hardness", WallHealthTest::new, 40);
-        register(event, environment, "hostiles_chew_through_to_the_polluter", HostilesChewTest::new, 400);
-        register(event, environment, "the_ground_absorbs_by_its_biome", AbsorptionTest::new, 20);
-    }
-
-    private interface TestFactory {
-        GameTestInstance create(TestData<Holder<TestEnvironmentDefinition<?>>> info);
-    }
-
-    private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment,
-            String name, TestFactory factory, int maxTicks) {
-        event.registerTest(Identifier.fromNamespaceAndPath(NauvisMilitary.MODID, name),
-                factory.create(new TestData<>(environment, EMPTY_STRUCTURE, maxTicks, 0, true, Rotation.NONE,
-                        false, 1, 1, false, PADDING)));
-    }
-
-    /** A whole turret, anchored here and facing north. */
-    private static GunTurretBlockEntity placeTurret(GameTestHelper helper, BlockPos anchor) {
-        GunTurretBlock block = ModBlocks.GUN_TURRET.get();
-        Multiblock.place(block, helper.getLevel(), helper.absolutePos(anchor),
-                block.defaultBlockState().setValue(GunTurretBlock.FACING, Direction.NORTH));
-        return helper.getBlockEntity(anchor, GunTurretBlockEntity.class);
-    }
-
-    /**
-     * A pistol fired at a husk six blocks away takes a round off the magazine and health off the
-     * husk - a bullet is a line, and it lands on the first living thing along it.
-     */
-    public static class PistolTest extends GameTestInstance {
-
-        public static final MapCodec<PistolTest> CODEC = RecordCodecBuilder.<PistolTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(PistolTest::info)).apply(i, PistolTest::new));
-
-        public PistolTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
+        // A pistol fired at a husk six blocks away takes a round off the magazine and health off the
+        // husk - a bullet is a line, and it lands on the first living thing along it.
+        tests.add("a_pistol_hits_what_it_points_at", 40, PADDING, helper -> {
             Player player = helper.makeMockServerPlayer(GameType.SURVIVAL);
             Vec3 feet = helper.absoluteVec(new Vec3(0.5, 1.0, 0.5));
             // Yaw 180 looks north, which is where the husk stands.
@@ -167,35 +86,12 @@ public final class NauvisMilitaryGameTests {
                     "the pistol fired with nothing to fire");
             husk.discard();
             helper.succeed();
-        }
+        });
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a pistol hits what it points at");
-        }
-    }
-
-    /**
-     * A loaded turret shoots the husk that walks up to it until it is dead, and spends its
-     * magazine doing it. Twenty health at five a round, less armour, is a handful of rounds at ten
-     * a second; the window allows the turret's first look.
-     */
-    public static class TurretShootsTest extends GameTestInstance {
-
-        public static final MapCodec<TurretShootsTest> CODEC = RecordCodecBuilder.<TurretShootsTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(TurretShootsTest::info)).apply(i, TurretShootsTest::new));
-
-        public TurretShootsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
+        // A loaded turret shoots the husk that walks up to it until it is dead, and spends its
+        // magazine doing it. Twenty health at five a round, less armour, is a handful of rounds at ten
+        // a second; the window allows the turret's first look.
+        tests.add("a_turret_shoots_what_comes_near", 100, PADDING, helper -> {
             GunTurretBlockEntity turret = placeTurret(helper, TURRET);
             turret.inventory().set(GunTurretBlockEntity.AMMO_SLOT,
                     ItemResource.of(ModItems.FIREARM_MAGAZINE.get()), 1);
@@ -210,31 +106,10 @@ public final class NauvisMilitaryGameTests {
                         "magazines still in the slot after chambering the only one");
                 helper.succeed();
             });
-        }
+        });
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a turret shoots what comes near");
-        }
-    }
-
-    /** A turret with nothing in its slot schedules nothing: non-negotiable #5. */
-    public static class TurretSleepsTest extends GameTestInstance {
-
-        public static final MapCodec<TurretSleepsTest> CODEC = RecordCodecBuilder.<TurretSleepsTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(TurretSleepsTest::info)).apply(i, TurretSleepsTest::new));
-
-        public TurretSleepsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
+        // A turret with nothing in its slot schedules nothing: non-negotiable #5.
+        tests.add("a_turret_without_ammunition_sleeps", 40, PADDING, helper -> {
             GunTurretBlockEntity turret = placeTurret(helper, TURRET);
             helper.runAfterDelay(10, () -> {
                 helper.assertValueEqual(turret.status(), GunTurretBlockEntity.Status.NO_AMMO, "status of an empty turret");
@@ -242,35 +117,12 @@ public final class NauvisMilitaryGameTests {
                         helper.absolutePos(TURRET), ModBlocks.GUN_TURRET.get()), "an empty turret is still ticking");
                 helper.succeed();
             });
-        }
+        });
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a turret without ammunition sleeps");
-        }
-    }
-
-    /**
-     * The machines' pollution lands in the cloud over their chunk, and a minute of drift gives
-     * two percent to each neighbour and loses five to the ground - on a fresh state, so the
-     * arithmetic is checked without the other tests' furnaces breathing into it.
-     */
-    public static class PollutionDriftsTest extends GameTestInstance {
-
-        public static final MapCodec<PollutionDriftsTest> CODEC = RecordCodecBuilder.<PollutionDriftsTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(PollutionDriftsTest::info)).apply(i, PollutionDriftsTest::new));
-
-        public PollutionDriftsTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
+        // The machines' pollution lands in the cloud over their chunk, and a minute of drift gives
+        // two percent to each neighbour and loses five to the ground - on a fresh state, so the
+        // arithmetic is checked without the other tests' furnaces breathing into it.
+        tests.add("pollution_drifts_and_thins", 40, PADDING, helper -> {
             helper.assertTrue(Pollution.installed(), "nothing is keeping count of pollution");
             ChunkPos here = ChunkPos.containing(helper.absolutePos(TURRET));
             PollutionState world = PollutionState.get(helper.getLevel());
@@ -295,31 +147,10 @@ public final class NauvisMilitaryGameTests {
             helper.assertTrue(Math.abs(state.at(new ChunkPos(11, 10)) - 15.0) < 1e-9,
                     "a neighbour of a cloud of 1000 after a minute: " + state.at(new ChunkPos(11, 10)) + ", not 15");
             helper.succeed();
-        }
+        });
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("pollution drifts and thins");
-        }
-    }
-
-    /** A thick enough cloud, with a player near it, sends hostiles and spends itself on them. */
-    public static class PollutionAttacksTest extends GameTestInstance {
-
-        public static final MapCodec<PollutionAttacksTest> CODEC = RecordCodecBuilder.<PollutionAttacksTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(PollutionAttacksTest::info)).apply(i, PollutionAttacksTest::new));
-
-        public PollutionAttacksTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
+        // A thick enough cloud, with a player near it, sends hostiles and spends itself on them.
+        tests.add("pollution_brings_something", 40, PADDING, helper -> {
             if (helper.getLevel().getDifficulty() == Difficulty.PEACEFUL) {
                 helper.succeed();
                 return;
@@ -355,34 +186,11 @@ public final class NauvisMilitaryGameTests {
                 sent.forEach(Mob::discard);
             }
             helper.succeed();
-        }
+        });
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("pollution brings something");
-        }
-    }
-
-    /**
-     * A turret is hurt as one thing whichever of its four blocks is hit, says so, and comes down
-     * as one thing with nothing handed back when its four hundred are gone.
-     */
-    public static class TurretHealthTest extends GameTestInstance {
-
-        public static final MapCodec<TurretHealthTest> CODEC = RecordCodecBuilder.<TurretHealthTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(TurretHealthTest::info)).apply(i, TurretHealthTest::new));
-
-        public TurretHealthTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
+        // A turret is hurt as one thing whichever of its four blocks is hit, says so, and comes down
+        // as one thing with nothing handed back when its four hundred are gone.
+        tests.add("a_turret_is_hurt_and_falls", 40, PADDING, helper -> {
             GunTurretBlockEntity turret = placeTurret(helper, TURRET);
             BlockPos corner = helper.absolutePos(TURRET.offset(1, 0, 1));
             helper.assertTrue(helper.getLevel().getBlockState(corner).is(ModBlocks.GUN_TURRET.get()),
@@ -404,34 +212,11 @@ public final class NauvisMilitaryGameTests {
                 helper.assertItemEntityCountIs(ModItems.GUN_TURRET.get(), TURRET, 6.0, 0);
                 helper.succeed();
             });
-        }
+        });
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a turret is hurt and falls");
-        }
-    }
-
-    /**
-     * A block with no health of its own is worth a hundred times its hardness, keeps its wounds in
-     * the level until it is mended or falls, and starts whole again when it is rebuilt.
-     */
-    public static class WallHealthTest extends GameTestInstance {
-
-        public static final MapCodec<WallHealthTest> CODEC = RecordCodecBuilder.<WallHealthTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(WallHealthTest::info)).apply(i, WallHealthTest::new));
-
-        public WallHealthTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
+        // A block with no health of its own is worth a hundred times its hardness, keeps its wounds in
+        // the level until it is mended or falls, and starts whole again when it is rebuilt.
+        tests.add("a_wall_is_worth_its_hardness", 40, PADDING, helper -> {
             BlockPos wall = new BlockPos(0, 1, 0);
             helper.setBlock(wall, Blocks.COBBLESTONE_WALL);
             BlockPos at = helper.absolutePos(wall);
@@ -455,36 +240,13 @@ public final class NauvisMilitaryGameTests {
             helper.assertFalse(Health.hurt(helper.getLevel(), at, 100000), "bedrock was hurt");
             helper.assertBlockPresent(Blocks.BEDROCK, wall);
             helper.succeed();
-        }
+        });
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("a wall is worth its hardness");
-        }
-    }
-
-    /**
-     * A hostile sent at a turret walks up to it and hits it, and a wall built across its path is
-     * what it hits first. The husk starts six blocks from a turret with a wall between; in twenty
-     * seconds it has either chewed the wall or the turret, and either way the factory has been hurt
-     * by something that was told to hurt it rather than the player.
-     */
-    public static class HostilesChewTest extends GameTestInstance {
-
-        public static final MapCodec<HostilesChewTest> CODEC = RecordCodecBuilder.<HostilesChewTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(HostilesChewTest::info)).apply(i, HostilesChewTest::new));
-
-        public HostilesChewTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
+        // A hostile sent at a turret walks up to it and hits it, and a wall built across its path is
+        // what it hits first. The husk starts six blocks from a turret with a wall between; in twenty
+        // seconds it has either chewed the wall or the turret, and either way the factory has been hurt
+        // by something that was told to hurt it rather than the player.
+        tests.add("hostiles_chew_through_to_the_polluter", 400, PADDING, helper -> {
             if (helper.getLevel().getDifficulty() == Difficulty.PEACEFUL) {
                 helper.succeed();
                 return;
@@ -544,31 +306,10 @@ public final class NauvisMilitaryGameTests {
                                 + ") nor the turret (" + turret.health() + "); " + where);
                 helper.succeed();
             });
-        }
+        });
 
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("hostiles chew through to the polluter");
-        }
-    }
-
-    /** A forest takes three times what a plain does, a beach a fifth, and the drift reads it. */
-    public static class AbsorptionTest extends GameTestInstance {
-
-        public static final MapCodec<AbsorptionTest> CODEC = RecordCodecBuilder.<AbsorptionTest>mapCodec(
-                i -> i.group(TestData.CODEC.forGetter(AbsorptionTest::info)).apply(i, AbsorptionTest::new));
-
-        public AbsorptionTest(TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-            super(info);
-        }
-
-        @Override
-        public void run(GameTestHelper helper) {
+        // A forest takes three times what a plain does, a beach a fifth, and the drift reads it.
+        tests.add("the_ground_absorbs_by_its_biome", 20, PADDING, helper -> {
             var biomes = helper.getLevel().registryAccess().lookupOrThrow(Registries.BIOME);
             helper.assertValueEqual(Absorption.of(biomes.getOrThrow(Biomes.FOREST)), Absorption.FOREST, "a forest's absorption");
             helper.assertValueEqual(Absorption.of(biomes.getOrThrow(Biomes.PLAINS)), PollutionState.ABSORB_PER_MINUTE, "a plain's absorption");
@@ -583,16 +324,18 @@ public final class NauvisMilitaryGameTests {
             helper.assertTrue(Math.abs(state.at(chunk) - (100.0 - 8.0 - Absorption.FOREST)) < 1e-9,
                     "a cloud of 100 over a forest after a minute: " + state.at(chunk));
             helper.succeed();
-        }
-
-        @Override
-        public MapCodec<? extends GameTestInstance> codec() {
-            return CODEC;
-        }
-
-        @Override
-        protected MutableComponent typeDescription() {
-            return Component.literal("the ground absorbs by its biome");
-        }
+        });
     }
+
+    private static final BlockPos TURRET = new BlockPos(0, 1, 0);
+    private static final int PADDING = 24;
+
+    /** A whole turret, anchored here and facing north. */
+    private static GunTurretBlockEntity placeTurret(GameTestHelper helper, BlockPos anchor) {
+        GunTurretBlock block = ModBlocks.GUN_TURRET.get();
+        Multiblock.place(block, helper.getLevel(), helper.absolutePos(anchor),
+                block.defaultBlockState().setValue(GunTurretBlock.FACING, Direction.NORTH));
+        return helper.getBlockEntity(anchor, GunTurretBlockEntity.class);
+    }
+
 }

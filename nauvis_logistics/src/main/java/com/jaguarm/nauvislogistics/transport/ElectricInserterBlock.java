@@ -13,20 +13,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
-/**
- * The electric inserter. Nothing to fuel it with by hand - it wants a pole in range.
- *
- * <p>Right-clicking says which of the two things is wrong, because "no power" and "pointing the
- * wrong way" are the two reasons an inserter stands still and they look identical from outside.
- *
- * <h2>Where a tier's numbers live</h2>
- *
- * <p>The three of them - how fast it swings, what that costs, how far it reaches - are on the
- * block rather than on {@link ElectricInserterBlockEntity}, because <b>a tier is a block</b>: one
- * block entity type serves every electric inserter there will be, and it saves the same charge
- * and the same swing whichever arm is holding it. {@link LongHandedInserterBlock} is then three
- * overridden numbers and a codec, which is what a variant should cost.
- */
+/** The electric inserter. Nothing to fuel it with by hand - it wants a pole in range. */
 public class ElectricInserterBlock extends InserterBlock {
 
     public static final MapCodec<ElectricInserterBlock> CODEC = simpleCodec(ElectricInserterBlock::new);

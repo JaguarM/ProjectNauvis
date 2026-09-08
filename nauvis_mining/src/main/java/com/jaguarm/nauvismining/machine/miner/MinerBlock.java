@@ -64,12 +64,6 @@ public abstract class MinerBlock extends BaseEntityBlock implements Multiblock.M
     /**
      * How much room this drill takes: two tiles by two for a burner, three by three for an
      * electric, which is what Factorio made them.
-     *
-     * <p><b>This is why there are two subclasses rather than one block with a tier field.</b> The
-     * shape carries the {@code part} property, and {@link #createBlockStateDefinition} needs that
-     * property - but it runs inside {@code Block}'s own constructor, before any field of this
-     * class has been assigned. A tier read there is always null. So each drill answers with a
-     * constant that belongs to its own class, which is set up long before any block exists.
      */
     @Override
     public abstract MachineShape shape();

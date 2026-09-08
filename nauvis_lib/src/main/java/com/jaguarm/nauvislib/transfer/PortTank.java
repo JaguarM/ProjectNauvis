@@ -12,19 +12,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 
-/**
- * The tank behind one port of a processing machine: Factorio's fluid box.
- *
- * <p>A fluid box belongs to a recipe. Choose advanced oil processing and the refinery's two input
- * boxes are water and crude oil, in that order, and a pipe of steam against either is refused;
- * choose nothing and they take nothing. That is what {@link #assign} sets and what
- * {@link #isValid} enforces, and it is what keeps a run of the wrong fluid from filling a machine
- * that could never use it.
- *
- * <p>Changing the recipe throws away what does not belong to the new one, as Factorio does when a
- * machine's recipe is changed: a box of heavy oil left in a refinery switched to basic oil
- * processing has no port to leave by and no craft to be spent on.
- */
+/** The tank behind one port of a processing machine: Factorio's fluid box. */
 public class PortTank extends FluidStacksResourceHandler {
 
     private static final String ASSIGNED = "Assigned";

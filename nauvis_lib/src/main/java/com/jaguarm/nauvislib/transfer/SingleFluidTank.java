@@ -7,17 +7,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 
-/**
- * A tank that holds one named fluid and nothing else.
- *
- * <p>A machine's fluid box. Refusing everything but its own fluid is what keeps a pipe run
- * carrying steam from being emptied into a pumpjack, or a run of crude oil into a boiler: the
- * run asks each endpoint whether it would take what the run holds, and a tank of oil only ever
- * says yes to oil, a tank of water only ever to water.
- *
- * <p>The fluid is a supplier, so a tank can name one that is registered later, or one looked up
- * by id from a mod this one does not compile against.
- */
+/** A tank that holds one named fluid and nothing else. */
 public class SingleFluidTank extends FluidStacksResourceHandler {
 
     private final Supplier<? extends Fluid> fluid;

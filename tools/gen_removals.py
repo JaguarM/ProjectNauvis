@@ -2,60 +2,22 @@
 """
 Generate the vanilla-replacement datapack: the recipes Project Nauvis takes away.
 
-    data/removals.json  ->  nauvis/.../vanilla_replacement/data/minecraft/recipe/<name>.json
+    data/removals.json -> nauvis/.../vanilla_replacement/data/minecraft/recipe/<name>.json
 
-PLAN.md puts this at milestone 3, and the reason is the one in its own sentence: once research
-gates progression there is somewhere for stripped vanilla recipes to go. A pack that adds
-Factorio's tree beside Minecraft's own recipes has not replaced anything - the player simply
-takes whichever road is shorter, and it is never the one with the belts on it.
+Each file is a `neoforge:never` condition (`ConditionalDecoder` reads conditions first and needs
+no body). The files ship as a built-in datapack at `Pack.Position.TOP` (`ModPacks`), because
+NeoForge's own copies of some 380 vanilla recipes outrank a mod's plain resources. Pack policy, so
+it lives in the `nauvis` mod.
 
-**Pack policy, so it lives in the `nauvis` mod** - non-negotiable #3. A subsystem mod may never
-delete another mod's recipe, and least of all Minecraft's.
-
-How a removal works
--------------------
-
-A recipe file whose only content is a condition that is never true. NeoForge's
-`ConditionalOps.ConditionalDecoder` reads the conditions first and returns an empty result
-**without decoding the rest**, so no recipe body is needed, and the file at
-`data/minecraft/recipe/<name>.json` shadows the one it is written over.
-
-The condition is **`neoforge:never`**. There is no `neoforge:false`; the registered names are
-`never` and `always`, and a typo here does not fail - it throws while parsing one recipe, which
-is a line in a log and a recipe that is still craftable.
-
-**And the file has to outrank NeoForge, not just vanilla.** NeoForge ships its own copy of about
-three hundred and eighty of Minecraft's recipe files - retagged so that other mods' metals and
-woods work in them - and its resources are applied after any mod's. A removal written into the
-pack mod's plain resources therefore works for most recipes and silently does nothing for those.
-The hopper is one of them, which is how this was found: four byte-identical files, three of which
-took effect. So the removals ship as a built-in datapack at `Pack.Position.TOP`, which sits above
-every mod's resources. See `ModPacks` in the nauvis mod.
-
-The rule, and why it is enforced rather than remembered
--------------------------------------------------------
-
-**A vanilla recipe is removed only when the pack can already do that job.** Every entry names a
-`replaced_by` recipe and this tool fails if that recipe is not shipped, so the pack cannot take
-something away and leave nothing in its place. That is the failure that would be found by a
-player unable to craft a furnace, three hours in, on a world they had already built on.
-
-Two kinds of entry, and the difference is worth keeping:
-
-- a **conflict** is a vanilla recipe making an item `data/mapping.json` maps a Factorio item
-  onto, so two recipes with different ingredient lists make the same thing and one of them is
-  wrong. Non-negotiable #1 says which one. **This half is checked, not listed**: given
-  Minecraft's own recipe list, any pack recipe producing a vanilla item whose vanilla recipe is
-  not removed is an error, so the table cannot fall behind the recipes.
-- a **bypass** is vanilla doing a job Factorio has a machine for. This half is a judgement and
-  is only ever a list.
-
-Minecraft's own recipes are read out of the client jar in the Gradle cache to check both. It is
-not always there, and the check skips itself when it is absent rather than failing - the same
-arrangement `checkRecipes` has with the Factorio dump.
+The rule: a vanilla recipe is removed only when the pack already does that job. Every entry names
+a `replaced_by` recipe and this fails if it is not shipped. A **conflict** (a vanilla recipe making
+an item the mapping puts a Factorio item on) is checked against Minecraft's own recipe list, read
+from the client jar in the Gradle cache, so any pack recipe for a vanilla item whose recipe is not
+removed is an error; a **bypass** is a listed judgement. `mirrors` and `kept` stand the check down
+for named recipes (docs/MAPPING.md). The jar checks skip themselves when the jar is absent.
 
 Usage:
-    python tools/gen_removals.py               summary only, writes nothing
+    python tools/gen_removals.py               summary only
     python tools/gen_removals.py --check       diff against what is on disk
     python tools/gen_removals.py --write       write into the nauvis pack mod
 """

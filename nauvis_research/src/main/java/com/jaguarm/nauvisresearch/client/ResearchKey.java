@@ -12,16 +12,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 
-/**
- * The key that opens the technology screen.
- *
- * <p>Factorio puts the technology screen on <b>T</b>, and Minecraft puts chat there, so the
- * default here is <b>G</b> - unbound in vanilla and within reach of the movement keys. It is a
- * key mapping like any other, so a player who wants T can have it and will know where to look.
- *
- * <p>The button on the lab stays. A key is what you use once you know the screen exists; the
- * button is how you find out.
- */
+/** The key that opens the technology screen. */
 @EventBusSubscriber(modid = NauvisResearch.MODID, value = Dist.CLIENT)
 public final class ResearchKey {
 

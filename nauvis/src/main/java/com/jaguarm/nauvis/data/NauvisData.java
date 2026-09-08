@@ -13,16 +13,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
-/**
- * The pack mod's own strings and models.
- *
- * <p>There is very little here and there should be: the pack mod is policy, and policy is data
- * files rather than content. What it does own is the name of the datapack that carries that
- * policy, which a player sees in the world creation screen and may well be deciding whether to
- * turn off - and the one raw resource it registers, see {@link ModContent}.
- *
- * <p>Run with {@code ./gradlew :nauvis:runClientData}.
- */
+/** The pack mod's own strings and models. */
 @EventBusSubscriber(modid = Nauvis.MODID)
 public final class NauvisData {
 

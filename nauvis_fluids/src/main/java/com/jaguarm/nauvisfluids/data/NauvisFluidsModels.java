@@ -40,22 +40,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
-/**
- * Block and item models.
- *
- * <p>Textures are placeholders and point at <em>vanilla</em> ones on purpose. A model naming a
- * texture this mod does not ship renders as the magenta-and-black checkerboard, which reads as a
- * broken model rather than as art nobody has drawn yet.
- *
- * <p>The pipe is a multipart, like a fence: a core that is always drawn and an arm for each
- * connected face. That is not decoration - the connections are real, and a run that has not joined
- * the boiler you thought it had joined is a thing you can see rather than a thing you have to work
- * out from a tooltip.
- *
- * <p>The oil well is a cube of earth with a black top: dirt on its sides so it sits in the ground
- * it replaced, and the puddle on top. The pumpjack is a machine on the shared shell, generated
- * from its shape the way the boiler and the engine are.
- */
+/** Block and item models. */
 public class NauvisFluidsModels extends ModelProvider {
 
     public NauvisFluidsModels(PackOutput output) {

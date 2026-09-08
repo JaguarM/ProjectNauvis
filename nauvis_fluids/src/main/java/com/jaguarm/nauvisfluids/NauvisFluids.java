@@ -18,23 +18,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
 
-/**
- * Pipes, oil, chemistry and nuclear.
- *
- * <p>This mod is here three milestones early for one reason: the boiler and the steam engine are
- * both paid for in pipes, so milestone 1's power needs one item out of a mod whose real work is
- * milestone 4. Registering the pipe with the right id and the right recipe cost nothing and kept
- * non-negotiable #1 honest.
- *
- * <p>The pipe carries steam, crude oil, water, and now the oils. Oil starts here: oil wells in the
- * ground, placed by worldgen in fields and never moved, and the pumpjack that stands over one and
- * draws from it at Factorio's rate. So does water: every lake and sea the world generates is
- * {@code nauvis_fluids:water}, Factorio's water tile - scooped as a water bucket, poured back as
- * vanilla's, never making a new source - and the offshore pump is the one thing that draws from
- * it. Then the oil is processed: the refinery, the chemical plant and the storage tank are here,
- * running Facrafting's fluid recipes, which is why this mod compiles against Facrafting and
- * declares it required - a machine that runs a {@code FacraftRecipe} has to be able to name it.
- */
+/** Pipes, oil, chemistry and nuclear. */
 @Mod(NauvisFluids.MODID)
 public class NauvisFluids {
     public static final String MODID = "nauvis_fluids";

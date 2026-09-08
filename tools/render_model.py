@@ -1,26 +1,14 @@
-"""Draws a block model to a PNG, so that a machine can be looked at without booting the game.
-
-Nothing in this repo could see a model until now: `check_models.py` proves every reference resolves,
-the gametests prove every collision box, and whether the thing *looks* right was a client boot and a
-person. That is still true for lighting and for how a machine sits in a world - but a model with a
-hole in it, a face on the wrong side, or a texture that is not what it was meant to be shows up in
-a rendering of the model alone, and this is that rendering.
+"""Draws a block model to a PNG, so a machine can be looked at without booting the game.
 
     python tools/render_model.py nauvis_fluids:block/pumpjack_inventory out.png
     python tools/render_model.py nauvis_power:block/boiler_inventory out.png --size 512
     python tools/render_model.py nauvis_fluids:block/pumpjack_corner out.png --view side
 
-It reads the model the way the game does - the generated assets first, then the vanilla client jar
-for parents and textures - and draws its elements as textured boxes from the item slot's angle:
-vanilla's `block/block` GUI display, rotated 30 degrees down and 225 round, which is the angle the
-screenshot that found the anvil-top holes was taken at. Every face is drawn with a depth buffer and
-Minecraft's own directional shading, and a texture pixel with an alpha under half is a hole, which is
-what the game shows for a cutout and what a player sees either way.
-
-`--view side` looks straight at the north face, for checking one cell's geometry, and `--view top`
-straight down.
-
-Needs Pillow and numpy, which the build does not, so this is a tool for a person and not a check.
+Reads the model as the game does (generated assets, then the vanilla client jar) and draws its
+elements as textured boxes from the item slot's angle (vanilla's `block/block` GUI display), with
+a depth buffer and Minecraft's directional shading; a texture pixel with alpha under half is a
+hole. `--view side` looks at the north face, `--view top` straight down. Needs Pillow and numpy,
+so it is a tool for a person and not a build check.
 """
 import argparse
 import json

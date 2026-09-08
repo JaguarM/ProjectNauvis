@@ -14,26 +14,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 
-/**
- * A radar: on the grid, it keeps the chunks around it loaded and ticking.
- *
- * <p>Factorio's radar draws 300 kW for as long as it stands and charts the seven-by-seven chunks
- * around it continuously; the far scan, which reveals one distant chunk at a time, has no map to
- * reveal on to here. What continuous charting means in Minecraft is that the area stays loaded -
- * the machines in it run, the belts move, the furnaces breathe - whether or not a player is near,
- * which is what a radar beside an outpost is for. Five of them go into a satellite, which is the
- * other reason it exists.
- *
- * <h2>Sleeping</h2>
- *
- * <p>Factorio's radar never stops drawing, and this one draws a second's worth at a time: once a
- * second it takes {@value #CHART_TICKS} ticks of its {@value #ENERGY_PER_TICK} FE a tick out of
- * the buffer, holds its tickets, and asks for the next second. A radar that cannot pay lets the
- * tickets go and schedules nothing - the one bounded cost is one tick a second per radar that is
- * running - and is woken by electricity arriving, through {@link MachinePower}, exactly as every
- * other machine is. The tickets are NeoForge's and survive the world closing, so a radar in a
- * chunk nobody is near is loaded by its own ticket when the world opens and ticks from there.
- */
+/** A radar: on the grid, it keeps the chunks around it loaded and ticking. */
 public class RadarBlockEntity extends BlockEntity {
 
     /** 300 kW at the pack's ratio of 120 FE/t to a 900 kW engine: a radar is a third of an engine. */

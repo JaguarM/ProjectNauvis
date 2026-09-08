@@ -17,23 +17,7 @@ import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
-/**
- * What a pipe says about the run it belongs to.
- *
- * <p>Modelled on Factorio's own pipe tooltip - what is in it, and how far the pipeline reaches -
- * because those are the two questions a pipe raises and neither is answerable by looking at the
- * block. A pipe holds nothing itself; the run holds everything, so a readout that reported only
- * the block would always say zero.
- *
- * <p>This is server data of necessity, like the electric pole's: a {@link FluidNetwork} lives on
- * the server and the client has no {@code FluidNetworkManager} to ask.
- *
- * <p><b>Factorio says {@code Pipeline extent: 6/320} and this says {@code 6 pipes}</b>, on
- * purpose. The 320 is Factorio's cap on how many pipes one fluid segment may contain, and this
- * pack has no such cap - a run here is one object whatever its length, which is the whole point of
- * {@link FluidNetwork}. Printing a denominator we do not enforce would be inventing a rule in a
- * tooltip.
- */
+/** What a pipe says about the run it belongs to. */
 public class PipeReadout implements IServerDataProvider<BlockAccessor> {
 
     public static final PipeReadout INSTANCE = new PipeReadout();

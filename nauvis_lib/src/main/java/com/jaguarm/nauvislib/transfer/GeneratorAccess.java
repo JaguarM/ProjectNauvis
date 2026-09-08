@@ -3,17 +3,7 @@ package com.jaguarm.nauvislib.transfer;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
-/**
- * A generator's buffer as the grid may use it: draw from it, never fill it.
- *
- * <p>The mirror image of {@link PowerAccess}. A steam engine or a solar panel makes electricity
- * and must never be handed any, or the network would have somewhere to park a surplus that is
- * not a battery.
- *
- * <p>{@code onDrawn} is the wake-up. A generator whose buffer is full has nothing to tick for
- * and stops scheduling itself; the one thing that gives it work again is somebody taking charge
- * out, which happens here, on a thread of control the generator is not part of.
- */
+/** A generator's buffer as the grid may use it: draw from it, never fill it. */
 public record GeneratorAccess(EnergyHandler backing, Runnable onDrawn) implements EnergyHandler {
 
     @Override

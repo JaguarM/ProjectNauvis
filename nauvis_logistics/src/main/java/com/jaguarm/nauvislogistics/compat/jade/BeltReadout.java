@@ -15,17 +15,7 @@ import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
-/**
- * What a belt says about the line it belongs to.
- *
- * <p>The two questions a belt raises and neither of which the block answers: how long is this
- * line, and how full is it. A belt block holds nothing - the run holds everything - so a readout
- * of the block alone would always say nothing at all, exactly as the pipe's would.
- *
- * <p>How full is quoted per lane, because a Factorio player thinks in lanes: a belt that is
- * {@code 20/20 left, 3/20 right} is a belt that needs a second source, and one number averaging
- * the two would hide the only thing worth knowing.
- */
+/** What a belt says about the line it belongs to. */
 public class BeltReadout implements IServerDataProvider<BlockAccessor> {
 
     public static final BeltReadout INSTANCE = new BeltReadout();

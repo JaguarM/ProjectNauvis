@@ -27,16 +27,7 @@ import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/**
- * The block half of the radar: three tiles by three, ten blocks of it, and nothing to open.
- *
- * <p>Factorio's radar has no window and this one has no screen: there is nothing to put in it
- * and nothing to choose. What it is doing is the hover readout's to say. No facing either - the
- * dish is drawn tilted one way, and a radar charts all round itself.
- *
- * <p>Everything about being made of several blocks is {@link Multiblock}'s, the same four rules
- * as every other machine.
- */
+/** The block half of the radar: three tiles by three, ten blocks of it, and nothing to open. */
 public class RadarBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 
     public static final MapCodec<RadarBlock> CODEC = simpleCodec(RadarBlock::new);

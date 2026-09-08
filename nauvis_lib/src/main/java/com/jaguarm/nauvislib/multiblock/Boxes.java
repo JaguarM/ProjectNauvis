@@ -2,26 +2,7 @@ package com.jaguarm.nauvislib.multiblock;
 
 import net.minecraft.core.Direction;
 
-/**
- * Turning a list of boxes a quarter turn at a time.
- *
- * <p>Two things have to rotate together when a machine is placed facing east rather than north:
- * where each cell sits, and the geometry inside it. This does the second; {@link MachineShape}
- * does the first, with the same rotation. **They are one rotation written twice and must stay
- * that way** - a model turned one way and a collision box turned the other is a machine you can
- * see through on one side and walk into on the other, and nothing about that fails a test that
- * does not look for it.
- *
- * <p>The convention is Minecraft's, not a choice: a blockstate {@code y: 90} turns a model a
- * quarter turn <em>clockwise seen from above</em>, which is what puts a furnace's front face on
- * the east when its model draws it on the north. Rotating a point about the centre of its block
- * that way sends {@code (x, z)} to {@code (16 - z, x)}, and rotating an offset between blocks
- * sends {@code (x, z)} to {@code (-z, x)}. The two differ only by the block's own centre.
- *
- * <p>It is also used at authoring time, and that is the more common case: four corner cells of a
- * machine are one corner written once and turned three times, so they cannot drift into three
- * different corners.
- */
+/** Turning a list of boxes a quarter turn at a time. */
 public final class Boxes {
 
     private Boxes() {}

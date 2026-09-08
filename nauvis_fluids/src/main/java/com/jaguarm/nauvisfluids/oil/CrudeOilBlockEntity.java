@@ -9,36 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
-/**
- * How much is left in one oil well.
- *
- * <p>Factorio's {@code crude-oil} resource, number for number. Its prototype says
- * {@code infinite = true, normal = 300000, minimum = 60000, infinite_depletion_amount = 10}, and
- * that is the whole model:
- *
- * <ul>
- *   <li><b>yield</b> is {@code amount / normal} - an amount of 300000 is 100%, and the tooltip's
- *       percentage is that and nothing more;
- *   <li>every pumpjack cycle lowers the amount by ten;
- *   <li>and it never falls below a floor: 60000, or a fifth of what the well started with,
- *       whichever is more. A 100% well bottoms out at 20% and pumps for ever at that; a 400% well
- *       bottoms out at 80%.
- * </ul>
- *
- * <p>So an oil well is not finite. It is <em>infinite with a decay to a floor</em>, which is the
- * thing this pack was first asked to build as "finite" and deliberately is not: a player who runs
- * their only oil field dry has no way to plastic, and Factorio never lets that happen.
- *
- * <h2>The starting amount is derived, not stored by worldgen</h2>
- *
- * <p>Nothing is written into this block entity when the world generates. The first time anything
- * asks, the amount is worked out from the world seed and the well's position by
- * {@link CrudeOilField#initialAmount}, and saved from then on. That keeps the worldgen feature to
- * placing blocks - a block entity in a proto-chunk is a thing to avoid having opinions about - and
- * it means a well placed by hand in creative is as rich as a well generated there would have been.
- *
- * <p>No ticker. A well does nothing on its own; the pumpjack on top of it does the work.
- */
+/** How much is left in one oil well. */
 public class CrudeOilBlockEntity extends BlockEntity {
 
     /** Factorio's {@code normal}: the amount that reads as 100% yield. */

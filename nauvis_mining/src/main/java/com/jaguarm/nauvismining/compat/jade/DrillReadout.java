@@ -14,17 +14,7 @@ import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
-/**
- * What a drill says when looked at: what it is mining, or why it has stopped.
- *
- * <p>Jade's own providers already show the slots and, for the electric tier, the energy bar. The
- * one thing they cannot know is the difference between a drill waiting for coal, one whose ore
- * has nowhere to go, and one standing over ground with nothing left in it - and those want three
- * different things done about them.
- *
- * <p>Two classes, a data half and a {@link Client} half, sharing one uid: Jade refuses one object
- * that is both. See the furnace's readout in {@code nauvis_machines} for the pattern.
- */
+/** What a drill says when looked at: what it is mining, or why it has stopped. */
 public class DrillReadout implements IServerDataProvider<BlockAccessor> {
 
     public static final DrillReadout INSTANCE = new DrillReadout();

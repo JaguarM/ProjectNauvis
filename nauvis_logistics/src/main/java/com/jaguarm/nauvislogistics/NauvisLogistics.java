@@ -11,16 +11,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 
-/**
- * Factorio's logistics: inserters first, then belts, splitters, chests and robots.
- *
- * <p>The inserter is the cheapest thing in the pack that changes what the game is. One block,
- * and every container in Minecraft becomes something a factory can feed. Belts are the harder
- * half of this mod and the one architectural decision that is expensive to reverse - see the
- * belt note in PLAN.md before starting them.
- *
- * <p>Ids come from {@code data/mapping.json} and are permanent.
- */
+/** Factorio's logistics: inserters first, then belts, splitters, chests and robots. */
 @Mod(NauvisLogistics.MODID)
 public class NauvisLogistics {
 

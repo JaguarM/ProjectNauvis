@@ -18,18 +18,6 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 /**
  * The furnace's slot rules as the client can work them out, so a shift-click lands where the
  * server will put it.
- *
- * <p>A menu's client half is built with a stand-in inventory, and the stand-in's {@code isValid}
- * is what {@code mayPlace} reads when the client predicts a shift-click. With a permissive
- * stand-in, coal jumped into the input slot and was moved to the fuel slot a tick later when the
- * server's answer arrived, and a stick went in and bounced back. Vanilla's furnace never does
- * that because its menu can ask the same questions on both sides - and so can this one: fuel
- * values are synced to the client, vanilla's furnace inputs are a synced property set, and
- * Facrafting sends every timed recipe. Only the research lock is a guess, and the client's guess
- * is the one the panel already draws with.
- *
- * <p>Client package because {@link ClientRecipes} is a client class; the menu's client
- * constructor is the only caller, and a dedicated server never runs it.
  */
 public final class ClientSlotRules {
 

@@ -19,90 +19,19 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 
-/**
- * Every electric network in one level, and the only thing in this mod that runs every tick.
- *
- * <p>It iterates <em>networks</em>, of which a large base has a handful, rather than poles, of
- * which it has thousands. A network that moved no energy last tick is dropped out of the active
- * set and stops costing anything per tick at all.
- *
- * <h2>Three indexes, and why each exists</h2>
- *
- * <ul>
- *   <li><b>pole to network</b> - the answer to "what did I just connect to", and the only state
- *       that says a network exists at all.
- *   <li><b>poles by cell</b> - poles bucketed into 8-block cubes. Wire reach is 7.5, which is
- *       less than 8, so two poles that can see each other are in the same cell or in one of the
- *       26 around it. That turns "which poles are in range of this one" into 27 map lookups
- *       instead of a 15x15x15 scan, and it is what keeps breaking a pole in the middle of a big
- *       network from being a visible stutter: splitting has to walk the graph, and walking it
- *       costs a constant per pole rather than three and a half thousand.
- *   <li><b>poles by supplied chunk</b> - which poles could possibly reach into a given chunk.
- *       This is the pre-filter for {@link #blockChanged}, which is called for every block change
- *       in the level; one lookup rejects everywhere that is not near a pole.
- * </ul>
- *
- * <h2>How a machine is found</h2>
- *
- * <p>Non-negotiable #3 forbids {@code nauvis_machines} from knowing what a pole is, so a machine
- * cannot come and register itself. Poles do the finding, through
- * {@code Capabilities.Energy.BLOCK} - which is NeoForge's, so a third-party machine is found on
- * exactly the same terms as ours.
- *
- * <p>The scan has to be triggered, never polled. Three things trigger it, and between them they
- * cover every way a machine can appear beside a pole:
- *
- * <ul>
- *   <li>a pole is placed or its chunk loads - it scans its own supply area once;
- *   <li>a block changes inside a chunk some pole reaches into - {@link #blockChanged}, fed by
- *       {@code BlockEvent.NeighborNotifyEvent}, which fires for any block placed or broken by any
- *       means, not just by a player;
- *   <li>a chunk a pole reaches into loads - the machines in it were unreachable when the pole
- *       last scanned, so that pole scans again.
- * </ul>
- *
- * <p>Nothing here is per-tick. The alternative - a capability invalidation listener registered on
- * each of the 125 positions in every pole's supply area - is exact and needs no pre-filter, but a
- * base of ten thousand poles would hold well over a million weak references to pay for it.
- *
- * <h2>The graph is never saved</h2>
- *
- * <p>It is derivable from where the poles are, so saving it would be caching, and invalidating
- * that cache across a chunk load is where the bugs would live. Poles register from
- * {@code onLoad} and deregister from {@code setRemoved} and {@code onChunkUnloaded}; the level
- * unloading throws the whole thing away.
- */
+/** Every electric network in one level, and the only thing in this mod that runs every tick. */
 public final class PowerNetworkManager {
 
 
     /**
-     * Factorio's small and medium poles supply a 5x5 area - two blocks either side of a one-tile
-     * pole. Kept as a cube in Y here, because a machine stacked above another is a reasonable
-     * thing to build and refusing it would be a rule the player has to learn for no reason.
-     *
-     * <p>The big pole is 4x4, which is not a smaller radius around a bigger point: it is its
-     * two-by-two footprint plus one tile on every side. So supply is measured from the
-     * <em>footprint</em> rather than from the foot, and a one-tile pole with a reach of two comes
-     * out at exactly the 5x5 it always was. See {@link Pole}.
+     * Factorio's small and medium poles supply a 5x5 area - two blocks either side of a
+     * one-tile pole. Kept as a cube in Y here, because a machine stacked above another is a
+     * reasonable thing to build and refusing it would be a rule the player has to learn for no
+     * reason.
      */
     public static final int SUPPLY_RADIUS = 2;
 
-    /**
-     * Cell size for the pole index, as a shift.
-     *
-     * <p>It was eight while every pole reached 7.5, and the neighbourhood was the 27 cells around
-     * one, which is complete only while the cell is wider than the reach. The medium pole reaches
-     * nine, so cells are sixteen; the alternative - keeping eight and widening the neighbourhood -
-     * covers a smaller volume for more lookups.
-     *
-     * <p>The big pole reaches thirty and no sane cell size covers that, so the scan is sized from
-     * the asking pole's own reach ({@link #cellSpan}) and poles that out-reach a cell are held in
-     * {@link #longReach} as well, where everybody looks. **That second index is not an
-     * optimisation, it is the correctness.** Without it, a small pole would find a big one only
-     * when the big one happened to fall inside the small one's own three-cell scan, so a wire
-     * would be there or not depending on where the two stood - and both halves would look right
-     * in isolation.
-     */
+    /** Cell size for the pole index, as a shift. */
     private static final int CELL_BITS = 4;
 
     private static final int CELL_SIZE = 1 << CELL_BITS;
@@ -158,17 +87,10 @@ public final class PowerNetworkManager {
     /**
      * What the graph needs to know about a pole, read off its block when it joins.
      *
-     * <p>Four numbers rather than a reference to the block, because every one of them is still
-     * wanted after the block is gone: a pole leaving is the expensive half of its life, and every
-     * question asked on that path - what it was wired to, what it was the last one supplying - is
-     * about a pole that no longer exists.
-     *
      * @param wireReach   how far it throws a wire, in blocks
      * @param width       its footprint east-west, in blocks, from the foot outwards
      * @param depth       its footprint north-south
      * @param supplyReach how far past that footprint it supplies machines. Factorio's areas are
-     *                    5x5 for a one-tile pole and 4x4 for the two-tile one, which is this plus
-     *                    the footprint in both cases and is not a radius in either
      */
     private record Pole(double wireReach, int width, int depth, int supplyReach) {}
 
@@ -351,11 +273,6 @@ public final class PowerNetworkManager {
 
     /**
      * Tells a pole, and everything it can see, what they are wired to.
-     *
-     * <p>Only the client cares - see {@code ElectricPoleBlockEntity#links}. It runs on
-     * placement and removal, which is the only time a wire can appear or disappear, and never on a
-     * tick. The neighbours have to be told too: a wire has two ends, and the one that already
-     * existed does not otherwise know that something just came into view.
      *
      * @param reachable the poles in range, if the caller already worked them out.
      */
@@ -581,14 +498,8 @@ public final class PowerNetworkManager {
     }
 
     /**
-     * The same, for a pole the index no longer holds - which is every caller on the removal path,
-     * because the pole is out of the index before its consequences are worked out.
-     *
-     * <p>Two passes, and the second is not a shortcut. The cell scan is sized from <em>this</em>
-     * pole's reach, so it finds everything this pole can see; what it cannot find is a pole that
-     * out-reaches it from further away, and a wire runs on the longer of the two reaches. That is
-     * what {@link #longReach} is for, and skipping the ones the first pass already covered is what
-     * keeps a neighbour from being listed twice.
+     * The same, for a pole the index no longer holds - which is every caller on the removal
+     * path, because the pole is out of the index before its consequences are worked out.
      */
     private void collectWireNeighbours(long pole, Pole self, LongArrayList out) {
         int cellX = BlockPos.getX(pole) >> CELL_BITS;
@@ -644,15 +555,8 @@ public final class PowerNetworkManager {
     }
 
     /**
-     * Whether a wire runs between two poles: the distance is within the <em>longer</em> of the two
-     * reaches.
-     *
-     * <p>The longer and not the shorter, which is Factorio's rule and not an accident of it. A
-     * medium pole is bought to span a gap, and a gap has a small pole at each end of it as often
-     * as not; a rule that took the shorter reach would make a medium pole useless everywhere
-     * except in a line of other medium poles. It also keeps the relation symmetric, which the
-     * flood fill in {@link #components} quietly depends on - an asymmetric one would put two poles
-     * in the same network or not depending on which end the walk started from.
+     * Whether a wire runs between two poles: the distance is within the <em>longer</em> of the
+     * two reaches.
      */
     private boolean withinWireReach(long a, Pole poleA, long b) {
         double dx = BlockPos.getX(a) - BlockPos.getX(b);
@@ -667,16 +571,7 @@ public final class PowerNetworkManager {
         return poleData.getOrDefault(pole, UNKNOWN);
     }
 
-    /**
-     * Whether a pole supplies a position: inside its footprint grown by its own margin.
-     *
-     * <p>Horizontally that is Factorio's area exactly - 5x5 around a one-tile pole with a margin
-     * of two, 4x4 around a two-tile one with a margin of one, 18x18 around a substation with a
-     * margin of eight. Vertically it stays two blocks either side of the <em>foot</em> for every
-     * tier, which is deliberate: a taller pole is not a pole that feeds machines further into the
-     * sky, and letting a substation supply eight blocks up would put a machine on a roof on the
-     * grid without the player doing anything to put it there.
-     */
+    /** Whether a pole supplies a position: inside its footprint grown by its own margin. */
     private boolean supplies(long pole, long position) {
         return supplies(pole, poleOf(pole), position);
     }

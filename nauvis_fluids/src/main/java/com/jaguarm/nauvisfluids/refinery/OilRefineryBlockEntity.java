@@ -18,20 +18,6 @@ import net.minecraft.world.level.material.Fluids;
 /**
  * An oil refinery: crude oil in, and depending on the recipe petroleum gas out, or heavy oil,
  * light oil and petroleum gas out of three separate ports.
- *
- * <p>Factorio's numbers: two fluid inputs and three fluid outputs, no item slots, crafting speed
- * one, and 420 kW - at the pack's ratio of 120 FE/t to a 900 kW steam engine,
- * {@value #ENERGY_PER_TICK} FE a tick. Its recipes are {@code oil-processing}, which is to say
- * the two oil processing recipes and nothing else.
- *
- * <h2>The ports do not move</h2>
- *
- * <p>Water is always the left input and crude oil the right; heavy oil, light oil and petroleum
- * gas are always the left, middle and right outputs. Factorio fixes them the same way, by
- * {@code fluidbox_index} on the recipe, and it is what lets a player research advanced oil
- * processing and add a water pipe and two more output pipes to a running refinery without
- * moving the crude pipe or the petroleum pipe already there. See
- * {@code ProcessingBlockEntity} for how a fluid without a fixed place is given one.
  */
 public class OilRefineryBlockEntity extends ProcessingBlockEntity {
 

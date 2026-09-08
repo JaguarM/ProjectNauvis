@@ -20,21 +20,7 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.event.RegisterFluidModelsEvent;
 import net.neoforged.neoforge.client.fluid.FluidTintSources;
 
-/**
- * The client half: what steam, crude oil and natural water look like, and the oil x-ray.
- *
- * <p>Every registered fluid needs a {@link FluidModel} in 26.2 - this is not optional and not
- * skippable for a fluid that is never placed in the world. Without one you get the
- * missing-texture checkerboard anywhere the fluid is drawn, which means every tank readout and
- * every Jade tooltip that shows a machine's contents. NeoForge logs
- * {@code Missing FluidModel for fluid} when it happens, and nothing else complains.
- *
- * <p>Vanilla textures, like every other model in this pack: water, tinted. Pale for steam, near
- * black for crude - Factorio's crude oil has a base colour of pure black and a flow colour of
- * grey - Factorio's own colours for the five the refinery and the chemical plant make, and for
- * natural water, water's own three sprites and the biome's colour, which is what makes a swamp's
- * water brown and a warm ocean's turquoise exactly as before.
- */
+/** The client half: what steam, crude oil and natural water look like, and the oil x-ray. */
 @Mod(value = NauvisFluids.MODID, dist = Dist.CLIENT)
 @EventBusSubscriber(modid = NauvisFluids.MODID, value = Dist.CLIENT)
 public class NauvisFluidsClient {

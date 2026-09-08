@@ -6,18 +6,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 
-/**
- * A magazine: so many rounds, each doing so much damage.
- *
- * <p>Factorio's numbers. A firearm magazine is ten rounds of five physical damage, a piercing
- * rounds magazine ten of eight. A magazine is a plain item and stacks, the way Factorio's do;
- * the rounds are counted on the gun that loaded it, so a half-used magazine is never an item
- * that refuses to stack with its neighbours. Minecraft's stack is 64 where Factorio's is 200,
- * which is the one number here that is not Factorio's.
- *
- * <p>A gun takes its ammunition from wherever the player keeps it - the off hand first, then the
- * inventory, the way a bow finds arrows - so there is no ammo slot to load.
- */
+/** A magazine: so many rounds, each doing so much damage. */
 public class MagazineItem extends Item {
 
     /** Factorio's magazines stack to two hundred; a Minecraft stack is sixty-four. */

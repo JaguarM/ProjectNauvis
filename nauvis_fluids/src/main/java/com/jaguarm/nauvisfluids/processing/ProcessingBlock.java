@@ -32,16 +32,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 /**
  * The block half of a refinery or a chemical plant: placement, breaking, opening, and which way
  * it points.
- *
- * <p>Everything about being several blocks is {@link Multiblock}'s. What is this machine's own is
- * that it <b>faces</b>: its ports are on particular sides, and turning it is how a player chooses
- * where the pipes go, exactly as in Factorio. The machine's north points the way the player is
- * looking when it is placed, so a refinery placed by a player looking north has its inputs on
- * the south side, towards them, and its outputs beyond - which is Factorio's default orientation
- * seen from the same place.
- *
- * <p>Right-click opens it, from any of its blocks. The recipe is chosen in Facrafting's panel
- * beside the screen, as the assembler's is.
  */
 public abstract class ProcessingBlock extends BaseEntityBlock implements Multiblock.MachineBlock {
 

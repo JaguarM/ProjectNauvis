@@ -17,12 +17,6 @@ import snownee.jade.api.config.IPluginConfig;
 /**
  * What a pumpjack says: what is in its tank, the yield of the well under it, and whether it is
  * pumping - and if not, why not.
- *
- * <p>Factorio's pumpjack window is exactly those things and the energy bar, and Jade's own
- * universal provider draws the energy bar off the capability with no help from here.
- *
- * <p>Two classes, a data half and a {@code Client} half, because Jade throws at registration if
- * one object is both.
  */
 public class PumpjackReadout implements IServerDataProvider<BlockAccessor> {
 

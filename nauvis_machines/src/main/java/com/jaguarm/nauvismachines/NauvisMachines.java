@@ -15,18 +15,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 
-/**
- * Factorio's machines: the assemblers and the furnaces, then modules, the beacon and the radar.
- *
- * <p>Ids come from {@code data/mapping.json} and are permanent — {@code assembling_machine_1}
- * is what Factorio calls it, this mod is what the mapping says owns it, and both live in every
- * world save from the first placement onwards. What is behind an id may be crude and rewritten;
- * the id may not.
- *
- * <p>This mod compiles against Facrafting, as {@code nauvis_fluids} does for its refinery: an
- * assembler <em>is</em> a machine that runs a timed Facrafting recipe. The arrow points one way
- * and there is no cycle, which is what non-negotiable #3 asks for.
- */
+/** Factorio's machines: the assemblers and the furnaces, then modules, the beacon and the radar. */
 @Mod(NauvisMachines.MODID)
 public class NauvisMachines {
 

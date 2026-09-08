@@ -5,20 +5,7 @@ import com.mojang.serialization.MapCodec;
 
 import net.minecraft.world.level.block.BaseEntityBlock;
 
-/**
- * Five copper plates and five steel plates, two tiles by two and six blocks tall.
- *
- * <p>Thirty blocks of reach, which is Factorio's number and four times the small pole's. It is the
- * only tier that does not fit the pole index's cells, and {@code PowerNetworkManager} holds a
- * second, small index for exactly that reason - see {@code longReach} there. A pole that reaches
- * further than a cell is wide cannot be found by a neighbour's cell scan, and the failure is a
- * wire that is missing in some positions and present in others.
- *
- * <p>Supplies a 4x4 area rather than the 5x5 of the two below it, which is also Factorio's and is
- * the trade that stops it being a strict upgrade: a big pole reaches four times as far and covers
- * less ground under itself, so it is what you run a bus on and not what you feed a field of
- * machines with.
- */
+/** Five copper plates and five steel plates, two tiles by two and six blocks tall. */
 public class BigElectricPoleBlock extends ElectricPoleBlock {
 
     public static final MapCodec<BigElectricPoleBlock> CODEC = simpleCodec(BigElectricPoleBlock::new);

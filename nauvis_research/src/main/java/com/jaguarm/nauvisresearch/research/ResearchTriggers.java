@@ -18,42 +18,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
-/**
- * Watches for the things a triggered technology is waiting on.
- *
- * <p>Some technologies have no cost at all - they finish when the world has made fifty iron plates,
- * or one lab, or pumped crude oil once. That is what lets a new world research its way to a boiler
- * and a lab before it has any science at all, and it is why the opening is not "hand-craft
- * everything and then discover research".
- *
- * <h2>Crafting is more than crafting</h2>
- *
- * <p>Factorio has one verb for it. Minecraft has four, and the trigger has to hear all of them or
- * it means something different from what it says: <b>iron plates are smelted here, not crafted</b>,
- * so a listener that only heard the crafting grid would leave "craft fifty iron plates" unreachable
- * for ever. So this hears a bench, a vanilla furnace, Facrafting's own panel - which is where this
- * pack does nearly all its hand crafting - and, through Facrafting's machine listener, the pack's
- * own furnaces and assemblers, which is where the plates actually come from.
- *
- * <p>What it deliberately does not hear is picking an item up. Mining fifty iron ore and smelting
- * it is the intended route; finding fifty iron ingots in a village chest is not the thing the
- * trigger is asking about.
- *
- * <h2>Mining is a machine's report</h2>
- *
- * <p>Factorio's {@code mine-entity} trigger - oil processing finishes when crude oil has been
- * pumped once - has no vanilla event behind it: no player, no block break. The machine that took
- * the resource says so, through Facrafting's {@code MiningListeners}, which is the one seam two
- * subsystem mods may share without depending on each other. {@link #mined} is what that seam
- * calls, installed beside the craft listener in {@code FacraftingLock}.
- *
- * <h2>The filter, and why it is worth having</h2>
- *
- * <p>{@link #watchedCrafts} and {@link #watchedMines} are the handful of ids some technology
- * actually names - five, today. Every craft in the game reaches this class, so the first thing it
- * does is a hash lookup that says no, and only a matching one touches the saved data at all.
- * Without it a world's saved state would grow an entry per item anybody ever made.
- */
+/** Watches for the things a triggered technology is waiting on. */
 @EventBusSubscriber(modid = NauvisResearch.MODID)
 public final class ResearchTriggers {
 

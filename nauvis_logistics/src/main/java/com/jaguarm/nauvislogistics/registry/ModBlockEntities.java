@@ -21,11 +21,6 @@ public final class ModBlockEntities {
      * Two types, because the two tiers save different things: the burner has a fuel slot and a
      * burn timer, the electric one has a charge. Everything else about an inserter - the swing,
      * the neighbour caches, the moving - is in the shared base class rather than duplicated.
-     *
-     * <p>The long-handed inserter was the first variant to prove that: it differs in speed, draw
-     * and reach, all three of which are numbers on the block, so it is registered against the
-     * electric type below rather than getting one of its own. The fast and stack arms arrived the
-     * same way, and the filter arm will too.
      */
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BurnerInserterBlockEntity>>
             BURNER_INSERTER = BLOCK_ENTITIES.register(
@@ -64,18 +59,7 @@ public final class ModBlockEntities {
                             MetalChestBlockEntity::new,
                             ModBlocks.STEEL_CHEST.get()));
 
-    /**
-     * One type for every belt tier there will ever be.
-     *
-     * <p>A belt block entity holds no behaviour at all - the run does the work and a belt is a
-     * fact about where the run goes - so what differs between tiers is the block, not this. The
-     * red belt was the first tier to prove it: adding it was a line in this list and nothing else
-     * here, and the express belt will be the same line again.
-     *
-     * <p>It is also what makes an upgrade cheap. {@code BeltBlock.useItemOn} swaps one belt block
-     * for a faster one, which remakes the block entity - and because both tiers are this one type,
-     * what is standing on the belt is written and read by the same code either side of the swap.
-     */
+    /** One type for every belt tier there will ever be. */
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BeltBlockEntity>>
             TRANSPORT_BELT = BLOCK_ENTITIES.register(
                     "transport_belt",

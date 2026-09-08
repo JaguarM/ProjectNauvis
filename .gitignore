@@ -20,3 +20,6 @@ bin/
 # Python bytecode from tools/
 __pycache__/
 *.pyc
+
+# Preview sheets the texture scripts write with --preview
+texture-workshop/*-preview.png
