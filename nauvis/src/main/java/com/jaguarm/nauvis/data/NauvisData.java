@@ -51,6 +51,9 @@ public final class NauvisData {
             add("pack.nauvis.vanilla_replacement",
                     "Project Nauvis: Factorio progression (turn off to restore vanilla recipes)");
             addItem(ModContent.SOLID_FUEL, "Solid fuel");
+            add("commands.nauvis.ore.patch", "A %s patch of %s ore blocks, %s by %s, from y %s to %s, under %s %s");
+            add("commands.nauvis.ore.patch.none", "No ground here to put ore in");
+            add("commands.nauvis.ore.starting.patch", "The %s starting patch is at %s %s %s");
         }
     }
 }

@@ -16,8 +16,14 @@ The jobs
 
 ### 1. Play it
 
-Three builds have passed their tests and nobody's eyes. Each wants a client boot and an evening:
+Four builds have passed their tests and nobody's eyes. Each wants a client boot and an evening:
 
+- **The ore patches.** A new world's three starting patches, found with a drill in hand: whether
+  the x-ray boxes read as patches, whether 48 to 120 blocks out and 16 to 48 down is the right
+  place for the first iron, whether thirty to forty across and three layers is enough for a first
+  base, and whether a random patch every 128 blocks is too many or too few. `/ore patch iron` puts
+  one under your feet in a superflat world. The knobs are the constants in `OrePatches` and the
+  doubling distance in `nauvis/pack/config/crumblingore-common.toml`.
 - **The rocket.** The *A* toggle and the Launch button on the silo's screen, the radar's dish, the
   nine module chips, the five new item icons, a launch watched from the ground. Not identity, so
   free to move: the five-second countdown, the firework's height, the rocket's colours, the

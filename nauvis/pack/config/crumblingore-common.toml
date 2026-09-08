@@ -1,0 +1,23 @@
+[crumbling]
+	#Whether ore blocks crumble instead of breaking outright.
+	#A crumbling ore stays in the world and wears down visibly over several
+	#harvests, dropping its loot each time. Applies to anything in the ores
+	#tag, so modded ores and ores placed by worldgen mods are included.
+	enabled = true
+	#How many harvests it takes to exhaust one ore block.
+	#Each harvest drops the block's normal loot, so raising this raises the
+	#total yield of every ore in the world as well as the time to extract it.
+	#Set to 1 to disable crumbling without turning the mod off.
+	#Range: 1 ~ 64
+	harvestsPerOre = 8
+
+	[crumbling.richness]
+		#Blocks from the world origin at which an ore holds twice its harvests, or 0
+		#for the same everywhere. Factorio's richness by distance: harvests are
+		#multiplied by max((D + distance) / (2 * D), 1), so nothing changes within D
+		#blocks of the origin and an ore 3D out holds twice as many.
+		#Range: 0 ~ 1000000
+		doubleDistance = 1300
+		#The most harvests the distance rule can put in one ore block.
+		#Range: 1 ~ 1024
+		maxHarvests = 64

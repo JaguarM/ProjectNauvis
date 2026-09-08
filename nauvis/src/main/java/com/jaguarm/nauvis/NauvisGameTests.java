@@ -1,5 +1,9 @@
 package com.jaguarm.nauvis;
 
+import com.jaguarm.nauvis.ore.OreKind;
+import com.jaguarm.nauvis.ore.OrePatch;
+import com.jaguarm.nauvis.ore.OrePatchFeature;
+import com.jaguarm.nauvis.ore.OrePatches;
 import com.jaguarm.nauvislib.test.GameTests;
 import com.jaguarm.nauvislib.test.PackGameTest;
 import com.jaguarm.nauvislib.test.PackGameTest.Info;
@@ -16,6 +20,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInstance;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -41,6 +46,108 @@ public final class NauvisGameTests {
         tests.add("steam_travels_down_a_pipe", SteamTravelsDownAPipeTest::new, 200, 24);
         tests.add("accumulator_carries_the_night", AccumulatorCarriesTheNightTest::new, 300, 24, true);
         tests.add("vanilla_recipes_are_replaced", VanillaRecipesAreReplacedTest::new, 20);
+
+        // A patch is a flat, wide slab of ore: every block within its few layers, the footprint
+        // tens of blocks across, and nothing but ground turned to ore.
+        tests.add("ore_patch_is_flat_and_wide", 40, 28, helper -> {
+            int size = 48;
+            int floor = 1;
+            int roof = 7;
+            for (int x = 0; x < size; x++) {
+                for (int z = 0; z < size; z++) {
+                    for (int y = floor; y <= roof; y++) {
+                        helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+                    }
+                }
+            }
+            BlockPos centre = helper.absolutePos(new BlockPos(size / 2, 3, size / 2));
+            OrePatch patch = OrePatches.patch(RandomSource.create(20260908L), OreKind.IRON,
+                    centre.getX(), centre.getZ(), centre.getY(), OrePatches.LAYERS_MAX);
+            int placed = OrePatchFeature.place(helper.getLevel(), patch);
+
+            int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, minZ = Integer.MAX_VALUE, maxZ = Integer.MIN_VALUE;
+            int counted = 0;
+            for (int x = 0; x < size; x++) {
+                for (int z = 0; z < size; z++) {
+                    for (int y = floor; y <= roof; y++) {
+                        if (!helper.getBlockState(new BlockPos(x, y, z)).is(Blocks.IRON_ORE)) {
+                            continue;
+                        }
+                        counted++;
+                        int worldY = helper.absolutePos(new BlockPos(x, y, z)).getY();
+                        helper.assertTrue(worldY >= patch.bottomY() && worldY <= patch.topY(),
+                                "ore at y " + worldY + " outside the patch's layers " + patch.bottomY() + ".." + patch.topY());
+                        minX = Math.min(minX, x);
+                        maxX = Math.max(maxX, x);
+                        minZ = Math.min(minZ, z);
+                        maxZ = Math.max(maxZ, z);
+                    }
+                }
+            }
+            helper.assertValueEqual(counted, placed, "ore blocks found against ore blocks the feature reports");
+            helper.assertTrue(placed >= 800, "a patch of only " + placed + " ore blocks");
+            int wide = Math.max(maxX - minX, maxZ - minZ) + 1;
+            int deep = Math.min(maxX - minX, maxZ - minZ) + 1;
+            helper.assertTrue(wide >= 24 && wide <= 48, "a patch " + wide + " across on its long axis");
+            helper.assertTrue(deep >= 14, "a patch " + deep + " across on its short axis");
+            helper.assertTrue(helper.getBlockState(new BlockPos(0, 3, 0)).is(Blocks.STONE),
+                    "the corner of the box, far outside the patch, is not stone any more");
+            helper.succeed();
+        });
+
+        // The three starting patches: one of each ore, in the starting area, apart from each
+        // other, high enough to reach; and no random patch inside the starting area.
+        tests.add("starting_patches_are_one_of_each_ore", 20, helper -> {
+            for (long seed = 1; seed <= 40; seed++) {
+                List<OrePatch> patches = OrePatches.startingPatches(seed);
+                helper.assertValueEqual(patches.size(), 3, "starting patches for seed " + seed);
+                helper.assertValueEqual(patches.stream().map(OrePatch::kind).distinct().count(), 3L,
+                        "distinct ores among the starting patches for seed " + seed);
+                for (OrePatch patch : patches) {
+                    double distance = Math.hypot(patch.centreX(), patch.centreZ());
+                    helper.assertTrue(distance >= OrePatches.STARTING_NEAR && distance <= OrePatches.STARTING_FAR,
+                            "a starting patch " + distance + " blocks from the origin, seed " + seed);
+                    helper.assertTrue(patch.bottomY() >= OrePatches.STARTING_DEPTH_MIN
+                            && patch.topY() <= OrePatches.STARTING_DEPTH_MAX + OrePatches.LAYERS_MAX,
+                            "a starting patch at y " + patch.bottomY() + ", seed " + seed);
+                    for (OrePatch other : patches) {
+                        if (other != patch) {
+                            helper.assertTrue(Math.hypot(other.centreX() - patch.centreX(), other.centreZ() - patch.centreZ())
+                                    >= 2 * OrePatches.REACH, "two starting patches overlap, seed " + seed);
+                        }
+                    }
+                }
+                for (int cellX = -3; cellX <= 3; cellX++) {
+                    for (int cellZ = -3; cellZ <= 3; cellZ++) {
+                        OrePatches.patchInCell(seed, cellX, cellZ).ifPresent(patch -> helper.assertTrue(
+                                Math.hypot(patch.centreX(), patch.centreZ()) >= OrePatches.STARTING_AREA,
+                                "a random patch inside the starting area at " + patch.centreX() + ", " + patch.centreZ()));
+                    }
+                }
+            }
+            // The same cell answers the same twice, and a chunk sees the patch its neighbour's cell reaches into.
+            helper.assertValueEqual(OrePatches.patchInCell(7L, 5, 9), OrePatches.patchInCell(7L, 5, 9), "one cell, asked twice");
+            helper.succeed();
+        });
+
+        // Vanilla's scattered iron, copper and coal veins are gone from the overworld and the
+        // patches are in: asked of the running biome, not of the files.
+        tests.add("vanilla_ore_veins_are_gone", 20, helper -> {
+            List<String> features = new java.util.ArrayList<>();
+            for (var step : helper.getLevel().registryAccess().lookupOrThrow(Registries.BIOME)
+                    .getOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS).value().getGenerationSettings().features()) {
+                for (var feature : step) {
+                    feature.unwrapKey().ifPresent(key -> features.add(key.identifier().toString()));
+                }
+            }
+            for (String vein : List.of("minecraft:ore_iron_upper", "minecraft:ore_iron_middle", "minecraft:ore_iron_small",
+                    "minecraft:ore_copper", "minecraft:ore_copper_large", "minecraft:ore_coal_upper", "minecraft:ore_coal_lower")) {
+                helper.assertFalse(features.contains(vein), vein + " still generates in the plains");
+            }
+            helper.assertTrue(features.contains("nauvis:ore_patch"), "the ore patches do not generate in the plains");
+            helper.assertTrue(features.contains("minecraft:ore_gold"), "gold, which the pack leaves alone, is gone too");
+            helper.succeed();
+        });
 
         // A pickaxe is the axe, the shovel and the hoe as well.
         //

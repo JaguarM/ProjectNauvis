@@ -41,7 +41,7 @@ The mods
 | `facrafting` | the timed crafting model and the crafting UI (sibling repo) |
 | `crumblingore` | ore depletion (sibling repo, released) |
 | `nauvis_lib` | the framework: multi-blocks, transfer views, the machine screen, bench packs, stack-size mixins, `GameTests` |
-| `nauvis` | pack policy, vanilla replacement, raw resources, terrain, `StandInStacks` |
+| `nauvis` | pack policy, vanilla replacement, raw resources, ore patches, `StandInStacks` |
 | `nauvis_materials` | intermediate products |
 | `nauvis_logistics` | belts, inserters, splitters, chests, robots |
 | `nauvis_machines` | assemblers, furnaces, modules, beacon, radar, repair pack |

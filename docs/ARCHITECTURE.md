@@ -152,8 +152,20 @@ alike.
 A resource is a block holding a number: `nauvis_fluids:crude_oil` is unbreakable ground with a
 block entity, so nothing about fluids in the world was written. Its starting value is a function
 of seed and position worked out on first ask (`CrudeOilField.initialAmount`), so worldgen only
-places blocks and a creative-placed well is as rich as a generated one. Ore patches are
-Minecraft's veins plus Crumbling Ore's counts; a drill reaches down its columns to `mineFloor`.
+places blocks and a creative-placed well is as rich as a generated one. A drill reaches down its columns to `mineFloor` for whatever ore is in them.
+
+**Ore is in patches, and a patch is arithmetic on the seed.** `nauvis/.../ore/`: `OrePatch` is a
+rounded rectangle (a superellipse with a rippled edge) two or three layers thick at one height;
+`OrePatches` says where they are, three starting patches of iron, copper and coal between 48 and
+120 blocks of the origin and a random patch in six cells of ten on a 128-block grid beyond the
+160-block starting area; `OrePatchFeature` runs once per chunk in the ore step and draws that
+chunk's share of every patch that reaches into it, so a patch spanning chunks needs no
+coordination. Only ground (`stone_ore_replaceables`, `deepslate_ore_replaceables`) becomes ore, so
+a cave leaves a hole. Vanilla's scattered iron, copper and coal features are removed by
+`no_vanilla_ore_veins.json`. Footprint is Factorio's and stays with distance; richness by distance
+is Crumbling Ore's `crumbling.richness.doubleDistance`, set in the pack config. There is no map,
+so `nauvis_mining`'s `OreXray` outlines the ore in loaded chunks while a drill is in hand, one box
+per chunk section per ore. `/ore patch <kind>` and `/ore starting` place patches by hand.
 Natural water is `nauvis_fluids:water` (vanilla's block on a fluid of ours, in the water tag,
 bucketed as vanilla water, never a new source), swapped in by `NaturalWaterFeature` in the last
 decoration step; the offshore pump asks `#nauvis_fluids:offshore_pumpable`. The wells' x-ray is a
