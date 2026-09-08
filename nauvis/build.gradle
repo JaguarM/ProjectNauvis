@@ -90,6 +90,13 @@ neoForge {
             type = 'gameTestServer'
             systemProperty 'neoforge.enabledGameTestNamespaces', pack_gametest_namespaces
             systemProperty 'jaguarm.benchRecipePacks', 'false'
+            // One test, or a few, as often as wanted: -Ptests=nauvis:accumulator_carries_the_night -Prepeat=20
+            if (project.hasProperty('tests')) {
+                programArguments.addAll('--tests', project.property('tests').toString())
+            }
+            if (project.hasProperty('repeat')) {
+                programArguments.addAll('--repeatCount', project.property('repeat').toString())
+            }
         }
 
         clientData {

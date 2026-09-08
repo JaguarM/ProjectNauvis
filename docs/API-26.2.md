@@ -20,6 +20,7 @@ Renames
 |---|---|
 | `ResourceLocation` | `Identifier` (`fromNamespaceAndPath`, `withDefaultNamespace`, `parse`) |
 | `ResourceKey#location()` | `identifier()` |
+| `Level#getDayTime()` / `ServerLevel#setDayTime(long)` | world clocks: `getOverworldClockTime()`; `clockManager().moveToTimeMarker(registryAccess().get(WorldClocks.OVERWORLD).orElseThrow(), ClockTimeMarkers.NOON)` or `setTotalTicks(clock, ticks)` |
 | `getMinBuildHeight()` | `LevelHeightAccessor.getMinY()` |
 | `saveAdditional(CompoundTag)` | `saveAdditional(ValueOutput)` / `loadAdditional(ValueInput)` |
 | `PacketDistributor` (serverbound) | `ClientPacketDistributor.sendToServer` |

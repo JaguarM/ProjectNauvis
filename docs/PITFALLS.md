@@ -102,8 +102,10 @@ Gametests
   machine. A slot's capacity is the item's stack size unless something says otherwise.
 - `gen_recipes.py --write` writes only recipes already on disk; `--all` writes every recipe and
   produces load errors for unregistered items.
-- `Level.getSkyDarken()` stays at 0 in a `GameTestServer` world whatever the clock says. Test
-  the formula. `canSeeSky` lags `setBlock` by a tick or two.
+- The sun in a `GameTestServer` world follows the world clock, which runs through the whole run,
+  so a test that depends on daylight is a different test in the evening. Pin the clock
+  (`clockManager().moveToTimeMarker(clock, ClockTimeMarkers.NOON)`) and run it in a batch of its
+  own; the formula is tested on its own. `canSeeSky` lags `setBlock` by a tick or two.
 - `makeMockServerPlayer` is not in the player list; broadcasts never reach it.
 
 Data, recipes and registries

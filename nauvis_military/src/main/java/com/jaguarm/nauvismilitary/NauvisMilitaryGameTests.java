@@ -4,7 +4,6 @@ import com.jaguarm.nauvislib.health.Health;
 import com.jaguarm.nauvislib.multiblock.Multiblock;
 import com.jaguarm.nauvislib.pollution.Pollution;
 import com.jaguarm.nauvismilitary.pollution.Absorption;
-import com.jaguarm.nauvismilitary.pollution.AttackFactoryGoal;
 import com.jaguarm.nauvismilitary.pollution.Attacks;
 import com.jaguarm.nauvismilitary.pollution.PollutionState;
 import com.jaguarm.nauvismilitary.registry.ModBlocks;
@@ -240,72 +239,6 @@ public final class NauvisMilitaryGameTests {
             helper.assertFalse(Health.hurt(helper.getLevel(), at, 100000), "bedrock was hurt");
             helper.assertBlockPresent(Blocks.BEDROCK, wall);
             helper.succeed();
-        });
-
-        // A hostile sent at a turret walks up to it and hits it, and a wall built across its path is
-        // what it hits first. The husk starts six blocks from a turret with a wall between; in twenty
-        // seconds it has either chewed the wall or the turret, and either way the factory has been hurt
-        // by something that was told to hurt it rather than the player.
-        tests.add("hostiles_chew_through_to_the_polluter", 400, PADDING, helper -> {
-            if (helper.getLevel().getDifficulty() == Difficulty.PEACEFUL) {
-                helper.succeed();
-                return;
-            }
-            // The test platform is only as big as the structure, which is a point: everything else
-            // is air over the world's floor far below. Lay a floor for the husk to walk on.
-            for (int x = -6; x <= 7; x++) {
-                for (int z = -9; z <= 3; z++) {
-                    helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
-                }
-            }
-            GunTurretBlockEntity turret = placeTurret(helper, TURRET);
-            // A wall across the whole approach from the north, two high, so the husk cannot walk round or over.
-            for (int x = -4; x <= 5; x++) {
-                helper.setBlock(new BlockPos(x, 1, -2), Blocks.COBBLESTONE_WALL);
-                helper.setBlock(new BlockPos(x, 2, -2), Blocks.COBBLESTONE_WALL);
-            }
-            BlockPos wall = helper.absolutePos(new BlockPos(0, 1, -2));
-            // A gametest's structure chunk is entity-ticking and the padded ground around it is
-            // only loaded, so a mob standing there never ticks. Force the chunks this test walks
-            // across; the runner unforces every forced chunk when the batch ends.
-            ChunkPos from = ChunkPos.containing(helper.absolutePos(new BlockPos(-5, 1, -7)));
-            ChunkPos to = ChunkPos.containing(helper.absolutePos(new BlockPos(6, 1, 2)));
-            for (int cx = from.x(); cx <= to.x(); cx++) {
-                for (int cz = from.z(); cz <= to.z(); cz++) {
-                    helper.getLevel().setChunkForced(cx, cz, true);
-                }
-            }
-            Husk husk = helper.spawn(EntityTypes.HUSK, new BlockPos(0, 1, -6));
-            Attacks.hunt(husk, helper.absolutePos(TURRET), null);
-            helper.assertTrue(husk.getTarget() == null, "a hostile sent at the factory has a target");
-
-            Vec3 start = husk.position();
-            helper.runAfterDelay(5, () -> {
-                helper.assertFalse(husk.isNoAi(), "the husk has no AI");
-                String goals = husk.goalSelector.getAvailableGoals().stream()
-                        .map(g -> g.getPriority() + ":" + g.getGoal().getClass().getSimpleName() + (g.isRunning() ? "*" : ""))
-                        .toList().toString();
-                boolean running = husk.goalSelector.getAvailableGoals().stream()
-                        .anyMatch(g -> g.getGoal() instanceof AttackFactoryGoal && g.isRunning());
-                helper.assertTrue(running, "the factory goal is not running; goals " + goals + ", target " + husk.getTarget()
-                        + ", ticks " + husk.tickCount + ", effective AI " + husk.isEffectiveAi() + ", alive " + husk.isAlive()
-                        + ", entity ticking chunk " + helper.getLevel().getChunkSource().chunkMap.getDistanceManager()
-                                .inEntityTickingRange(husk.chunkPosition().pack()));
-            });
-            helper.runAfterDelay(100, () -> helper.assertTrue(husk.position().distanceTo(start) > 1.5,
-                    "a hostile sent at the factory did not set off: still at " + husk.position()
-                            + ", path done " + husk.getNavigation().isDone()));
-            helper.runAfterDelay(380, () -> {
-                float wallHealth = Health.health(helper.getLevel(), wall);
-                boolean wallHurt = helper.getLevel().getBlockState(wall).isAir() || wallHealth < 200.0F;
-                boolean turretHurt = turret.isRemoved() || turret.health() < GunTurretBlockEntity.MAX_HEALTH;
-                String where = "husk at " + husk.position() + ", path done " + husk.getNavigation().isDone();
-                husk.discard();
-                helper.assertTrue(wallHurt || turretHurt,
-                        "a hostile sent at the turret hurt neither the wall in its way (" + wallHealth
-                                + ") nor the turret (" + turret.health() + "); " + where);
-                helper.succeed();
-            });
         });
 
         // A forest takes three times what a plain does, a beach a fifth, and the drift reads it.

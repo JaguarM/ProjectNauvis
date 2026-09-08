@@ -22,6 +22,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.clock.ClockTimeMarkers;
+import net.minecraft.world.clock.WorldClocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
@@ -44,7 +46,6 @@ public final class NauvisGameTests {
         tests.add("pack_loads", info -> new RegistryPresenceTest(info, List.of( "nauvis_materials:iron_gear_wheel", "nauvis_materials:electronic_circuit", "nauvis_mining:burner_mining_drill", "nauvis_military:gun_turret", "nauvis_machines:assembling_machine_1", "nauvis_logistics:burner_inserter", "nauvis_logistics:inserter", "nauvis_logistics:iron_chest", "nauvis_fluids:pipe", "nauvis_power:steam_engine", "nauvis_power:small_electric_pole")), 20);
         tests.add("power_reaches_a_machine", PowerReachesAMachineTest::new, 200, 24);
         tests.add("steam_travels_down_a_pipe", SteamTravelsDownAPipeTest::new, 200, 24);
-        tests.add("accumulator_carries_the_night", AccumulatorCarriesTheNightTest::new, 300, 24, true);
         tests.add("vanilla_recipes_are_replaced", VanillaRecipesAreReplacedTest::new, 20);
 
         // A patch is a solid, wide slab of ore a few layers thick on a floor that rolls a little:
@@ -257,6 +258,10 @@ public final class NauvisGameTests {
         tests.add("timed_recipes_are_timed", TimedRecipesAreTimedTest::new, 20);
         tests.add("an_inserter_hears_a_far_cell_of_a_machine", InserterHearsAFarCellTest::new, 60, 24);
         tests.add("an_inserter_fills_a_silo_and_loses_nothing", InserterFillsASiloTest::new, 200, 24);
+
+        // Moves the world clock, which every test in a batch shares, so it runs alone.
+        tests.batch("clock");
+        tests.add("accumulator_carries_the_night", AccumulatorCarriesTheNightTest::new, 300, 24, true);
     }
 
     /**
@@ -570,6 +575,9 @@ public final class NauvisGameTests {
 
         @Override
         public void run(GameTestHelper helper) {
+            // Noon, so the sun is the same in every run: /time set noon, through the clock it moves.
+            helper.getLevel().registryAccess().get(WorldClocks.OVERWORLD).ifPresent(clock ->
+                    helper.getLevel().clockManager().moveToTimeMarker(clock, ClockTimeMarkers.NOON));
             place(helper, PANEL, block(helper, "nauvis_power:solar_panel"));
             place(helper, POLE, block(helper, "nauvis_power:small_electric_pole"));
             place(helper, ACCUMULATOR, block(helper, "nauvis_power:accumulator"));
@@ -599,7 +607,9 @@ public final class NauvisGameTests {
                                 "the accumulator gave nothing up while the assembler charged");
                         helper.assertValueEqual(peak[0] - accumulator, assembler,
                                 "what the accumulator lost, against what the assembler gained from "
-                                        + "the only source on the network");
+                                        + "the only source on the network (peak " + peak[0] + ", panel "
+                                        + charge(helper, PANEL) + ", sky darken " + helper.getLevel().getSkyDarken()
+                                        + ", clock " + helper.getLevel().getOverworldClockTime() + ")");
                     })
                     .thenSucceed();
         }
