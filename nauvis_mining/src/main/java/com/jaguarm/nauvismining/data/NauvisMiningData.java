@@ -92,6 +92,10 @@ public final class NauvisMiningData {
         protected void addTags(HolderLookup.Provider registries) {
             var pickaxe = tag(BlockTags.MINEABLE_WITH_PICKAXE);
             ModBlocks.BLOCKS.getEntries().forEach(block -> pickaxe.add(block.getKey()));
+            tag(com.jaguarm.nauvismining.registry.ModTags.FACTORIO_ORES)
+                    .addTag(net.neoforged.neoforge.common.Tags.Blocks.ORES_IRON)
+                    .addTag(net.neoforged.neoforge.common.Tags.Blocks.ORES_COPPER)
+                    .addTag(net.neoforged.neoforge.common.Tags.Blocks.ORES_COAL);
         }
     }
 

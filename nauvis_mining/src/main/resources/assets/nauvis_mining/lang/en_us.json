@@ -1,7 +1,6 @@
 {
   "pack.nauvis_mining.crafting_table": "Nauvis Mining: bench recipes (skips research)",
   "tab.facrafting.group.production": "Production",
-
   "itemGroup.nauvis_mining": "Project Nauvis: Mining",
   "config.jade.plugin_nauvis_mining": "Project Nauvis: Mining",
   "config.jade.plugin_nauvis_mining.drill": "Mining drill",
@@ -20,5 +19,9 @@
   "nauvis_mining.configuration.section.nauvis_mining.common.toml": "Project Nauvis: Mining Configs",
   "nauvis_mining.configuration.section.nauvis_mining.common.toml.title": "Project Nauvis: Mining Configs",
   "nauvis_mining.configuration.miner": "Miner",
-  "nauvis_mining.configuration.mineFloor": "Lowest Mining Level"
+  "nauvis_mining.configuration.mineFloor": "Lowest Mining Level",
+  "screen.nauvis_mining.miner.factorio_ores": "F",
+  "screen.nauvis_mining.miner.factorio_ores.on": "Mining Factorio's ores only: iron, copper and coal. Click to take any ore.",
+  "screen.nauvis_mining.miner.factorio_ores.off": "Mining any ore. Click to take only Factorio's: iron, copper and coal.",
+  "gui.nauvis_mining.miner.factorio_ores_only": "Factorio's ores only"
 }

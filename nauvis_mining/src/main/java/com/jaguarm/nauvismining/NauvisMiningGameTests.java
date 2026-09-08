@@ -8,6 +8,7 @@ import com.jaguarm.nauvismining.machine.MachineTier;
 import com.jaguarm.nauvismining.machine.miner.DigArea;
 import com.jaguarm.nauvismining.machine.miner.MinerBlock;
 import com.jaguarm.nauvismining.machine.miner.MinerBlockEntity;
+import com.jaguarm.nauvismining.machine.miner.MinerMenu;
 import com.jaguarm.nauvismining.machine.miner.MinerStatus;
 import com.jaguarm.nauvismining.registry.ModBlocks;
 import com.jaguarm.nauvismining.registry.ModItems;
@@ -103,6 +104,40 @@ public final class NauvisMiningGameTests {
         });
         tests.add("drill_covers_factorios_area", DigAreaIsFactoriosTest::new, 40, PADDING);
         tests.add("drill_takes_ore_from_under_it", DrillTakesOreTest::new, 160, PADDING);
+
+        // A placed drill takes Factorio's ores and nothing else, so it can be set on a patch and
+        // forgotten; the screen's toggle, pressed as the screen presses it, lets it take any ore.
+        tests.add("drill_takes_only_factorio_ores_until_told", 400, PADDING, helper -> {
+            BlockPos gold = new BlockPos(0, 0, 0);
+            BlockPos iron = new BlockPos(1, 0, 1);
+            BlockPos chest = new BlockPos(0, 1, -1);
+            MinerBlockEntity drill = place(helper, DRILL, MachineTier.BURNER);
+            bedrock(helper, drill.digArea(), 3);
+            helper.setBlock(gold, Blocks.GOLD_ORE);
+            helper.setBlock(iron, Blocks.IRON_ORE);
+            helper.setBlock(chest, Blocks.CHEST);
+            handPickaxe(drill, Items.IRON_PICKAXE);
+            drill.inventory().set(MinerBlockEntity.FUEL_SLOT, ItemResource.of(Items.COAL), 8);
+            helper.assertTrue(drill.factorioOresOnly(), "a drill just placed takes any ore");
+
+            int window = MinerBlockEntity.cycleTicksFor(MachineTier.BURNER, ModuleEffect.NONE, 0) + 30;
+            helper.runAfterDelay(window, () -> {
+                helper.assertContainerContains(chest, Items.RAW_IRON);
+                helper.assertBlockPresent(Blocks.GOLD_ORE, gold);
+                helper.assertFalse(helper.getBlockState(chest).isAir(), "the chest is gone");
+                // Nothing of Factorio's left, then the toggle: the drill looks again and finds the gold.
+                helper.setBlock(iron, Blocks.STONE);
+                net.minecraft.world.entity.player.Player player =
+                        helper.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+                MinerMenu menu = (MinerMenu) drill.createMenu(1, player.getInventory(), player);
+                helper.assertTrue(menu.clickMenuButton(player, MinerMenu.BUTTON_FACTORIO_ORES), "the toggle did nothing");
+                helper.assertFalse(drill.factorioOresOnly(), "the toggle left the drill on Factorio's ores");
+            });
+            helper.runAfterDelay(2 * window + 40, () -> {
+                helper.assertContainerContains(chest, Items.RAW_GOLD);
+                helper.succeed();
+            });
+        });
         tests.add("drill_outputs_to_the_front", DrillOutputsToTheFrontTest::new, 120, PADDING);
 
         // A drill over plain rock walks its columns once, reports that there is nothing to mine, and

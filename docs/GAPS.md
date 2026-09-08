@@ -85,6 +85,9 @@ Mining
 - The drill is placed blind and the status line says "No minable resources" after its first walk.
 - A drill wants a pickaxe: tier decides ores, Fortune multiplies, Efficiency shortens the cycle a
   tenth a level, Silk Touch is stripped, every ore costs a point. *Kept.*
+- A drill takes only the ores in `#nauvis_mining:factorio_ores` (iron, copper, coal) until its F
+  toggle is pressed, so one set on a patch can be forgotten; pressed, it takes anything in
+  `#c:ores`. The x-ray shows the same tag. A pack adds an ore by tagging it.
 - A drill with nowhere to put its ore polls once a second; a chest in front wakes it at once. It
   never drops ore on the ground.
 - A depleted drill stays depleted until its pickaxe changes.

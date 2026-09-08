@@ -165,7 +165,9 @@ a cave leaves a hole. Vanilla's scattered iron, copper and coal features are rem
 `no_vanilla_ore_veins.json`. Footprint is Factorio's and stays with distance; richness by distance
 is Crumbling Ore's `crumbling.richness.doubleDistance`, set in the pack config. There is no map,
 so `nauvis_mining`'s `OreXray` outlines the ore in loaded chunks while a drill is in hand, one box
-per chunk section per ore. `/ore patch <kind>` and `/ore starting` place patches by hand.
+per chunk section per ore. What counts as Factorio's ore is the block tag
+`nauvis_mining:factorio_ores`, read by the x-ray and by the drill, which takes only those until
+its screen's toggle (a menu button, like the silo's) says otherwise. `/ore patch <kind>` and `/ore starting` place patches by hand.
 Natural water is `nauvis_fluids:water` (vanilla's block on a fluid of ours, in the water tag,
 bucketed as vanilla water, never a new source), swapped in by `NaturalWaterFeature` in the last
 decoration step; the offshore pump asks `#nauvis_fluids:offshore_pumpable`. The wells' x-ray is a

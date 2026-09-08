@@ -6,6 +6,7 @@ import java.util.List;
 import com.jaguarm.nauvislib.NauvisLibClient;
 import com.jaguarm.nauvismining.NauvisMining;
 import com.jaguarm.nauvismining.machine.miner.MinerBlock;
+import com.jaguarm.nauvismining.registry.ModTags;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.Minecraft;
@@ -41,8 +42,9 @@ public final class OreXray {
     private static final int RADIUS = 8;
     private static final int RESCAN_TICKS = 20;
     private static final float LINE = 2.0F;
-    /** Factorio's map colours for iron, copper and coal, the coal lifted off black so it shows. */
-    private static final int[] ARGB = {0xE06A8694, 0xE0CD6337, 0xE0404040};
+    /** Factorio's map colours for iron, copper and coal, the coal lifted off black so it shows; white for any other tagged ore. */
+    private static final int[] ARGB = {0xE06A8694, 0xE0CD6337, 0xE0404040, 0xE0F0F0F0};
+    private static final int KINDS = ARGB.length;
 
     private record Box(AABB box, int argb) {}
 
@@ -94,8 +96,8 @@ public final class OreXray {
     /** One box per ore per section that holds any: a palette check first, so empty ground costs nothing. */
     private static List<Box> scan(ClientLevel level, ChunkPos from) {
         List<Box> found = new ArrayList<>();
-        int[] min = new int[3 * 3];
-        int[] max = new int[3 * 3];
+        int[] min = new int[KINDS * 3];
+        int[] max = new int[KINDS * 3];
         for (int cx = from.x() - RADIUS; cx <= from.x() + RADIUS; cx++) {
             for (int cz = from.z() - RADIUS; cz <= from.z() + RADIUS; cz++) {
                 LevelChunk chunk = level.getChunkSource().getChunkNow(cx, cz);
@@ -127,7 +129,7 @@ public final class OreXray {
                         }
                     }
                     int baseY = chunk.getSectionYFromSectionIndex(i) << 4;
-                    for (int kind = 0; kind < 3; kind++) {
+                    for (int kind = 0; kind < KINDS; kind++) {
                         if (max[kind * 3] < 0) {
                             continue;
                         }
@@ -142,7 +144,11 @@ public final class OreXray {
         return found;
     }
 
+    /** Which colour an ore takes, or -1 for a block that is not one of the drill's ores. */
     private static int kindOf(BlockState state) {
+        if (!state.is(ModTags.FACTORIO_ORES)) {
+            return -1;
+        }
         if (state.is(Tags.Blocks.ORES_IRON)) {
             return 0;
         }
@@ -152,6 +158,6 @@ public final class OreXray {
         if (state.is(Tags.Blocks.ORES_COAL)) {
             return 2;
         }
-        return -1;
+        return 3;
     }
 }

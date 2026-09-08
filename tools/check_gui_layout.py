@@ -110,7 +110,8 @@ SCREENS = [
         slots=[('pickaxe', 'PICKAXE_X', 'PICKAXE_Y', 1, 1), ('fuel', 'FUEL_X', 'FUEL_Y', 1, 1),
                ('output', 'OUTPUT_X', 'OUTPUT_Y', 1, 1), ('module', 'MODULE_X', 'MODULE_Y', 3, 3)],
         bars=[('progress bar', 'ARROW_X', 'ARROW_Y', 'ARROW_WIDTH', 'ARROW_HEIGHT'),
-              ('flame', 'FLAME_X', 'FLAME_Y', 'FLAME_WIDTH', 'FLAME_HEIGHT')],
+              ('flame', 'FLAME_X', 'FLAME_Y', 'FLAME_WIDTH', 'FLAME_HEIGHT'),
+              ('ore toggle', 'MODE_X', 'MODE_Y', 'MODE_WIDTH', 'MODE_HEIGHT')],
     ),
     Screen(
         'gun turret',

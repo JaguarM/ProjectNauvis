@@ -1,2 +1,3 @@
-// 26.2	2026-09-06T00:53:00.6922493	Tags for minecraft:block mod id nauvis_mining
+// 26.2	2026-09-08T18:22:28.6849356	Tags for minecraft:block mod id nauvis_mining
 9b42cc4e5838ef4fb48fd64cc709f0a54abe7a4f data/minecraft/tags/block/mineable/pickaxe.json
+4abfa73eba4dfc41e9089d68ff702bb88af97ea2 data/nauvis_mining/tags/block/factorio_ores.json

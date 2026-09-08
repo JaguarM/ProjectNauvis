@@ -19,7 +19,8 @@ The jobs
 Four builds have passed their tests and nobody's eyes. Each wants a client boot and an evening:
 
 - **The ore patches.** A new world's three starting patches, found with a drill in hand: whether
-  the x-ray boxes read as patches, whether 48 to 120 blocks out and 16 to 48 down is the right
+  the x-ray boxes read as patches, whether the F toggle on the drill's screen reads as "Factorio's
+  ores only", whether 48 to 120 blocks out and 16 to 48 down is the right
   place for the first iron, whether thirty to forty across and three layers is enough for a first
   base, and whether a random patch every 128 blocks is too many or too few. `/ore patch iron` puts
   one under your feet in a superflat world. The knobs are the constants in `OrePatches` and the

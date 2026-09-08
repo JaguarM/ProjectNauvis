@@ -6,6 +6,7 @@ import com.jaguarm.nauvismining.machine.miner.MinerScreen;
 import com.jaguarm.nauvismining.machine.miner.MinerStatus;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import snownee.jade.api.BlockAccessor;
@@ -23,6 +24,7 @@ public class DrillReadout implements IServerDataProvider<BlockAccessor> {
 
     static final String STATUS = "Status";
     static final String MINING = "Mining";
+    static final String FACTORIO_ORES_ONLY = "FactorioOresOnly";
 
     private DrillReadout() {}
 
@@ -32,6 +34,7 @@ public class DrillReadout implements IServerDataProvider<BlockAccessor> {
             return;
         }
         data.putInt(STATUS, drill.status().ordinal());
+        data.putBoolean(FACTORIO_ORES_ONLY, drill.factorioOresOnly());
         if (drill.mining() != null) {
             data.putString(MINING, BuiltInRegistries.BLOCK.getKey(drill.mining()).toString());
         }
@@ -61,6 +64,9 @@ public class DrillReadout implements IServerDataProvider<BlockAccessor> {
                     .map(BuiltInRegistries.BLOCK::getValue)
                     .orElse(null);
             tooltip.add(MinerScreen.statusText(status, mining));
+            if (data.getBooleanOr(FACTORIO_ORES_ONLY, true)) {
+                tooltip.add(Component.translatable("gui.nauvis_mining.miner.factorio_ores_only"));
+            }
         }
 
         @Override

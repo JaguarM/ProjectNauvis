@@ -36,7 +36,11 @@ public class MinerMenu extends AbstractContainerMenu {
     public static final int DATA_ENERGY_PER_TICK = 5;
     public static final int DATA_ENERGY_CAPACITY = 6;
     public static final int DATA_STATUS = 7;
-    public static final int DATA_COUNT = 8;
+    public static final int DATA_FACTORIO_ORES_ONLY = 8;
+    public static final int DATA_COUNT = 9;
+
+    /** The one button: {@code clickMenuButton} with this id flips whether the drill takes only Factorio's ores. */
+    public static final int BUTTON_FACTORIO_ORES = 0;
 
     /**
      * Where the screen expects to find things. Shared, so the two cannot drift apart.
@@ -174,6 +178,20 @@ public class MinerMenu extends AbstractContainerMenu {
 
     public MinerStatus status() {
         return MinerStatus.byOrdinal(data.get(DATA_STATUS));
+    }
+
+    public boolean factorioOresOnly() {
+        return data.get(DATA_FACTORIO_ORES_ONLY) != 0;
+    }
+
+    /** Vanilla's menu-button packet, as the screen sends it; the server's menu reaches the drill through the level. */
+    @Override
+    public boolean clickMenuButton(Player player, int buttonId) {
+        if (buttonId != BUTTON_FACTORIO_ORES || !(level.getBlockEntity(machinePos) instanceof MinerBlockEntity drill)) {
+            return false;
+        }
+        drill.setFactorioOresOnly(!drill.factorioOresOnly());
+        return true;
     }
 
     /** The ore being mined, read off the synced block entity, or null when there is none. */

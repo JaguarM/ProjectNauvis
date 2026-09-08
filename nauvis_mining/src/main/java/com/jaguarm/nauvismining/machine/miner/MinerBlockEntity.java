@@ -12,6 +12,7 @@ import com.jaguarm.nauvislib.transfer.PowerAccess;
 import com.jaguarm.nauvismining.Config;
 import com.jaguarm.nauvismining.machine.MachineTier;
 import com.jaguarm.nauvismining.registry.ModBlockEntities;
+import com.jaguarm.nauvismining.registry.ModTags;
 import com.mojang.authlib.GameProfile;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -137,6 +138,12 @@ public class MinerBlockEntity extends BlockEntity implements MenuProvider {
     /** Whether the columns want walking again from the top: after a load, and after the pickaxe changes. */
     private boolean rescan = true;
 
+    /**
+     * Whether the drill takes only the ores in {@code nauvis_mining:factorio_ores}. On when placed,
+     * so a drill set on a patch and forgotten never fills its chest with gold and redstone.
+     */
+    private boolean factorioOresOnly = true;
+
     /** What was mined and has not found a home yet. Rarely more than one stack. */
     private final List<ItemStack> hand = new ArrayList<>();
 
@@ -162,6 +169,7 @@ public class MinerBlockEntity extends BlockEntity implements MenuProvider {
                 case MinerMenu.DATA_ENERGY_PER_TICK -> currentEnergyPerTick();
                 case MinerMenu.DATA_ENERGY_CAPACITY -> energyCapacity();
                 case MinerMenu.DATA_STATUS -> status.ordinal();
+                case MinerMenu.DATA_FACTORIO_ORES_ONLY -> factorioOresOnly ? 1 : 0;
                 default -> 0;
             };
         }
@@ -239,6 +247,23 @@ public class MinerBlockEntity extends BlockEntity implements MenuProvider {
 
     public MinerStatus status() {
         return status;
+    }
+
+    public boolean factorioOresOnly() {
+        return factorioOresOnly;
+    }
+
+    /** Changes what the drill may take, and starts it looking again: the ore it was on may be off the list now. */
+    public void setFactorioOresOnly(boolean only) {
+        if (factorioOresOnly == only) {
+            return;
+        }
+        factorioOresOnly = only;
+        target = null;
+        progress = 0;
+        rescan = true;
+        setChanged();
+        wake();
     }
 
     public int progress() {
@@ -364,7 +389,7 @@ public class MinerBlockEntity extends BlockEntity implements MenuProvider {
         searching = false;
         ItemStack pickaxe = pickaxe();
         FakePlayer miner = fakePlayer(level);
-        if (target != null && minable(level, target, pickaxe, miner)) {
+        if (target != null && minable(level, target, pickaxe, miner, factorioOresOnly)) {
             return target;
         }
         target = null;
@@ -389,7 +414,7 @@ public class MinerBlockEntity extends BlockEntity implements MenuProvider {
                     return null;
                 }
                 BlockPos candidate = new BlockPos(column.x(), currentY, column.z());
-                if (minable(level, candidate, pickaxe, miner)) {
+                if (minable(level, candidate, pickaxe, miner, factorioOresOnly)) {
                     target = candidate;
                     setMining(level.getBlockState(candidate).getBlock());
                     return target;
@@ -413,12 +438,14 @@ public class MinerBlockEntity extends BlockEntity implements MenuProvider {
      * <p>Never {@code getBlockState} on an unloaded chunk - asking loads it, and an electric
      * drill's ring can cross a chunk edge. See {@code docs/PITFALLS.md}.
      */
-    private static boolean minable(ServerLevel level, BlockPos pos, ItemStack pickaxe, FakePlayer miner) {
+    private static boolean minable(ServerLevel level, BlockPos pos, ItemStack pickaxe, FakePlayer miner,
+            boolean factorioOresOnly) {
         if (!level.isLoaded(pos)) {
             return false;
         }
         BlockState state = level.getBlockState(pos);
         return state.is(Tags.Blocks.ORES)
+                && (!factorioOresOnly || state.is(ModTags.FACTORIO_ORES))
                 && state.getDestroySpeed(level, pos) >= 0
                 && pickaxe.isCorrectToolForDrops(state)
                 && level.mayInteract(miner, pos);
@@ -432,7 +459,7 @@ public class MinerBlockEntity extends BlockEntity implements MenuProvider {
         }
         ItemStack pickaxe = pickaxe();
         FakePlayer miner = fakePlayer(level);
-        if (!minable(level, ore, pickaxe, miner)) {
+        if (!minable(level, ore, pickaxe, miner, factorioOresOnly)) {
             // Changed under us: another drill, a player. Look again next cycle.
             target = null;
             return;
@@ -776,6 +803,7 @@ public class MinerBlockEntity extends BlockEntity implements MenuProvider {
         output.putInt("BurnTime", burnTime);
         output.putInt("BurnTimeTotal", burnTimeTotal);
         output.putInt("ColumnIndex", columnIndex);
+        output.putBoolean("FactorioOresOnly", factorioOresOnly);
         output.putInt("CurrentY", currentY);
         if (target != null) {
             output.putIntArray("Target", new int[] {target.getX(), target.getY(), target.getZ()});
@@ -807,6 +835,7 @@ public class MinerBlockEntity extends BlockEntity implements MenuProvider {
         burnTime = input.getIntOr("BurnTime", 0);
         burnTimeTotal = input.getIntOr("BurnTimeTotal", 0);
         columnIndex = input.getIntOr("ColumnIndex", 1);
+        factorioOresOnly = input.getBooleanOr("FactorioOresOnly", true);
         currentY = input.getIntOr("CurrentY", Integer.MIN_VALUE);
         target = input.getIntArray("Target")
                 .filter(xyz -> xyz.length == 3)
