@@ -6,15 +6,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "nauvis_logistics"
-    },
-    {
-      "type": "neoforge:mod_loaded",
       "modid": "nauvis_materials"
-    },
-    {
-      "type": "neoforge:registered",
-      "value": "nauvis_logistics:flying_robot_frame"
     }
   ],
   "type": "facrafting:facraft",
@@ -31,7 +23,7 @@
       "count": 2
     },
     {
-      "ingredient": "nauvis_logistics:flying_robot_frame",
+      "ingredient": "nauvis_materials:flying_robot_frame",
       "count": 1
     }
   ],

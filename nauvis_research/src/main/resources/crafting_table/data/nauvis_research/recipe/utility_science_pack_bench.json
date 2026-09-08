@@ -6,15 +6,7 @@
     },
     {
       "type": "neoforge:mod_loaded",
-      "modid": "nauvis_logistics"
-    },
-    {
-      "type": "neoforge:mod_loaded",
       "modid": "nauvis_materials"
-    },
-    {
-      "type": "neoforge:registered",
-      "value": "nauvis_logistics:flying_robot_frame"
     }
   ],
   "type": "minecraft:crafting_shapeless",
@@ -25,7 +17,7 @@
     "nauvis_materials:low_density_structure",
     "nauvis_materials:processing_unit",
     "nauvis_materials:processing_unit",
-    "nauvis_logistics:flying_robot_frame"
+    "nauvis_materials:flying_robot_frame"
   ],
   "result": {
     "id": "nauvis_research:utility_science_pack",

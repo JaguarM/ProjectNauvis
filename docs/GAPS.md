@@ -127,7 +127,7 @@ Modules and the rocket
   spills what is owed.
 - A silo with no recipe logs one warning and looks again every ten seconds.
 - No cargo landing pad: the silo's output slot is where a launch's science comes back.
-- Utility science waits for the flying robot frame, which nothing registers yet (NEXT.md).
+- The flying robot frame exists for utility science; the robots that are built around it do not.
 - Only the silo applies Factorio's insertion limit to automation; an assembler's view fills an
   ingredient slot to its capacity.
 - The radar keeps a seven-by-seven of chunks loaded while powered and charts nothing.

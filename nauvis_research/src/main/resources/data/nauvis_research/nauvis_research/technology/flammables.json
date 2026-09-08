@@ -1,6 +1,6 @@
 {
   "name": "Flammables",
-  "order": "0064",
+  "order": "0065",
   "prerequisites": [
     "nauvis_research:oil_processing"
   ],

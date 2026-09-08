@@ -451,6 +451,37 @@ CONTROL_UNIT = {
     "g": (110, 230, 110, 255),
 }
 
+# A rounded grey frame around a blue lens, two feet below: the robot before it is a robot.
+FLYING_ROBOT_FRAME = """
+................
+......dddd......
+....ddmllmdd....
+...dmllhhllmd...
+..dmllhhhhllmd..
+..dmlhkbbkhlmd..
+..dmlhbbbbhlmd..
+..dmlhbbbbhlmd..
+..dmlhkbbkhlmd..
+..dmllhhhhllmd..
+...dmllhhllmd...
+....ddmllmdd....
+.....dd..dd.....
+....dmd..dmd....
+....ddd..ddd....
+................
+"""
+
+# Grey steel with a blue lens.
+FRAME = {
+    ".": (0, 0, 0, 0),
+    "d": (48, 52, 60, 255),
+    "m": (110, 116, 128, 255),
+    "l": (160, 166, 176, 255),
+    "h": (205, 210, 218, 255),
+    "b": (90, 160, 230, 255),
+    "k": (40, 80, 140, 255),
+}
+
 # name -> (map, palette, the mod whose item it is)
 ITEMS = {
     "steel_plate": (STEEL_PLATE, STEEL, "nauvis_materials"),
@@ -467,6 +498,7 @@ ITEMS = {
     "low_density_structure": (LOW_DENSITY_STRUCTURE, COPPER, "nauvis_materials"),
     "rocket_fuel": (ROCKET_FUEL, ROCKET_ORANGE, "nauvis_materials"),
     "iron_stick": (IRON_STICK, IRON, "nauvis_materials"),
+    "flying_robot_frame": (FLYING_ROBOT_FRAME, FRAME, "nauvis_materials"),
     "solid_fuel": (SOLID_FUEL, COAL_BLACK, "nauvis"),
     "repair_pack": (REPAIR_PACK, TOOLBOX, "nauvis_machines"),
     "explosives": (EXPLOSIVES, DYNAMITE, "nauvis_fluids"),

@@ -1,6 +1,6 @@
 {
   "name": "Rocket silo",
-  "order": "0066",
+  "order": "0067",
   "prerequisites": [
     "nauvis_research:concrete",
     "nauvis_research:rocket_fuel",

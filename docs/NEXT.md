@@ -46,15 +46,7 @@ Each passed three full runs and failed one on 2026-09-08, with nothing of theirs
 `nauvis_military:hostiles_chew_through_to_the_polluter`: the factory goal was not running on tick
 5, though it was in the goal list. Neither has been looked into.
 
-### 3. The flying robot frame
-
-Utility science is two flying robot frames, three low density structures and two processing units
-in 2.0, and nothing registers the frame yet: its recipe ships behind a `neoforge:registered`
-condition (`pending` in the mapping), so utility science and the rocket silo's technology cannot
-be reached in play. The frame is an intermediate, not a robot: an item in `nauvis_logistics` with
-a texture from the workshop, a stack of fifty, and the `pending` flag comes off.
-
-### 4. Later updates
+### 3. Later updates
 
 The robots (milestone 6) and what space science buys (infinite research). `PLAN.md`'s to schedule.
 

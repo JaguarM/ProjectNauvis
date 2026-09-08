@@ -599,9 +599,9 @@
     },
     "flying-robot-frame": {
       "name": "Flying robot frame",
-      "owner": "nauvis_logistics",
-      "item": "nauvis_logistics:flying_robot_frame",
-      "pending": true
+      "owner": "nauvis_materials",
+      "item": "nauvis_materials:flying_robot_frame",
+      "stack": 50
     },
     "gate": {
       "name": "Gate",

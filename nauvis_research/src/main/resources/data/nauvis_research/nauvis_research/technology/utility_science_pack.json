@@ -1,7 +1,8 @@
 {
   "name": "Utility science pack",
-  "order": "0063",
+  "order": "0064",
   "prerequisites": [
+    "nauvis_research:robotics",
     "nauvis_research:processing_unit",
     "nauvis_research:low_density_structure"
   ],

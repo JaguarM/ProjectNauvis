@@ -71,24 +71,27 @@ public final class ModItems {
     public static final DeferredItem<Item> PROCESSING_UNIT = ITEMS.registerSimpleItem("processing_unit", () -> Stacks.of(100));
 
     /**
-     * Five copper plates, five plastic and ten steel, thirty seconds: the rocket's skin, and the
-     * dearest thing a rocket part is paid for in.
+     * Twenty copper plates, five plastic and two steel, fifteen seconds: the rocket's skin.
      */
     public static final DeferredItem<Item> LOW_DENSITY_STRUCTURE = ITEMS.registerSimpleItem("low_density_structure", () -> Stacks.of(50));
 
     /**
-     * Ten solid fuel, thirty seconds - the dump's recipe, from before rocket fuel wanted light
-     * oil as well. It burns, too: Factorio's 100 MJ is twenty-five of coal's 4, and the furnace
-     * fuel data map says so.
+     * Ten solid fuel and ten light oil, fifteen seconds. It burns, too: Factorio's 100 MJ is
+     * twenty-five of coal's 4, and the furnace fuel data map says so.
      */
     public static final DeferredItem<Item> ROCKET_FUEL = ITEMS.registerSimpleItem("rocket_fuel", () -> Stacks.of(20));
 
     /**
-     * One iron plate makes two, in half a second. Its recipe shipped for a while before the item
-     * did and failed to load every start; it is here so the recipe the concrete technology
-     * unlocks names something. Rails were what it was for, and rails are out.
+     * One iron plate makes two, in half a second: rails and the medium and big poles are made of
+     * them.
      */
     public static final DeferredItem<Item> IRON_STICK = ITEMS.registerSimpleItem("iron_stick", () -> Stacks.of(100));
+
+    /**
+     * An electric engine, two batteries, a steel plate and three circuits, twenty seconds: what a
+     * robot is built around, and what utility science is built of. The robots are a later update.
+     */
+    public static final DeferredItem<Item> FLYING_ROBOT_FRAME = ITEMS.registerSimpleItem("flying_robot_frame", () -> Stacks.of(50));
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB =
             CREATIVE_MODE_TABS.register("main", () -> CreativeModeTab.builder()
@@ -110,6 +113,7 @@ public final class ModItems {
                         output.accept(LOW_DENSITY_STRUCTURE.get());
                         output.accept(ROCKET_FUEL.get());
                         output.accept(IRON_STICK.get());
+                        output.accept(FLYING_ROBOT_FRAME.get());
                     })
                     .build());
 }

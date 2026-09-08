@@ -1,18 +1,18 @@
 {
-  "name": "Rocket fuel",
-  "order": "0066",
+  "name": "Robotics",
+  "order": "0063",
   "prerequisites": [
-    "nauvis_research:flammables",
-    "nauvis_research:advanced_oil_processing"
+    "nauvis_research:electric_engine",
+    "nauvis_research:battery"
   ],
-  "units": 300,
-  "ticks_per_unit": 900,
+  "units": 75,
+  "ticks_per_unit": 600,
   "packs": [
     "nauvis_research:automation_science_pack",
     "nauvis_research:logistic_science_pack",
     "nauvis_research:chemical_science_pack"
   ],
   "unlocks": [
-    "nauvis_materials:rocket_fuel"
+    "nauvis_materials:flying_robot_frame"
   ]
 }
