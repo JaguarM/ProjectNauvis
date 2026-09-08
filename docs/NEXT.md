@@ -27,10 +27,15 @@ Four builds have passed their tests and nobody's eyes. Each wants a client boot 
   shape for a first base, and whether a random patch every 128 blocks is too many or too few. `/ore patch iron` puts
   one under your feet in a superflat world. The knobs are the constants in `OrePatches` and the
   doubling distance in `nauvis/pack/config/crumblingore-common.toml`.
-- **The rocket.** The *A* toggle and the Launch button on the silo's screen, the radar's dish, the
-  nine module chips, the five new item icons, a launch watched from the ground. Not identity, so
-  free to move: the five-second countdown, the firework's height, the rocket's colours, the
-  placeholder textures, whether a nine-by-nine pad reads as a silo.
+- **The rocket.** The *A* toggle and the Launch button on the silo's screen, the radar's dish, a
+  launch watched from the ground. Not identity, so free to move: the five-second countdown, the
+  firework's height, the rocket's colours, whether a nine-by-nine pad reads as a silo.
+- **The icons.** Every item is drawn from Factorio's icon since 2026-09-08: the seven flasks, the
+  guns level with the muzzle left, the curved magazines, the wrench and screwdriver, the modules'
+  three lamps, the coil, the crystal, the ring and propeller, the rocket part and the satellite.
+  Whether each reads in a slot, on a belt and in the lab's window. The guns point forward in the
+  hand through `models/item/gun.json`; the angles in it were worked out from the renderer's code
+  and never seen: first person is ten degrees in and ten up, third person follows the sword.
 - **The stacks.** Two hundred circuits in a slot, and how three- and four-digit counts read in a
   chest and on the hotbar. Cobblestone, coal and raw ore stack to fifty now; that is the one number
   to feel out, one line each in the pack mod's `StandInStacks`.

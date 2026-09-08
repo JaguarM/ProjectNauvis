@@ -9,11 +9,13 @@ change to the map moves every item drawn from it and they cannot drift apart.
 
 Most of these go into `nauvis_materials` and two into other mods, because an item lives in the mod the
 mapping gives it: solid fuel is the pack mod's and explosives are the fluids mod's. Only the
-items with a map below are written; the copper cable and the iron gear wheel were drawn by hand
-before this file existed and are left alone rather than redrawn from a guess at their maps. The
-electronic circuit was too, until the advanced circuit and the processing unit came off one
-board map beside it and the three read as two families - now all three are that map, in
-Factorio's green, red and blue.
+items with a map below are written; the iron gear wheel was drawn by hand before this file
+existed and is left alone rather than redrawn from a guess at its map. The three circuits are
+one board map in Factorio's green, red and blue, so they read as one family.
+
+Each map is Factorio's icon at sixteen pixels: the coil of copper cable, the crystal of sulfur,
+the two-terminal battery, the wrench crossed with a screwdriver, the ring and propeller of the
+robot frame, the honeycomb of the low density structure.
 
 Legend for the maps:
     .  transparent                   m  mid material
@@ -107,31 +109,54 @@ PLASTIC_BAR = """
 ................
 """
 
-# A lump, lit from the top left.
+# A cluster of three crystals radiating from one root, each lit down its left face: the way
+# vanilla's amethyst cluster reads as crystals and one lump does not.
 SULFUR = """
 ................
 ................
-................
-......ddd.......
-.....dlhhd......
-....dlhhlld.....
-...dllllmmmd....
-...dlmmmmmmd....
-...dmmmmmmmd....
-....dmmmmmd.....
-.....ddddd......
-................
-................
+........d.......
+.......dhd...d..
+.......dhld.dhd.
+...d...dhlddhmd.
+..dhd..dhlddhmd.
+..dhmd.dhldhmmd.
+...dhmddhlhmmd..
+....dhmdhlmmd...
+.....dhmhlmd....
+......dddmd.....
+.......ddd......
 ................
 ................
 ................
 """
 
-# A cylinder standing up, with a red cap: the two tones down the left are the round of it.
+# A coil of wire lying flat: two rings and the hole in the middle, the end of the wire trailing
+# out at the bottom right.
+COPPER_CABLE = """
+................
+................
+.....dddddd.....
+...ddhhhhhhdd...
+..dhhmddddmhhd..
+.dhmdd....ddmhd.
+.dhd..dddd..dmd.
+.dmd.dhhhhd.dmd.
+.dmd.dmddmd.dmd.
+.dmd.dddddd.dmd.
+.dmdd......ddmd.
+..dmmdd..ddmmd..
+...ddmmmmmmddd..
+.....dddddd..d..
+..............d.
+................
+"""
+
+# A cylinder standing up with a red and a blue terminal on top: the two tones down the left are
+# the round of it.
 BATTERY = """
 ................
-.....drrrrd.....
-....drrrrrrd....
+.....rr..bb.....
+....drrddbbd....
 ....dmmmmmmd....
 ....dllmmmmd....
 ....dllmmmmd....
@@ -147,20 +172,20 @@ BATTERY = """
 ................
 """
 
-# A red board with pale traces and a chip in the middle, pins along the bottom edge: the
-# electronic circuit's shape in the advanced circuit's colour.
-ADVANCED_CIRCUIT = """
+# A board with three gold traces running in from the left edge and stepping down, pins along
+# the bottom edge: one map for all three circuits.
+CIRCUIT_BOARD = """
 ................
 ..dddddddddddd..
 ..dmmmmmmmmmmd..
-..dmwwmmmwwmmd..
-..dmwmmmmmwmmd..
-..dmmmmhmmmmmd..
-..dmmmhhhmmmmd..
-..dmmmmhmmmmmd..
-..dmwmmmmmwmmd..
-..dmwwmmmwwmmd..
+..dwwwwwmmmmmd..
+..dmmmmmwwwwmd..
 ..dmmmmmmmmmmd..
+..dwwwwwwwmmmd..
+..dmmmmmmmwwmd..
+..dmmmmmmmmmmd..
+..dwwwmmmmmmmd..
+..dmmmwwwwwwmd..
 ..dddddddddddd..
 ...d..d..d..d...
 ................
@@ -184,6 +209,27 @@ ENGINE_UNIT = """
 ..dmhhmmmmhhmd..
 ..dmmmmmmmmmmd..
 ..dddddddddddd..
+................
+................
+"""
+
+# A motor lying on its side: red bands at both ends of the can, the shaft out of the left, feet
+# under it.
+ELECTRIC_ENGINE_UNIT = """
+................
+................
+................
+....dddddddddd..
+...drhhhhhhhhrd.
+...drllllllllrd.
+.dddrllllllllrd.
+.dmmrmmmmmmmmrd.
+.dddrmmmmmmmmrd.
+...drmmmmmmmmrd.
+...drddddddddrd.
+....dddddddddd..
+......dd..dd....
+.....dddddddd...
 ................
 ................
 """
@@ -228,8 +274,8 @@ EXPLOSIVES = """
 ................
 """
 
-# A copper panel drilled through: Factorio's low density structure is a honeycomb, and a grid
-# of dark holes in a bright plate is how a honeycomb reads at sixteen pixels.
+# A panel drilled through: Factorio's low density structure is a honeycomb, and a grid of dark
+# holes in a bright plate is how a honeycomb reads at sixteen pixels.
 LOW_DENSITY_STRUCTURE = """
 ................
 .dddddddddddddd.
@@ -293,24 +339,26 @@ IRON_STICK = """
 .....ddd........
 """
 
-# A toolbox with a handle and a clasp: the repair pack, which is a box of what mends a machine.
+# A wrench crossed with a screwdriver: the wrench's open jaw at the top left and its shaft to the
+# bottom right, the screwdriver's blade at the top right and its yellow handle at the bottom left,
+# in front.
 REPAIR_PACK = """
-................
-................
-......dddd......
-.....dmmmmd.....
-....dd....dd....
-..dddddddddddd..
-..dmmmmmmmmmmd..
-..dmmmmhhmmmmd..
-..dmmmmhhmmmmd..
-..dddddddddddd..
-..dllllllllllld.
-..dllllllllllld.
-..dllllllllllld.
-..dllllllllllld.
-..dddddddddddd..
-................
+.ddd............
+dlhld.........dd
+dl.dld.......dhd
+ddd.dld.....dhd.
+..dd.dld...dhd..
+...dddlld.dhd...
+.....dllldhd....
+......ddkkd.....
+.....dkyykdd....
+....dkyykdlld...
+...dkyyykddlld..
+..dkyyykd..dlld.
+.dkyyykd....dlld
+.dkyykd......ddd
+.ddkkd..........
+..ddd...........
 """
 
 # --- palettes --------------------------------------------------------------
@@ -340,7 +388,7 @@ YELLOW = {
     "h": (255, 240, 132, 255),
 }
 
-# The battery's body is near black, so its red cap is what the eye finds.
+# The battery's body is near black, so its red and blue terminals are what the eye finds.
 BLACK_AND_RED = {
     ".": (0, 0, 0, 0),
     "d": (38, 38, 43, 255),
@@ -348,6 +396,7 @@ BLACK_AND_RED = {
     "l": (108, 108, 118, 255),
     "h": (148, 148, 158, 255),
     "r": (198, 50, 40, 255),
+    "b": (60, 110, 210, 255),
 }
 
 RED_BOARD = {
@@ -389,12 +438,14 @@ IRON = {
     "h": (190, 190, 200, 255),
 }
 
+# The electric engine's blue-grey steel, with the red of its end bands.
 ELECTRIC_IRON = {
     ".": (0, 0, 0, 0),
     "d": (44, 52, 70, 255),
     "m": (78, 96, 128, 255),
     "l": (122, 148, 186, 255),
     "h": (176, 200, 232, 255),
+    "r": (198, 50, 40, 255),
 }
 
 COAL_BLACK = {
@@ -414,7 +465,7 @@ DYNAMITE = {
     "f": (214, 194, 130, 255),
 }
 
-# Copper's oranges, off the copper block: the low density structure is a copper skin.
+# Copper's oranges, off the copper block.
 COPPER = {
     ".": (0, 0, 0, 0),
     "d": (112, 60, 36, 255),
@@ -432,13 +483,24 @@ ROCKET_ORANGE = {
     "h": (255, 200, 110, 255),
 }
 
-# Red steel with a pale clasp: the colour of a toolbox.
-TOOLBOX = {
+# The warm grey of the low density structure's plates, a shade browner than steel.
+PLATE_GREY = {
     ".": (0, 0, 0, 0),
-    "d": (70, 26, 22, 255),
-    "m": (176, 44, 36, 255),
-    "l": (204, 70, 56, 255),
-    "h": (230, 214, 170, 255),
+    "d": (58, 54, 50, 255),
+    "m": (118, 110, 100, 255),
+    "l": (168, 158, 146, 255),
+    "h": (208, 200, 188, 255),
+}
+
+# Steel tools with a yellow handle.
+TOOLS = {
+    ".": (0, 0, 0, 0),
+    "d": (56, 60, 68, 255),
+    "m": (120, 126, 138, 255),
+    "l": (176, 182, 194, 255),
+    "h": (226, 230, 238, 255),
+    "y": (226, 180, 40, 255),
+    "k": (150, 112, 20, 255),
 }
 
 # A grey unit with a blue window and one green lamp.
@@ -451,35 +513,34 @@ CONTROL_UNIT = {
     "g": (110, 230, 110, 255),
 }
 
-# A rounded grey frame around a blue lens, two feet below: the robot before it is a robot.
+# A ring with a three-bladed propeller in it and two legs below: the robot before it is a robot.
 FLYING_ROBOT_FRAME = """
 ................
-......dddd......
-....ddmllmdd....
-...dmllhhllmd...
-..dmllhhhhllmd..
-..dmlhkbbkhlmd..
-..dmlhbbbbhlmd..
-..dmlhbbbbhlmd..
-..dmlhkbbkhlmd..
-..dmllhhhhllmd..
-...dmllhhllmd...
-....ddmllmdd....
-.....dd..dd.....
-....dmd..dmd....
-....ddd..ddd....
-................
+.....dddddd.....
+...ddlbbbbldd...
+..dlb..kk..bld..
+.dlb...kk...bld.
+.dl....kk....ld.
+.dl...kkkk...ld.
+.dl..kkkkkk..ld.
+.dm.kkk..kkk.md.
+.dm.kk....kk.md.
+..dm........md..
+...ddmmmmmmdd...
+.....dddddd.....
+....dm....md....
+....dm....md....
+....dd....dd....
 """
 
-# Grey steel with a blue lens.
+# Grey steel, the ring lit cyan along its top, near-black blades.
 FRAME = {
     ".": (0, 0, 0, 0),
     "d": (48, 52, 60, 255),
     "m": (110, 116, 128, 255),
     "l": (160, 166, 176, 255),
-    "h": (205, 210, 218, 255),
-    "b": (90, 160, 230, 255),
-    "k": (40, 80, 140, 255),
+    "b": (120, 200, 240, 255),
+    "k": (30, 32, 38, 255),
 }
 
 # name -> (map, palette, the mod whose item it is)
@@ -488,19 +549,18 @@ ITEMS = {
     "plastic_bar": (PLASTIC_BAR, PLASTIC, "nauvis_materials"),
     "sulfur": (SULFUR, YELLOW, "nauvis_materials"),
     "battery": (BATTERY, BLACK_AND_RED, "nauvis_materials"),
-    "electronic_circuit": (ADVANCED_CIRCUIT, GREEN_BOARD, "nauvis_materials"),
-    "advanced_circuit": (ADVANCED_CIRCUIT, RED_BOARD, "nauvis_materials"),
-    "processing_unit": (ADVANCED_CIRCUIT, BLUE_BOARD, "nauvis_materials"),
+    "electronic_circuit": (CIRCUIT_BOARD, GREEN_BOARD, "nauvis_materials"),
+    "advanced_circuit": (CIRCUIT_BOARD, RED_BOARD, "nauvis_materials"),
+    "processing_unit": (CIRCUIT_BOARD, BLUE_BOARD, "nauvis_materials"),
     "engine_unit": (ENGINE_UNIT, IRON, "nauvis_materials"),
-    # The same engine in the blue-grey of Factorio's electric one: one map, so the two read as
-    # the same part with a different drive, which they are.
-    "electric_engine_unit": (ENGINE_UNIT, ELECTRIC_IRON, "nauvis_materials"),
-    "low_density_structure": (LOW_DENSITY_STRUCTURE, COPPER, "nauvis_materials"),
+    "electric_engine_unit": (ELECTRIC_ENGINE_UNIT, ELECTRIC_IRON, "nauvis_materials"),
+    "copper_cable": (COPPER_CABLE, COPPER, "nauvis_materials"),
+    "low_density_structure": (LOW_DENSITY_STRUCTURE, PLATE_GREY, "nauvis_materials"),
     "rocket_fuel": (ROCKET_FUEL, ROCKET_ORANGE, "nauvis_materials"),
     "iron_stick": (IRON_STICK, IRON, "nauvis_materials"),
     "flying_robot_frame": (FLYING_ROBOT_FRAME, FRAME, "nauvis_materials"),
     "solid_fuel": (SOLID_FUEL, COAL_BLACK, "nauvis"),
-    "repair_pack": (REPAIR_PACK, TOOLBOX, "nauvis_machines"),
+    "repair_pack": (REPAIR_PACK, TOOLS, "nauvis_machines"),
     "explosives": (EXPLOSIVES, DYNAMITE, "nauvis_fluids"),
 }
 

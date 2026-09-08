@@ -3,16 +3,17 @@
     python texture-workshop/make_module_textures.py            # write the PNGs
     python texture-workshop/make_module_textures.py --preview  # also write module-preview.png
 
-The same file shape as `make_material_textures.py`, and the same reason: a module is a chip, and
-the three tiers-one modules are the *same* chip in three colours, so they come off one map and
-cannot drift apart. Factorio's colours, because a player reads a module by its colour before its
-name - blue for speed, green for efficiency, red for productivity.
+The same file shape as `make_material_textures.py`, and the same reason: a module is Factorio's
+square unit with three lamps along its top, and the three tiers-one modules are the *same* unit
+in three colours, so they come off one map and cannot drift apart. Factorio's colours, because a
+player reads a module by its colour before its name - blue for speed, green for efficiency, red
+for productivity.
 
 Legend for the map:
     .  transparent                   d  dark board / outline
     m  mid board                     l  light board edge
     c  the module's colour           b  the colour, brighter
-    p  a pin                         t  a tier stripe, gold
+    p  a gold trace                  t  a tier stripe, gold
 """
 
 import os
@@ -27,23 +28,23 @@ OUT = os.path.join(REPO, "nauvis_machines", "src", "main", "resources", "assets"
 
 SIZE = 16
 
-# A square chip seen from above: a dark board with a lighter top edge, a coloured window across
-# the middle with a bright bar in it, and four pins down each side.
+# A square unit seen from above: a dark board lit along its top and left, three domed lamps in
+# the module's colour along the top, and two gold traces across the middle.
 MODULE = """
 ................
-..p..dddddddd...
-..pp.dlllllld...
-..p..dmmmmmmd...
-..pp.dmccccmd...
-..p..dmcbbcmd...
-..pp.dmcbbcmd...
-..p..dmccccmd...
-..pp.dmmmmmmd...
-..p..dmccccmd...
-..pp.dmcbbcmd...
-..p..dmccccmd...
-..pp.dmmmmmmd...
-..p..dddddddd...
+................
+.dddddddddddddd.
+.dlllllllllllld.
+.dlbbbmbbbmbbbd.
+.dlcbcmcbcmcbcd.
+.dlmcmmmcmmmcmd.
+.dlmmmmmmmmmmmd.
+.dlmpppmmmpppmd.
+.dlmmmpmmmmpmmd.
+.dlmmmmmmmmmmmd.
+.dlmmmmmmmmmmmd.
+.dlmmmmmmmmmmmd.
+.dddddddddddddd.
 ................
 ................
 """
@@ -67,13 +68,13 @@ RED = dict(BOARD, c=(178, 48, 48, 255), b=(240, 120, 110, 255))
 def striped(text, row):
     """The map with the board row at {@code row} turned to a gold stripe."""
     lines = text.split("\n")
-    assert lines[row] == "..pp.dmmmmmmd...", f"row {row} is not a plain board row: {lines[row]!r}"
-    lines[row] = "..pp.dttttttd..."
+    assert lines[row] == ".dlmmmmmmmmmmmd.", f"row {row} is not a plain board row: {lines[row]!r}"
+    lines[row] = ".dltttttttttttd."
     return "\n".join(lines)
 
 
 MODULE_2 = striped(MODULE, 13)
-MODULE_3 = striped(MODULE_2, 9)
+MODULE_3 = striped(MODULE_2, 11)
 
 for tiered in (MODULE_2, MODULE_3):
     assert tiered != MODULE, "a tier's stripe did not land on the map"
