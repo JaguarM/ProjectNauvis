@@ -74,14 +74,14 @@ public final class ModItems {
      * Five copper plates, five plastic and ten steel, thirty seconds: the rocket's skin, and the
      * dearest thing a rocket part is paid for in.
      */
-    public static final DeferredItem<Item> LOW_DENSITY_STRUCTURE = ITEMS.registerSimpleItem("low_density_structure", () -> Stacks.of(10));
+    public static final DeferredItem<Item> LOW_DENSITY_STRUCTURE = ITEMS.registerSimpleItem("low_density_structure", () -> Stacks.of(50));
 
     /**
      * Ten solid fuel, thirty seconds - the dump's recipe, from before rocket fuel wanted light
      * oil as well. It burns, too: Factorio's 100 MJ is twenty-five of coal's 4, and the furnace
      * fuel data map says so.
      */
-    public static final DeferredItem<Item> ROCKET_FUEL = ITEMS.registerSimpleItem("rocket_fuel", () -> Stacks.of(10));
+    public static final DeferredItem<Item> ROCKET_FUEL = ITEMS.registerSimpleItem("rocket_fuel", () -> Stacks.of(20));
 
     /** A processing unit and a speed module, thirty seconds: the third thing a rocket part costs. */
     public static final DeferredItem<Item> ROCKET_CONTROL_UNIT = ITEMS.registerSimpleItem("rocket_control_unit", () -> Stacks.of(10));

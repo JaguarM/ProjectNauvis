@@ -185,7 +185,9 @@ ceiling; a result of a thousand is the machine's business. An input slot is one 
 holds the larger of a stack and twice the recipe's count (`AssemblerInventory`,
 `RocketSiloInventory`); a machine with no recipe takes nothing; the client asks its copy of the
 recipe through `ClientSlotRules`/`ClientSiloRules`. Slots over ninety-nine are saved as a resource
-and an amount.
+and an amount. That capacity is what a hand may fill; what automation may put in is Factorio's
+insertion limit, a craft's worth plus the crafts that finish inside one inserter swing and at least
+two (`MachineAccess.insertionLimit`, a rule the machine hands its view). The silo hands one.
 
 The furnace chooses its own recipe: Factorio's four `smelting` recipes first, through
 `RecipeLocks` with the level, then vanilla's smelting list at 200 ticks over the tier's speed. Every

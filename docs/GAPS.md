@@ -126,6 +126,10 @@ Modules and the rocket
 - A launch's thousand packs are owed to the output slot and paid as it clears; breaking the silo
   spills what is owed.
 - A silo with no recipe logs one warning and looks again every ten seconds.
+- The rocket part is 1.1's: rocket control units, a hundred parts. Stacks follow 2.0.7 where the
+  item survived it (low density structure fifty, rocket fuel twenty); the control unit stays at ten.
+- Only the silo applies Factorio's insertion limit to automation; an assembler's view fills an
+  ingredient slot to its capacity.
 - The radar keeps a seven-by-seven of chunks loaded while powered and charts nothing.
 
 Smelting, crafting and research

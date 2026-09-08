@@ -94,7 +94,8 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
             this::wanted, resource -> resource.is(ModItems.SATELLITE.get()));
 
     /** What inserters see: ingredients and a satellite in, science out. Never the raw slots. */
-    private final ResourceHandler<ItemResource> automationView = new MachineAccess(inventory, OUTPUT_SLOT);
+    private final ResourceHandler<ItemResource> automationView =
+            new MachineAccess(inventory, OUTPUT_SLOT, this::automationLimit);
 
     /** Every rocket part is an intermediate product, so every module is welcome here. */
     private final ModuleSlots modules = new ModuleSlots(MODULE_SLOTS, this::onInventoryChanged);
@@ -418,6 +419,23 @@ public class RocketSiloBlockEntity extends BlockEntity implements MenuProvider {
             }
             return true;
         }
+    }
+
+    /**
+     * How many of an ingredient automation may leave in a slot: Factorio's insertion limit for a
+     * part at this silo's speed, twice a part's worth for a three-second part. The satellite slot
+     * has no rule beyond its size.
+     */
+    private int automationLimit(int index, ItemResource resource) {
+        if (index >= INPUT_SLOTS || !(level instanceof ServerLevel serverLevel)) {
+            return Integer.MAX_VALUE;
+        }
+        FacraftRecipe part = partRecipe(serverLevel);
+        if (part == null) {
+            return 0;
+        }
+        int craftTicks = Math.max(1, Math.round(part.craftTicks() / CRAFTING_SPEED));
+        return MachineAccess.insertionLimit(wanted(part, index, resource), craftTicks);
     }
 
     /** Whether the satellite slot holds what the launch recipe wants besides rocket parts. */

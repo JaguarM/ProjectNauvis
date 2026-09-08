@@ -37,7 +37,14 @@ Four builds have passed their tests and nobody's eyes. Each wants a client boot 
   repair pack mends it. The knobs in `Attacks`, `Absorption` and `PollutionState` have never been
   played: how often a group comes, how big, how far away, how hard a zombie hits a wall.
 
-### 2. Later updates
+### 2. Two gametests that fail on timing, once in a few runs
+
+Each passed three full runs and failed one on 2026-09-08, with nothing of theirs changed.
+`nauvis:accumulator_carries_the_night`: the assembler gained 800 where the accumulator lost 984.
+`nauvis_military:hostiles_chew_through_to_the_polluter`: the factory goal was not running on tick
+5, though it was in the goal list. Neither has been looked into.
+
+### 3. Later updates
 
 The robots (milestone 6) and what space science buys (infinite research). `PLAN.md`'s to schedule.
 

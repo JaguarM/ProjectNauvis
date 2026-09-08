@@ -614,8 +614,8 @@ public final class NauvisGameTests {
     }
 
     /**
-     * An inserter feeding a silo stops at the silo's limit, and every item it took from the chest
-     * is in the silo or still in the chest.
+     * An inserter feeding a silo stops at Factorio's insertion limit, twice a part's worth and well
+     * short of a stack, and every item it took from the chest is in the silo or still in the chest.
      */
     public static class InserterFillsASiloTest extends PackGameTest {
 
