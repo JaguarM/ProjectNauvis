@@ -22,6 +22,9 @@ Models, datagen and rendering
   `getRenderBoundingBox`, and `shouldRenderOffScreen` if its section may be culled.
 - A `minecraft:special` item model keeps its renderer under `model` and its display model under
   `base`; `check_models.py` knows. Relaxing a checker on a false failure hides the real one.
+- `item/handheld` is built for a texture drawn corner to corner: its rotations send the top-right
+  corner forward and the left edge back at the player. A texture drawn level needs its own
+  `display` block (`nauvis_military:item/gun`); `item/generated` holds it like a card.
 
 Blocks and multiblocks
 ----------------------

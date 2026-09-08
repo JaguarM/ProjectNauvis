@@ -12,6 +12,7 @@ import com.jaguarm.nauvismilitary.turret.GunTurretBlock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
@@ -23,7 +24,9 @@ import net.minecraft.client.data.models.MultiVariant;
 import net.minecraft.client.data.models.blockstates.MultiVariantGenerator;
 import net.minecraft.client.data.models.blockstates.PropertyDispatch;
 import net.minecraft.client.data.models.model.ModelLocationUtils;
+import net.minecraft.client.data.models.model.ModelTemplate;
 import net.minecraft.client.data.models.model.ModelTemplates;
+import net.minecraft.client.data.models.model.TextureSlot;
 import net.minecraft.client.renderer.block.dispatch.VariantMutator;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -139,6 +142,14 @@ public final class NauvisMilitaryData {
     /** The turret's four blocks and its miniature, and the items on their own textures. */
     private static class Models extends ModelProvider {
 
+        /**
+         * A gun's model: a flat item whose display turns a texture drawn level, muzzle left,
+         * to point forward in either hand. The display block is {@code models/item/gun.json}.
+         */
+        private static final ModelTemplate GUN = new ModelTemplate(
+                Optional.of(Identifier.fromNamespaceAndPath(NauvisMilitary.MODID, "item/gun")),
+                Optional.empty(), TextureSlot.LAYER0);
+
         Models(PackOutput output) {
             super(output, NauvisMilitary.MODID);
         }
@@ -146,11 +157,8 @@ public final class NauvisMilitaryData {
         @Override
         protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators items) {
             turret(blockModels, ModBlocks.GUN_TURRET.get());
-            // Held like a sword, muzzle forward: vanilla's handheld transform points a texture's
-            // top-right corner away from the player, and the guns are drawn to it. A flat item
-            // is held like a card and pointed its barrel across the hand.
             for (Item gun : List.of(ModItems.PISTOL.get(), ModItems.SUBMACHINE_GUN.get())) {
-                items.generateFlatItem(gun, ModelTemplates.FLAT_HANDHELD_ITEM);
+                items.generateFlatItem(gun, GUN);
             }
             for (Item item : List.of(ModItems.FIREARM_MAGAZINE.get(), ModItems.PIERCING_ROUNDS_MAGAZINE.get(),
                     ModItems.GRENADE.get(), ModItems.LIGHT_ARMOR.get(), ModItems.HEAVY_ARMOR.get())) {

@@ -11,6 +11,12 @@ Six colours is enough for a rocky surface; a twelfth shade of grey means the sty
 
 Every script takes `--preview`; the previews are not committed.
 
+Every item map is Factorio's icon at sixteen pixels, in vanilla's idiom: the science packs are
+one flask in seven colours, the guns lie level with the muzzle to the left. A gun's model,
+`nauvis_military/.../models/item/gun.json`, is the display block that turns that to point
+forward in the hand, because vanilla's handheld display is built for a sword drawn corner to
+corner and would aim a level gun at the player.
+
 The chests are not an ASCII map: a chest texture is six rectangles per box, unwrapped, and where
 each lands is decided by `ModelPart.Cube`. `make_chest_textures.py` writes that arithmetic out at
 the top. The front of a chest is south, and the lock shares the lid's `texOffs`.

@@ -1,5 +1,5 @@
 {
-  "parent": "minecraft:item/handheld",
+  "parent": "nauvis_military:item/gun",
   "textures": {
     "layer0": "nauvis_military:item/pistol"
   }
