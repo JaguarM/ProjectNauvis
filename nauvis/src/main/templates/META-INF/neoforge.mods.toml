@@ -36,3 +36,6 @@ usable standalone, so none of this can live inside them.
     versionRange="[0.1.0,)"
     ordering="AFTER"
     side="BOTH"
+
+[[mixins]]
+    config="nauvis.mixins.json"

@@ -49,7 +49,8 @@ public class OrePatchFeature extends Feature<NoneFeatureConfiguration> {
         for (int x = Math.max(minX, patch.minX()); x <= Math.min(maxX, patch.maxX()); x++) {
             for (int z = Math.max(minZ, patch.minZ()); z <= Math.min(maxZ, patch.maxZ()); z++) {
                 int height = patch.height(x, z);
-                for (int y = patch.bottomY(); y < patch.bottomY() + height; y++) {
+                int floor = patch.floorAt(x, z);
+                for (int y = floor; y < floor + height; y++) {
                     if (y < level.getMinY() || y > level.getMaxY()) {
                         continue;
                     }

@@ -11,18 +11,23 @@ import net.minecraft.util.RandomSource;
  * random patch in some of the cells of a grid beyond the starting area. Every chunk asks the same
  * arithmetic, so a patch that spans chunks is drawn the same by each of them.
  *
- * <p>Factorio's starting patches are thirty to forty tiles across, and a patch's footprint stays
- * that size with distance while its richness grows; here the richness is Crumbling Ore's harvests
- * per block, which the pack's config scales by the same distance rule. Factorio places about 2.5
- * patches of each ore per square kilometre; with no map to find them on, the pack places about
- * five times that.
+ * <p>Factorio's starting patches are thirty to forty tiles across and a patch's footprint stays
+ * that size with distance while its richness grows; the pack's are a little smaller, and the
+ * richness is Crumbling Ore's harvests per block, which the pack's config scales by the same
+ * distance rule. Factorio places about 2.5 patches of each ore per square kilometre; with no map
+ * to find them on, the pack places about five times that.
  */
 public final class OrePatches {
 
     private OrePatches() {}
 
-    public static final int LONG_AXIS_MIN = 30;
-    public static final int LONG_AXIS_MAX = 40;
+    /** Factorio's starting patches are thirty to forty across; a first look found that too big here. */
+    public static final int LONG_AXIS_MIN = 20;
+    public static final int LONG_AXIS_MAX = 30;
+    /** The most the floor tilts, in blocks per block along an axis: three or so across a patch. */
+    public static final double MAX_SLOPE = 0.2;
+    public static final int WAVELENGTH_MIN = 10;
+    public static final int WAVELENGTH_MAX = 20;
     /** The short axis as a fraction of the long one: kinda rectangular, never a square or a stripe. */
     public static final double ASPECT_MIN = 0.6;
     public static final double ASPECT_MAX = 0.85;
@@ -63,10 +68,14 @@ public final class OrePatches {
         double longAxis = LONG_AXIS_MIN + random.nextDouble() * (LONG_AXIS_MAX - LONG_AXIS_MIN);
         double shortAxis = longAxis * (ASPECT_MIN + random.nextDouble() * (ASPECT_MAX - ASPECT_MIN));
         boolean alongX = random.nextBoolean();
+        OrePatch.Relief relief = new OrePatch.Relief(
+                (random.nextDouble() * 2 - 1) * MAX_SLOPE, (random.nextDouble() * 2 - 1) * MAX_SLOPE,
+                WAVELENGTH_MIN + random.nextDouble() * (WAVELENGTH_MAX - WAVELENGTH_MIN),
+                WAVELENGTH_MIN + random.nextDouble() * (WAVELENGTH_MAX - WAVELENGTH_MIN),
+                random.nextDouble() * 2 * Math.PI, random.nextDouble() * 2 * Math.PI);
         return new OrePatch(kind, centreX, centreZ,
                 (alongX ? longAxis : shortAxis) / 2, (alongX ? shortAxis : longAxis) / 2,
-                bottomY, layers, random.nextDouble() * 2 * Math.PI, random.nextDouble() * 2 * Math.PI,
-                random.nextLong());
+                bottomY, layers, random.nextDouble() * 2 * Math.PI, random.nextDouble() * 2 * Math.PI, relief);
     }
 
     /**

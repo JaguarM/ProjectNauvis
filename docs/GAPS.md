@@ -71,9 +71,12 @@ Belts
 Mining
 ------
 
-- Ore is in patches thirty to forty blocks across and two or three layers thick, underground at
-  a random height, and nowhere else: vanilla's scattered iron, copper and coal are gone. Gold,
-  redstone, lapis, diamonds and emeralds still generate as vanilla does.
+- Ore is in patches twenty to thirty blocks across and two or three layers thick, solid, on a
+  floor that tilts and rolls a few blocks, underground at a random height, and nowhere else:
+  vanilla's scattered iron, copper and coal features and its noise ore veins are gone (the veins
+  by a mixin in the pack mod, since they are not features). Gold, redstone, lapis, diamonds and
+  emeralds still generate as vanilla does. Factorio's patches are thirty to forty across; a first
+  look found that too big here.
 - No stone patch: stone is every block of ground. No uranium patch: no uranium ore exists yet.
 - A patch is found with a drill in hand, which outlines the ore in loaded chunks through the
   ground; there is no map. Starting patches sit between y 16 and 48, random ones between -40

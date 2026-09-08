@@ -47,12 +47,13 @@ public final class NauvisGameTests {
         tests.add("accumulator_carries_the_night", AccumulatorCarriesTheNightTest::new, 300, 24, true);
         tests.add("vanilla_recipes_are_replaced", VanillaRecipesAreReplacedTest::new, 20);
 
-        // A patch is a flat, wide slab of ore: every block within its few layers, the footprint
-        // tens of blocks across, and nothing but ground turned to ore.
-        tests.add("ore_patch_is_flat_and_wide", 40, 28, helper -> {
+        // A patch is a solid, wide slab of ore a few layers thick on a floor that rolls a little:
+        // every column inside it holds ore, every ore block is within the patch's height, the
+        // footprint is tens of blocks across, and nothing but ground was turned to ore.
+        tests.add("ore_patch_is_a_solid_rolling_slab", 40, 28, helper -> {
             int size = 48;
-            int floor = 1;
-            int roof = 7;
+            int floor = 0;
+            int roof = 15;
             for (int x = 0; x < size; x++) {
                 for (int z = 0; z < size; z++) {
                     for (int y = floor; y <= roof; y++) {
@@ -60,38 +61,61 @@ public final class NauvisGameTests {
                     }
                 }
             }
-            BlockPos centre = helper.absolutePos(new BlockPos(size / 2, 3, size / 2));
+            BlockPos centre = helper.absolutePos(new BlockPos(size / 2, 7, size / 2));
             OrePatch patch = OrePatches.patch(RandomSource.create(20260908L), OreKind.IRON,
                     centre.getX(), centre.getZ(), centre.getY(), OrePatches.LAYERS_MAX);
             int placed = OrePatchFeature.place(helper.getLevel(), patch);
 
             int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, minZ = Integer.MAX_VALUE, maxZ = Integer.MIN_VALUE;
+            int minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
             int counted = 0;
             for (int x = 0; x < size; x++) {
                 for (int z = 0; z < size; z++) {
+                    BlockPos column = helper.absolutePos(new BlockPos(x, 0, z));
+                    boolean inside = patch.contains(column.getX(), column.getZ());
+                    boolean any = false;
                     for (int y = floor; y <= roof; y++) {
                         if (!helper.getBlockState(new BlockPos(x, y, z)).is(Blocks.IRON_ORE)) {
                             continue;
                         }
+                        any = true;
                         counted++;
                         int worldY = helper.absolutePos(new BlockPos(x, y, z)).getY();
-                        helper.assertTrue(worldY >= patch.bottomY() && worldY <= patch.topY(),
-                                "ore at y " + worldY + " outside the patch's layers " + patch.bottomY() + ".." + patch.topY());
+                        helper.assertTrue(worldY >= patch.minY() && worldY <= patch.maxY(),
+                                "ore at y " + worldY + " outside the patch's " + patch.minY() + ".." + patch.maxY());
                         minX = Math.min(minX, x);
                         maxX = Math.max(maxX, x);
                         minZ = Math.min(minZ, z);
                         maxZ = Math.max(maxZ, z);
+                        minY = Math.min(minY, worldY);
+                        maxY = Math.max(maxY, worldY);
                     }
+                    helper.assertValueEqual(any, inside, "ore in the column at " + x + ", " + z
+                            + " against the patch saying it is " + (inside ? "inside" : "outside"));
                 }
             }
             helper.assertValueEqual(counted, placed, "ore blocks found against ore blocks the feature reports");
-            helper.assertTrue(placed >= 800, "a patch of only " + placed + " ore blocks");
+            helper.assertTrue(placed >= 350, "a patch of only " + placed + " ore blocks");
             int wide = Math.max(maxX - minX, maxZ - minZ) + 1;
             int deep = Math.min(maxX - minX, maxZ - minZ) + 1;
-            helper.assertTrue(wide >= 24 && wide <= 48, "a patch " + wide + " across on its long axis");
-            helper.assertTrue(deep >= 14, "a patch " + deep + " across on its short axis");
-            helper.assertTrue(helper.getBlockState(new BlockPos(0, 3, 0)).is(Blocks.STONE),
+            helper.assertTrue(wide >= 16 && wide <= 40, "a patch " + wide + " across on its long axis");
+            helper.assertTrue(deep >= 9, "a patch " + deep + " across on its short axis");
+            helper.assertTrue(maxY - minY + 1 <= OrePatches.LAYERS_MAX + 2 * patch.maxRelief(),
+                    "a patch " + (maxY - minY + 1) + " blocks tall is not a slab");
+            helper.assertTrue(maxY - minY + 1 >= OrePatches.LAYERS_MAX + 1,
+                    "a patch " + (maxY - minY + 1) + " blocks tall lies dead flat");
+            helper.assertTrue(helper.getBlockState(new BlockPos(0, 7, 0)).is(Blocks.STONE),
                     "the corner of the box, far outside the patch, is not stone any more");
+            helper.succeed();
+        });
+
+        // Vanilla's noise ore veins, the snaking iron and copper bodies that no biome modifier
+        // reaches, are off: asked of the overworld's noise settings as the generator would ask.
+        tests.add("vanilla_ore_veins_are_off", 20, helper -> {
+            var settings = helper.getLevel().registryAccess()
+                    .lookupOrThrow(Registries.NOISE_SETTINGS)
+                    .getOrThrow(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.OVERWORLD).value();
+            helper.assertFalse(settings.oreVeinsEnabled(), "the overworld still grows vanilla's ore veins");
             helper.succeed();
         });
 
@@ -108,7 +132,7 @@ public final class NauvisGameTests {
                     helper.assertTrue(distance >= OrePatches.STARTING_NEAR && distance <= OrePatches.STARTING_FAR,
                             "a starting patch " + distance + " blocks from the origin, seed " + seed);
                     helper.assertTrue(patch.bottomY() >= OrePatches.STARTING_DEPTH_MIN
-                            && patch.topY() <= OrePatches.STARTING_DEPTH_MAX + OrePatches.LAYERS_MAX,
+                            && patch.bottomY() <= OrePatches.STARTING_DEPTH_MAX,
                             "a starting patch at y " + patch.bottomY() + ", seed " + seed);
                     for (OrePatch other : patches) {
                         if (other != patch) {

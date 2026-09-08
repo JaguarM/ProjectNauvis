@@ -26,8 +26,8 @@ public final class OreCommand {
     private OreCommand() {}
 
     private static final String POSITION = "position";
-    /** How far under the feet the top layer goes: within a pickaxe's reach, out of sight. */
-    private static final int UNDER_FEET = 4;
+    /** How far under the feet the floor's middle goes: within a pickaxe's reach, out of sight. */
+    private static final int UNDER_FEET = 6;
 
     @SubscribeEvent
     static void register(RegisterCommandsEvent event) {
@@ -61,7 +61,7 @@ public final class OreCommand {
         }
         source.sendSuccess(() -> Component.translatable(key("patch"), kind.id, placed,
                 Math.round(2 * patch.halfWidth()), Math.round(2 * patch.halfDepth()),
-                patch.bottomY(), patch.topY(), at.getX(), at.getZ()), true);
+                patch.minY(), patch.maxY(), at.getX(), at.getZ()), true);
         return placed;
     }
 

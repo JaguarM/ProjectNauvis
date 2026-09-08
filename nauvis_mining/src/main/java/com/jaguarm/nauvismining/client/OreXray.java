@@ -30,7 +30,7 @@ import net.neoforged.neoforge.common.Tags;
 
 /**
  * The ore x-ray: while a drill is in hand, the iron, copper and coal in the loaded chunks around
- * the player are outlined through the ground, one box per chunk section in each ore's colour.
+ * the player are outlined through the ground, one box per vein in each ore's colour.
  * There is no map, so this is how a patch is found; a pumpjack does the same for oil wells.
  */
 @EventBusSubscriber(modid = NauvisMining.MODID, value = Dist.CLIENT)
@@ -141,7 +141,29 @@ public final class OreXray {
                 }
             }
         }
-        return found;
+        return merged(found);
+    }
+
+    /** Boxes of one ore that touch are one vein, so they are drawn as one box. */
+    private static List<Box> merged(List<Box> boxes) {
+        List<Box> out = new ArrayList<>(boxes);
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (int i = 0; i < out.size() && !changed; i++) {
+                for (int j = i + 1; j < out.size(); j++) {
+                    Box a = out.get(i);
+                    Box b = out.get(j);
+                    if (a.argb() == b.argb() && a.box().inflate(0.5).intersects(b.box())) {
+                        out.set(i, new Box(a.box().minmax(b.box()), a.argb()));
+                        out.remove(j);
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+        }
+        return out;
     }
 
     /** Which colour an ore takes, or -1 for a block that is not one of the drill's ores. */
