@@ -744,6 +744,43 @@ public final class NauvisLogisticsBeltGameTests {
             });
         });
 
+        // An inserter that filled a belt to a standstill picks up again when the belt moves on:
+        // the run tells the block it was waiting on that there is room, since nothing else does.
+        tests.add("inserter_resumes_when_a_belt_clears", 500, PADDING, helper -> {
+            BlockPos chest = new BlockPos(0, 1, 2);
+            BlockPos loader = new BlockPos(0, 1, 1);
+            BlockPos taker = new BlockPos(1, 1, -1);
+            BlockPos bin = new BlockPos(1, 1, -2);
+
+            // Two tiles: the far lane holds eight, and the loader fills them from a chest of ten.
+            line(helper, 2);
+            helper.setBlock(chest, Blocks.CHEST);
+            helper.setBlock(bin, Blocks.CHEST);
+            helper.setBlock(loader, ModBlocks.BURNER_INSERTER.get().defaultBlockState()
+                    .setValue(InserterBlock.FACING, Direction.NORTH));
+            helper.setBlock(taker, ModBlocks.BURNER_INSERTER.get().defaultBlockState()
+                    .setValue(InserterBlock.FACING, Direction.NORTH));
+
+            int filled = SETTLED + 8 * BurnerInserterBlockEntity.SWING_TICKS + 40;
+            helper.runAfterDelay(SETTLED, () -> {
+                put(container(helper, chest), Items.IRON_INGOT, 10);
+                put(helper.getBlockEntity(loader, BurnerInserterBlockEntity.class).fuelAccess(), Items.COAL, 1);
+            });
+            helper.runAfterDelay(filled, () -> {
+                helper.assertValueEqual(runAt(helper, TAIL).itemCount(), 8, "ingots on the belt once it is full");
+                helper.assertValueEqual(countIn(container(helper, chest), Items.IRON_INGOT), 2, "ingots left in the chest");
+                helper.assertFalse(isScheduled(helper, loader), "the loader is still ticking at a full belt");
+                // The far end starts taking: room appears at the loader's tile only by items moving on.
+                put(helper.getBlockEntity(taker, BurnerInserterBlockEntity.class).fuelAccess(), Items.COAL, 1);
+            });
+            helper.runAfterDelay(filled + 3 * BurnerInserterBlockEntity.SWING_TICKS, () -> {
+                helper.assertTrue(countIn(container(helper, bin), Items.IRON_INGOT) >= 1, "the taker took nothing off the belt");
+                helper.assertTrue(countIn(container(helper, chest), Items.IRON_INGOT) < 2,
+                        "the loader slept through the belt moving on");
+                helper.succeed();
+            });
+        });
+
         // And the other way: an inserter takes an item off a belt and puts it in a chest.
         tests.add("inserter_takes_from_a_belt", 200, PADDING, helper -> {
             BlockPos inserter = new BlockPos(0, 1, 1);

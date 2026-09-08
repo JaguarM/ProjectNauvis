@@ -163,5 +163,6 @@ Vanilla, and what is left alone
   mixins and a count of three or four digits is scaled to fit. Not lifted: minecart chests,
   bundles, another mod's container that answers ninety-nine itself. Cobblestone, coal and raw ore
   go down to fifty; one line each in `StandInStacks`.
-- Nothing tests that inventories survive a save and reload, or that a network rebuilds after a
-  chunk cycle. An inserter at a chunk border whose source chunk cycles can sleep through items.
+- Only the silo's slots are tested through a save and reload. Nothing tests that a network
+  rebuilds after a chunk cycle; an inserter at a chunk border whose source chunk cycles can sleep
+  through items.

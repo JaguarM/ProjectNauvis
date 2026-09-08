@@ -74,6 +74,13 @@ public final class BeltRun extends SnapshotJournal<Integer> {
     private final BitSet occupied = new BitSet();
     private final BitSet arriving = new BitSet();
 
+    /**
+     * Blocks something tried to put an item on and could not. Each is told once room appears
+     * there and then forgotten: the world hears nothing else of a belt moving on, and an inserter
+     * asleep at a backed-up belt has no other way to hear it.
+     */
+    private final BitSet waiting = new BitSet();
+
     BeltRun(Level level, BeltLines lines, BeltBlock block, List<BlockPos> blocks, Direction[] facings,
             int[] rises, boolean loops) {
         this.level = level;
@@ -270,6 +277,7 @@ public final class BeltRun extends SnapshotJournal<Integer> {
         }
         if (moved) {
             announceArrivals();
+            announceRoom();
         }
         return moved;
     }
@@ -296,6 +304,32 @@ public final class BeltRun extends SnapshotJournal<Integer> {
 
         occupied.clear();
         occupied.or(arriving);
+    }
+
+    /** Tells the world about every block something waited on that has room again. */
+    private void announceRoom() {
+        if (!(level instanceof ServerLevel)) {
+            return;
+        }
+        for (int index = waiting.nextSetBit(0); index >= 0; index = waiting.nextSetBit(index + 1)) {
+            if (hasRoom(index)) {
+                waiting.clear(index);
+                level.updateNeighbourForOutputSignal(blocks.get(index), block);
+            }
+        }
+    }
+
+    /** Whether either lane of block {@code index} has a free place on the quarter-tile grid. */
+    private boolean hasRoom(int index) {
+        int edge = frontEdge(index);
+        for (BeltLane lane : lanes) {
+            for (int slot = 0; slot < 4; slot++) {
+                if (lane.hasRoomAt(edge + slot * Belts.SPACING)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -400,6 +434,7 @@ public final class BeltRun extends SnapshotJournal<Integer> {
                     new BeltItemAddedPayload(block, lane, position - edge, item)));
             return true;
         }
+        waiting.set(index);
         return false;
     }
 

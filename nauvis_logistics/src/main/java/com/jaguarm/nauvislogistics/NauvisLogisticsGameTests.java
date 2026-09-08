@@ -321,6 +321,44 @@ public final class NauvisLogisticsGameTests {
                                     "items moved after the power came back"))
                     .thenSucceed();
         });
+        // An electric inserter that swung to a full chest holds its arm there and sleeps: no tick
+        // and no energy until either side changes, and then the item goes over at once.
+        tests.add("electric_inserter_holds_without_spending", 200, PADDING, helper -> {
+            buildElectricLine(helper, true);
+            ElectricInserterBlockEntity inserter = helper.getBlockEntity(INSERTER, ElectricInserterBlockEntity.class);
+            insert(container(helper, SOURCE), Items.IRON_INGOT, 1);
+            int[] held = new int[1];
+
+            // Mid-swing, the destination fills up behind its back: twenty-seven stacks of stone.
+            helper.runAfterDelay(5, () -> helper.assertValueEqual(
+                    insert(container(helper, DESTINATION), Items.STONE, 27 * 64), 27 * 64,
+                    "stone put in the destination chest"));
+
+            helper.runAfterDelay(ElectricInserterBlock.SWING_TICKS + 10, () -> {
+                helper.assertValueEqual(countIn(container(helper, SOURCE), Items.IRON_INGOT), 1,
+                        "the ingot should still be in the source chest");
+                helper.assertValueEqual(inserter.swing(), ElectricInserterBlock.SWING_TICKS,
+                        "the swing should be held at its end");
+                helper.assertFalse(isElectricScheduled(helper),
+                        "an inserter with nowhere to put its item is still ticking");
+                held[0] = inserter.energyStored();
+            });
+            helper.runAfterDelay(ElectricInserterBlock.SWING_TICKS + 40, () -> {
+                helper.assertValueEqual(inserter.energyStored(), held[0], "energy spent holding an item over a full chest");
+                helper.assertFalse(isElectricScheduled(helper), "an inserter holding an item woke on its own");
+                try (Transaction transaction = Transaction.openRoot()) {
+                    container(helper, DESTINATION).extract(ItemResource.of(Items.STONE), 27 * 64, transaction);
+                    transaction.commit();
+                }
+            });
+            helper.runAfterDelay(ElectricInserterBlock.SWING_TICKS + 45, () -> {
+                helper.assertValueEqual(countIn(container(helper, DESTINATION), Items.IRON_INGOT), 1,
+                        "the ingot did not go over once there was room");
+                helper.assertValueEqual(inserter.swing(), 0, "the swing did not finish");
+                helper.succeed();
+            });
+        });
+
         tests.add("burner_inserter_opens_a_screen", BurnerInserterOpensAScreenTest::new, 60, PADDING);
 
         // The long arm takes from two blocks behind and gives two blocks in front, over whatever is

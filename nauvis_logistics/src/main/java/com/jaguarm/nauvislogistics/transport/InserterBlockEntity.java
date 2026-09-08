@@ -38,7 +38,7 @@ public abstract class InserterBlockEntity extends BlockEntity {
      */
     public static final int IDLE_RECHECK_TICKS = 20;
 
-    /** Ticks into the current swing. Reaching {@link #swingTicks} delivers the item. */
+    /** Ticks into the current swing. Reaching {@link #swingTicks} delivers the item, or holds there until it can. */
     private int swing;
 
     private @Nullable BlockCapabilityCache<ResourceHandler<ItemResource>, @Nullable Direction> source;
@@ -113,22 +113,25 @@ public abstract class InserterBlockEntity extends BlockEntity {
             return;
         }
 
-        spendOneTick();
-        swing++;
+        if (swing < swingTicks()) {
+            spendOneTick();
+            swing++;
+            setChanged();
+        }
 
         if (swing >= swingTicks()) {
             if (!move(hand, true)) {
-                // The item went away mid-swing, or the destination filled up. Hold the swing and
-                // sleep; either side changing wakes it again - unless it reaches too far to hear
-                // either side, which is what the re-check is for.
-                setChanged();
+                // The item went away mid-swing, or the destination filled up. Hold the swing,
+                // already paid for, and sleep: a wake from either side costs one attempt and
+                // nothing else. Unless it reaches too far to hear either side, which is what the
+                // re-check is for.
                 lookAgainIfOutOfEarshot(level);
                 return;
             }
             swing = 0;
+            setChanged();
         }
 
-        setChanged();
         level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
     }
 

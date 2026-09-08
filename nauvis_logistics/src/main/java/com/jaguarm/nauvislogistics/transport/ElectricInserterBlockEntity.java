@@ -24,7 +24,10 @@ public class ElectricInserterBlockEntity extends InserterBlockEntity {
     public static final int ENERGY_CAPACITY = ElectricInserterBlock.ENERGY_PER_TICK * 200;
 
     /** Unrestricted, because the inserter spends from it. What the grid sees is {@link #gridView}. */
-    private final MachinePower energy = new MachinePower(ENERGY_CAPACITY, this::onSupplyChanged);
+    private final MachinePower energy = new MachinePower(ENERGY_CAPACITY, this::onEnergyChanged);
+
+    /** Whether the buffer is changing because this inserter is spending, which is no reason to wake. */
+    private boolean spending;
 
     private final EnergyHandler gridView = new PowerAccess(energy);
 
@@ -63,7 +66,18 @@ public class ElectricInserterBlockEntity extends InserterBlockEntity {
 
     @Override
     protected void spendOneTick() {
-        energy.set(energy.getAmountAsInt() - electricTier().energyPerTick());
+        spending = true;
+        try {
+            energy.set(energy.getAmountAsInt() - electricTier().energyPerTick());
+        } finally {
+            spending = false;
+        }
+    }
+
+    private void onEnergyChanged() {
+        if (!spending) {
+            onSupplyChanged();
+        }
     }
 
     @Override

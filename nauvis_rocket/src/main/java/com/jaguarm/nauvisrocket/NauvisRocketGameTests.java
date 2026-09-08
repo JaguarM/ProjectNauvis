@@ -11,14 +11,18 @@ import com.jaguarm.nauvisrocket.silo.RocketSiloStatus;
 import com.jaguarm.nauvislib.test.GameTests;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.storage.TagValueInput;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
@@ -173,6 +177,29 @@ public final class NauvisRocketGameTests {
                 helper.assertValueEqual(came, 1000, "space science after an empty launch: no more than before");
                 helper.succeed();
             });
+        });
+
+        // What an inserter fills the slots to survives a save: twice a part's worth of a ten-stack
+        // ingredient, and a launch's science in the output.
+        tests.add("a_silo_keeps_its_slots_through_a_save", 20, PADDING, helper -> {
+            RocketSiloBlockEntity silo = placeSilo(helper);
+            Item structure = item(helper, "nauvis_materials:low_density_structure");
+            helper.assertValueEqual(insert(silo.automationView(), structure, 20), 20,
+                    "two parts' worth of low density structures accepted");
+            try (Transaction transaction = Transaction.openRoot()) {
+                silo.inventory().insert(RocketSiloBlockEntity.OUTPUT_SLOT,
+                        ItemResource.of(ModItems.SPACE_SCIENCE_PACK.get()), 1000, transaction);
+                transaction.commit();
+            }
+            HolderLookup.Provider registries = helper.getLevel().registryAccess();
+            CompoundTag saved = silo.saveWithoutMetadata(registries);
+            RocketSiloBlockEntity reloaded = new RocketSiloBlockEntity(silo.getBlockPos(), silo.getBlockState());
+            reloaded.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, registries, saved));
+            helper.assertValueEqual(reloaded.inventory().getAmountAsInt(0), 20,
+                    "low density structures after a save and reload; saved as " + saved.get("Inventory"));
+            helper.assertValueEqual(reloaded.inventory().getAmountAsInt(RocketSiloBlockEntity.OUTPUT_SLOT), 1000,
+                    "space science after a save and reload; saved as " + saved.get("Inventory"));
+            helper.succeed();
         });
     }
 

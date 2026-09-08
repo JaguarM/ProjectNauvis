@@ -1336,7 +1336,7 @@
         "yield": 1
       },
       "category": "crafting-with-fluid",
-      "stack": 200
+      "stack": 100
     },
     "production-science-pack": {
       "name": "Production science pack",

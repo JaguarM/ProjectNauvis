@@ -68,7 +68,7 @@ public final class ModItems {
      * Twenty circuits, two advanced circuits and five sulfuric acid, ten seconds: the other item
      * made from a fluid in an assembler, and the top of the circuit ladder the pack reaches.
      */
-    public static final DeferredItem<Item> PROCESSING_UNIT = ITEMS.registerSimpleItem("processing_unit", () -> Stacks.of(200));
+    public static final DeferredItem<Item> PROCESSING_UNIT = ITEMS.registerSimpleItem("processing_unit", () -> Stacks.of(100));
 
     /**
      * Five copper plates, five plastic and ten steel, thirty seconds: the rocket's skin, and the

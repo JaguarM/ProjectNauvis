@@ -256,6 +256,7 @@ public final class NauvisGameTests {
         });
         tests.add("timed_recipes_are_timed", TimedRecipesAreTimedTest::new, 20);
         tests.add("an_inserter_hears_a_far_cell_of_a_machine", InserterHearsAFarCellTest::new, 60, 24);
+        tests.add("an_inserter_fills_a_silo_and_loses_nothing", InserterFillsASiloTest::new, 200, 24);
     }
 
     /**
@@ -610,6 +611,80 @@ public final class NauvisGameTests {
             return handler.getAmountAsInt();
         }
 
+    }
+
+    /**
+     * An inserter feeding a silo stops at the silo's limit, and every item it took from the chest
+     * is in the silo or still in the chest.
+     */
+    public static class InserterFillsASiloTest extends PackGameTest {
+
+        private static final BlockPos SILO = new BlockPos(0, 1, 0);
+        private static final BlockPos INSERTER = new BlockPos(5, 1, 0);
+        private static final BlockPos CHEST = new BlockPos(6, 1, 0);
+
+        /** Four swings of the burner inserter, thirty ticks each, and room to wake and sleep. */
+        private static final int SWINGS_TICKS = 4 * 30 + 40;
+
+        InserterFillsASiloTest(Info info) { super(info); }
+
+        @Override
+        public void run(GameTestHelper helper) {
+            place(helper, SILO, block(helper, "nauvis_rocket:rocket_silo"));
+            helper.setBlock(CHEST, Blocks.CHEST);
+            Block inserter = block(helper, "nauvis_logistics:burner_inserter");
+            helper.setBlock(INSERTER, inserter.defaultBlockState()
+                    .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.WEST));
+            Item structure = item(helper, "nauvis_materials:low_density_structure");
+
+            ResourceHandler<ItemResource> silo = handler(helper, SILO);
+            ResourceHandler<ItemResource> chest = handler(helper, CHEST);
+            helper.assertValueEqual(insert(silo, structure, 17), 17, "low density structures the silo took by hand");
+            helper.assertValueEqual(insert(chest, structure, 5), 5, "low density structures put in the chest");
+            helper.assertValueEqual(insert(handler(helper, INSERTER), Items.COAL, 1), 1, "coal the inserter took");
+
+            helper.runAfterDelay(SWINGS_TICKS, () -> {
+                int inSilo = silo.getAmountAsInt(0);
+                int inChest = countIn(chest, structure);
+                helper.assertValueEqual(inSilo, 20, "low density structures in the silo: twice a part's worth is the limit");
+                helper.assertValueEqual(inChest, 2, "low density structures left in the chest");
+                helper.assertValueEqual(inSilo + inChest, 22, "low density structures altogether: the inserter lost some");
+                helper.assertFalse(helper.getLevel().getBlockTicks().hasScheduledTick(helper.absolutePos(INSERTER), inserter),
+                        "the inserter is still awake with a full silo in front of it");
+                helper.succeed();
+            });
+        }
+
+        private static ResourceHandler<ItemResource> handler(GameTestHelper helper, BlockPos pos) {
+            ResourceHandler<ItemResource> handler = Capabilities.Item.BLOCK.getCapability(
+                    helper.getLevel(), helper.absolutePos(pos), null, null, null);
+            helper.assertTrue(handler != null, "no item capability at " + pos);
+            return handler;
+        }
+
+        private static int insert(ResourceHandler<ItemResource> handler, Item item, int count) {
+            try (Transaction transaction = Transaction.openRoot()) {
+                int inserted = handler.insert(ItemResource.of(item), count, transaction);
+                transaction.commit();
+                return inserted;
+            }
+        }
+
+        private static int countIn(ResourceHandler<ItemResource> handler, Item item) {
+            int total = 0;
+            for (int index = 0; index < handler.size(); index++) {
+                if (handler.getResource(index).getItem() == item) {
+                    total += handler.getAmountAsInt(index);
+                }
+            }
+            return total;
+        }
+
+        private static Item item(GameTestHelper helper, String id) {
+            Item item = BuiltInRegistries.ITEM.getValue(Identifier.parse(id));
+            helper.assertTrue(item != Items.AIR, "expected " + id + " to be registered, got air");
+            return item;
+        }
     }
 
     /**

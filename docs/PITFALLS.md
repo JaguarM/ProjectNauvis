@@ -72,6 +72,11 @@ Waking, ticking and belts
   (`BeltLines` ticks the splitter). A gametest is a server, so it cannot catch this.
 - A horizontal `Entity.move` clears `onGround`; read it before and put it back after.
 - Bank a finished craft before asking for power.
+- Spending is not a supply change. A buffer that wakes its machine on every change wakes it from
+  its own tick, and a machine that spends without progressing re-ticks for ever (the electric
+  inserter holding an item over a full chest).
+- A belt announces a block gaining its first item and nothing else. Room appearing as items move
+  on is announced only at a block something failed to insert at (`BeltRun.waiting`).
 - `setChanged()` reaches the anchor's six neighbours only; use `Multiblock.announce` from the
   inventory hook, never from `setChanged`.
 
