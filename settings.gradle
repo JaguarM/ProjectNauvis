@@ -10,7 +10,7 @@ plugins {
 
 rootProject.name = 'ProjectNauvis'
 
-// The two sibling repos, substituted for their published coordinates so an edit is picked up
+// The three sibling repos, substituted for their published coordinates so an edit is picked up
 // here at once. Gradle matches an included build by directory name and the jars are named after
 // the mod ids, so the substitution has to be spelled out.
 includeBuild('../Facrafting') {
@@ -21,6 +21,11 @@ includeBuild('../Facrafting') {
 includeBuild('../CrumblingOre') {
     dependencySubstitution {
         substitute module('com.jaguarm.crumblingore:crumblingore') using project(':')
+    }
+}
+includeBuild('../NauvisTerrain') {
+    dependencySubstitution {
+        substitute module('com.jaguarm.nauvisterrain:nauvis_terrain') using project(':')
     }
 }
 

@@ -51,6 +51,7 @@ repositories {
 dependencies {
     runtimeOnly "com.jaguarm.facrafting:facrafting:${facrafting_version}"
     runtimeOnly "com.jaguarm.crumblingore:crumblingore:${crumblingore_version}"
+    runtimeOnly "com.jaguarm.nauvisterrain:nauvis_terrain:${nauvis_terrain_version}"
 
     implementation project(':nauvis_lib')
     runtimeOnly project(':nauvis_materials')

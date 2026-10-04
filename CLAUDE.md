@@ -53,7 +53,10 @@ The siblings
 
 `../Facrafting` (`facrafting`) is unpublished and ours to change freely; folding it into this repo
 is a separate decision to ask about. `../CrumblingOre` (`crumblingore`) is released, so its ids and
-behaviour are frozen. Both are `includeBuild`s, so an edit is picked up here at once.
+behaviour are frozen. `../NauvisTerrain` (`nauvis_terrain`) is the world: Factorio's Nauvis as a
+world type a new world starts on, its ores at the surface; the pack changes what it needs of it
+through data and never compiles against it. All three are `includeBuild`s, so an edit is picked up
+here at once.
 `nauvis_mining` is a fork of the released Neo Progressive Automation under Factorio's ids;
 `nauvis_materials` is Neo Progressive Materials folded in under the pack's ids. The originals at
 `../NeoProgressiveAutomation` and `../NeoProgressiveMaterials` are not built and not to be
