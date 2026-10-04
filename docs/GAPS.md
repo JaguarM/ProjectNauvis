@@ -81,8 +81,8 @@ Mining
 - A patch is found with a drill in hand, which outlines the ore in loaded chunks through the
   ground; there is no map. Starting patches sit between y 16 and 48, random ones between -40
   and 48, so some are a dig and none breach the surface on purpose (a hill or a ravine may).
-- Richness by distance is Crumbling Ore's harvests per block, doubling at 3900 blocks and capped
-  at sixty-four; the footprint does not grow. A world made before the patches keeps its vanilla
+- Richness by distance is Crumbling Ore's harvests per block, one more times eight in each
+  2600-block ring around the origin and capped at sixty-four; the footprint does not grow. A world made before the patches keeps its vanilla
   veins in the chunks it has generated.
 - A patch cut by a cave or water has a hole in it, and a patch under an ocean is under the sea bed.
 - The drill is placed blind and the status line says "No minable resources" after its first walk.

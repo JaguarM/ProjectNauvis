@@ -165,7 +165,7 @@ coordination. Only ground (`stone_ore_replaceables`, `deepslate_ore_replaceables
 a cave leaves a hole. Vanilla's scattered iron, copper and coal features are removed by
 `no_vanilla_ore_veins.json`, and its noise ore veins, which are not features, by the pack mod's
 one mixin, `NoiseGeneratorSettingsMixin`. Footprint is Factorio's and stays with distance; richness by distance
-is Crumbling Ore's `crumbling.richness.doubleDistance`, set in the pack config. There is no map,
+is Crumbling Ore's rings, `crumbling.richness.ringWidth`, set in the pack config. There is no map,
 so `nauvis_mining`'s `OreXray` outlines the ore in loaded chunks while a drill is in hand, one box
 per chunk section per ore. What counts as Factorio's ore is the block tag
 `nauvis_mining:factorio_ores`, read by the x-ray and by the drill, which takes only those until

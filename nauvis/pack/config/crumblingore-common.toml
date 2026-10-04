@@ -12,12 +12,12 @@
 	harvestsPerOre = 8
 
 	[crumbling.richness]
-		#Blocks from the world origin at which an ore holds twice its harvests, or 0
-		#for the same everywhere. Factorio's richness by distance: harvests are
-		#multiplied by max((D + distance) / (2 * D), 1), so nothing changes within D
-		#blocks of the origin and an ore 3D out holds twice as many.
+		#Width in blocks of the rings around the world origin, or 0 for the same
+		#harvests everywhere. An ore in ring k, counted from 0 at the origin by the
+		#distance of its chunk's centre, holds (k + 1) times harvestsPerOre.
+		#2600 follows Factorio's ore richness by distance.
 		#Range: 0 ~ 1000000
-		doubleDistance = 1300
-		#The most harvests the distance rule can put in one ore block.
+		ringWidth = 2600
+		#The most harvests the rings can put in one ore block.
 		#Range: 1 ~ 1024
 		maxHarvests = 64
