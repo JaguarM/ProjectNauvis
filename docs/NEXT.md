@@ -20,13 +20,11 @@ The jobs
 
 Four builds have passed their tests and nobody's eyes. Each wants a client boot and an evening:
 
-- **The ore patches.** A new world's three starting patches, found with a drill in hand: whether
-  the x-ray boxes read as patches, whether the F toggle on the drill's screen reads as "Factorio's
-  ores only", whether 48 to 120 blocks out and 16 to 48 down is the right
-  place for the first iron, whether twenty to thirty across and three layers, rolling a few blocks, is the right size and
-  shape for a first base, and whether a random patch every 128 blocks is too many or too few. `/ore patch iron` puts
-  one under your feet in a superflat world. The knobs are the constants in `OrePatches` and the
-  doubling distance in `nauvis/pack/config/crumblingore-common.toml`.
+- **Nauvis.** A new world is Nauvis Terrain's, its patches at the surface: whether a first drill on
+  iron one block deep, eight harvests a block, lasts long enough, whether the F toggle on the
+  drill's screen reads as "Factorio's ores only", and how the oil fields and the offshore pump sit
+  on its ground and lakes. The knob is the ring width in
+  `nauvis/pack/config/crumblingore-common.toml`.
 - **The rocket.** The *A* toggle and the Launch button on the silo's screen, the radar's dish, a
   launch watched from the ground. Not identity, so free to move: the five-second countdown, the
   firework's height, the rocket's colours, whether a nine-by-nine pad reads as a silo.

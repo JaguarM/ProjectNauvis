@@ -27,8 +27,8 @@ Oil and water
 - Field placement approximates Factorio's autoplace: richness uses Wube's `additional_richness`
   220000 and distance factor; density is four times Factorio's (one per 300 chunks, none within
   150 blocks of the origin) because there is no map. Three to eight wells a field on a 4-block grid.
-- A superflat world with the default preset runs no features: no oil, trees or ores. `/oil field`
-  and `/oil well` place them; gamemaster only, like `/research`.
+- A superflat world with the default preset runs no features, so it has no oil: `/oil field` and
+  `/oil well` place it; gamemaster only, like `/research`.
 - Distance is measured from the world origin, not spawn.
 - There is no map, so a pumpjack in hand x-rays every well in render distance.
 - The pumpjack's screen exists for its module slots.
@@ -71,26 +71,20 @@ Belts
 Mining
 ------
 
-- Ore is in patches twenty to thirty blocks across and two or three layers thick, solid, on a
-  floor that tilts and rolls a few blocks, underground at a random height, and nowhere else:
-  vanilla's scattered iron, copper and coal features and its noise ore veins are gone (the veins
-  by a mixin in the pack mod, since they are not features). Gold, redstone, lapis, diamonds and
-  emeralds still generate as vanilla does. Factorio's patches are thirty to forty across; a first
-  look found that too big here.
-- No stone patch: stone is every block of ground. No uranium patch: no uranium ore exists yet.
-- A patch is found with a drill in hand, which outlines the ore in loaded chunks through the
-  ground; there is no map. Starting patches sit between y 16 and 48, random ones between -40
-  and 48, so some are a dig and none breach the surface on purpose (a hill or a ravine may).
+- Ore is Nauvis Terrain's: Factorio's iron, copper, coal and stone patches at the surface, one
+  block deep, in a Nauvis world. A world of another type has vanilla's ores and no patches.
+  Underground, a Nauvis world keeps vanilla's gold, redstone, lapis and diamonds.
+- A stone patch is plain stone, which the drill leaves to a pickaxe like every other block of
+  ground. No uranium patch: no uranium ore exists yet.
 - Richness by distance is Crumbling Ore's harvests per block, one more times eight in each
-  2600-block ring around the origin and capped at sixty-four; the footprint does not grow. A world made before the patches keeps its vanilla
-  veins in the chunks it has generated.
-- A patch cut by a cave or water has a hole in it, and a patch under an ocean is under the sea bed.
+  2600-block ring around the origin and capped at sixty-four, in place of Factorio's amount on a
+  tile.
 - The drill is placed blind and the status line says "No minable resources" after its first walk.
 - A drill wants a pickaxe: tier decides ores, Fortune multiplies, Efficiency shortens the cycle a
   tenth a level, Silk Touch is stripped, every ore costs a point. *Kept.*
 - A drill takes only the ores in `#nauvis_mining:factorio_ores` (iron, copper, coal) until its F
   toggle is pressed, so one set on a patch can be forgotten; pressed, it takes anything in
-  `#c:ores`. The x-ray shows the same tag. A pack adds an ore by tagging it.
+  `#c:ores`. A pack adds an ore by tagging it.
 - A drill with nowhere to put its ore polls once a second; a chest in front wakes it at once. It
   never drops ore on the ground.
 - A depleted drill stays depleted until its pickaxe changes.

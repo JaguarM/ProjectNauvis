@@ -33,6 +33,9 @@ Settled decisions, not to be re-litigated
   the pack. A number from another version is a stale file, not a choice.
 - **A footprint is identity; height is ours.** `size` in `data/mapping.json`, checked against
   each `*Shape` by `check_models.py`.
+- **The world is Nauvis Terrain's** (2026-10-04). A new world is Factorio's Nauvis from the sibling
+  `../NauvisTerrain`, its ore patches at the surface; the pack places no ore of its own and changes
+  the world only through data.
 - **Ranges and tunables are balance, not identity.** The guns reach twice Factorio's range, a
   drill wants a pickaxe, a solar panel loses output in rain: kept on purpose, listed in `GAPS.md`.
 
@@ -43,8 +46,9 @@ The mods
 |---|---|
 | `facrafting` | the timed crafting model and the crafting UI (sibling repo) |
 | `crumblingore` | ore depletion (sibling repo, released) |
+| `nauvis_terrain` | the world: Factorio's Nauvis, its ore patches included (sibling repo) |
 | `nauvis_lib` | the framework: multi-blocks, transfer views, the machine screen, bench packs, stack-size mixins, `GameTests` |
-| `nauvis` | pack policy, vanilla replacement, raw resources, ore patches, `StandInStacks` |
+| `nauvis` | pack policy, vanilla replacement, raw resources, `StandInStacks` |
 | `nauvis_materials` | intermediate products |
 | `nauvis_logistics` | belts, inserters, splitters, chests, robots |
 | `nauvis_machines` | assemblers, furnaces, modules, beacon, radar, repair pack |

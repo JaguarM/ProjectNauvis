@@ -1,6 +1,0 @@
-{
-  "type": "neoforge:add_features",
-  "biomes": "#minecraft:is_overworld",
-  "features": "nauvis:ore_patch",
-  "step": "underground_ores"
-}

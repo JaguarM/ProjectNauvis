@@ -12,8 +12,8 @@ public final class ModTags {
     private ModTags() {}
 
     /**
-     * The ores a drill takes when it is left to itself, and the ones the x-ray shows: iron,
-     * copper and coal, the ores Factorio's patches are made of. A pack adds an ore by tagging it.
+     * The ores a drill takes when it is left to itself: iron, copper and coal, the ores Factorio's
+     * patches are made of. A pack adds an ore by tagging it.
      */
     public static final TagKey<Block> FACTORIO_ORES = TagKey.create(Registries.BLOCK,
             Identifier.fromNamespaceAndPath(NauvisMining.MODID, "factorio_ores"));
