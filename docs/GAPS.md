@@ -99,6 +99,7 @@ Military and pollution
   turret does (four hundred).
 - A repair pack is spent whole on a click, mends up to three hundred, kept when nothing needed it.
 - Absorption reads the biome at the chunk's middle, once a minute; an unloaded chunk takes five.
+  A Nauvis world is one biome, so there it is the same everywhere; Factorio's is per tile.
 - Nothing comes for an empty base: attacks need a player within ninety-six blocks.
 - A turret does not turn, shoots from its middle, and looks around twice a second while loaded.
 - Bullets are lines: no spread, no travel time, cannot miss, never hit a player.
