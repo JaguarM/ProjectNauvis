@@ -23,9 +23,10 @@ includeBuild('../CrumblingOre') {
         substitute module('com.jaguarm.crumblingore:crumblingore') using project(':')
     }
 }
+// Nauvis Terrain builds one mod per Minecraft version; this pack takes the one for its own.
 includeBuild('../NauvisTerrain') {
     dependencySubstitution {
-        substitute module('com.jaguarm.nauvisterrain:nauvis_terrain') using project(':')
+        substitute module('com.jaguarm.nauvisterrain:nauvis_terrain') using project(':mc-26.2')
     }
 }
 
