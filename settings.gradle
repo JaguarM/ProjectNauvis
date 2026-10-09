@@ -26,7 +26,7 @@ includeBuild('../CrumblingOre') {
 // Nauvis Terrain builds one mod per Minecraft version; this pack takes the one for its own.
 includeBuild('../NauvisTerrain') {
     dependencySubstitution {
-        substitute module('com.jaguarm.nauvisterrain:nauvis_terrain') using project(':mc-26.2')
+        substitute module('com.jaguarm.nauvisterrain:nauvis_terrain') using project(':mc-26.2:neoforge')
     }
 }
 
